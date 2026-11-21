@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Packaging outputs
+dist/
+build/
+*.spec
+
+# Local secrets, certificates & databases (NEVER commit)
+.env
+*.pfx
+certs/
+*.db
+*.sqlite3
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

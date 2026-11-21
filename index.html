@@ -1,0 +1,4397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYNAPSE TW · 全自動台股交易系統（TradingView × Yahoo/FinMind × 多模型 AI × 模擬/實盤）</title>
+  <meta name="description" content="全自動台股交易系統網頁版：雙向資料交流交握拓撲、TradingView 進階線圖與帳號串接、Yahoo/FinMind 真實台股行情、Grok/Gemini/Claude/ChatGPT 多模型 AI 解析、LINE Bot/Telegram 條列推播與模擬/真實下單切換。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg-page: #f3f6fb;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-muted: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --ink-1: #0f172a;
+      --ink-2: #334155;
+      --ink-3: #64748b;
+      --ink-4: #94a3b8;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --accent-dark: #1d4ed8;
+      --teal: #0d9488;
+      --teal-soft: #f0fdfa;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+      --up: #dc2626;
+      --up-soft: #fef2f2;
+      --down: #059669;
+      --down-soft: #ecfdf5;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -14px rgba(15, 23, 42, 0.08);
+      --shadow-modal: 0 24px 60px -12px rgba(15, 23, 42, 0.25);
+    }
+
+    body.intl-colors {
+      --up: #059669;
+      --up-soft: #ecfdf5;
+      --down: #dc2626;
+      --down-soft: #fef2f2;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      background: var(--bg-page);
+      color: var(--ink-1);
+      font-family: "Inter", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Layout Helpers */
+    .container {
+      width: 100%;
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 0 10px; }
+    }
+
+    /* Header */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ink-1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-sub {
+      margin: 0;
+      font-size: 11px;
+      color: var(--ink-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 340px;
+    }
+
+    /* Main Nav Tabs */
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-muted);
+      padding: 4px;
+      border-radius: 11px;
+      overflow-x: auto;
+      max-width: 100%;
+      scrollbar-width: none;
+    }
+
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-3);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--ink-1);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .nav-btn.active {
+      background: var(--ink-1);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+    }
+
+    /* Header Right Controls */
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .env-switch {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .env-pill {
+      border: none;
+      background: transparent;
+      color: var(--ink-3);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .env-pill.active-sim {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    .env-pill.active-live {
+      background: #dc2626;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.28);
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--ink-2);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-strong);
+      color: var(--ink-1);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-sm {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 7px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: #ffffff;
+    }
+
+    .btn-dark {
+      background: var(--ink-1);
+      border-color: var(--ink-1);
+      color: #ffffff;
+    }
+
+    .btn-dark:hover {
+      background: #1e293b;
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+      color: #ffffff;
+    }
+
+    .btn-teal {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #ffffff;
+    }
+
+    .btn-teal:hover {
+      background: #0f766e;
+      color: #ffffff;
+    }
+
+    .clock-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+
+    .clock-time {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-1);
+      line-height: 1.2;
+    }
+
+    .clock-tz {
+      font-size: 10px;
+      color: var(--ink-4);
+      font-weight: 600;
+    }
+
+    @media (max-width: 1024px) {
+      .clock-box { display: none; }
+    }
+
+    /* Telemetry Status Ribbon */
+    .ribbon {
+      background: #0f172a;
+      color: #cbd5e1;
+      font-size: 11px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .ribbon-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 7px 0;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+
+    .ribbon-inner::-webkit-scrollbar { display: none; }
+
+    .ribbon-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .ribbon-sep {
+      color: #334155;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .dot-ok { background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
+    .dot-warn { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22); }
+    .dot-err { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
+
+    /* Alert Banner */
+    .global-banner {
+      display: none;
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .global-banner.show { display: block; }
+    .banner-live { background: #fef2f2; color: #b91c1c; border-bottom: 1px solid #fecaca; }
+    .banner-halted { background: #991b1b; color: #ffffff; }
+
+    /* Main Workspace */
+    .workspace {
+      padding: 16px 0 40px;
+    }
+
+    .tab-section {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-section.active {
+      display: flex;
+    }
+
+    /* Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .card-title-group {
+      min-width: 0;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink-1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .card-subtitle {
+      margin: 2px 0 0;
+      font-size: 11.5px;
+      color: var(--ink-3);
+    }
+
+    .card-body {
+      padding: 16px 18px;
+      min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+      .card-header { padding: 12px 14px 10px; }
+      .card-body { padding: 12px 14px; }
+    }
+
+    /* Badges & Tags */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .badge-blue { background: var(--accent-soft); color: var(--accent-dark); border-color: #bfdbfe; }
+    .badge-teal { background: var(--teal-soft); color: #0f766e; border-color: #99f6e4; }
+    .badge-amber { background: var(--amber-soft); color: #b45309; border-color: #fde68a; }
+    .badge-slate { background: var(--bg-muted); color: var(--ink-2); border-color: var(--border); }
+    .badge-up { background: var(--up-soft); color: var(--up); border-color: color-mix(in srgb, var(--up) 25%, transparent); }
+    .badge-down { background: var(--down-soft); color: var(--down); border-color: color-mix(in srgb, var(--down) 25%, transparent); }
+
+    /* Grids */
+    .grid-handshake {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .grid-chart-order {
+      display: grid;
+      grid-template-columns: minmax(0, 1.85fr) minmax(300px, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .grid-ai-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 1200px) {
+      .grid-handshake { grid-template-columns: minmax(0, 1fr); }
+      .grid-chart-order { grid-template-columns: minmax(0, 1fr); }
+      .grid-ai-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .grid-ai-4 { grid-template-columns: minmax(0, 1fr); }
+      .grid-2 { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    /* Handshake Topology Canvas */
+    .handshake-stage {
+      position: relative;
+      width: 100%;
+      height: clamp(330px, 38vw, 430px);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, rgba(13, 148, 136, 0.03) 42%, rgba(248, 250, 252, 0.9) 78%),
+        #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    @media (max-width: 640px) {
+      .handshake-stage { height: 390px; }
+    }
+
+    #handshakeCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: pointer;
+    }
+
+    .stage-overlay-bar {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+      flex-wrap: wrap;
+    }
+
+    .stage-hint {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--ink-3);
+      font-weight: 500;
+    }
+
+    .inspector-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .inspector-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric-mini {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 10px;
+      min-width: 0;
+    }
+
+    .metric-mini-label {
+      font-size: 10px;
+      color: var(--ink-4);
+      font-weight: 600;
+    }
+
+    .metric-mini-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Watchlist Bar */
+    .watchlist-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+    }
+
+    .watchlist-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .stock-pill {
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--ink-2);
+      border-radius: 9px;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .stock-pill:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .stock-pill.active {
+      background: var(--ink-1);
+      border-color: var(--ink-1);
+      color: #ffffff;
+    }
+
+    .stock-pill .pill-chg {
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .add-stock-form {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+
+    .input, .select, .textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      background: #ffffff;
+      color: var(--ink-1);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12.5px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* Chart Toolbar & Container */
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chart-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chart-viewport {
+      position: relative;
+      width: 100%;
+      height: clamp(360px, 46vh, 470px);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    #tvWidgetMount, #rawChartMount {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    #tvWidgetMount {
+      display: none;
+    }
+
+    #rawChartMount {
+      display: block;
+      padding: 14px 16px;
+    }
+
+    .tv-account-bar {
+      padding: 10px 16px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    /* OHLCV & Order Ticket */
+    .ohlcv-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .ohlcv-cell {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 10px;
+      min-width: 0;
+    }
+
+    .ohlcv-label {
+      font-size: 10px;
+      color: var(--ink-4);
+      font-weight: 600;
+    }
+
+    .ohlcv-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .side-btn {
+      border: 1.5px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--ink-2);
+      border-radius: 10px;
+      padding: 9px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .side-btn.buy-active {
+      background: var(--up);
+      border-color: var(--up);
+      color: #ffffff;
+    }
+
+    .side-btn.sell-active {
+      background: var(--down);
+      border-color: var(--down);
+      color: #ffffff;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+
+    .order-summary {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0 12px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .order-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--ink-2);
+    }
+
+    /* AI Multi-Model Cards */
+    .consensus-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+    }
+
+    .ai-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #ffffff;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ai-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -12px rgba(15, 23, 42, 0.16);
+    }
+
+    .ai-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .ai-model-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink-1);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .ai-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .ai-summary-text {
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.55;
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .ai-meta-line {
+      font-size: 11px;
+      color: var(--ink-3);
+      background: var(--bg-subtle);
+      border-radius: 7px;
+      padding: 6px 8px;
+      line-height: 1.45;
+    }
+
+    /* Tables */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      min-width: 720px;
+    }
+
+    table.data-table th {
+      text-align: left;
+      padding: 9px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-3);
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    table.data-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--bg-muted);
+      color: var(--ink-2);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    table.data-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .num-right { text-align: right !important; }
+    .num-center { text-align: center !important; }
+    .text-up { color: var(--up) !important; }
+    .text-down { color: var(--down) !important; }
+
+    /* Message Preview Box (LINE / Telegram) */
+    .msg-preview-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-family: "JetBrains Mono", "Noto Sans TC", monospace;
+      font-size: 12px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 360px;
+      overflow-y: auto;
+      border: 1px solid #1e293b;
+    }
+
+    /* Code Viewer */
+    .code-box {
+      background: #0f172a;
+      color: #93c5fd;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      overflow: auto;
+      max-height: 400px;
+      margin: 0;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(15, 23, 42, 0.56);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-modal);
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink-1);
+    }
+
+    /* Toast */
+    .toast-stack {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 360px;
+      width: calc(100vw - 32px);
+      pointer-events: none;
+    }
+
+    .toast-item {
+      pointer-events: auto;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 12px;
+      padding: 11px 14px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
+      border-left: 4px solid var(--accent);
+      font-size: 12px;
+      animation: slideUp 0.2s ease;
+    }
+
+    .toast-item.success { border-left-color: #10b981; }
+    .toast-item.warn { border-left-color: #f59e0b; }
+    .toast-item.error { border-left-color: #ef4444; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky Top Navigation -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">TW</div>
+        <div class="brand-text">
+          <h1 class="brand-title">
+            SYNAPSE TW
+            <span class="badge badge-blue">全自動台股中控台</span>
+          </h1>
+          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 多模型 AI × LINE / TG × 模擬 / 實盤</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="主導覽">
+        <button class="nav-btn active" data-tab="desk"><i data-lucide="activity" style="width:14px;height:14px;"></i>總覽指揮台</button>
+        <button class="nav-btn" data-tab="ai"><i data-lucide="cpu" style="width:14px;height:14px;"></i>AI 多模型解析</button>
+        <button class="nav-btn" data-tab="notify"><i data-lucide="bell-ring" style="width:14px;height:14px;"></i>LINE / TG 通知中心</button>
+        <button class="nav-btn" data-tab="deploy"><i data-lucide="cloud" style="width:14px;height:14px;"></i>雲端部署與腳本</button>
+      </nav>
+
+      <div class="top-controls">
+        <!-- SIM / LIVE Trading Mode Switch -->
+        <div class="env-switch" role="group" aria-label="模擬與真實下單切換">
+          <button id="btnModeSim" class="env-pill active-sim" title="模擬下單模式（依真實報價紙上撮合）">模擬下單 SIM</button>
+          <button id="btnModeLive" class="env-pill" title="真實下單模式（需永豐金 Shioaji 後端與 CA 憑證）">真實下單 LIVE</button>
+        </div>
+
+        <button id="btnColorScheme" class="btn btn-sm" title="切換台股紅漲綠跌 / 國際綠漲紅跌">
+          <span id="colorSchemeLabel">紅漲綠跌</span>
+        </button>
+
+        <button id="btnOpenSettings" class="btn btn-sm">
+          <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i>API / 金鑰
+        </button>
+
+        <button id="btnKillSwitch" class="btn btn-sm btn-danger">
+          <i data-lucide="octagon-alert" style="width:13px;height:13px;"></i><span id="killSwitchText">緊急熔斷</span>
+        </button>
+
+        <div class="clock-box">
+          <span id="twClock" class="clock-time mono">--:--:--</span>
+          <span class="clock-tz">UTC+8 TAIPEI</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Telemetry Status Ribbon -->
+  <div class="ribbon">
+    <div class="container ribbon-inner">
+      <span class="ribbon-item">
+        <span id="ribbonDot" class="dot dot-ok"></span>
+        <strong style="color:#f8fafc;">DATA HANDSHAKE</strong>
+      </span>
+      <span class="ribbon-sep">|</span>
+      <span class="ribbon-item">連線模式：<strong id="ribbonBackendMode" style="color:#38bdf8;">偵測中...</strong></span>
+      <span class="ribbon-sep">|</span>
+      <span class="ribbon-item">真實報價同步：<strong id="ribbonSyncedCount" class="mono" style="color:#34d399;">0/0</strong></span>
+      <span class="ribbon-sep">|</span>
+      <span class="ribbon-item">AI 模型：<strong id="ribbonAiStatus" style="color:#fbbf24;">4 模型待命</strong></span>
+      <span class="ribbon-sep">|</span>
+      <span class="ribbon-item">推播通道：<strong id="ribbonNotifyStatus" style="color:#a7f3d0;">未啟用</strong></span>
+      <span class="ribbon-sep">|</span>
+      <span class="ribbon-item">最新交握事件：<span id="ribbonLastEvent" style="color:#e2e8f0;">系統啟動，準備同步 Yahoo / FinMind 真實台股行情...</span></span>
+    </div>
+  </div>
+
+  <!-- Live / Kill Switch Global Warning Banner -->
+  <div id="globalBanner" class="global-banner"></div>
+
+  <!-- Main Workspace -->
+  <main class="container workspace">
+
+    <!-- ==================== TAB 1: COMMAND DESK ==================== -->
+    <section id="tab-desk" class="tab-section active">
+
+      <!-- 1. Watchlist & Add Real TW Stock Bar -->
+      <div class="watchlist-bar">
+        <div id="watchlistPills" class="watchlist-pills"></div>
+        <form id="addStockForm" class="add-stock-form">
+          <input id="addStockInput" class="input mono" style="width:155px;" type="text" placeholder="加入台股代號如 2603" maxlength="8" />
+          <button type="submit" class="btn btn-dark btn-sm">
+            <i data-lucide="plus" style="width:13px;height:13px;"></i>查詢加入
+          </button>
+          <button type="button" id="btnSyncAll" class="btn btn-teal btn-sm">
+            <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>全標的同步真實行情
+          </button>
+        </form>
+      </div>
+
+      <!-- 2. Centerpiece: SYNAPSE Bidirectional Data Handshake Topology -->
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <i data-lucide="network" style="width:16px;height:16px;color:var(--accent);"></i>
+              SYNAPSE 雙向資料交流交握網路
+              <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
+            </h2>
+            <p class="card-subtitle">即時視覺化呈現 Yahoo / FinMind 真實行情、TradingView 訊號、AI 四模型共識、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
+          </div>
+          <div class="chart-group">
+            <button id="btnTriggerHandshake" class="btn btn-sm btn-primary">
+              <i data-lucide="zap" style="width:13px;height:13px;"></i>觸發全鏈路交握測試
+            </button>
+            <button id="btnToggleAnim" class="btn btn-sm">
+              <span id="animToggleLabel">動畫運行中</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="grid-handshake">
+            <div class="handshake-stage">
+              <canvas id="handshakeCanvas"></canvas>
+              <div class="stage-overlay-bar">
+                <span class="stage-hint">點擊任一節點可檢視即時交握延遲、狀態與最後封包內容</span>
+                <span id="handshakeCounters" class="stage-hint mono">SYN: 0 ｜ ACK: 0 ｜ 平均延遲: -- ms</span>
+              </div>
+            </div>
+            <aside id="handshakeInspector" class="inspector-box"></aside>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. TradingView Chart + Real OHLCV & SIM/LIVE Order Ticket -->
+      <div class="grid-chart-order">
+        <!-- Left: TradingView & Yahoo/FinMind Chart Card -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">
+                <span id="activeStockTitle" class="mono">2330 台積電</span>
+                <span id="activeStockIndustry" class="badge badge-slate">半導體業</span>
+                <span id="activePriceText" class="mono" style="font-size:17px;font-weight:800;">--</span>
+                <span id="activeChangeBadge" class="badge badge-slate mono">待同步</span>
+              </h2>
+              <p class="card-subtitle">
+                數據來源：<strong id="activeSourceText">尚未同步（嚴禁猜測假價格）</strong> ｜ 更新：<span id="activeDateText" class="mono">--</span>
+              </p>
+            </div>
+            <div class="chart-group">
+              <button id="btnSyncFinmind" class="btn btn-sm btn-primary">
+                <i data-lucide="database" style="width:13px;height:13px;"></i>抓 FinMind
+              </button>
+              <button id="btnSyncYahoo" class="btn btn-sm">
+                <i data-lucide="globe" style="width:13px;height:13px;"></i>抓 Yahoo
+              </button>
+            </div>
+          </div>
+
+          <div class="chart-controls">
+            <div class="chart-group">
+              <button id="btnChartRaw" class="btn btn-sm btn-dark">Yahoo / FinMind 真實數據圖</button>
+              <button id="btnChartTv" class="btn btn-sm">TradingView 進階線圖</button>
+            </div>
+            <div class="chart-group">
+              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期">
+                <option value="5">5 分 K</option>
+                <option value="15" selected>15 分 K</option>
+                <option value="60">60 分 K</option>
+                <option value="D">日線 D</option>
+                <option value="W">週線 W</option>
+              </select>
+              <select id="tvStudySelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="技術指標組合">
+                <option value="ema_rsi" selected>EMA + RSI</option>
+                <option value="macd_bb">MACD + 布林通道</option>
+                <option value="vwap_vol">VWAP + 成交量</option>
+                <option value="stoch">KD 隨機指標</option>
+              </select>
+              <button id="btnTvDrawTools" class="btn btn-sm" title="顯示/隱藏 TradingView 側邊繪圖工具列">繪圖工具: 開</button>
+              <button id="btnTvTheme" class="btn btn-sm" title="切換 TradingView 亮暗主題">主題: 亮</button>
+            </div>
+          </div>
+
+          <div class="chart-viewport">
+            <div id="tvWidgetMount"></div>
+            <div id="rawChartMount">
+              <canvas id="rawPriceChart"></canvas>
+            </div>
+          </div>
+
+          <!-- TradingView Account Login & Advanced Features Bar -->
+          <div class="tv-account-bar">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="badge badge-blue">TradingView 進階帳號功能</span>
+              <span id="tvAccountStatusText" style="color:var(--ink-3);">支援雲端指標、自訂 Layout 與 Pine Script Alert Webhook</span>
+            </div>
+            <div class="chart-group">
+              <a id="tvLoginWorkspaceLink" href="https://www.tradingview.com/chart/?symbol=TWSE%3A2330" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">
+                <i data-lucide="external-link" style="width:13px;height:13px;"></i>登入 TradingView 進階圖表
+              </a>
+              <button id="btnOpenTvAccountModal" class="btn btn-sm">
+                <i data-lucide="user-check" style="width:13px;height:13px;"></i>綁定帳號 / 雲端 Layout
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Right: Real OHLCV Telemetry + SIM / LIVE Order Execution Ticket -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">
+                <i data-lucide="arrow-left-right" style="width:16px;height:16px;color:var(--teal);"></i>
+                真實行情 &amp; 下單執行票
+              </h2>
+              <p class="card-subtitle">嚴格採用真實抓取報價下單；未取得報價時自動鎖定防呆</p>
+            </div>
+            <span id="ticketModeBadge" class="badge badge-blue">模擬下單 SIM</span>
+          </div>
+          <div class="card-body">
+            <!-- Real OHLCV Grid -->
+            <div class="ohlcv-grid">
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">開盤 OPEN</div>
+                <div id="ohlcvOpen" class="ohlcv-val mono">--</div>
+              </div>
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">現價 / 收盤</div>
+                <div id="ohlcvClose" class="ohlcv-val mono">--</div>
+              </div>
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">最高 HIGH</div>
+                <div id="ohlcvHigh" class="ohlcv-val mono text-up">--</div>
+              </div>
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">最低 LOW</div>
+                <div id="ohlcvLow" class="ohlcv-val mono text-down">--</div>
+              </div>
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">成交量</div>
+                <div id="ohlcvVolume" class="ohlcv-val mono">--</div>
+              </div>
+              <div class="ohlcv-cell">
+                <div class="ohlcv-label">RSI(14)</div>
+                <div id="ohlcvRsi" class="ohlcv-val mono">--</div>
+              </div>
+            </div>
+
+            <!-- Order Ticket Form -->
+            <div style="border-top:1px solid var(--border);padding-top:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:800;color:var(--ink-1);">下單標的：<span id="ticketStockDisplay" class="mono">2330 台積電</span></span>
+                <button id="btnFillLatestPrice" type="button" class="btn btn-sm">帶入最新真實價</button>
+              </div>
+
+              <div class="side-toggle">
+                <button type="button" id="btnSideBuy" class="side-btn buy-active">買進 BUY</button>
+                <button type="button" id="btnSideSell" class="side-btn">賣出 SELL</button>
+              </div>
+
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="orderPriceInput">委託價格 (TWD)</label>
+                  <input id="orderPriceInput" type="number" step="0.5" min="0" class="input mono" placeholder="請先同步真實報價" />
+                </div>
+                <div>
+                  <label class="field-label" for="orderQtyInput">委託數量</label>
+                  <div style="display:flex;gap:6px;">
+                    <input id="orderQtyInput" type="number" min="1" value="1" class="input mono" />
+                    <select id="orderUnitSelect" class="select" style="width:72px;">
+                      <option value="張" selected>張</option>
+                      <option value="股">股</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="orderTypeSelect">價格條件</label>
+                  <select id="orderTypeSelect" class="select">
+                    <option value="LMT" selected>限價 LMT</option>
+                    <option value="MKT">市價 MKT</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="orderTifSelect">委託效期</label>
+                  <select id="orderTifSelect" class="select">
+                    <option value="ROD" selected>ROD 當日有效</option>
+                    <option value="IOC">IOC 立即成交否則取消</option>
+                    <option value="FOK">FOK 全部成交否則取消</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="order-summary mono">
+                <div class="order-summary-row">
+                  <span>預估委託金額</span>
+                  <strong id="estNotional">$0</strong>
+                </div>
+                <div class="order-summary-row">
+                  <span>手續費 (2.8折) / 證交稅</span>
+                  <span id="estFeeTax">$0 / $0</span>
+                </div>
+                <div class="order-summary-row">
+                  <span>模擬帳戶可用現金</span>
+                  <strong id="simCashDisplay" style="color:var(--accent-dark);">$3,000,000</strong>
+                </div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
+                <input id="orderAutoNotify" type="checkbox" checked />
+                成交回報自動推播至 LINE Bot / Telegram
+              </label>
+
+              <button id="btnSubmitOrder" type="button" class="btn btn-primary" style="width:100%;padding:10px;font-size:13px;font-weight:800;">
+                <i data-lucide="send" style="width:14px;height:14px;"></i>
+                <span id="submitOrderLabel">送出模擬下單 (SIM)</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- 4. Multi-Model AI Assistance Summary (Grok, Gemini, Claude, ChatGPT) -->
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <i data-lucide="sparkles" style="width:16px;height:16px;color:var(--accent);"></i>
+              AI 四模型多維度解析（Grok Bot · Gemini · Claude · ChatGPT）
+            </h2>
+            <p class="card-subtitle">僅注入已驗證的 Yahoo / FinMind 真實 OHLCV 與技術指標進行平行研判，嚴禁無數據猜測</p>
+          </div>
+          <div class="chart-group">
+            <button id="btnRunAiQuick" class="btn btn-sm btn-primary">
+              <i data-lucide="play" style="width:13px;height:13px;"></i>一鍵四模型解析目前標的
+            </button>
+            <button id="btnPushAiReport" class="btn btn-sm btn-teal">
+              <i data-lucide="bell" style="width:13px;height:13px;"></i>推播 AI 共識至 LINE/TG
+            </button>
+            <button id="btnOpenAiSettings" class="btn btn-sm">設定模型 API 金鑰</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="aiConsensusBar" class="consensus-bar">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span class="badge badge-slate">四模型共識</span>
+              <strong id="consensusHeadline" style="font-size:13px;color:var(--ink-1);">請先同步真實行情，點擊「一鍵四模型解析目前標的」</strong>
+            </div>
+            <span id="consensusMeta" class="mono" style="font-size:11.5px;color:var(--ink-3);">標的：2330 台積電</span>
+          </div>
+          <div id="aiQuickGrid" class="grid-ai-4"></div>
+        </div>
+      </article>
+
+      <!-- 5. Auto-Signal Scanner Table (Always Code + Traditional Chinese Name) -->
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <i data-lucide="radar" style="width:16px;height:16px;color:var(--teal);"></i>
+              台股真實行情自動訊號掃描（股票代號 × 中文名稱完整呈現）
+            </h2>
+            <p class="card-subtitle">根據真實抓取之 K 線序列即時計算 EMA(5/12)、RSI(14)、VWAP 乖離，支援單筆與全市場條列推播</p>
+          </div>
+          <div class="chart-group">
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;">
+              <input id="autoTradeOnSignal" type="checkbox" />
+              掃描到買賣訊號自動下單
+            </label>
+            <button id="btnScanSignals" class="btn btn-sm btn-dark">
+              <i data-lucide="scan-search" style="width:13px;height:13px;"></i>立即掃描訊號
+            </button>
+            <button id="btnPushBatchSignals" class="btn btn-sm btn-teal">
+              <i data-lucide="send" style="width:13px;height:13px;"></i>一鍵條列推播 LINE / TG
+            </button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>股票代號 / 中文名稱</th>
+                  <th>真實數據源</th>
+                  <th class="num-right">最新價</th>
+                  <th class="num-right">漲跌幅</th>
+                  <th class="num-right">EMA(5) / EMA(12)</th>
+                  <th class="num-right">RSI(14)</th>
+                  <th class="num-right">VWAP 乖離</th>
+                  <th class="num-center">自動偵測訊號</th>
+                  <th class="num-right">快速操作</th>
+                </tr>
+              </thead>
+              <tbody id="signalTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6. Portfolio Positions & Order Execution Audit Log -->
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">即時持倉與未實現損益</h2>
+              <p class="card-subtitle">依真實同步現價即時重算（無真實報價時不猜測損益）</p>
+            </div>
+            <button id="btnResetSimAcct" class="btn btn-sm">重設模擬盤 ($300萬)</button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="table-wrap">
+              <table class="data-table" style="min-width:520px;">
+                <thead>
+                  <tr>
+                    <th>股票代號 / 名稱</th>
+                    <th class="num-right">持有股數</th>
+                    <th class="num-right">均價</th>
+                    <th class="num-right">真實現價</th>
+                    <th class="num-right">未實現損益</th>
+                    <th class="num-right">平倉</th>
+                  </tr>
+                </thead>
+                <tbody id="positionsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">模擬 / 實盤委託成交稽核紀錄</h2>
+              <p class="card-subtitle">完整記錄交易模式 (SIM/LIVE)、時間戳、手續費與證交稅</p>
+            </div>
+            <button id="btnExportOrdersCsv" class="btn btn-sm">
+              <i data-lucide="download" style="width:13px;height:13px;"></i>匯出 CSV
+            </button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="table-wrap">
+              <table class="data-table" style="min-width:540px;">
+                <thead>
+                  <tr>
+                    <th>時間</th>
+                    <th>模式</th>
+                    <th>標的</th>
+                    <th>方向 / 數量</th>
+                    <th class="num-right">成交價</th>
+                    <th>狀態</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: AI MULTI-MODEL STUDIO ==================== -->
+    <section id="tab-ai" class="tab-section">
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">多模型 AI 深度解析工作室（Grok Bot · Gemini · Claude · ChatGPT）</h2>
+            <p class="card-subtitle">支援自訂分析提問，同步調用四家主流大型語言模型 API（可透過雲端後端安全代理或瀏覽器金鑰直連）</p>
+          </div>
+          <button id="btnRunAiStudio" class="btn btn-primary">
+            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行四模型深度解析
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="grid-2" style="margin-bottom:14px;">
+            <div>
+              <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
+              <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
+            </div>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+              <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">模型掛載與 API 金鑰狀態</div>
+              <div class="form-grid-2" style="margin-bottom:8px;">
+                <div>
+                  <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
+                  <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+                </div>
+                <div>
+                  <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
+                  <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
+                </div>
+                <div>
+                  <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
+                  <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
+                </div>
+                <div>
+                  <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
+                  <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機瀏覽器 localStorage；雲端部署建議寫入伺服器 .env</span>
+                <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存 AI 金鑰</button>
+              </div>
+            </div>
+          </div>
+          <div id="aiStudioResults" class="grid-ai-4"></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ==================== TAB 3: LINE BOT & TELEGRAM NOTIFICATION CENTER ==================== -->
+    <section id="tab-notify" class="tab-section">
+      <div class="grid-2">
+        <!-- Left: LINE & Telegram Credentials -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">LINE Bot &amp; Telegram 推播通道設定</h2>
+              <p class="card-subtitle">採用 LINE Messaging API Push（支援個人與群組）與 Telegram Bot API</p>
+            </div>
+            <button id="btnSaveNotifyCfg" class="btn btn-sm btn-dark">儲存通道設定</button>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+            <div style="padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <strong style="color:#166534;font-size:13px;">LINE Bot (Messaging API)</strong>
+                <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input id="cfgLineEnabled" type="checkbox" />啟用 LINE 推播
+                </label>
+              </div>
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="cfgLineToken">Channel Access Token</label>
+                  <input id="cfgLineToken" type="password" class="input mono" placeholder="貼上長期 Channel Access Token" />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgLineTarget">Target User / Group ID</label>
+                  <input id="cfgLineTarget" type="text" class="input mono" placeholder="Uxxxx... 或 Cxxxx..." />
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                <span style="font-size:11px;color:#15803d;">連接雲端後端時自動經 /api/v1/notify/broadcast 轉發，免除 CORS 限制</span>
+                <button id="btnTestLine" type="button" class="btn btn-sm btn-teal">發送 LINE 測試訊號</button>
+              </div>
+            </div>
+
+            <div style="padding:12px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <strong style="color:#075985;font-size:13px;">Telegram Bot</strong>
+                <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input id="cfgTgEnabled" type="checkbox" />啟用 Telegram 推播
+                </label>
+              </div>
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="cfgTgToken">Bot Token (@BotFather)</label>
+                  <input id="cfgTgToken" type="password" class="input mono" placeholder="123456789:AAH..." />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgTgChatId">Chat ID / 頻道 ID</label>
+                  <input id="cfgTgChatId" type="text" class="input mono" placeholder="例如 -1001234567890" />
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                <span style="font-size:11px;color:#0369a1;">支援瀏覽器直連 api.telegram.org 與雲端後端雙模式發送</span>
+                <button id="btnTestTg" type="button" class="btn btn-sm btn-primary">發送 Telegram 測試訊號</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:12px;font-weight:800;margin-bottom:6px;">推播投遞日誌</div>
+              <div id="notifyLogsBox" class="msg-preview-box" style="max-height:190px;font-size:11px;">尚無推播紀錄。</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Right: Structured Itemized Message Preview -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">訊號條列預覽（完整呈現股票代號與中文名稱）</h2>
+              <p class="card-subtitle">LINE Bot 與 Telegram 實際發送之整齊排版預覽</p>
+            </div>
+            <div class="chart-group">
+              <button id="btnRefreshPreview" class="btn btn-sm">更新預覽</button>
+              <button id="btnSendPreviewNow" class="btn btn-sm btn-teal">立即推播此份清單</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="notifyPreviewBox" class="msg-preview-box"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: CLOUD DEPLOY & PINE SCRIPT ==================== -->
+    <section id="tab-deploy" class="tab-section">
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">雲端後端連線與一鍵部署設定</h2>
+              <p class="card-subtitle">支援 Render / Railway / Fly.io / Docker 全棧部署，或純靜態 HTML 部署至 Cloudflare Pages / Vercel</p>
+            </div>
+            <span id="backendHealthBadge" class="badge badge-slate">檢查中...</span>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <label class="field-label" for="cloudBackendInput">雲端 FastAPI 後端網址（同源託管時留空即可自動偵測）</label>
+              <div style="display:flex;gap:8px;">
+                <input id="cloudBackendInput" type="text" class="input mono" placeholder="例如 https://synapse-tw-trading.onrender.com" />
+                <button id="btnTestBackend" type="button" class="btn btn-primary">測試並儲存</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="field-label" for="finmindTokenInput">FinMind API v4 Token（選填，免費註冊可由 300 升至 600 次/時）</label>
+              <div style="display:flex;gap:8px;">
+                <input id="finmindTokenInput" type="password" class="input mono" placeholder="貼上您的 FinMind Token" />
+                <button id="btnSaveFinmindToken" type="button" class="btn btn-dark">儲存 Token</button>
+              </div>
+            </div>
+
+            <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;line-height:1.7;">
+              <strong>三種雲端部署方案：</strong>
+              <ol style="margin:6px 0 0 18px;padding:0;color:var(--ink-2);">
+                <li><strong>全棧雲端（推薦，Yahoo + FinMind + AI + LINE + 實盤全通）</strong>：將 <code>tw-auto-trading-system/</code> 推送至 GitHub，連結 <strong>Render.com</strong> 自動讀取 <code>render.yaml</code> 免費部署。</li>
+                <li><strong>Docker 容器部署</strong>：執行 <code>docker build -t synapse-tw . &amp;&amp; docker run -p 8000:8000 --env-file .env synapse-tw</code>。</li>
+                <li><strong>純靜態單檔 HTML</strong>：直接將 <code>index.html</code> 拖曳上傳至 <strong>Cloudflare Pages / Vercel / Netlify</strong>（內建直連 FinMind <code>ACAO=*</code> 真實台股行情）。</li>
+              </ol>
+            </div>
+
+            <div class="chart-group">
+              <button id="btnDownloadHtml" type="button" class="btn btn-primary">
+                <i data-lucide="download" style="width:14px;height:14px;"></i>匯出目前設定為獨立 index.html
+              </button>
+              <button id="btnCopyWebhookUrl" type="button" class="btn">複製 TradingView Webhook 端點</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">TradingView Pine Script v5 自動下單腳本（含股票代號與中文名稱）</h2>
+              <p class="card-subtitle">貼入 TradingView 帳號之 Pine Editor 並建立快訊（Alert）即可自動觸發 Webhook</p>
+            </div>
+            <button id="btnCopyPine" class="btn btn-sm btn-dark">複製 Pine Script</button>
+          </div>
+          <div class="card-body">
+            <pre id="pineScriptBox" class="code-box"></pre>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== MODAL 1: LIVE TRADING SAFETY GATE ==================== -->
+  <div id="liveSafetyModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" style="color:#b91c1c;">切換至「真實下單 LIVE」安全檢核</h3>
+          <p class="card-subtitle">真實下單將透過雲端後端呼叫永豐金 Shioaji 實盤 API 動用真實資金，請先完成以下確認</p>
+        </div>
+        <button class="btn btn-sm" data-close-modal="liveSafetyModal">關閉</button>
+      </div>
+      <div id="liveCheckStatusBox" style="padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#991b1b;"></div>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
+        <input id="liveConfirm1" type="checkbox" style="margin-top:3px;" />
+        我已確認目前顯示之 Yahoo / FinMind 報價與委託數量皆為真實數值。
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
+        <input id="liveConfirm2" type="checkbox" style="margin-top:3px;" />
+        我已於雲端伺服器設定永豐金 API Key、Secret Key 與有效 Sinopac.pfx 憑證，並理解實盤交易風險。
+      </label>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:6px;">
+        <button class="btn" data-close-modal="liveSafetyModal">維持模擬盤 SIM</button>
+        <button id="btnConfirmLiveMode" class="btn btn-danger">確認切換為真實下單 LIVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: TRADINGVIEW ACCOUNT & LAYOUT BINDING ==================== -->
+  <div id="tvAccountModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">TradingView 帳號登入與進階功能綁定</h3>
+          <p class="card-subtitle">串接您的 TradingView Essential / Plus / Premium 帳號雲端工作區、自訂繪圖與快訊 Webhook</p>
+        </div>
+        <button class="btn btn-sm" data-close-modal="tvAccountModal">關閉</button>
+      </div>
+      <div class="form-grid-2">
+        <div>
+          <label class="field-label" for="tvUsernameInput">TradingView 帳號名稱（顯示辨識用）</label>
+          <input id="tvUsernameInput" type="text" class="input" placeholder="例如 trader_tw_pro" />
+        </div>
+        <div>
+          <label class="field-label" for="tvTierSelect">帳號方案等級</label>
+          <select id="tvTierSelect" class="select">
+            <option value="Basic">Basic（免費版）</option>
+            <option value="Essential">Essential（支援 Webhook 快訊）</option>
+            <option value="Plus">Plus（多圖表佈局）</option>
+            <option value="Premium">Premium（秒級週期與進階快訊）</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="field-label" for="tvLayoutUrlInput">自訂雲端圖表 Layout 網址（選填，例如 https://www.tradingview.com/chart/AbCdEfGh/）</label>
+        <input id="tvLayoutUrlInput" type="text" class="input mono" placeholder="貼上您登入 TradingView 後的專屬圖表網址，開啟進階圖表時將自動帶入該佈局" />
+      </div>
+      <div style="padding:12px;border-radius:10px;background:var(--accent-soft);border:1px solid #bfdbfe;font-size:12px;color:var(--ink-2);line-height:1.6;">
+        <strong>為何支援外部帳號工作區直連？</strong><br />
+        基於瀏覽器第三方 Cookie 安全政策（SameSite），內嵌 Widget 無法讀取個人帳號私有腳本；透過綁定您的專屬 Layout 網址並點擊「登入 TradingView 進階圖表」，可立即於您的已登入工作區同步當前台股標的，並以 Webhook 回傳自動下單訊號至本系統。
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" data-close-modal="tvAccountModal">取消</button>
+        <button id="btnSaveTvAccount" class="btn btn-primary">儲存 TradingView 綁定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastStack" class="toast-stack"></div>
+
+  <script>
+    // =========================================================================
+    // 1. STATE & VERIFIED TAIWAN STOCK WATCHLIST (ZERO GUESSED PRICES)
+    // =========================================================================
+    const STORAGE_KEY = 'synapse_tw_v3_state';
+
+    const DEFAULT_WATCHLIST = [
+      { symbol: '2330', name: '台積電', industry: '半導體業', marketType: 'twse', tvSymbol: 'TWSE:2330', yahooSymbol: '2330.TW', dataset: 'TaiwanStockPrice', finmindId: '2330' },
+      { symbol: '2317', name: '鴻海', industry: '其他電子業', marketType: 'twse', tvSymbol: 'TWSE:2317', yahooSymbol: '2317.TW', dataset: 'TaiwanStockPrice', finmindId: '2317' },
+      { symbol: '2454', name: '聯發科', industry: '半導體業', marketType: 'twse', tvSymbol: 'TWSE:2454', yahooSymbol: '2454.TW', dataset: 'TaiwanStockPrice', finmindId: '2454' },
+      { symbol: '0050', name: '元大台灣50', industry: 'ETF', marketType: 'twse', tvSymbol: 'TWSE:0050', yahooSymbol: '0050.TW', dataset: 'TaiwanStockPrice', finmindId: '0050' },
+      { symbol: '3037', name: '欣興', industry: '電子工業', marketType: 'twse', tvSymbol: 'TWSE:3037', yahooSymbol: '3037.TW', dataset: 'TaiwanStockPrice', finmindId: '3037' },
+      { symbol: '3189', name: '景碩', industry: '半導體業', marketType: 'twse', tvSymbol: 'TWSE:3189', yahooSymbol: '3189.TW', dataset: 'TaiwanStockPrice', finmindId: '3189' },
+      { symbol: '6213', name: '聯茂', industry: '電子工業', marketType: 'twse', tvSymbol: 'TWSE:6213', yahooSymbol: '6213.TW', dataset: 'TaiwanStockPrice', finmindId: '6213' },
+      { symbol: '8046', name: '南電', industry: '電子工業', marketType: 'twse', tvSymbol: 'TWSE:8046', yahooSymbol: '8046.TW', dataset: 'TaiwanStockPrice', finmindId: '8046' },
+      { symbol: '2382', name: '廣達', industry: '電腦及週邊', marketType: 'twse', tvSymbol: 'TWSE:2382', yahooSymbol: '2382.TW', dataset: 'TaiwanStockPrice', finmindId: '2382' },
+      { symbol: 'TXF', name: '台指期近月', industry: '期貨', marketType: 'taifex', tvSymbol: 'TAIFEX:TXF1!', yahooSymbol: '^TWII', dataset: 'TaiwanFuturesDaily', finmindId: 'TX' }
+    ];
+
+    const state = {
+      activeTab: 'desk',
+      envMode: 'SIM', // SIM | LIVE
+      killSwitch: false,
+      intlColors: false,
+      animRunning: true,
+      activeSymbol: '2330',
+      chartMode: 'raw', // tv | raw
+      tvInterval: '15',
+      tvStudy: 'ema_rsi',
+      tvDrawTools: true,
+      tvTheme: 'light',
+      orderSide: 'BUY',
+      autoTradeOnSignal: false,
+
+      backendDetected: false,
+      backendUrl: '', // empty = auto same-origin if available
+      backendHealth: null,
+      finmindToken: '',
+
+      tvAccount: {
+        username: '',
+        tier: 'Essential',
+        layoutUrl: ''
+      },
+
+      aiKeys: {
+        grok: '',
+        gemini: '',
+        claude: '',
+        chatgpt: ''
+      },
+
+      notifier: {
+        lineEnabled: false,
+        lineToken: '',
+        lineTargetId: '',
+        tgEnabled: false,
+        tgToken: '',
+        tgChatId: '',
+        logs: []
+      },
+
+      simCashTwd: 3000000,
+      positions: [],
+      orders: [],
+      watchlist: [],
+      quotes: {}, // symbol -> { price, prevClose, open, high, low, volume, lastDate, source, candles, error }
+      aiResults: {}, // symbol -> { timestamp, models: [...] }
+
+      handshake: {
+        selectedNodeId: 'CORE',
+        synCount: 0,
+        ackCount: 0,
+        latencies: [],
+        packets: [],
+        ripples: [],
+        nodeStats: {
+          YAHOO: { status: '待命', latencyMs: null, lastMsg: '等待同步 Yahoo Finance' },
+          FINMIND: { status: '待命', latencyMs: null, lastMsg: '等待同步 FinMind v4' },
+          TRADINGVIEW: { status: '已連線', latencyMs: 18, lastMsg: 'TradingView 進階線圖已就緒' },
+          SCANNER: { status: '待命', latencyMs: null, lastMsg: '等待真實 K 線掃描' },
+          CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SYNAPSE 風控與路由中樞就緒' },
+          AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Grok / Gemini / Claude / ChatGPT 待命' },
+          LINE_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 LINE Token' },
+          TG_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 Telegram Token' },
+          BROKER: { status: '模擬盤 SIM', latencyMs: 24, lastMsg: '永豐金 Shioaji 模擬撮合就緒' }
+        }
+      }
+    };
+
+    function loadPersistedState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (Array.isArray(saved.watchlist) && saved.watchlist.length > 0) state.watchlist = saved.watchlist;
+          if (typeof saved.simCashTwd === 'number') state.simCashTwd = saved.simCashTwd;
+          if (Array.isArray(saved.positions)) state.positions = saved.positions;
+          if (Array.isArray(saved.orders)) state.orders = saved.orders;
+          if (saved.backendUrl) state.backendUrl = saved.backendUrl;
+          if (saved.finmindToken) state.finmindToken = saved.finmindToken;
+          if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
+          if (saved.aiKeys) Object.assign(state.aiKeys, saved.aiKeys);
+          if (saved.notifier) {
+            Object.assign(state.notifier, saved.notifier);
+            if (!Array.isArray(state.notifier.logs)) state.notifier.logs = [];
+          }
+          if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
+        }
+      } catch (e) {}
+
+      if (state.watchlist.length === 0) {
+        state.watchlist = DEFAULT_WATCHLIST.map(x => ({ ...x }));
+      }
+      if (!state.watchlist.some(x => x.symbol === state.activeSymbol)) {
+        state.activeSymbol = state.watchlist[0].symbol;
+      }
+    }
+
+    function persistState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          watchlist: state.watchlist,
+          simCashTwd: state.simCashTwd,
+          positions: state.positions,
+          orders: state.orders.slice(0, 120),
+          backendUrl: state.backendUrl,
+          finmindToken: state.finmindToken,
+          tvAccount: state.tvAccount,
+          aiKeys: state.aiKeys,
+          notifier: { ...state.notifier, logs: state.notifier.logs.slice(0, 30) },
+          activeSymbol: state.activeSymbol
+        }));
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 2. UTILITIES & FORMATTING
+    // =========================================================================
+    function nowTwTime() {
+      return new Intl.DateTimeFormat('zh-TW', {
+        timeZone: 'Asia/Taipei',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(new Date());
+    }
+
+    function nowTwDateTime() {
+      const d = new Date();
+      const parts = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Taipei',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      }).format(d);
+      return parts.replace('T', ' ');
+    }
+
+    function fmtNum(v, decimals = 2) {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return '--';
+      return Number(v).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function fmtInt(v) {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return '--';
+      return Math.round(Number(v)).toLocaleString('en-US');
+    }
+
+    function fmtMoney(v) {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return '--';
+      return '$' + Math.round(Number(v)).toLocaleString('en-US');
+    }
+
+    function getStockMeta(symbol) {
+      return state.watchlist.find(w => w.symbol === symbol) || {
+        symbol, name: symbol, industry: '台股', marketType: 'twse',
+        tvSymbol: `TWSE:${symbol}`, yahooSymbol: `${symbol}.TW`,
+        dataset: 'TaiwanStockPrice', finmindId: symbol
+      };
+    }
+
+    function getQuote(symbol) {
+      return state.quotes[symbol] || null;
+    }
+
+    function getApiBase() {
+      if (state.backendUrl && state.backendUrl.trim()) {
+        return state.backendUrl.trim().replace(/\/+$/, '');
+      }
+      if (state.backendDetected && window.location.protocol.startsWith('http')) {
+        return window.location.origin;
+      }
+      return '';
+    }
+
+    function showToast(title, message, tone = 'info') {
+      const stack = document.getElementById('toastStack');
+      if (!stack) return;
+      const el = document.createElement('div');
+      el.className = `toast-item ${tone}`;
+      el.innerHTML = `<div style="font-weight:800;margin-bottom:2px;">${escapeHtml(title)}</div><div style="opacity:0.9;">${escapeHtml(message)}</div>`;
+      stack.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(6px)';
+        el.style.transition = 'all 0.2s ease';
+        setTimeout(() => el.remove(), 220);
+      }, 3800);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function setRibbonEvent(text) {
+      const el = document.getElementById('ribbonLastEvent');
+      if (el) el.textContent = `[${nowTwTime()}] ${text}`;
+    }
+
+    // =========================================================================
+    // 3. TECHNICAL INDICATORS (STRICTLY FROM REAL FETCHED SERIES)
+    // =========================================================================
+    function calcEMA(closes, period) {
+      if (!Array.isArray(closes) || closes.length === 0) return null;
+      const k = 2 / (period + 1);
+      let ema = closes[0];
+      for (let i = 1; i < closes.length; i++) {
+        ema = closes[i] * k + ema * (1 - k);
+      }
+      return Number(ema.toFixed(2));
+    }
+
+    function calcRSI(closes, period = 14) {
+      if (!Array.isArray(closes) || closes.length < 3) return null;
+      const len = Math.min(period, closes.length - 1);
+      let gains = 0;
+      let losses = 0;
+      for (let i = closes.length - len; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff > 0) gains += diff;
+        else losses += Math.abs(diff);
+      }
+      if (losses === 0) return 100;
+      const rs = (gains / len) / (losses / len);
+      return Number((100 - 100 / (1 + rs)).toFixed(1));
+    }
+
+    function calcVwapSeries(candles) {
+      let cumPV = 0;
+      let cumV = 0;
+      return candles.map((c, idx) => {
+        const typical = (c.high + c.low + c.close) / 3;
+        const vol = c.volume > 0 ? c.volume : 1;
+        cumPV += typical * vol;
+        cumV += vol;
+        return Number((cumPV / cumV).toFixed(2));
+      });
+    }
+
+    function evaluateStockSignal(symbol) {
+      const meta = getStockMeta(symbol);
+      const q = getQuote(symbol);
+      if (!q || q.price === null || !Array.isArray(q.candles) || q.candles.length < 2) {
+        return {
+          symbol: meta.symbol,
+          name: meta.name,
+          source: q?.error ? `錯誤：${q.error}` : '尚未同步',
+          price: null,
+          changePct: null,
+          ema5: null,
+          ema12: null,
+          rsi: null,
+          vwapDiff: null,
+          signal: 'WAIT',
+          signalLabel: '待同步',
+          reason: '等待 Yahoo / FinMind 真實行情同步'
+        };
+      }
+
+      const closes = q.candles.map(c => c.close);
+      const ema5 = calcEMA(closes, 5);
+      const ema12 = calcEMA(closes, 12);
+      const prevEma5 = calcEMA(closes.slice(0, -1), 5);
+      const prevEma12 = calcEMA(closes.slice(0, -1), 12);
+      const rsi = calcRSI(closes, 14);
+      const vwapArr = calcVwapSeries(q.candles);
+      const vwap = vwapArr[vwapArr.length - 1] || q.price;
+      const vwapDiff = Number((((q.price - vwap) / vwap) * 100).toFixed(2));
+      const base = q.prevClose || q.open || q.price;
+      const changePct = base > 0 ? Number((((q.price - base) / base) * 100).toFixed(2)) : 0;
+
+      let signal = 'HOLD';
+      let signalLabel = '觀望 HOLD';
+      let reason = `均線整理（EMA5=${ema5}, EMA12=${ema12}）`;
+
+      if (prevEma5 !== null && prevEma12 !== null && prevEma5 <= prevEma12 && ema5 > ema12) {
+        signal = 'BUY';
+        signalLabel = '買進 BUY';
+        reason = `EMA5(${ema5}) 黃金交叉突破 EMA12(${ema12})`;
+      } else if (prevEma5 !== null && prevEma12 !== null && prevEma5 >= prevEma12 && ema5 < ema12) {
+        signal = 'SELL';
+        signalLabel = '賣出 SELL';
+        reason = `EMA5(${ema5}) 死亡交叉跌破 EMA12(${ema12})`;
+      } else if (ema5 > ema12 && vwapDiff > 0.25 && (rsi === null || rsi < 74)) {
+        signal = 'BUY';
+        signalLabel = '買進 BUY';
+        reason = `多頭排列且站上 VWAP (+${vwapDiff}%)`;
+      } else if (ema5 < ema12 && vwapDiff < -0.25 && (rsi === null || rsi > 26)) {
+        signal = 'SELL';
+        signalLabel = '賣出 SELL';
+        reason = `空頭排列且跌破 VWAP (${vwapDiff}%)`;
+      } else if (rsi !== null && rsi <= 30) {
+        signal = 'BUY';
+        signalLabel = '買進 BUY';
+        reason = `RSI(14)=${rsi} 進入超賣反彈區`;
+      } else if (rsi !== null && rsi >= 76) {
+        signal = 'SELL';
+        signalLabel = '賣出 SELL';
+        reason = `RSI(14)=${rsi} 進入超買警戒區`;
+      }
+
+      return {
+        symbol: meta.symbol,
+        name: meta.name,
+        source: q.source,
+        price: q.price,
+        changePct,
+        ema5,
+        ema12,
+        rsi,
+        vwapDiff,
+        signal,
+        signalLabel,
+        reason
+      };
+    }
+
+    // =========================================================================
+    // 4. BIDIRECTIONAL DATA EXCHANGE HANDSHAKE CANVAS (FB REEL INSPIRED)
+    // =========================================================================
+    let handshakeNodes = [];
+    let animPhase = 0;
+
+    function triggerHandshake(fromId, toId, color = '#2563eb', tag = 'SYN', bidirectional = true, latencyMs = null, msg = '') {
+      state.handshake.synCount += 1;
+      if (latencyMs !== null) {
+        state.handshake.latencies.push(latencyMs);
+        if (state.handshake.latencies.length > 30) state.handshake.latencies.shift();
+      }
+      if (state.handshake.nodeStats[fromId]) {
+        if (latencyMs !== null) state.handshake.nodeStats[fromId].latencyMs = latencyMs;
+        if (msg) state.handshake.nodeStats[fromId].lastMsg = msg;
+      }
+      if (state.handshake.nodeStats[toId]) {
+        if (latencyMs !== null) state.handshake.nodeStats[toId].latencyMs = latencyMs;
+        if (msg) state.handshake.nodeStats[toId].lastMsg = msg;
+      }
+
+      // Forward SYN packet to CORE then target
+      state.handshake.packets.push({
+        from: fromId,
+        to: toId,
+        color,
+        tag,
+        t: 0,
+        speed: 0.022 + Math.random() * 0.008,
+        bidirectional,
+        ackSpawned: false
+      });
+
+      const counterEl = document.getElementById('handshakeCounters');
+      if (counterEl) {
+        const avg = state.handshake.latencies.length
+          ? Math.round(state.handshake.latencies.reduce((a, b) => a + b, 0) / state.handshake.latencies.length)
+          : '--';
+        counterEl.textContent = `SYN: ${state.handshake.synCount} ｜ ACK: ${state.handshake.ackCount} ｜ 平均延遲: ${avg} ms`;
+      }
+    }
+
+    function computeHandshakeLayout(w, h) {
+      const compact = w < 640;
+      const leftIds = [
+        { id: 'YAHOO', label: 'Yahoo Finance', sub: '盤中即時報價源', color: '#0284c7' },
+        { id: 'FINMIND', label: 'FinMind v4', sub: '台股 OHLCV / 名稱', color: '#2563eb' },
+        { id: 'TRADINGVIEW', label: 'TradingView', sub: '進階線圖 / Webhook', color: '#0f172a' },
+        { id: 'SCANNER', label: '台股訊號引擎', sub: 'EMA · RSI · VWAP', color: '#0d9488' }
+      ];
+      const rightIds = [
+        { id: 'AI_CLUSTER', label: 'AI 四模型共識', sub: 'Grok·Gemini·Claude·GPT', color: '#4f46e5' },
+        { id: 'LINE_BOT', label: 'LINE Bot 推播', sub: '條列代號+中文名稱', color: '#16a34a' },
+        { id: 'TG_BOT', label: 'Telegram Bot', sub: '即時訊號頻道推播', color: '#0284c7' },
+        { id: 'BROKER', label: '永豐金 Shioaji', sub: state.envMode === 'LIVE' ? '真實下單 LIVE' : '模擬下單 SIM', color: state.envMode === 'LIVE' ? '#dc2626' : '#d97706' }
+      ];
+
+      const nodes = [];
+      if (compact) {
+        // Mobile 3-tier vertical layout (zero horizontal overlap)
+        const cardW = Math.min(140, (w - 28) / 2 - 4);
+        const cardH = 38;
+        leftIds.forEach((item, i) => {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          nodes.push({
+            ...item,
+            side: 'left',
+            w: cardW,
+            h: cardH,
+            x: (col === 0 ? w * 0.27 : w * 0.73),
+            y: 34 + row * 48
+          });
+        });
+
+        nodes.push({
+          id: 'CORE',
+          label: 'SYNAPSE',
+          sub: state.killSwitch ? 'HALTED' : `${state.envMode} HUB`,
+          color: state.killSwitch ? '#dc2626' : (state.envMode === 'LIVE' ? '#ea580c' : '#2563eb'),
+          side: 'core',
+          r: 34,
+          x: w * 0.5,
+          y: h * 0.5
+        });
+
+        rightIds.forEach((item, i) => {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          nodes.push({
+            ...item,
+            side: 'right',
+            w: cardW,
+            h: cardH,
+            x: (col === 0 ? w * 0.27 : w * 0.73),
+            y: h - 108 + row * 48
+          });
+        });
+      } else {
+        // Desktop / Tablet 3-column symmetric neural handshake layout
+        const cardW = Math.min(182, Math.max(138, w * 0.21));
+        const cardH = 52;
+        const leftX = Math.max(cardW / 2 + 16, w * 0.14);
+        const rightX = Math.min(w - cardW / 2 - 16, w * 0.86);
+        const topPad = 48;
+        const bottomPad = 64;
+        const spanY = Math.max(160, h - topPad - bottomPad);
+
+        leftIds.forEach((item, i) => {
+          nodes.push({
+            ...item,
+            side: 'left',
+            w: cardW,
+            h: cardH,
+            x: leftX,
+            y: topPad + (i / (leftIds.length - 1)) * spanY
+          });
+        });
+
+        nodes.push({
+          id: 'CORE',
+          label: 'SYNAPSE',
+          sub: state.killSwitch ? '已熔斷鎖定' : (state.envMode === 'LIVE' ? '實盤交握中樞' : '模擬交握中樞'),
+          color: state.killSwitch ? '#dc2626' : (state.envMode === 'LIVE' ? '#ea580c' : '#2563eb'),
+          side: 'core',
+          r: Math.min(48, Math.max(38, w * 0.052)),
+          x: w * 0.5,
+          y: (h - 24) * 0.5
+        });
+
+        rightIds.forEach((item, i) => {
+          nodes.push({
+            ...item,
+            side: 'right',
+            w: cardW,
+            h: cardH,
+            x: rightX,
+            y: topPad + (i / (rightIds.length - 1)) * spanY
+          });
+        });
+      }
+
+      handshakeNodes = nodes;
+    }
+
+    function evalCubic(p0, p1, p2, p3, t) {
+      const mt = 1 - t;
+      return {
+        x: mt * mt * mt * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * p3.x,
+        y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y
+      };
+    }
+
+    function getAnchorPoints(a, b, compact) {
+      if (compact) {
+        const p0 = { x: a.x, y: a.side === 'left' ? a.y + a.h / 2 : (a.side === 'right' ? a.y - a.h / 2 : a.y) };
+        const p3 = { x: b.x, y: b.side === 'left' ? b.y + b.h / 2 : (b.side === 'right' ? b.y - b.h / 2 : b.y) };
+        const midY = (p0.y + p3.y) / 2;
+        return [p0, { x: p0.x, y: midY }, { x: p3.x, y: midY }, p3];
+      }
+      const p0 = {
+        x: a.side === 'left' ? a.x + a.w / 2 : (a.side === 'right' ? a.x - a.w / 2 : (b.x > a.x ? a.x + a.r : a.x - a.r)),
+        y: a.y
+      };
+      const p3 = {
+        x: b.side === 'left' ? b.x + b.w / 2 : (b.side === 'right' ? b.x - b.w / 2 : (a.x > b.x ? b.x + b.r : b.x - b.r)),
+        y: b.y
+      };
+      const dx = (p3.x - p0.x) * 0.48;
+      return [p0, { x: p0.x + dx, y: p0.y }, { x: p3.x - dx, y: p3.y }, p3];
+    }
+
+    function drawHandshakeFrame() {
+      const canvas = document.getElementById('handshakeCanvas');
+      if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        requestAnimationFrame(drawHandshakeFrame);
+        return;
+      }
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = Math.round(rect.width * dpr);
+      const ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) {
+        canvas.width = cw;
+        canvas.height = ch;
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      const compact = rect.width < 640;
+      computeHandshakeLayout(rect.width, rect.height);
+      const core = handshakeNodes.find(n => n.id === 'CORE');
+      if (state.animRunning) animPhase += 0.025;
+
+      // Draw bidirectional connection channels
+      handshakeNodes.filter(n => n.id !== 'CORE').forEach((n, idx) => {
+        const [p0, p1, p2, p3] = getAnchorPoints(n, core, compact);
+        const selected = !state.handshake.selectedNodeId || state.handshake.selectedNodeId === 'CORE' || state.handshake.selectedNodeId === n.id;
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        ctx.strokeStyle = selected ? (n.color + '44') : 'rgba(148,163,184,0.22)';
+        ctx.lineWidth = selected ? 2.2 : 1.2;
+        ctx.stroke();
+
+        // Subtle animated data flow dash showing continuous keep-alive handshake
+        if (state.animRunning && !state.killSwitch) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+          ctx.strokeStyle = n.color + '66';
+          ctx.lineWidth = 1.4;
+          ctx.setLineDash([5, 16]);
+          ctx.lineDashOffset = (n.side === 'left' ? -animPhase : animPhase) * 28 + idx * 7;
+          ctx.stroke();
+          ctx.restore();
+        }
+      });
+
+      // Expanding handshake ripples at Core
+      state.handshake.ripples = state.handshake.ripples.filter(r => r.alpha > 0.02);
+      state.handshake.ripples.forEach(r => {
+        r.radius += 1.4;
+        r.alpha *= 0.94;
+        ctx.beginPath();
+        ctx.arc(core.x, core.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = r.color + Math.round(r.alpha * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      // Traveling bidirectional SYN / ACK packets with comet tails
+      const nextPackets = [];
+      state.handshake.packets.forEach(pkt => {
+        if (state.animRunning) pkt.t += pkt.speed;
+        const aNode = handshakeNodes.find(n => n.id === pkt.from);
+        const bNode = handshakeNodes.find(n => n.id === pkt.to);
+        if (!aNode || !bNode) return;
+
+        // Spawn Core ripple & return ACK handshake at midpoint
+        if (pkt.t >= 0.5 && !pkt.ackSpawned) {
+          pkt.ackSpawned = true;
+          state.handshake.ripples.push({ radius: core.r, alpha: 0.7, color: pkt.color });
+          if (pkt.bidirectional && pkt.to !== 'CORE') {
+            state.handshake.ackCount += 1;
+            nextPackets.push({
+              from: pkt.to,
+              to: pkt.from,
+              color: '#0d9488',
+              tag: 'ACK',
+              t: 0,
+              speed: 0.026,
+              bidirectional: false,
+              ackSpawned: true
+            });
+          } else if (pkt.tag === 'SYN') {
+            state.handshake.ackCount += 1;
+          }
+        }
+
+        if (pkt.t >= 1) return;
+
+        let pt;
+        let tailPt;
+        if (pkt.from === 'CORE' || pkt.to === 'CORE') {
+          const [p0, p1, p2, p3] = getAnchorPoints(aNode, bNode, compact);
+          pt = evalCubic(p0, p1, p2, p3, pkt.t);
+          tailPt = evalCubic(p0, p1, p2, p3, Math.max(0, pkt.t - 0.1));
+        } else if (pkt.t < 0.5) {
+          const [p0, p1, p2, p3] = getAnchorPoints(aNode, core, compact);
+          const lt = pkt.t * 2;
+          pt = evalCubic(p0, p1, p2, p3, lt);
+          tailPt = evalCubic(p0, p1, p2, p3, Math.max(0, lt - 0.14));
+        } else {
+          const [p0, p1, p2, p3] = getAnchorPoints(core, bNode, compact);
+          const rt = (pkt.t - 0.5) * 2;
+          pt = evalCubic(p0, p1, p2, p3, rt);
+          tailPt = evalCubic(p0, p1, p2, p3, Math.max(0, rt - 0.14));
+        }
+
+        // Comet tail
+        const grad = ctx.createLinearGradient(tailPt.x, tailPt.y, pt.x, pt.y);
+        grad.addColorStop(0, pkt.color + '00');
+        grad.addColorStop(1, pkt.color + 'cc');
+        ctx.beginPath();
+        ctx.moveTo(tailPt.x, tailPt.y);
+        ctx.lineTo(pt.x, pt.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Glowing orb
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 7.5, 0, Math.PI * 2);
+        ctx.fillStyle = pkt.color + '33';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 3.8, 0, Math.PI * 2);
+        ctx.fillStyle = pkt.color;
+        ctx.fill();
+
+        nextPackets.push(pkt);
+      });
+      state.handshake.packets = nextPackets;
+
+      // Draw Center Core Hub with dual rotating handshake rings
+      if (core) {
+        const halo = ctx.createRadialGradient(core.x, core.y, core.r * 0.4, core.x, core.y, core.r * 1.75);
+        halo.addColorStop(0, core.color + '28');
+        halo.addColorStop(1, core.color + '00');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(core.x, core.y, core.r * 1.75, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Outer rotating handshake ring
+        ctx.save();
+        ctx.translate(core.x, core.y);
+        ctx.rotate(animPhase * 0.65);
+        ctx.beginPath();
+        ctx.arc(0, 0, core.r + 10, 0, Math.PI * 1.35);
+        ctx.strokeStyle = core.color + '88';
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        ctx.rotate(-animPhase * 1.45);
+        ctx.beginPath();
+        ctx.arc(0, 0, core.r + 16, 0, Math.PI * 0.9);
+        ctx.strokeStyle = '#0d948877';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.restore();
+
+        // Core solid disc
+        ctx.beginPath();
+        ctx.arc(core.x, core.y, core.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(15,23,42,0.12)';
+        ctx.shadowBlur = 14;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = state.handshake.selectedNodeId === 'CORE' ? 3.2 : 2.2;
+        ctx.strokeStyle = core.color;
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#0f172a';
+        ctx.font = `800 ${compact ? 10 : 12}px Inter, sans-serif`;
+        ctx.fillText('SYNAPSE', core.x, core.y - 2);
+        ctx.fillStyle = core.color;
+        ctx.font = `700 ${compact ? 8.5 : 9.5}px "Noto Sans TC", Inter, sans-serif`;
+        ctx.fillText(core.sub, core.x, core.y + 13);
+      }
+
+      // Draw Node Cards
+      handshakeNodes.filter(n => n.id !== 'CORE').forEach(n => {
+        const x = n.x - n.w / 2;
+        const y = n.y - n.h / 2;
+        const selected = state.handshake.selectedNodeId === n.id;
+        const st = state.handshake.nodeStats[n.id] || {};
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x, y, n.w, n.h, 11);
+        ctx.fillStyle = selected ? '#f8fafc' : '#ffffff';
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
+        ctx.shadowBlur = selected ? 14 : 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = selected ? 2.4 : 1.2;
+        ctx.strokeStyle = selected ? n.color : '#cbd5e1';
+        ctx.stroke();
+
+        // Accent bar
+        ctx.beginPath();
+        ctx.roundRect(x + 5, y + 7, 4, n.h - 14, 2);
+        ctx.fillStyle = n.color;
+        ctx.fill();
+
+        // Title
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#0f172a';
+        ctx.font = `800 ${compact ? 10 : 11.5}px "Noto Sans TC", Inter, sans-serif`;
+        ctx.fillText(n.label, x + 14, y + (compact ? 15 : 21));
+
+        // Status indicator dot
+        const isOk = String(st.status || '').includes('正常') || String(st.status || '').includes('連線') || String(st.status || '').includes('已啟用') || String(st.status || '').includes('模擬');
+        ctx.beginPath();
+        ctx.arc(x + n.w - 11, y + (compact ? 12 : 17), 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = isOk ? '#10b981' : '#f59e0b';
+        ctx.fill();
+
+        // Sub label (clipped safely)
+        ctx.fillStyle = '#64748b';
+        ctx.font = `600 ${compact ? 8.5 : 10}px "Noto Sans TC", Inter, sans-serif`;
+        const maxChars = compact ? 11 : 15;
+        const subText = n.sub.length > maxChars ? n.sub.slice(0, maxChars) + '…' : n.sub;
+        ctx.fillText(subText, x + 14, y + (compact ? 29 : 39));
+        ctx.restore();
+      });
+
+      ctx.restore();
+      requestAnimationFrame(drawHandshakeFrame);
+    }
+
+    function renderHandshakeInspector() {
+      const box = document.getElementById('handshakeInspector');
+      if (!box) return;
+      const id = state.handshake.selectedNodeId || 'CORE';
+      const node = handshakeNodes.find(n => n.id === id) || { id: 'CORE', label: 'SYNAPSE 交握核心', sub: '雙向協議路由與風控中樞', color: '#2563eb' };
+      const st = state.handshake.nodeStats[id] || { status: '運作中', latencyMs: null, lastMsg: '--' };
+
+      const actionMap = {
+        YAHOO: { label: '立即抓取 Yahoo 即時報價', fn: () => fetchMarketData(state.activeSymbol, 'yahoo') },
+        FINMIND: { label: '立即抓取 FinMind 台股資料', fn: () => fetchMarketData(state.activeSymbol, 'finmind') },
+        TRADINGVIEW: { label: '開啟 TradingView 帳號綁定', fn: () => openModal('tvAccountModal') },
+        SCANNER: { label: '立即掃描全市場訊號', fn: () => runSignalScan(false) },
+        CORE: { label: '觸發全鏈路交握測試', fn: () => runFullHandshakeDemo() },
+        AI_CLUSTER: { label: '執行四模型 AI 平行解析', fn: () => runMultiAiAnalysis() },
+        LINE_BOT: { label: '前往 LINE Bot 推播設定', fn: () => switchTab('notify') },
+        TG_BOT: { label: '前往 Telegram Bot 設定', fn: () => switchTab('notify') },
+        BROKER: { label: '檢視模擬 / 實盤切換', fn: () => { if (state.envMode === 'SIM') openLiveSafetyModal(); else setTradingMode('SIM'); } }
+      };
+      const act = actionMap[id] || actionMap.CORE;
+
+      box.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--ink-4);text-transform:uppercase;">NODE INSPECTOR</div>
+              <div style="font-size:15px;font-weight:800;color:var(--ink-1);">${escapeHtml(node.label)}</div>
+            </div>
+            <span class="badge badge-blue">${escapeHtml(st.status || '運作中')}</span>
+          </div>
+          <div class="inspector-metric-grid">
+            <div class="metric-mini">
+              <div class="metric-mini-label">交握延遲</div>
+              <div class="metric-mini-val mono">${st.latencyMs !== null ? st.latencyMs + ' ms' : '--'}</div>
+            </div>
+            <div class="metric-mini">
+              <div class="metric-mini-label">累計 SYN / ACK</div>
+              <div class="metric-mini-val mono">${state.handshake.synCount} / ${state.handshake.ackCount}</div>
+            </div>
+          </div>
+          <div style="background:#ffffff;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12px;">
+            <div style="font-size:10.5px;font-weight:700;color:var(--ink-4);margin-bottom:4px;">最新交握封包紀錄</div>
+            <div style="color:var(--ink-2);word-break:break-word;">${escapeHtml(st.lastMsg || '等待資料交換...')}</div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
+            目前焦點標的：<strong class="mono" style="color:var(--ink-1);">${escapeHtml(state.activeSymbol)} ${escapeHtml(getStockMeta(state.activeSymbol).name)}</strong><br/>
+            交易引擎：<strong>${state.envMode === 'LIVE' ? '真實下單 LIVE (Shioaji)' : '模擬下單 SIM (紙上撮合)'}</strong>
+          </div>
+        </div>
+        <button id="btnInspectorAction" type="button" class="btn btn-primary" style="width:100%;">
+          ${escapeHtml(act.label)}
+        </button>
+      `;
+
+      const actBtn = document.getElementById('btnInspectorAction');
+      if (actBtn) actBtn.onclick = act.fn;
+    }
+
+    function runFullHandshakeDemo() {
+      const meta = getStockMeta(state.activeSymbol);
+      triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, 32, `請求 ${meta.symbol} ${meta.name} 真實行情`);
+      setTimeout(() => triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, 41, `同步 ${meta.yahooSymbol} 盤中報價`), 180);
+      setTimeout(() => triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, 85, `派發 Grok/Gemini/Claude/GPT 平行解析`), 380);
+      setTimeout(() => triggerHandshake('CORE', 'LINE_BOT', '#16a34a', 'PUSH', false, 28, `準備 LINE Bot 條列訊號 (${meta.symbol} ${meta.name})`), 620);
+      setTimeout(() => triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 24, `準備 Telegram 推播`), 740);
+      setTimeout(() => triggerHandshake('CORE', 'BROKER', state.envMode === 'LIVE' ? '#dc2626' : '#d97706', 'ORDER', true, 19, `永豐金 Shioaji 風控交握確認`), 920);
+      setRibbonEvent(`全鏈路雙向交握完成：${meta.symbol} ${meta.name}`);
+      renderHandshakeInspector();
+    }
+
+    // =========================================================================
+    // 5. REAL MARKET DATA ENGINE (YAHOO FINANCE & FINMIND V4 — NO GUESSING)
+    // =========================================================================
+    async function detectBackend() {
+      const candidates = [];
+      if (state.backendUrl && state.backendUrl.trim()) {
+        candidates.push(state.backendUrl.trim().replace(/\/+$/, ''));
+      }
+      if (window.location.protocol.startsWith('http')) {
+        candidates.push(window.location.origin);
+      }
+
+      for (const base of candidates) {
+        try {
+          const resp = await fetch(`${base}/api/v1/health`, { method: 'GET' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.status === 'ok') {
+              state.backendDetected = true;
+              state.backendHealth = data;
+              if (!state.backendUrl && base !== window.location.origin) {
+                state.backendUrl = base;
+              }
+              updateBackendBadges();
+              return true;
+            }
+          }
+        } catch (e) {}
+      }
+
+      state.backendDetected = false;
+      state.backendHealth = null;
+      updateBackendBadges();
+      return false;
+    }
+
+    function updateBackendBadges() {
+      const rMode = document.getElementById('ribbonBackendMode');
+      const hBadge = document.getElementById('backendHealthBadge');
+      if (state.backendDetected) {
+        if (rMode) rMode.textContent = '雲端 FastAPI 代理已連線 (Yahoo+FinMind+AI+LINE)';
+        if (hBadge) {
+          hBadge.className = 'badge badge-teal';
+          hBadge.textContent = `後端已連線 (${state.backendHealth?.trading_mode || 'SIM'})`;
+        }
+      } else {
+        if (rMode) rMode.textContent = '靜態直連模式 (FinMind 直接抓取)';
+        if (hBadge) {
+          hBadge.className = 'badge badge-amber';
+          hBadge.textContent = '靜態瀏覽器模式（未連後端）';
+        }
+      }
+    }
+
+    async function fetchFinmindDirect(meta) {
+      const t0 = performance.now();
+      const d = new Date();
+      d.setDate(d.getDate() - (meta.dataset === 'TaiwanFuturesDaily' ? 21 : 45));
+      const startDate = d.toISOString().slice(0, 10);
+      let url = `https://api.finmindtrade.com/api/v4/data?dataset=${encodeURIComponent(meta.dataset)}&data_id=${encodeURIComponent(meta.finmindId)}&start_date=${encodeURIComponent(startDate)}`;
+      if (state.finmindToken && state.finmindToken.trim()) {
+        url += `&token=${encodeURIComponent(state.finmindToken.trim())}`;
+      }
+
+      const resp = await fetch(url, { method: 'GET', mode: 'cors' });
+      if (!resp.ok) throw new Error(`FinMind HTTP ${resp.status}`);
+      const json = await resp.json();
+      let rows = Array.isArray(json.data) ? json.data.filter(r => Number(r.close) > 0) : [];
+
+      if (meta.dataset === 'TaiwanFuturesDaily' && rows.length > 0) {
+        const reg = rows.filter(r => !r.trading_session || r.trading_session === 'position');
+        if (reg.length > 0) rows = reg;
+        const byDate = new Map();
+        rows.forEach(r => {
+          const ex = byDate.get(r.date);
+          if (!ex || Number(r.volume || 0) > Number(ex.volume || 0)) byDate.set(r.date, r);
+        });
+        rows = Array.from(byDate.values()).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      }
+
+      if (rows.length === 0) throw new Error(`FinMind 查無 ${meta.symbol} 成交資料`);
+
+      const recent = rows.slice(-30);
+      const latest = recent[recent.length - 1];
+      const prev = recent.length > 1 ? recent[recent.length - 2] : latest;
+      const latency = Math.max(1, Math.round(performance.now() - t0));
+
+      return {
+        price: Number(latest.close),
+        prevClose: Number(prev.close),
+        open: Number(latest.open || prev.close || latest.close),
+        high: Number(latest.max || latest.close),
+        low: Number(latest.min || latest.close),
+        volume: Number(latest.Trading_Volume || latest.volume || 0),
+        lastDate: meta.dataset === 'TaiwanFuturesDaily' && latest.contract_date
+          ? `${latest.date} (${latest.contract_date})`
+          : String(latest.date),
+        source: `FinMind ${meta.dataset} (直連真實數據)`,
+        latencyMs: latency,
+        candles: recent.map(r => ({
+          label: String(r.date).slice(5),
+          open: Number(r.open || r.close),
+          high: Number(r.max || r.close),
+          low: Number(r.min || r.close),
+          close: Number(r.close),
+          volume: Number(r.Trading_Volume || r.volume || 0)
+        }))
+      };
+    }
+
+    async function fetchMarketData(symbol, preferred = 'auto') {
+      const meta = getStockMeta(symbol);
+      const apiBase = getApiBase();
+      const t0 = performance.now();
+
+      try {
+        let result = null;
+
+        // Priority 1: Cloud Backend Yahoo Finance (real-time intraday, zero CORS)
+        if ((preferred === 'yahoo' || preferred === 'auto') && apiBase) {
+          try {
+            const resp = await fetch(`${apiBase}/api/v1/market/yahoo/${encodeURIComponent(meta.yahooSymbol)}?interval=15m&range_str=5d`);
+            if (resp.ok) {
+              const j = await resp.json();
+              if (j && j.price) {
+                const lat = Math.max(1, Math.round(performance.now() - t0));
+                result = {
+                  price: j.price,
+                  prevClose: j.prev_close || j.open,
+                  open: j.open,
+                  high: j.high,
+                  low: j.low,
+                  volume: j.volume,
+                  lastDate: j.last_date,
+                  source: `Yahoo Finance (${meta.yahooSymbol})`,
+                  latencyMs: lat,
+                  candles: j.candles || []
+                };
+                state.handshake.nodeStats.YAHOO.status = '連線正常';
+                triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, lat, `${meta.symbol} ${meta.name} 現價 ${j.price}`);
+              }
+            }
+          } catch (e) {
+            if (preferred === 'yahoo') throw e;
+          }
+        }
+
+        // Priority 2: Cloud Backend FinMind proxy
+        if (!result && preferred !== 'yahoo' && apiBase) {
+          try {
+            const tok = state.finmindToken ? `&token=${encodeURIComponent(state.finmindToken)}` : '';
+            const resp = await fetch(`${apiBase}/api/v1/market/finmind/${encodeURIComponent(meta.finmindId)}?dataset=${encodeURIComponent(meta.dataset)}${tok}`);
+            if (resp.ok) {
+              const j = await resp.json();
+              if (j && j.price) {
+                const lat = Math.max(1, Math.round(performance.now() - t0));
+                result = {
+                  price: j.price,
+                  prevClose: j.prev_close || j.open,
+                  open: j.open,
+                  high: j.high,
+                  low: j.low,
+                  volume: j.volume,
+                  lastDate: j.last_date,
+                  source: `FinMind ${meta.dataset} (雲端代理)`,
+                  latencyMs: lat,
+                  candles: j.candles || []
+                };
+                state.handshake.nodeStats.FINMIND.status = '連線正常';
+                triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, lat, `${meta.symbol} ${meta.name} 收盤 ${j.price}`);
+              }
+            }
+          } catch (e) {}
+        }
+
+        // Priority 3: Direct browser FinMind v4 (supports CORS ACAO=*)
+        if (!result && preferred !== 'yahoo') {
+          result = await fetchFinmindDirect(meta);
+          state.handshake.nodeStats.FINMIND.status = '直連正常';
+          triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, result.latencyMs, `${meta.symbol} ${meta.name} 真實價 ${result.price}`);
+        }
+
+        if (!result && preferred === 'yahoo' && !apiBase) {
+          throw new Error('純靜態模式瀏覽器會阻擋 Yahoo CORS，請部署雲端後端或改點「抓 FinMind」');
+        }
+
+        if (!result) throw new Error('未能取得真實報價');
+
+        state.quotes[symbol] = result;
+        setRibbonEvent(`同步真實行情成功：${meta.symbol} ${meta.name} @ ${result.price}（${result.source}）`);
+        renderAllViews();
+        return true;
+      } catch (err) {
+        state.quotes[symbol] = {
+          ...(state.quotes[symbol] || {}),
+          error: err.message || '抓取失敗'
+        };
+        if (preferred === 'yahoo') {
+          state.handshake.nodeStats.YAHOO.status = '受限';
+          state.handshake.nodeStats.YAHOO.lastMsg = err.message;
+        } else {
+          state.handshake.nodeStats.FINMIND.status = '異常';
+          state.handshake.nodeStats.FINMIND.lastMsg = err.message;
+        }
+        renderAllViews();
+        return false;
+      }
+    }
+
+    async function syncAllWatchlist() {
+      const btn = document.getElementById('btnSyncAll');
+      if (btn) btn.disabled = true;
+      showToast('開始同步真實台股行情', `正在從 Yahoo / FinMind 抓取 ${state.watchlist.length} 檔標的...`, 'info');
+      let okCount = 0;
+      for (const item of state.watchlist) {
+        const ok = await fetchMarketData(item.symbol, 'auto');
+        if (ok) okCount++;
+      }
+      if (btn) btn.disabled = false;
+      state.handshake.nodeStats.SCANNER.status = okCount > 0 ? '掃描就緒' : '等待行情';
+      triggerHandshake('CORE', 'SCANNER', '#0d9488', 'SYN', true, 16, `已完成 ${okCount}/${state.watchlist.length} 檔真實報價同步`);
+      showToast('真實行情同步完成', `成功取得 ${okCount}/${state.watchlist.length} 檔真實台股資訊。`, okCount > 0 ? 'success' : 'warn');
+      renderAllViews();
+    }
+
+    async function lookupAndAddStock(rawCode) {
+      const code = rawCode.trim().toUpperCase().replace(/\.TWO?$/i, '');
+      if (!code || !/^[A-Z0-9]{4,6}$/.test(code)) {
+        showToast('代號格式錯誤', '請輸入 4~6 碼台股代號（例如 2603、00878、6488）。', 'warn');
+        return;
+      }
+      const existing = state.watchlist.find(w => w.symbol === code);
+      if (existing) {
+        selectStock(code);
+        showToast('已在監控清單', `已切換至 ${existing.symbol} ${existing.name}`, 'info');
+        return;
+      }
+
+      showToast('查詢台股官方名稱中', `正在從 FinMind TaiwanStockInfo 驗證 ${code}...`, 'info');
+      try {
+        const apiBase = getApiBase();
+        let info = null;
+        if (apiBase) {
+          const r = await fetch(`${apiBase}/api/v1/market/stock-info/${encodeURIComponent(code)}`);
+          if (r.ok) info = await r.json();
+        }
+        if (!info) {
+          let url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&data_id=${encodeURIComponent(code)}`;
+          if (state.finmindToken) url += `&token=${encodeURIComponent(state.finmindToken)}`;
+          const r = await fetch(url, { mode: 'cors' });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const j = await r.json();
+          const row = (j.data || [])[0];
+          if (!row) throw new Error(`FinMind 查無台股代號 ${code}（嚴禁猜測）`);
+          const mtype = String(row.type || 'twse').toLowerCase();
+          info = {
+            stock_id: code,
+            stock_name: row.stock_name || code,
+            industry: row.industry_category || '台股',
+            market_type: mtype,
+            yahoo_symbol: mtype === 'tpex' ? `${code}.TWO` : `${code}.TW`,
+            tv_symbol: mtype === 'tpex' ? `TPEX:${code}` : `TWSE:${code}`
+          };
+        }
+
+        state.watchlist.push({
+          symbol: info.stock_id,
+          name: info.stock_name,
+          industry: info.industry,
+          marketType: info.market_type,
+          tvSymbol: info.tv_symbol,
+          yahooSymbol: info.yahoo_symbol,
+          dataset: 'TaiwanStockPrice',
+          finmindId: info.stock_id
+        });
+        persistState();
+        selectStock(info.stock_id);
+        await fetchMarketData(info.stock_id, 'auto');
+        showToast('已新增真實台股標的', `${info.stock_id} ${info.stock_name}（${info.industry}）已加入並同步。`, 'success');
+      } catch (err) {
+        showToast('查詢失敗', err.message || '查無此股票代號', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 6. TRADINGVIEW ADVANCED CHART + RAW REAL DATA CHART
+    // =========================================================================
+    let rawChartInstance = null;
+
+    function getStudyList(preset) {
+      switch (preset) {
+        case 'macd_bb': return ['STD;MACD', 'STD;Bollinger_Bands'];
+        case 'vwap_vol': return ['STD;VWAP', 'STD;Volume'];
+        case 'stoch': return ['STD;Stochastic', 'STD;EMA'];
+        default: return ['STD;EMA', 'STD;RSI'];
+      }
+    }
+
+    function renderTradingViewChart() {
+      const mount = document.getElementById('tvWidgetMount');
+      if (!mount) return;
+      const meta = getStockMeta(state.activeSymbol);
+      mount.innerHTML = '';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'tradingview-widget-container';
+      wrap.style.width = '100%';
+      wrap.style.height = '100%';
+
+      const inner = document.createElement('div');
+      inner.className = 'tradingview-widget-container__widget';
+      inner.style.width = '100%';
+      inner.style.height = '100%';
+
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+      script.async = true;
+      script.text = JSON.stringify({
+        autosize: true,
+        symbol: meta.tvSymbol,
+        interval: state.tvInterval,
+        timezone: 'Asia/Taipei',
+        theme: state.tvTheme,
+        style: '1',
+        locale: 'zh_TW',
+        allow_symbol_change: true,
+        withdateranges: true,
+        hide_top_toolbar: false,
+        hide_side_toolbar: !state.tvDrawTools,
+        show_popup_button: true,
+        popup_width: '1280',
+        popup_height: '800',
+        studies: getStudyList(state.tvStudy),
+        support_host: 'https://www.tradingview.com'
+      });
+
+      wrap.appendChild(inner);
+      wrap.appendChild(script);
+      mount.appendChild(wrap);
+
+      // Update external TradingView login workspace link
+      const link = document.getElementById('tvLoginWorkspaceLink');
+      if (link) {
+        if (state.tvAccount.layoutUrl && state.tvAccount.layoutUrl.startsWith('https://')) {
+          const base = state.tvAccount.layoutUrl.split('?')[0];
+          link.href = `${base}?symbol=${encodeURIComponent(meta.tvSymbol)}`;
+        } else {
+          link.href = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(meta.tvSymbol)}`;
+        }
+      }
+    }
+
+    function renderRawPriceChart() {
+      const canvas = document.getElementById('rawPriceChart');
+      if (!canvas) return;
+      const meta = getStockMeta(state.activeSymbol);
+      const q = getQuote(state.activeSymbol);
+      const candles = q?.candles || [];
+
+      if (rawChartInstance) {
+        rawChartInstance.destroy();
+        rawChartInstance = null;
+      }
+
+      const labels = candles.map(c => c.label);
+      const closes = candles.map(c => c.close);
+      const vwap = candles.length ? calcVwapSeries(candles) : [];
+
+      rawChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['等待同步真實資料'],
+          datasets: [
+            {
+              label: `${meta.symbol} ${meta.name} 真實成交價`,
+              data: closes,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.08)',
+              borderWidth: 2.2,
+              fill: true,
+              tension: 0.22,
+              pointRadius: 2.5
+            },
+            {
+              label: 'VWAP 加權均價',
+              data: vwap,
+              borderColor: '#0d9488',
+              borderDash: [5, 4],
+              borderWidth: 1.7,
+              fill: false,
+              tension: 0.25,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', align: 'end', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10.5 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10.5 } } }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // 7. MULTI-MODEL AI ENGINE (GROK, GEMINI, CLAUDE, CHATGPT)
+    // =========================================================================
+    const AI_MODELS = [
+      { id: 'grok', label: 'Grok Bot (xAI)', short: 'GK', color: '#0f172a', role: '短線動能與籌碼情緒' },
+      { id: 'gemini', label: 'Gemini (Google)', short: 'GM', color: '#2563eb', role: '技術結構與產業趨勢' },
+      { id: 'claude', label: 'Claude (Anthropic)', short: 'CL', color: '#d97706', role: '風控紀律與停損檢核' },
+      { id: 'chatgpt', label: 'ChatGPT (OpenAI)', short: 'GP', color: '#059669', role: '多空劇本與倉位策略' }
+    ];
+
+    function buildDeterministicFallbackDigest(modelDef, sig, q) {
+      // Strictly transparent local technical digest computed ONLY from real fetched numbers
+      const support = q.low ? fmtNum(q.low, 2) : '--';
+      const resist = q.high ? fmtNum(q.high, 2) : '--';
+      let verdict = sig.signal === 'BUY' ? 'BULL' : (sig.signal === 'SELL' ? 'BEAR' : 'NEUTRAL');
+      let conf = sig.signal === 'HOLD' ? 54 : 68;
+      let summary = '';
+      let risk = '';
+
+      if (modelDef.id === 'grok') {
+        summary = `依真實行情 ${q.price}（漲跌 ${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%），短線 EMA5=${sig.ema5} 與 EMA12=${sig.ema12}；${sig.reason}。`;
+        risk = `短線留意量能變化，跌破 ${support} 宜防假突破。`;
+      } else if (modelDef.id === 'gemini') {
+        summary = `技術結構顯示 VWAP 乖離 ${sig.vwapDiff >= 0 ? '+' : ''}${sig.vwapDiff}%、RSI(14)=${sig.rsi ?? '--'}，整體趨勢判讀為「${sig.signalLabel}」。`;
+        risk = `資料日期 ${q.lastDate}，建議結合大盤籌碼確認。`;
+      } else if (modelDef.id === 'claude') {
+        if (sig.rsi !== null && sig.rsi >= 72) {
+          verdict = 'NEUTRAL';
+          conf = 61;
+        }
+        summary = `風控檢核：當日區間 ${support} ~ ${resist}，建議單筆曝險不超過總資金 15%，嚴守紀律停損。`;
+        risk = `若有效失守 ${support} 應立即減碼或熔斷觀察。`;
+      } else {
+        summary = `劇本規劃：站穩 ${resist} 偏多看待，拉回測 ${support} 觀察支撐力道；建議採分批進場控制均價。`;
+        risk = `嚴禁追高殺低，下單前請確認模擬/實盤模式。`;
+      }
+
+      return {
+        model: modelDef.id,
+        connected: false,
+        modeLabel: '本地真實數據量化摘要（未填 API Key）',
+        latency_ms: 4,
+        verdict,
+        confidence: conf,
+        summary,
+        key_levels: `支撐 ${support} ｜ 壓力 ${resist}`,
+        risk_note: risk
+      };
+    }
+
+    async function runMultiAiAnalysis(customPrompt = '') {
+      const meta = getStockMeta(state.activeSymbol);
+      const q = getQuote(state.activeSymbol);
+      if (!q || q.price === null) {
+        showToast('缺少真實報價', `請先同步 ${meta.symbol} ${meta.name} 的 Yahoo / FinMind 真實數據，嚴禁無數據猜測。`, 'warn');
+        return;
+      }
+
+      const sig = evaluateStockSignal(state.activeSymbol);
+      const snapshot = {
+        source: q.source,
+        last_date: q.lastDate,
+        open: q.open,
+        high: q.high,
+        low: q.low,
+        price: q.price,
+        volume: q.volume,
+        change_pct: sig.changePct,
+        ema5: sig.ema5,
+        ema12: sig.ema12,
+        rsi: sig.rsi,
+        vwap_diff: sig.vwapDiff
+      };
+
+      const btnQuick = document.getElementById('btnRunAiQuick');
+      const btnStudio = document.getElementById('btnRunAiStudio');
+      if (btnQuick) btnQuick.disabled = true;
+      if (btnStudio) btnStudio.disabled = true;
+
+      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送 ${meta.symbol} ${meta.name} 真實數據至四模型`);
+      showToast('AI 多模型平行解析中', `正在為 ${meta.symbol} ${meta.name}（現價 ${q.price}）執行 Grok / Gemini / Claude / ChatGPT 研判...`, 'info');
+
+      const apiBase = getApiBase();
+      let finalResults = [];
+
+      if (apiBase) {
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/ai/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: meta.symbol,
+              stock_name: meta.name,
+              market_snapshot: snapshot,
+              models: ['grok', 'gemini', 'claude', 'chatgpt'],
+              api_keys: state.aiKeys,
+              custom_prompt: customPrompt
+            })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            finalResults = (data.results || []).map(r => {
+              const def = AI_MODELS.find(m => m.id === r.model);
+              if (r.connected) {
+                return { ...r, modeLabel: '雲端 LLM API 即時解析' };
+              }
+              return {
+                ...buildDeterministicFallbackDigest(def, sig, q),
+                modeLabel: `本地量化摘要（${r.error || '未填 API Key'}）`
+              };
+            });
+          }
+        } catch (e) {}
+      }
+
+      // If no backend or backend call skipped, try direct browser call for models with keys (Gemini/OpenAI/xAI) and transparent local digest for others
+      if (finalResults.length === 0) {
+        finalResults = await Promise.all(AI_MODELS.map(async def => {
+          const key = (state.aiKeys[def.id] || '').trim();
+          if (!key) return buildDeterministicFallbackDigest(def, sig, q);
+          try {
+            const t0 = performance.now();
+            const prompt = `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${meta.symbol} ${meta.name}，來源=${q.source}，日期=${q.lastDate}，開=${q.open} 高=${q.high} 低=${q.low} 現價=${q.price} 漲跌=${sig.changePct}% 量=${q.volume} EMA5=${sig.ema5} EMA12=${sig.ema12} RSI14=${sig.rsi} VWAP乖離=${sig.vwapDiff}%。${customPrompt ? '額外提問：' + customPrompt : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"70字內研判","key_levels":"支撐與壓力","risk_note":"35字內風控"}`;
+            let text = '';
+            if (def.id === 'gemini') {
+              const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } })
+              });
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              const j = await r.json();
+              text = j.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            } else if (def.id === 'chatgpt') {
+              const r = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+              });
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              const j = await r.json();
+              text = j.choices?.[0]?.message?.content || '';
+            } else if (def.id === 'grok') {
+              const r = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: 'grok-3-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+              });
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              const j = await r.json();
+              text = j.choices?.[0]?.message?.content || '';
+            } else {
+              throw new Error('Claude 瀏覽器直連需透過雲端後端代理避免 CORS');
+            }
+            const cleaned = text.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleaned.slice(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1));
+            return {
+              model: def.id,
+              connected: true,
+              modeLabel: '瀏覽器直連 LLM API',
+              latency_ms: Math.round(performance.now() - t0),
+              verdict: String(parsed.verdict || 'NEUTRAL').toUpperCase(),
+              confidence: Number(parsed.confidence || 65),
+              summary: String(parsed.summary || ''),
+              key_levels: String(parsed.key_levels || '--'),
+              risk_note: String(parsed.risk_note || '')
+            };
+          } catch (err) {
+            return {
+              ...buildDeterministicFallbackDigest(def, sig, q),
+              modeLabel: `本地量化摘要（API 受限：${err.message.slice(0, 32)}）`
+            };
+          }
+        }));
+      }
+
+      state.aiResults[state.activeSymbol] = {
+        timestamp: nowTwDateTime(),
+        price: q.price,
+        source: q.source,
+        models: finalResults
+      };
+
+      const liveCount = finalResults.filter(x => x.connected).length;
+      state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/4 API 連線` : '本地量化摘要';
+      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${meta.symbol} ${meta.name} 四模型解析完成`;
+      triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${meta.symbol} ${meta.name} 共識回傳完成`);
+      setRibbonEvent(`AI 四模型解析完成：${meta.symbol} ${meta.name}`);
+
+      if (btnQuick) btnQuick.disabled = false;
+      if (btnStudio) btnStudio.disabled = false;
+      renderAiPanels();
+      renderTopRibbon();
+    }
+
+    function renderAiPanels() {
+      const meta = getStockMeta(state.activeSymbol);
+      const pack = state.aiResults[state.activeSymbol];
+      const quickGrid = document.getElementById('aiQuickGrid');
+      const studioGrid = document.getElementById('aiStudioResults');
+      const headline = document.getElementById('consensusHeadline');
+      const metaEl = document.getElementById('consensusMeta');
+
+      if (metaEl) metaEl.textContent = `標的：${meta.symbol} ${meta.name}${pack ? ' ｜ 解析時間：' + pack.timestamp : ''}`;
+
+      const cardsHtml = AI_MODELS.map(def => {
+        const res = pack?.models?.find(m => m.model === def.id);
+        if (!res) {
+          return `
+            <div class="ai-card">
+              <div class="ai-card-head">
+                <div class="ai-model-name">
+                  <span class="ai-avatar" style="background:${def.color};">${def.short}</span>
+                  <span>${def.label}</span>
+                </div>
+                <span class="badge badge-slate">待命</span>
+              </div>
+              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。請點擊上方「一鍵四模型解析」以載入真實數據研判。</p>
+              <div class="ai-meta-line">API 狀態：${state.aiKeys[def.id] ? '已設定金鑰' : '未設定金鑰（可切換本地量化摘要）'}</div>
+            </div>
+          `;
+        }
+
+        const vCls = res.verdict === 'BULL' ? 'badge-up' : (res.verdict === 'BEAR' ? 'badge-down' : 'badge-amber');
+        const vLbl = res.verdict === 'BULL' ? '看多 BULL' : (res.verdict === 'BEAR' ? '看空 BEAR' : '觀望 NEUTRAL');
+        return `
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <div class="ai-model-name">
+                <span class="ai-avatar" style="background:${def.color};">${def.short}</span>
+                <span>${def.label}</span>
+              </div>
+              <span class="badge ${vCls}">${vLbl} · ${res.confidence}%</span>
+            </div>
+            <p class="ai-summary-text">${escapeHtml(res.summary)}</p>
+            <div class="ai-meta-line">
+              <div><strong>關鍵價位：</strong><span class="mono">${escapeHtml(res.key_levels)}</span></div>
+              <div><strong>風控提醒：</strong>${escapeHtml(res.risk_note)}</div>
+              <div style="margin-top:4px;font-size:10px;color:${res.connected ? '#0f766e' : '#b45309'};font-weight:700;">
+                ● ${escapeHtml(res.modeLabel || (res.connected ? 'LLM API 實測' : '本地量化摘要'))} (${res.latency_ms || 0}ms)
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (quickGrid) quickGrid.innerHTML = cardsHtml;
+      if (studioGrid) studioGrid.innerHTML = cardsHtml;
+
+      if (headline) {
+        if (!pack) {
+          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 四模型解析（點擊右側按鈕立即開始）`;
+        } else {
+          const bulls = pack.models.filter(m => m.verdict === 'BULL').length;
+          const bears = pack.models.filter(m => m.verdict === 'BEAR').length;
+          const avgConf = Math.round(pack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / pack.models.length);
+          const verdictText = bulls >= 3 ? '偏多共識' : (bears >= 3 ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
+          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${pack.price}）→ 四模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${4 - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 8. LINE BOT & TELEGRAM STRUCTURED ITEMIZED NOTIFIER (CODE + CHINESE NAME)
+    // =========================================================================
+    function formatBatchSignalMessage() {
+      const signals = state.watchlist.map(w => evaluateStockSignal(w.symbol));
+      const synced = signals.filter(s => s.price !== null);
+      const lines = [
+        '【SYNAPSE TW 台股自動交易訊號彙整】',
+        `時間：${nowTwDateTime()} (UTC+8)`,
+        `模式：${state.envMode === 'LIVE' ? '真實下單 LIVE' : '模擬下單 SIM'} ｜ 已同步：${synced.length}/${signals.length} 檔`,
+        '━━━━━━━━━━━━━━━━━━━━'
+      ];
+
+      if (synced.length === 0) {
+        lines.push('目前尚未同步任何真實報價，請先點擊「全標的同步真實行情」。');
+      } else {
+        synced.forEach((s, i) => {
+          const chgStr = s.changePct >= 0 ? `+${s.changePct}%` : `${s.changePct}%`;
+          const icon = s.signal === 'BUY' ? '🔴 [買進 BUY]' : (s.signal === 'SELL' ? '🟢 [賣出 SELL]' : '⚪ [觀望 HOLD]');
+          lines.push(`${i + 1}. ${s.symbol} ${s.name} ｜ ${icon}`);
+          lines.push(`   現價：${fmtNum(s.price, 2)} (${chgStr}) ｜ RSI(14)：${s.rsi ?? '--'}`);
+          lines.push(`   依據：${s.reason}`);
+        });
+      }
+
+      lines.push('━━━━━━━━━━━━━━━━━━━━');
+      lines.push('數據來源：Yahoo Finance / FinMind 真實台股行情');
+      return lines.join('\n');
+    }
+
+    function formatSingleSignalMessage(sig) {
+      const chgStr = sig.changePct !== null ? (sig.changePct >= 0 ? `+${sig.changePct}%` : `${sig.changePct}%`) : '--';
+      return [
+        '【SYNAPSE TW 單筆台股訊號通知】',
+        `時間：${nowTwDateTime()} (UTC+8)`,
+        '━━━━━━━━━━━━━━━━━━━━',
+        `• 股票代號：${sig.symbol}`,
+        `• 中文名稱：${sig.name}`,
+        `• 交易訊號：${sig.signalLabel}`,
+        `• 真實現價：${sig.price !== null ? fmtNum(sig.price, 2) : '--'} (${chgStr})`,
+        `• 技術指標：EMA5=${sig.ema5 ?? '--'} / EMA12=${sig.ema12 ?? '--'} ｜ RSI(14)=${sig.rsi ?? '--'}`,
+        `• 判斷依據：${sig.reason}`,
+        `• 數據來源：${sig.source}`,
+        '━━━━━━━━━━━━━━━━━━━━'
+      ].join('\n');
+    }
+
+    function formatAiReportMessage() {
+      const meta = getStockMeta(state.activeSymbol);
+      const pack = state.aiResults[state.activeSymbol];
+      if (!pack) return '';
+      const lines = [
+        '【SYNAPSE TW · AI 四模型共識報告】',
+        `標的：${meta.symbol} ${meta.name}`,
+        `真實現價：${fmtNum(pack.price, 2)}（來源：${pack.source}）`,
+        `時間：${pack.timestamp} (UTC+8)`,
+        '━━━━━━━━━━━━━━━━━━━━'
+      ];
+      pack.models.forEach((m, idx) => {
+        const def = AI_MODELS.find(x => x.id === m.model);
+        const vLbl = m.verdict === 'BULL' ? '看多 BULL' : (m.verdict === 'BEAR' ? '看空 BEAR' : '觀望 NEUTRAL');
+        lines.push(`${idx + 1}. ${def?.label || m.model}：${vLbl} (${m.confidence}%)`);
+        lines.push(`   研判：${m.summary}`);
+        lines.push(`   價位：${m.key_levels}`);
+      });
+      lines.push('━━━━━━━━━━━━━━━━━━━━');
+      return lines.join('\n');
+    }
+
+    function pushNotifyLog(channel, status, text) {
+      state.notifier.logs.unshift({ time: nowTwTime(), channel, status, text: text.slice(0, 220) });
+      if (state.notifier.logs.length > 30) state.notifier.logs.pop();
+      persistState();
+      renderNotifyCenter();
+    }
+
+    async function sendNotification(text, forceChannels = null) {
+      const channels = forceChannels || [
+        ...(state.notifier.lineEnabled ? ['line'] : []),
+        ...(state.notifier.tgEnabled ? ['telegram'] : [])
+      ];
+
+      if (channels.length === 0) {
+        pushNotifyLog('PREVIEW', '未啟用通道（請先於通知中心勾選啟用）', text);
+        showToast('已寫入推播預覽', '尚未勾選啟用 LINE Bot 或 Telegram，請至「LINE / TG 通知中心」完成設定。', 'warn');
+        return;
+      }
+
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/notify/broadcast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text,
+              line_token: state.notifier.lineToken,
+              line_target_id: state.notifier.lineTargetId,
+              tg_token: state.notifier.tgToken,
+              tg_chat_id: state.notifier.tgChatId,
+              channels
+            })
+          });
+          if (resp.ok) {
+            const j = await resp.json();
+            Object.entries(j.results || {}).forEach(([ch, res]) => {
+              const chUpper = ch.toUpperCase();
+              const ok = Boolean(res.ok);
+              pushNotifyLog(chUpper, ok ? '雲端發送成功 (200)' : `發送失敗：${res.error || res.status}`, text);
+              if (ch === 'line') {
+                state.handshake.nodeStats.LINE_BOT.status = ok ? '推播成功' : '設定異常';
+                triggerHandshake('CORE', 'LINE_BOT', '#16a34a', 'PUSH', false, 35, ok ? 'LINE Bot 推播成功' : 'LINE 推播失敗');
+              } else if (ch === 'telegram') {
+                state.handshake.nodeStats.TG_BOT.status = ok ? '推播成功' : '設定異常';
+                triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 29, ok ? 'Telegram 推播成功' : 'TG 推播失敗');
+              }
+            });
+            showToast('推播指令已執行', '請於通知中心檢視各通道投遞結果。', 'success');
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // Direct Browser Fallback (Telegram supports CORS; LINE requires backend proxy)
+      if (channels.includes('telegram')) {
+        if (!state.notifier.tgToken || !state.notifier.tgChatId) {
+          pushNotifyLog('TELEGRAM', '未填 Bot Token 或 Chat ID', text);
+        } else {
+          try {
+            const r = await fetch(`https://api.telegram.org/bot${encodeURIComponent(state.notifier.tgToken)}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: state.notifier.tgChatId, text })
+            });
+            const ok = r.ok;
+            pushNotifyLog('TELEGRAM', ok ? '直連發送成功 (200)' : `HTTP ${r.status}`, text);
+            triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 40, ok ? 'Telegram 直連成功' : 'Telegram 失敗');
+          } catch (err) {
+            pushNotifyLog('TELEGRAM', '連線受限：' + err.message, text);
+          }
+        }
+      }
+
+      if (channels.includes('line')) {
+        if (!state.notifier.lineToken || !state.notifier.lineTargetId) {
+          pushNotifyLog('LINE', '未填 Channel Access Token 或 Target ID', text);
+        } else {
+          pushNotifyLog('LINE', 'LINE Messaging API 受瀏覽器 CORS 保護，請部署並連線雲端 FastAPI 後端即可自動轉發', text);
+          showToast('LINE 推播提醒', '因 LINE 官方 API 不開放瀏覽器直接跨域呼叫，連線雲端後端 server.py 後即可全自動推播。', 'warn');
+        }
+      }
+    }
+
+    // =========================================================================
+    // 9. SIMULATED VS LIVE ORDER EXECUTION ENGINE
+    // =========================================================================
+    function setTradingMode(mode) {
+      state.envMode = mode;
+      const btnSim = document.getElementById('btnModeSim');
+      const btnLive = document.getElementById('btnModeLive');
+      const banner = document.getElementById('globalBanner');
+      const hTag = document.getElementById('handshakeModeTag');
+      const tBadge = document.getElementById('ticketModeBadge');
+      const submitLbl = document.getElementById('submitOrderLabel');
+
+      if (btnSim) btnSim.className = mode === 'SIM' ? 'env-pill active-sim' : 'env-pill';
+      if (btnLive) btnLive.className = mode === 'LIVE' ? 'env-pill active-live' : 'env-pill';
+
+      if (mode === 'LIVE') {
+        if (hTag) { hTag.className = 'badge badge-up'; hTag.textContent = 'LIVE 真實下單模式'; }
+        if (tBadge) { tBadge.className = 'badge badge-up'; tBadge.textContent = '真實下單 LIVE'; }
+        if (submitLbl) submitLbl.textContent = '送出真實下單 (LIVE · Shioaji)';
+        state.handshake.nodeStats.BROKER.status = '實盤 LIVE';
+      } else {
+        if (hTag) { hTag.className = 'badge badge-blue'; hTag.textContent = 'SIM 模擬模式'; }
+        if (tBadge) { tBadge.className = 'badge badge-blue'; tBadge.textContent = '模擬下單 SIM'; }
+        if (submitLbl) submitLbl.textContent = '送出模擬下單 (SIM)';
+        state.handshake.nodeStats.BROKER.status = '模擬盤 SIM';
+      }
+
+      if (banner) {
+        if (state.killSwitch) {
+          banner.className = 'global-banner show banner-halted';
+          banner.textContent = '🚨 系統已啟動緊急熔斷（KILL SWITCH）— 所有模擬與實盤自動下單皆已鎖定';
+        } else if (mode === 'LIVE') {
+          banner.className = 'global-banner show banner-live';
+          banner.textContent = '⚠️ 目前處於「真實下單 LIVE」模式：所有委託將送往雲端永豐金 Shioaji 實盤接口，請審慎確認價格與數量';
+        } else {
+          banner.className = 'global-banner';
+        }
+      }
+
+      renderHandshakeInspector();
+      renderNotifyCenter();
+    }
+
+    function openLiveSafetyModal() {
+      const box = document.getElementById('liveCheckStatusBox');
+      if (box) {
+        const backendOk = state.backendDetected;
+        const sjOk = Boolean(state.backendHealth?.shioaji_configured);
+        const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
+        box.innerHTML = `
+          <div>1. 雲端後端連線：<strong>${backendOk ? '✓ 已連線' : '✗ 尚未連線（請先部署並連線 server.py）'}</strong></div>
+          <div>2. 永豐金 Shioaji 金鑰：<strong>${sjOk ? '✓ 已設定' : '✗ 尚未設定環境變數 SHIOAJI_API_KEY'}</strong></div>
+          <div>3. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '✗ 尚未掛載憑證檔案'}</strong></div>
+        `;
+      }
+      document.getElementById('liveConfirm1').checked = false;
+      document.getElementById('liveConfirm2').checked = false;
+      openModal('liveSafetyModal');
+    }
+
+    function updateOrderSummary() {
+      const price = Number(document.getElementById('orderPriceInput')?.value || 0);
+      const qty = Math.max(1, Number(document.getElementById('orderQtyInput')?.value || 1));
+      const unit = document.getElementById('orderUnitSelect')?.value || '張';
+      const shares = unit === '張' ? qty * 1000 : qty;
+      const notional = price * shares;
+      const isEtf = state.activeSymbol.startsWith('00');
+      const fee = notional > 0 ? Math.max(20, Math.round(notional * 0.001425 * 0.28)) : 0;
+      const tax = (state.orderSide === 'SELL' && notional > 0) ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
+
+      const elNot = document.getElementById('estNotional');
+      const elFt = document.getElementById('estFeeTax');
+      const elCash = document.getElementById('simCashDisplay');
+      if (elNot) elNot.textContent = fmtMoney(notional);
+      if (elFt) elFt.textContent = `${fmtMoney(fee)} / ${fmtMoney(tax)}`;
+      if (elCash) elCash.textContent = fmtMoney(state.simCashTwd);
+    }
+
+    async function executeOrder({ symbol, side, qty, unit, price, orderType = 'LMT', tif = 'ROD', source = 'WEB_UI' }) {
+      if (state.killSwitch) {
+        showToast('下單已攔截', '目前處於緊急熔斷狀態，請先解除熔斷。', 'error');
+        return;
+      }
+      const meta = getStockMeta(symbol);
+      if (!price || price <= 0) {
+        showToast('缺少真實價格', `請先同步 ${meta.symbol} ${meta.name} 的真實報價或輸入有效委託價。`, 'warn');
+        return;
+      }
+
+      const shares = unit === '張' ? qty * 1000 : qty;
+      const notional = shares * price;
+      const isEtf = symbol.startsWith('00');
+      const fee = Math.max(20, Math.round(notional * 0.001425 * 0.28));
+      const tax = side === 'SELL' ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
+
+      // LIVE MODE: Strictly require Cloud Backend + real API execution
+      if (state.envMode === 'LIVE') {
+        const apiBase = getApiBase();
+        if (!apiBase) {
+          showToast('實盤下單阻斷', '尚未連線雲端實盤後端（server.py），系統拒絕模擬假裝實盤成交！', 'error');
+          return;
+        }
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/orders/place`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              env_mode: 'LIVE',
+              symbol: meta.symbol,
+              stock_name: meta.name,
+              side,
+              order_type: orderType,
+              tif,
+              qty,
+              unit,
+              price,
+              source
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            throw new Error(data.detail || `HTTP ${resp.status}`);
+          }
+          state.orders.unshift(data);
+          persistState();
+          triggerHandshake('CORE', 'BROKER', '#dc2626', 'ORDER', true, 48, `LIVE 委託送出 ${meta.symbol} ${meta.name} ${side} ${qty}${unit}`);
+          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（單號 ${data.order_id}）`, 'success');
+        } catch (err) {
+          showToast('真實下單失敗', err.message, 'error');
+          return;
+        }
+      } else {
+        // SIM MODE: Real-price paper matching
+        if (side === 'BUY') {
+          const totalCost = notional + fee;
+          if (totalCost > state.simCashTwd) {
+            showToast('模擬現金不足', `需 ${fmtMoney(totalCost)}，目前可用 ${fmtMoney(state.simCashTwd)}。`, 'warn');
+            return;
+          }
+          state.simCashTwd -= totalCost;
+          const pos = state.positions.find(p => p.symbol === symbol);
+          if (pos) {
+            const newShares = pos.shares + shares;
+            pos.avgPrice = Number(((pos.avgPrice * pos.shares + notional) / newShares).toFixed(2));
+            pos.shares = newShares;
+          } else {
+            state.positions.push({ symbol: meta.symbol, name: meta.name, shares, avgPrice: price });
+          }
+        } else {
+          const pos = state.positions.find(p => p.symbol === symbol);
+          if (!pos || pos.shares < shares) {
+            showToast('模擬持股不足', `${meta.symbol} ${meta.name} 目前持有 ${pos ? pos.shares : 0} 股，無法賣出 ${shares} 股。`, 'warn');
+            return;
+          }
+          state.simCashTwd += (notional - fee - tax);
+          pos.shares -= shares;
+          if (pos.shares <= 0) {
+            state.positions = state.positions.filter(p => p.symbol !== symbol);
+          }
+        }
+
+        const rec = {
+          order_id: `SIM-${meta.symbol}-${Date.now().toString().slice(-6)}`,
+          iso_time: nowTwDateTime(),
+          env_mode: 'SIM',
+          symbol: meta.symbol,
+          stock_name: meta.name,
+          side,
+          order_type: orderType,
+          tif,
+          qty,
+          unit,
+          price,
+          fee_twd: fee,
+          tax_twd: tax,
+          status: 'FILLED_SIM'
+        };
+        state.orders.unshift(rec);
+        persistState();
+
+        // Also mirror to backend SQLite audit log if connected
+        const apiBase = getApiBase();
+        if (apiBase) {
+          fetch(`${apiBase}/api/v1/orders/place`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              env_mode: 'SIM', symbol: meta.symbol, stock_name: meta.name,
+              side, order_type: orderType, tif, qty, unit, price, source
+            })
+          }).catch(() => {});
+        }
+
+        triggerHandshake('CORE', 'BROKER', '#d97706', 'ORDER', true, 18, `SIM 成交 ${meta.symbol} ${meta.name} ${side} ${qty}${unit} @${price}`);
+        showToast('模擬下單成交', `${meta.symbol} ${meta.name} ${side === 'BUY' ? '買進' : '賣出'} ${qty}${unit} @ ${fmtNum(price, 2)}`, 'success');
+      }
+
+      if (document.getElementById('orderAutoNotify')?.checked && (state.notifier.lineEnabled || state.notifier.tgEnabled)) {
+        const receipt = [
+          `【SYNAPSE TW ${state.envMode === 'LIVE' ? '實盤' : '模擬'}成交回報】`,
+          `時間：${nowTwDateTime()} (UTC+8)`,
+          '━━━━━━━━━━━━━━━━━━━━',
+          `• 股票代號：${meta.symbol}`,
+          `• 中文名稱：${meta.name}`,
+          `• 委託方向：${side === 'BUY' ? '買進 BUY' : '賣出 SELL'}`,
+          `• 成交數量：${qty} ${unit} (${fmtInt(shares)} 股)`,
+          `• 成交價格：${fmtNum(price, 2)} TWD`,
+          `• 手續費 / 稅：${fmtMoney(fee)} / ${fmtMoney(tax)}`,
+          '━━━━━━━━━━━━━━━━━━━━'
+        ].join('\n');
+        sendNotification(receipt);
+      }
+
+      setRibbonEvent(`${state.envMode} 委託完成：${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}`);
+      renderAllViews();
+    }
+
+    // =========================================================================
+    // 10. UI RENDERERS
+    // =========================================================================
+    function selectStock(symbol) {
+      state.activeSymbol = symbol;
+      persistState();
+      renderTradingViewChart();
+      renderAllViews();
+      const q = getQuote(symbol);
+      if (!q || q.price === null) {
+        fetchMarketData(symbol, 'auto');
+      }
+    }
+
+    function renderWatchlistPills() {
+      const container = document.getElementById('watchlistPills');
+      if (!container) return;
+      container.innerHTML = state.watchlist.map(w => {
+        const active = w.symbol === state.activeSymbol;
+        const sig = evaluateStockSignal(w.symbol);
+        const chgHtml = sig.changePct !== null
+          ? `<span class="pill-chg mono ${sig.changePct >= 0 ? 'text-up' : 'text-down'}">${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%</span>`
+          : `<span class="pill-chg mono" style="opacity:0.55;">--</span>`;
+        return `
+          <button type="button" class="stock-pill ${active ? 'active' : ''}" data-select-symbol="${escapeHtml(w.symbol)}">
+            <span class="mono" style="font-weight:800;">${escapeHtml(w.symbol)}</span>
+            <span>${escapeHtml(w.name)}</span>
+            ${active ? '' : chgHtml}
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('[data-select-symbol]').forEach(btn => {
+        btn.addEventListener('click', () => selectStock(btn.dataset.selectSymbol));
+      });
+    }
+
+    function renderActiveStockHeaderAndOhlcv() {
+      const meta = getStockMeta(state.activeSymbol);
+      const q = getQuote(state.activeSymbol);
+      const sig = evaluateStockSignal(state.activeSymbol);
+
+      document.getElementById('activeStockTitle').textContent = `${meta.symbol} ${meta.name}`;
+      document.getElementById('activeStockIndustry').textContent = meta.industry || '台股';
+      document.getElementById('ticketStockDisplay').textContent = `${meta.symbol} ${meta.name}`;
+
+      const priceEl = document.getElementById('activePriceText');
+      const chgBadge = document.getElementById('activeChangeBadge');
+      if (q && q.price !== null) {
+        priceEl.textContent = fmtNum(q.price, 2);
+        priceEl.className = `mono ${sig.changePct >= 0 ? 'text-up' : 'text-down'}`;
+        chgBadge.textContent = `${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%`;
+        chgBadge.className = `badge mono ${sig.changePct >= 0 ? 'badge-up' : 'badge-down'}`;
+        document.getElementById('activeSourceText').textContent = q.source;
+        document.getElementById('activeDateText').textContent = q.lastDate;
+
+        document.getElementById('ohlcvOpen').textContent = fmtNum(q.open, 2);
+        document.getElementById('ohlcvClose').textContent = fmtNum(q.price, 2);
+        document.getElementById('ohlcvHigh').textContent = fmtNum(q.high, 2);
+        document.getElementById('ohlcvLow').textContent = fmtNum(q.low, 2);
+        document.getElementById('ohlcvVolume').textContent = fmtInt(q.volume);
+        document.getElementById('ohlcvRsi').textContent = sig.rsi !== null ? sig.rsi : '--';
+
+        const priceInput = document.getElementById('orderPriceInput');
+        if (priceInput && (!priceInput.value || priceInput.dataset.boundSymbol !== meta.symbol)) {
+          priceInput.value = q.price;
+          priceInput.dataset.boundSymbol = meta.symbol;
+        }
+      } else {
+        priceEl.textContent = '--';
+        priceEl.className = 'mono';
+        chgBadge.textContent = q?.error ? '抓取失敗' : '待同步';
+        chgBadge.className = 'badge badge-slate mono';
+        document.getElementById('activeSourceText').textContent = q?.error || '尚未同步（嚴禁猜測）';
+        document.getElementById('activeDateText').textContent = '--';
+        ['ohlcvOpen', 'ohlcvClose', 'ohlcvHigh', 'ohlcvLow', 'ohlcvVolume', 'ohlcvRsi'].forEach(id => {
+          document.getElementById(id).textContent = '--';
+        });
+        const priceInput = document.getElementById('orderPriceInput');
+        if (priceInput && priceInput.dataset.boundSymbol !== meta.symbol) {
+          priceInput.value = '';
+          priceInput.dataset.boundSymbol = meta.symbol;
+        }
+      }
+
+      if (state.chartMode === 'raw') renderRawPriceChart();
+      updateOrderSummary();
+      renderPineScript();
+    }
+
+    function renderSignalTable() {
+      const tbody = document.getElementById('signalTableBody');
+      if (!tbody) return;
+      const rows = state.watchlist.map(w => evaluateStockSignal(w.symbol));
+
+      tbody.innerHTML = rows.map(r => {
+        const sigCls = r.signal === 'BUY' ? 'badge-up' : (r.signal === 'SELL' ? 'badge-down' : 'badge-slate');
+        const chgCls = r.changePct === null ? '' : (r.changePct >= 0 ? 'text-up' : 'text-down');
+        return `
+          <tr>
+            <td>
+              <button type="button" class="btn btn-sm" style="border:none;background:transparent;padding:0;font-weight:800;color:var(--ink-1);" data-jump-sym="${escapeHtml(r.symbol)}">
+                <span class="mono" style="color:var(--accent-dark);">${escapeHtml(r.symbol)}</span>
+                <span>${escapeHtml(r.name)}</span>
+              </button>
+            </td>
+            <td style="font-size:11.5px;color:var(--ink-3);">${escapeHtml(r.source)}</td>
+            <td class="num-right mono" style="font-weight:800;">${r.price !== null ? fmtNum(r.price, 2) : '--'}</td>
+            <td class="num-right mono ${chgCls}" style="font-weight:700;">${r.changePct !== null ? (r.changePct >= 0 ? '+' : '') + r.changePct + '%' : '--'}</td>
+            <td class="num-right mono" style="font-size:11.5px;">${r.ema5 !== null ? `${r.ema5} / ${r.ema12}` : '--'}</td>
+            <td class="num-right mono" style="font-weight:700;">${r.rsi !== null ? r.rsi : '--'}</td>
+            <td class="num-right mono ${r.vwapDiff !== null ? (r.vwapDiff >= 0 ? 'text-up' : 'text-down') : ''}">${r.vwapDiff !== null ? (r.vwapDiff >= 0 ? '+' : '') + r.vwapDiff + '%' : '--'}</td>
+            <td class="num-center">
+              <span class="badge ${sigCls}" title="${escapeHtml(r.reason)}">${escapeHtml(r.signalLabel)}</span>
+            </td>
+            <td class="num-right">
+              <div style="display:inline-flex;gap:5px;">
+                <button type="button" class="btn btn-sm" data-push-one="${escapeHtml(r.symbol)}">推播</button>
+                <button type="button" class="btn btn-sm btn-primary" data-order-one="${escapeHtml(r.symbol)}">下單</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('[data-jump-sym]').forEach(b => {
+        b.addEventListener('click', () => selectStock(b.dataset.jumpSym));
+      });
+      tbody.querySelectorAll('[data-push-one]').forEach(b => {
+        b.addEventListener('click', () => {
+          const sig = evaluateStockSignal(b.dataset.pushOne);
+          sendNotification(formatSingleSignalMessage(sig));
+        });
+      });
+      tbody.querySelectorAll('[data-order-one]').forEach(b => {
+        b.addEventListener('click', () => {
+          selectStock(b.dataset.orderOne);
+          const q = getQuote(b.dataset.orderOne);
+          if (q?.price) document.getElementById('orderPriceInput').value = q.price;
+          updateOrderSummary();
+          document.getElementById('orderPriceInput')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+    }
+
+    function renderPositionsAndOrders() {
+      const pBody = document.getElementById('positionsBody');
+      if (pBody) {
+        if (state.positions.length === 0) {
+          pBody.innerHTML = '<tr><td colspan="6" class="num-center" style="padding:20px;color:var(--ink-4);">尚無模擬持倉，請於上方下單票送出首筆委託。</td></tr>';
+        } else {
+          pBody.innerHTML = state.positions.map(p => {
+            const q = getQuote(p.symbol);
+            const cur = q?.price ?? null;
+            const pnl = cur !== null ? Math.round((cur - p.avgPrice) * p.shares) : null;
+            const pnlCls = pnl === null ? '' : (pnl >= 0 ? 'text-up' : 'text-down');
+            return `
+              <tr>
+                <td><strong class="mono">${escapeHtml(p.symbol)}</strong> ${escapeHtml(p.name)}</td>
+                <td class="num-right mono">${fmtInt(p.shares)}</td>
+                <td class="num-right mono">${fmtNum(p.avgPrice, 2)}</td>
+                <td class="num-right mono" style="font-weight:700;">${cur !== null ? fmtNum(cur, 2) : '待同步'}</td>
+                <td class="num-right mono ${pnlCls}" style="font-weight:800;">${pnl !== null ? (pnl >= 0 ? '+' : '') + fmtMoney(pnl) : '--'}</td>
+                <td class="num-right">
+                  <button type="button" class="btn btn-sm" data-close-pos="${escapeHtml(p.symbol)}">市價平倉</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          pBody.querySelectorAll('[data-close-pos]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const pos = state.positions.find(x => x.symbol === btn.dataset.closePos);
+              const q = getQuote(btn.dataset.closePos);
+              if (!pos) return;
+              if (!q?.price) {
+                showToast('請先同步真實現價', `請先同步 ${pos.symbol} ${pos.name} 真實報價後再平倉。`, 'warn');
+                return;
+              }
+              executeOrder({
+                symbol: pos.symbol,
+                side: 'SELL',
+                qty: pos.shares,
+                unit: '股',
+                price: q.price,
+                orderType: 'MKT',
+                tif: 'IOC',
+                source: 'CLOSE_POSITION'
+              });
+            });
+          });
+        }
+      }
+
+      const oBody = document.getElementById('ordersHistoryBody');
+      if (oBody) {
+        if (state.orders.length === 0) {
+          oBody.innerHTML = '<tr><td colspan="6" class="num-center" style="padding:20px;color:var(--ink-4);">尚無委託紀錄。</td></tr>';
+        } else {
+          oBody.innerHTML = state.orders.slice(0, 20).map(o => `
+            <tr>
+              <td class="mono" style="font-size:11px;color:var(--ink-3);">${escapeHtml(String(o.iso_time || '').slice(5))}</td>
+              <td><span class="badge ${o.env_mode === 'LIVE' ? 'badge-up' : 'badge-blue'}">${escapeHtml(o.env_mode)}</span></td>
+              <td><strong class="mono">${escapeHtml(o.symbol)}</strong> ${escapeHtml(o.stock_name || '')}</td>
+              <td class="mono ${o.side === 'BUY' ? 'text-up' : 'text-down'}" style="font-weight:700;">${o.side === 'BUY' ? '買進' : '賣出'} ${o.qty}${escapeHtml(o.unit)}</td>
+              <td class="num-right mono" style="font-weight:700;">${fmtNum(o.price, 2)}</td>
+              <td><span class="badge badge-teal">${escapeHtml(o.status)}</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+
+    function renderNotifyCenter() {
+      const preview = document.getElementById('notifyPreviewBox');
+      if (preview) preview.textContent = formatBatchSignalMessage();
+
+      const logBox = document.getElementById('notifyLogsBox');
+      if (logBox) {
+        if (state.notifier.logs.length === 0) {
+          logBox.textContent = '尚無推播紀錄。填入 Token 並勾選啟用後，可點擊測試按鈕立即驗證。';
+        } else {
+          logBox.textContent = state.notifier.logs.map(l => `[${l.time}] [${l.channel}] ${l.status}\n${l.text}\n---`).join('\n');
+        }
+      }
+    }
+
+    function renderPineScript() {
+      const box = document.getElementById('pineScriptBox');
+      if (!box) return;
+      const meta = getStockMeta(state.activeSymbol);
+      const endpoint = (getApiBase() || 'https://你的雲端網址.onrender.com') + '/api/v1/webhook/tv';
+      box.textContent = `//@version=5
+strategy("SYNAPSE TW Auto ${meta.symbol} ${meta.name}", overlay=true)
+
+// === 填入您的雲端 Webhook 網址 ===
+// Webhook URL: ${endpoint}
+secret_key = input.string("SYNAPSE_TV_SECRET_2026", "Webhook 密鑰")
+env_mode   = input.string("${state.envMode}", "交易模式", options=["SIM", "LIVE"])
+order_qty  = input.int(1, "委託張數", minval=1)
+
+ema_fast = ta.ema(close, 5)
+ema_slow = ta.ema(close, 12)
+rsi_val  = ta.rsi(close, 14)
+
+long_sig  = ta.crossover(ema_fast, ema_slow) and rsi_val < 72
+short_sig = ta.crossunder(ema_fast, ema_slow) and rsi_val > 28
+
+make_json(string act) =>
+    '{"secret":"' + secret_key +
+    '","signal_id":"TV-${meta.symbol}-' + str.tostring(timenow) +
+    '","symbol":"${meta.symbol}","stock_name":"${meta.name}","action":"' + act +
+    '","price":' + str.tostring(close) +
+    ',"qty":' + str.tostring(order_qty) +
+    ',"unit":"張","env_mode":"' + env_mode + '"}'
+
+if long_sig
+    strategy.entry("Long", strategy.long)
+    alert(make_json("BUY"), alert.freq_once_per_bar_close)
+
+if short_sig
+    strategy.close("Long")
+    alert(make_json("SELL"), alert.freq_once_per_bar_close)
+
+plot(ema_fast, color=color.blue, title="EMA 5")
+plot(ema_slow, color=color.orange, title="EMA 12")`;
+    }
+
+    function renderTopRibbon() {
+      const synced = state.watchlist.filter(w => getQuote(w.symbol)?.price !== null && getQuote(w.symbol)?.price !== undefined).length;
+      document.getElementById('ribbonSyncedCount').textContent = `${synced}/${state.watchlist.length}`;
+
+      const configuredAi = AI_MODELS.filter(m => Boolean(state.aiKeys[m.id]) || Boolean(state.backendHealth?.ai_env_configured?.[m.id])).length;
+      document.getElementById('ribbonAiStatus').textContent = configuredAi > 0 ? `${configuredAi}/4 API 已連線` : '4 模型就緒 (含本地量化)';
+
+      const ch = [];
+      if (state.notifier.lineEnabled) ch.push('LINE');
+      if (state.notifier.tgEnabled) ch.push('Telegram');
+      document.getElementById('ribbonNotifyStatus').textContent = ch.length ? `已啟用 ${ch.join(' + ')}` : '未啟用';
+    }
+
+    function renderAllViews() {
+      renderWatchlistPills();
+      renderActiveStockHeaderAndOhlcv();
+      renderSignalTable();
+      renderPositionsAndOrders();
+      renderAiPanels();
+      renderNotifyCenter();
+      renderHandshakeInspector();
+      renderTopRibbon();
+    }
+
+    function runSignalScan(notify = false) {
+      const results = state.watchlist.map(w => evaluateStockSignal(w.symbol));
+      const actionable = results.filter(r => r.signal === 'BUY' || r.signal === 'SELL');
+      triggerHandshake('SCANNER', 'CORE', '#0d9488', 'SYN', true, 14, `掃描完成：偵測到 ${actionable.length} 筆買賣訊號`);
+
+      if (actionable.length > 0 && state.autoTradeOnSignal && !state.killSwitch) {
+        actionable.forEach(r => {
+          executeOrder({
+            symbol: r.symbol,
+            side: r.signal,
+            qty: 1,
+            unit: '張',
+            price: r.price,
+            orderType: 'LMT',
+            tif: 'ROD',
+            source: 'AUTO_SCANNER'
+          });
+        });
+      }
+
+      if (notify) {
+        sendNotification(formatBatchSignalMessage());
+      } else {
+        showToast(
+          '訊號掃描完成',
+          actionable.length
+            ? `偵測到 ${actionable.length} 檔買賣訊號：${actionable.map(x => `${x.symbol} ${x.name}(${x.signal})`).join('、')}`
+            : '所有已同步標的目前處於觀望整理區間。',
+          actionable.length ? 'success' : 'info'
+        );
+      }
+      renderSignalTable();
+      renderNotifyCenter();
+    }
+
+    // =========================================================================
+    // 11. NAVIGATION, MODALS & EVENT BINDING
+    // =========================================================================
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+      document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === `tab-${tabId}`));
+      if (tabId === 'notify') renderNotifyCenter();
+      if (tabId === 'deploy') renderPineScript();
+    }
+
+    function openModal(id) {
+      document.getElementById(id)?.classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id)?.classList.remove('open');
+    }
+
+    function populateSettingsInputs() {
+      document.getElementById('keyGrok').value = state.aiKeys.grok || '';
+      document.getElementById('keyGemini').value = state.aiKeys.gemini || '';
+      document.getElementById('keyClaude').value = state.aiKeys.claude || '';
+      document.getElementById('keyChatgpt').value = state.aiKeys.chatgpt || '';
+
+      document.getElementById('cfgLineEnabled').checked = Boolean(state.notifier.lineEnabled);
+      document.getElementById('cfgLineToken').value = state.notifier.lineToken || '';
+      document.getElementById('cfgLineTarget').value = state.notifier.lineTargetId || '';
+      document.getElementById('cfgTgEnabled').checked = Boolean(state.notifier.tgEnabled);
+      document.getElementById('cfgTgToken').value = state.notifier.tgToken || '';
+      document.getElementById('cfgTgChatId').value = state.notifier.tgChatId || '';
+
+      document.getElementById('cloudBackendInput').value = state.backendUrl || '';
+      document.getElementById('finmindTokenInput').value = state.finmindToken || '';
+      document.getElementById('tvUsernameInput').value = state.tvAccount.username || '';
+      document.getElementById('tvTierSelect').value = state.tvAccount.tier || 'Essential';
+      document.getElementById('tvLayoutUrlInput').value = state.tvAccount.layoutUrl || '';
+
+      if (state.tvAccount.username) {
+        document.getElementById('tvAccountStatusText').textContent = `已綁定 TradingView 帳號：${state.tvAccount.username} (${state.tvAccount.tier})`;
+      }
+    }
+
+    function bindEvents() {
+      // Tabs
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Modal close buttons
+      document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+      });
+      document.querySelectorAll('.modal-backdrop').forEach(bg => {
+        bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+      });
+
+      // SIM / LIVE switcher
+      document.getElementById('btnModeSim').addEventListener('click', () => {
+        setTradingMode('SIM');
+        showToast('已切換至模擬下單 SIM', '所有委託將依真實報價進行紙上撮合。', 'info');
+      });
+      document.getElementById('btnModeLive').addEventListener('click', () => openLiveSafetyModal());
+      document.getElementById('btnConfirmLiveMode').addEventListener('click', () => {
+        if (!document.getElementById('liveConfirm1').checked || !document.getElementById('liveConfirm2').checked) {
+          showToast('請完成安全確認', '請勾選兩項實盤風險確認方塊後再切換。', 'warn');
+          return;
+        }
+        closeModal('liveSafetyModal');
+        setTradingMode('LIVE');
+        showToast('已切換至真實下單 LIVE', '委託將送往雲端永豐金 Shioaji 實盤接口，請務必確認風險。', 'warn');
+      });
+
+      // Taiwan red-up / Intl green-up toggle
+      document.getElementById('btnColorScheme').addEventListener('click', () => {
+        state.intlColors = !state.intlColors;
+        document.body.classList.toggle('intl-colors', state.intlColors);
+        document.getElementById('colorSchemeLabel').textContent = state.intlColors ? '綠漲紅跌' : '紅漲綠跌';
+      });
+
+      // Kill Switch
+      document.getElementById('btnKillSwitch').addEventListener('click', () => {
+        state.killSwitch = !state.killSwitch;
+        document.getElementById('killSwitchText').textContent = state.killSwitch ? '解除熔斷' : '緊急熔斷';
+        setTradingMode(state.envMode);
+        showToast(
+          state.killSwitch ? '已啟動緊急熔斷' : '已解除緊急熔斷',
+          state.killSwitch ? '所有自動與手動下單已立即鎖定。' : '交易通道已恢復就緒。',
+          state.killSwitch ? 'error' : 'success'
+        );
+      });
+
+      document.getElementById('btnOpenSettings').addEventListener('click', () => switchTab('ai'));
+      document.getElementById('btnOpenAiSettings').addEventListener('click', () => switchTab('ai'));
+
+      // Add real stock
+      document.getElementById('addStockForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const inp = document.getElementById('addStockInput');
+        lookupAndAddStock(inp.value);
+        inp.value = '';
+      });
+      document.getElementById('btnSyncAll').addEventListener('click', () => syncAllWatchlist());
+      document.getElementById('btnSyncFinmind').addEventListener('click', () => fetchMarketData(state.activeSymbol, 'finmind'));
+      document.getElementById('btnSyncYahoo').addEventListener('click', () => fetchMarketData(state.activeSymbol, 'yahoo'));
+
+      // Handshake canvas interactions
+      document.getElementById('btnTriggerHandshake').addEventListener('click', () => runFullHandshakeDemo());
+      document.getElementById('btnToggleAnim').addEventListener('click', () => {
+        state.animRunning = !state.animRunning;
+        document.getElementById('animToggleLabel').textContent = state.animRunning ? '動畫運行中' : '動畫已暫停';
+      });
+      document.getElementById('handshakeCanvas').addEventListener('click', e => {
+        const rect = e.target.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        for (const n of handshakeNodes) {
+          if (n.id === 'CORE') {
+            if (Math.hypot(mx - n.x, my - n.y) <= n.r + 8) {
+              state.handshake.selectedNodeId = 'CORE';
+              renderHandshakeInspector();
+              return;
+            }
+          } else if (mx >= n.x - n.w / 2 && mx <= n.x + n.w / 2 && my >= n.y - n.h / 2 && my <= n.y + n.h / 2) {
+            state.handshake.selectedNodeId = n.id;
+            renderHandshakeInspector();
+            return;
+          }
+        }
+      });
+
+      // Chart mode & TradingView controls
+      document.getElementById('btnChartTv').addEventListener('click', () => {
+        state.chartMode = 'tv';
+        document.getElementById('btnChartTv').className = 'btn btn-sm btn-dark';
+        document.getElementById('btnChartRaw').className = 'btn btn-sm';
+        document.getElementById('tvWidgetMount').style.display = 'block';
+        document.getElementById('rawChartMount').style.display = 'none';
+      });
+      document.getElementById('btnChartRaw').addEventListener('click', () => {
+        state.chartMode = 'raw';
+        document.getElementById('btnChartRaw').className = 'btn btn-sm btn-dark';
+        document.getElementById('btnChartTv').className = 'btn btn-sm';
+        document.getElementById('tvWidgetMount').style.display = 'none';
+        document.getElementById('rawChartMount').style.display = 'block';
+        renderRawPriceChart();
+      });
+      document.getElementById('tvIntervalSelect').addEventListener('change', e => {
+        state.tvInterval = e.target.value;
+        renderTradingViewChart();
+      });
+      document.getElementById('tvStudySelect').addEventListener('change', e => {
+        state.tvStudy = e.target.value;
+        renderTradingViewChart();
+      });
+      document.getElementById('btnTvDrawTools').addEventListener('click', () => {
+        state.tvDrawTools = !state.tvDrawTools;
+        document.getElementById('btnTvDrawTools').textContent = `繪圖工具: ${state.tvDrawTools ? '開' : '關'}`;
+        renderTradingViewChart();
+      });
+      document.getElementById('btnTvTheme').addEventListener('click', () => {
+        state.tvTheme = state.tvTheme === 'light' ? 'dark' : 'light';
+        document.getElementById('btnTvTheme').textContent = `主題: ${state.tvTheme === 'light' ? '亮' : '暗'}`;
+        renderTradingViewChart();
+      });
+
+      // TradingView Account Modal
+      document.getElementById('btnOpenTvAccountModal').addEventListener('click', () => openModal('tvAccountModal'));
+      document.getElementById('btnSaveTvAccount').addEventListener('click', () => {
+        state.tvAccount.username = document.getElementById('tvUsernameInput').value.trim();
+        state.tvAccount.tier = document.getElementById('tvTierSelect').value;
+        state.tvAccount.layoutUrl = document.getElementById('tvLayoutUrlInput').value.trim();
+        persistState();
+        populateSettingsInputs();
+        renderTradingViewChart();
+        closeModal('tvAccountModal');
+        showToast('TradingView 綁定已儲存', '點擊「登入 TradingView 進階圖表」將自動開啟您的專屬工作區。', 'success');
+      });
+
+      // Order ticket
+      document.getElementById('btnSideBuy').addEventListener('click', () => {
+        state.orderSide = 'BUY';
+        document.getElementById('btnSideBuy').className = 'side-btn buy-active';
+        document.getElementById('btnSideSell').className = 'side-btn';
+        updateOrderSummary();
+      });
+      document.getElementById('btnSideSell').addEventListener('click', () => {
+        state.orderSide = 'SELL';
+        document.getElementById('btnSideSell').className = 'side-btn sell-active';
+        document.getElementById('btnSideBuy').className = 'side-btn';
+        updateOrderSummary();
+      });
+      ['orderPriceInput', 'orderQtyInput', 'orderUnitSelect'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateOrderSummary);
+        document.getElementById(id).addEventListener('change', updateOrderSummary);
+      });
+      document.getElementById('btnFillLatestPrice').addEventListener('click', () => {
+        const q = getQuote(state.activeSymbol);
+        if (!q?.price) {
+          showToast('尚未同步報價', '請先點擊「抓 FinMind」或「抓 Yahoo」取得真實報價。', 'warn');
+          return;
+        }
+        document.getElementById('orderPriceInput').value = q.price;
+        updateOrderSummary();
+      });
+      document.getElementById('btnSubmitOrder').addEventListener('click', () => {
+        executeOrder({
+          symbol: state.activeSymbol,
+          side: state.orderSide,
+          qty: Math.max(1, parseInt(document.getElementById('orderQtyInput').value || '1', 10)),
+          unit: document.getElementById('orderUnitSelect').value,
+          price: Number(document.getElementById('orderPriceInput').value || 0),
+          orderType: document.getElementById('orderTypeSelect').value,
+          tif: document.getElementById('orderTifSelect').value,
+          source: 'ORDER_TICKET'
+        });
+      });
+
+      // AI Analysis
+      document.getElementById('btnRunAiQuick').addEventListener('click', () => runMultiAiAnalysis(''));
+      document.getElementById('btnRunAiStudio').addEventListener('click', () => {
+        runMultiAiAnalysis(document.getElementById('aiStudioPrompt').value.trim());
+      });
+      document.getElementById('btnPushAiReport').addEventListener('click', () => {
+        const report = formatAiReportMessage();
+        if (!report) {
+          showToast('尚無 AI 解析報告', '請先點擊「一鍵四模型解析目前標的」。', 'warn');
+          return;
+        }
+        sendNotification(report);
+      });
+      document.getElementById('btnSaveAiKeys').addEventListener('click', () => {
+        state.aiKeys.grok = document.getElementById('keyGrok').value.trim();
+        state.aiKeys.gemini = document.getElementById('keyGemini').value.trim();
+        state.aiKeys.claude = document.getElementById('keyClaude').value.trim();
+        state.aiKeys.chatgpt = document.getElementById('keyChatgpt').value.trim();
+        persistState();
+        renderAiPanels();
+        renderTopRibbon();
+        showToast('AI 金鑰已儲存', '四模型設定已存入本機瀏覽器。', 'success');
+      });
+
+      // Signal Scanner & Portfolio
+      document.getElementById('autoTradeOnSignal').addEventListener('change', e => {
+        state.autoTradeOnSignal = e.target.checked;
+      });
+      document.getElementById('btnScanSignals').addEventListener('click', () => runSignalScan(false));
+      document.getElementById('btnPushBatchSignals').addEventListener('click', () => runSignalScan(true));
+      document.getElementById('btnResetSimAcct').addEventListener('click', () => {
+        state.simCashTwd = 3000000;
+        state.positions = [];
+        state.orders = [];
+        persistState();
+        renderAllViews();
+        showToast('模擬盤已重設', '可用現金已恢復為 $3,000,000 TWD。', 'info');
+      });
+      document.getElementById('btnExportOrdersCsv').addEventListener('click', () => {
+        if (state.orders.length === 0) {
+          showToast('尚無紀錄可匯出', '請先送出委託後再匯出 CSV。', 'warn');
+          return;
+        }
+        const header = '時間,模式,單號,股票代號,中文名稱,方向,數量,單位,價格,手續費,證交稅,狀態\n';
+        const rows = state.orders.map(o =>
+          [o.iso_time, o.env_mode, o.order_id, o.symbol, o.stock_name, o.side, o.qty, o.unit, o.price, o.fee_twd, o.tax_twd, o.status].join(',')
+        ).join('\n');
+        const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `synapse_tw_orders_${Date.now()}.csv`;
+        a.click();
+      });
+
+      // Notifier Center
+      document.getElementById('btnSaveNotifyCfg').addEventListener('click', () => {
+        state.notifier.lineEnabled = document.getElementById('cfgLineEnabled').checked;
+        state.notifier.lineToken = document.getElementById('cfgLineToken').value.trim();
+        state.notifier.lineTargetId = document.getElementById('cfgLineTarget').value.trim();
+        state.notifier.tgEnabled = document.getElementById('cfgTgEnabled').checked;
+        state.notifier.tgToken = document.getElementById('cfgTgToken').value.trim();
+        state.notifier.tgChatId = document.getElementById('cfgTgChatId').value.trim();
+        persistState();
+        renderTopRibbon();
+        showToast('推播通道已儲存', 'LINE Bot 與 Telegram 設定已生效。', 'success');
+      });
+      document.getElementById('btnTestLine').addEventListener('click', () => {
+        document.getElementById('btnSaveNotifyCfg').click();
+        sendNotification(formatBatchSignalMessage(), ['line']);
+      });
+      document.getElementById('btnTestTg').addEventListener('click', () => {
+        document.getElementById('btnSaveNotifyCfg').click();
+        sendNotification(formatBatchSignalMessage(), ['telegram']);
+      });
+      document.getElementById('btnRefreshPreview').addEventListener('click', () => renderNotifyCenter());
+      document.getElementById('btnSendPreviewNow').addEventListener('click', () => sendNotification(formatBatchSignalMessage()));
+
+      // Cloud Deploy Tab
+      document.getElementById('btnTestBackend').addEventListener('click', async () => {
+        state.backendUrl = document.getElementById('cloudBackendInput').value.trim().replace(/\/+$/, '');
+        persistState();
+        const ok = await detectBackend();
+        showToast(
+          ok ? '雲端後端連線成功' : '無法連線至雲端後端',
+          ok ? 'Yahoo / FinMind 代理、AI 多模型與 LINE 推播已全面啟用。' : '請確認網址是否正確或先部署 server.py。',
+          ok ? 'success' : 'error'
+        );
+        renderPineScript();
+      });
+      document.getElementById('btnSaveFinmindToken').addEventListener('click', () => {
+        state.finmindToken = document.getElementById('finmindTokenInput').value.trim();
+        persistState();
+        showToast('FinMind Token 已儲存', '下次抓取將自動帶入提升每小時額度。', 'success');
+      });
+      document.getElementById('btnCopyPine').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(document.getElementById('pineScriptBox').textContent);
+          showToast('已複製 Pine Script v5', '可直接貼入 TradingView Pine Editor 建立快訊。', 'success');
+        } catch (e) {
+          showToast('複製失敗', '請手動選取程式碼複製。', 'warn');
+        }
+      });
+      document.getElementById('btnCopyWebhookUrl').addEventListener('click', async () => {
+        const url = (getApiBase() || 'https://你的雲端網址.onrender.com') + '/api/v1/webhook/tv';
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast('已複製 Webhook 端點', url, 'success');
+        } catch (e) {}
+      });
+      document.getElementById('btnDownloadHtml').addEventListener('click', () => {
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'index.html';
+        a.click();
+        showToast('已匯出獨立 index.html', '可直接上傳至 Cloudflare Pages / Vercel / Netlify 部署。', 'success');
+      });
+    }
+
+    // =========================================================================
+    // 12. BOOTSTRAP
+    // =========================================================================
+    async function initApp() {
+      loadPersistedState();
+      populateSettingsInputs();
+      bindEvents();
+      setTradingMode('SIM');
+      renderTradingViewChart();
+      renderAllViews();
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+
+      // Live Taipei Clock
+      const tickClock = () => {
+        const el = document.getElementById('twClock');
+        if (el) el.textContent = nowTwTime();
+      };
+      tickClock();
+      setInterval(tickClock, 1000);
+
+      // Start 60fps Handshake Topology animation
+      requestAnimationFrame(drawHandshakeFrame);
+
+      // Periodic ambient handshake pulse
+      setInterval(() => {
+        if (state.animRunning && !state.killSwitch) {
+          const sources = ['YAHOO', 'FINMIND', 'TRADINGVIEW'];
+          const targets = ['AI_CLUSTER', 'BROKER', 'SCANNER'];
+          const s = sources[Math.floor(Math.random() * sources.length)];
+          const t = targets[Math.floor(Math.random() * targets.length)];
+          if (s !== t) {
+            state.handshake.packets.push({
+              from: s, to: t, color: '#2563eb', tag: 'SYNC', t: 0, speed: 0.016, bidirectional: false, ackSpawned: false
+            });
+          }
+        }
+      }, 2800);
+
+      // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
+      await detectBackend();
+      await fetchMarketData(state.activeSymbol, 'auto');
+      // Sync top 4 benchmark stocks automatically in background
+      for (const sym of ['2317', '2454', '0050', '3037']) {
+        if (sym !== state.activeSymbol && state.watchlist.some(w => w.symbol === sym)) {
+          fetchMarketData(sym, 'auto');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: synapse-tw-trading
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: TRADING_MODE
+        value: SIM
+      - key: CHECK_TV_IP
+        value: "false"
+      - key: TV_WEBHOOK_SECRET
+        generateValue: true
+      - key: FINMIND_TOKENS
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_TARGET_ID
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false

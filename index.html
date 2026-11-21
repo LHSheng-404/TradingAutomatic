@@ -520,7 +520,7 @@
 
     .tech-switch-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -2344,7 +2344,7 @@
                   <i data-lucide="bot" style="width:16px;height:16px;color:#b91c1c;"></i>
                   台股技術分析開關 &amp; 價量多 Agent 自動買賣中心（參考專家版 v68）
                 </h2>
-                <p class="card-subtitle">下單與自動巡檢皆即時抓取真實最新股價，結合 8 大台股技術開關、價量動能與風控守門員，自動切換最適 AI 模型判定買賣</p>
+                <p class="card-subtitle">下單與自動巡檢皆即時抓取真實最新股價（支援上市 .TW / 上櫃 .TWO），結合 10 大台股技術・籌碼・大盤強弱開關與風控守門員，自動切換最適 AI 模型判定買賣</p>
               </div>
               <div class="chart-group">
                 <label style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;font-size:12px;font-weight:800;color:#991b1b;cursor:pointer;">
@@ -2368,7 +2368,14 @@
                     <option value="DEEP_REASONING">DEEP_REASONING · Claude / Gemini 深度風控推理</option>
                   </select>
                 </div>
-                <div class="form-grid-2">
+                <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+                  <div>
+                    <label class="field-label" for="agentScopeSelect">自動買賣範圍</label>
+                    <select id="agentScopeSelect" class="select">
+                      <option value="ACTIVE" selected>僅目前標的</option>
+                      <option value="WATCHLIST">全自選股輪巡</option>
+                    </select>
+                  </div>
                   <div>
                     <label class="field-label" for="agentPollIntervalSelect">自動巡檢週期</label>
                     <select id="agentPollIntervalSelect" class="select mono">
@@ -2378,7 +2385,7 @@
                     </select>
                   </div>
                   <div>
-                    <label class="field-label" for="agentAutoQtyInput">每次自動下單 (張)</label>
+                    <label class="field-label" for="agentAutoQtyInput">每次下單 (張)</label>
                     <input id="agentAutoQtyInput" type="number" min="1" max="50" step="1" value="1" class="input mono" />
                   </div>
                 </div>
@@ -2398,17 +2405,17 @@
                 </div>
               </div>
 
-              <!-- 8 Technical Analysis Switches -->
+              <!-- 10 Technical + Chip + RS Analysis Switches (v68 Expert Edition) -->
               <div>
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
                   <div>
-                    <strong style="font-size:13px;color:var(--ink-1);">台股技術分析開關矩陣（<span id="techSwitchEnabledCount" class="mono">8</span> / 8 已啟用）</strong>
-                    <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px;">開關變更後立即影響策略評分與自動買賣條件</span>
+                    <strong style="font-size:13px;color:var(--ink-1);">台股技術・籌碼・強弱開關矩陣（<span id="techSwitchEnabledCount" class="mono">10</span> / 10 已啟用）</strong>
+                    <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px;">支援上市 TWSE (.TW) 與上櫃 TPEx (.TWO)，開關即時影響自動買賣判定</span>
                   </div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button id="btnTechPresetAll" type="button" class="btn btn-sm">全部開啟 (8/8)</button>
-                    <button id="btnTechPresetMomentum" type="button" class="btn btn-sm">價量動能組 (MA/MACD/OBV/VWAP)</button>
-                    <button id="btnTechPresetReversal" type="button" class="btn btn-sm">波段轉折組 (KDJ/RSI/布林)</button>
+                    <button id="btnTechPresetAll" type="button" class="btn btn-sm">全部開啟 (10/10)</button>
+                    <button id="btnTechPresetMomentum" type="button" class="btn btn-sm">價量籌碼動能組</button>
+                    <button id="btnTechPresetReversal" type="button" class="btn btn-sm">波段轉折組</button>
                   </div>
                 </div>
                 <div id="techSwitchesGrid" class="tech-switch-grid"></div>
@@ -2946,12 +2953,15 @@
         obv: true,
         bollinger: true,
         vwap: true,
-        momentum: true
+        momentum: true,
+        inst: true,
+        rs: true
       },
 
       agentConfig: {
         precheckOnOrder: true,
         autoTradeEnabled: false,
+        scope: 'ACTIVE',
         routingPolicy: 'AUTO',
         pollSec: 60,
         autoQty: 1,
@@ -4215,7 +4225,9 @@
       { key: 'obv', label: 'OBV 能量潮與量比', desc: '量比 ≥1.2x 搭配 OBV 資金流向判讀' },
       { key: 'bollinger', label: '布林通道 (20, 2σ)', desc: '上下軌支撐壓力與中軌多空分水嶺' },
       { key: 'vwap', label: 'VWAP 機構加權均價', desc: '盤中主力成本線乖離強弱驗證' },
-      { key: 'momentum', label: '5/20 日動能輪動', desc: '短中期價格動能共振方向過濾' }
+      { key: 'momentum', label: '5/20 日動能輪動', desc: '短中期價格動能共振方向過濾' },
+      { key: 'inst', label: '三大法人籌碼', desc: 'FinMind 外資／投信／自營商連買賣' },
+      { key: 'rs', label: '相對大盤 RS 強弱', desc: '對比加權指數 (^TWII) 領漲抗跌檢核' }
     ];
 
     function buildDeterministicFallbackDigest(modelDef, sig, q) {
@@ -4938,7 +4950,7 @@
         </div>
         <div style="color:var(--ink-2);line-height:1.5;">
           • <strong>價量 Agent</strong>：${escapeHtml(pv.regime)}（量比 <span class="mono">${pv.volume_ratio}x</span>，VWAP乖離 <span class="mono">${pv.vwap_diff >= 0 ? '+' : ''}${pv.vwap_diff}%</span>）<br/>
-          • <strong>技術開關 (${tech.enabled_count}/8)</strong>：評分 <strong class="mono">${tech.score}</strong>（${tech.signal}）<br/>
+          • <strong>技術開關 (${tech.enabled_count}/${V68_TECH_SWITCH_DEFS.length})</strong>：評分 <strong class="mono">${tech.score}</strong>（${tech.signal}）<br/>
           • <strong>最適模型切換</strong>：<span class="badge badge-blue" style="font-size:10px;padding:1px 6px;">${escapeHtml(router.selected_model_name)}</span><br/>
           <span style="color:var(--ink-3);font-size:11px;">路由依據：${escapeHtml(router.reason)}</span>
         </div>
@@ -5095,12 +5107,18 @@
       const ms = Math.max(15, Number(state.agentConfig.pollSec || 60)) * 1000;
       agentAutoTimer = setInterval(async () => {
         if (!state.agentConfig.autoTradeEnabled || state.killSwitch) return;
-        await runMultiAgentOrchestration({
-          symbol: state.activeSymbol,
-          intendedSide: 'AUTO',
-          intendedPrice: getQuote(state.activeSymbol)?.price || null,
-          autoExecute: true
-        });
+        const targets = state.agentConfig.scope === 'WATCHLIST'
+          ? state.watchlist.map(w => w.symbol)
+          : [state.activeSymbol];
+        for (const sym of targets) {
+          if (!state.agentConfig.autoTradeEnabled || state.killSwitch) break;
+          await runMultiAgentOrchestration({
+            symbol: sym,
+            intendedSide: 'AUTO',
+            intendedPrice: getQuote(sym)?.price || null,
+            autoExecute: true
+          });
+        }
       }, ms);
     }
 
@@ -6202,6 +6220,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (autoTog) autoTog.checked = Boolean(state.agentConfig.autoTradeEnabled);
       const polSel = document.getElementById('agentRoutingPolicySelect');
       if (polSel) polSel.value = state.agentConfig.routingPolicy || 'AUTO';
+      const scScope = document.getElementById('agentScopeSelect');
+      if (scScope) scScope.value = state.agentConfig.scope || 'ACTIVE';
       const intSel = document.getElementById('agentPollIntervalSelect');
       if (intSel) intSel.value = String(state.agentConfig.pollSec || 60);
       const qtyInp = document.getElementById('agentAutoQtyInput');
@@ -6579,9 +6599,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         );
       });
 
-      ['agentRoutingPolicySelect', 'agentPollIntervalSelect', 'agentAutoQtyInput', 'agentMaxSlippageInput', 'agentScoreThresholdInput', 'agentMinConfInput'].forEach(id => {
+      ['agentRoutingPolicySelect', 'agentScopeSelect', 'agentPollIntervalSelect', 'agentAutoQtyInput', 'agentMaxSlippageInput', 'agentScoreThresholdInput', 'agentMinConfInput'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', () => {
           state.agentConfig.routingPolicy = document.getElementById('agentRoutingPolicySelect')?.value || 'AUTO';
+          state.agentConfig.scope = document.getElementById('agentScopeSelect')?.value || 'ACTIVE';
           state.agentConfig.pollSec = Math.max(15, parseInt(document.getElementById('agentPollIntervalSelect')?.value || '60', 10));
           state.agentConfig.autoQty = Math.max(1, parseInt(document.getElementById('agentAutoQtyInput')?.value || '1', 10));
           state.agentConfig.maxSlippagePct = Math.max(0.1, parseFloat(document.getElementById('agentMaxSlippageInput')?.value || '1.0'));
@@ -6593,22 +6614,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       });
 
       document.getElementById('btnTechPresetAll')?.addEventListener('click', () => {
-        Object.keys(state.techSwitches).forEach(k => { state.techSwitches[k] = true; });
+        V68_TECH_SWITCH_DEFS.forEach(d => { state.techSwitches[d.key] = true; });
         persistState();
         renderTechSwitchesUI();
-        showToast('已套用全指標開關', '8 大台股技術分析開關已全部啟用。', 'success');
+        showToast('已套用全指標開關', '10 大台股技術・籌碼・大盤強弱開關已全部啟用。', 'success');
       });
       document.getElementById('btnTechPresetMomentum')?.addEventListener('click', () => {
-        state.techSwitches = { ma: true, macd: true, kdj: false, rsi: false, obv: true, bollinger: false, vwap: true, momentum: true };
+        state.techSwitches = { ma: true, macd: true, kdj: false, rsi: false, obv: true, bollinger: false, vwap: true, momentum: true, inst: true, rs: true };
         persistState();
         renderTechSwitchesUI();
-        showToast('已套用價量動能組', '啟用 MA/EMA、MACD、OBV量比、VWAP、5/20日動能（5/8）。', 'info');
+        showToast('已套用價量籌碼動能組', '啟用 MA/EMA、MACD、OBV、VWAP、5/20日動能、三大法人籌碼與大盤 RS（7/10）。', 'info');
       });
       document.getElementById('btnTechPresetReversal')?.addEventListener('click', () => {
-        state.techSwitches = { ma: false, macd: false, kdj: true, rsi: true, obv: true, bollinger: true, vwap: false, momentum: false };
+        state.techSwitches = { ma: false, macd: false, kdj: true, rsi: true, obv: true, bollinger: true, vwap: false, momentum: false, inst: true, rs: false };
         persistState();
         renderTechSwitchesUI();
-        showToast('已套用波段轉折組', '啟用 KDJ、RSI(14)、OBV量比、布林通道（4/8）。', 'info');
+        showToast('已套用波段轉折組', '啟用 KDJ、RSI(14)、OBV量比、布林通道與三大法人籌碼（5/10）。', 'info');
       });
       document.getElementById('btnClearAgentLogs')?.addEventListener('click', () => {
         state.agentLogs = [];

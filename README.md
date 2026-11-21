@@ -22,8 +22,8 @@
 
 ![下單實時價量多 Agent 預檢](docs/screenshots/order_agent_precheck.png)
 
-### 3. 台股技術分析開關（專家版 v68）& 多 Agent 自動買賣中心
-> 將台股核心技術分析整理為 **8 大獨立開關**（`MA/EMA 均線`、`MACD 動能`、`KDJ 隨機指標`、`RSI(14)`、`OBV 能量潮與量比`、`布林通道 (20,2σ)`、`VWAP 機構加權均價`、`5/20 日動能輪動`），搭配 4-Agent 協作與最適模型自動路由策略，啟用後即依策略評分與模型共識自動執行買賣。
+### 3. 台股技術・籌碼・大盤強弱開關（專家版 v68）& 多 Agent 自動買賣中心
+> 將台股專家版 v68 完整整理為 **10 大獨立開關**（`MA/EMA 均線`、`MACD 動能`、`KDJ 隨機指標`、`RSI(14)`、`OBV 能量潮與量比`、`布林通道 (20,2σ)`、`VWAP 機構加權均價`、`5/20 日動能輪動`、`FinMind 三大法人籌碼`、`相對大盤 RS 強弱 (^TWII)`），同時支援 **TWSE 上市 (`.TW`) 與 TPEx 上櫃 (`.TWO`)** 即時股價偵測及「單一標的／全自選股輪巡」自動買賣。
 
 ![台股技術開關與多 Agent 自動買賣彈窗](docs/screenshots/agent_strategy_modal.png)
 
@@ -57,14 +57,14 @@
 
 ---
 
-## 核心功能（v3.1.0）
+## 核心功能（v3.2.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情；支援一鍵「重新綁定通知目標」與「發送測試通知」。 |
+| **1. 台股 10 大開關（v68 技術＋籌碼＋大盤 RS）與自動買賣** | 參考 `台股分析系統 專家版 v68` 整理為 10 大獨立開關（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱），自動支援上市 `.TW` 與上櫃 `.TWO` 雙市場；支援「僅目前標的」或「全自選股輪巡」自動執行 SIM / LIVE 買賣。 |
 | **2. 六模型 AI（新增 Groq ＋ Ollama 地端）** | 除 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)** 外，新增 **Groq 極速雲端推理**（支援線上載入模型清單）與 **Ollama / LM Studio / vLLM 地端模型**（支援 `/api/tags` 一鍵偵測本機模型、原生 `/api/chat` 與 OpenAI 相容端點，並自動濾除 DeepSeek-R1/QwQ `<think>` 標籤）。 |
-| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援四種路由策略：`AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING`，並具完整容錯切換（Failover）。 |
-| **4. 台股技術分析開關（v68）與自動買賣引擎** | 參考台股專家版 v68 報告整理為 8 大獨立技術開關（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動），提供全開／價量動能組／波段轉折組預設；啟用自動買賣後可定時實時偵測並依開關評分＋AI 信心門檻＋風控檢核自動執行 SIM / LIVE 委託。 |
+| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
+| **4. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
 | **5. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
 | **6. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
 | **7. 對帳單交易復盤 & 台股真實定投回測** | 支援多選匯入 PDF（含密碼解鎖）/ XLSX / CSV / JSON 對帳單復盤與退佣試算；並提供 FinMind 真實歷史股價＋除權息配股定投回測查詢，嚴禁猜測假數據。 |
@@ -75,22 +75,22 @@
 ## 快速開始（支援直接執行與一鍵打包）
 
 ### 方式一：直接下載 GitHub Release 執行（最簡單、免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.1.0`：
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.2.0`：
 
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.1.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
+  - 下載 `SYNAPSE-TW-v3.2.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.1.0-macos-arm64
-  ./SYNAPSE-TW-v3.1.0-macos-arm64
+  chmod +x SYNAPSE-TW-v3.2.0-macos-arm64
+  ./SYNAPSE-TW-v3.2.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.1.0-linux-x64
-  ./SYNAPSE-TW-v3.1.0-linux-x64
+  chmod +x SYNAPSE-TW-v3.2.0-linux-x64
+  ./SYNAPSE-TW-v3.2.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.1.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SYNAPSE-TW-v3.2.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
 
@@ -121,12 +121,12 @@ cd TradingAutomatic
 
 ```bash
 pip install -r requirements.txt pyinstaller
-python3 package.py --version v3.1.0
+python3 package.py --version v3.2.0
 ```
 
 執行完成後會在 `dist/` 目錄自動產出：
-1. `SYNAPSE-TW-v3.1.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
-2. `SYNAPSE-TW-v3.1.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
+1. `SYNAPSE-TW-v3.2.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
+2. `SYNAPSE-TW-v3.2.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
 3. `SHA256SUMS.txt`（完整性校驗檔）
 
 > 專案同時包含 GitHub Actions 自動發布管線 [`.github/workflows/release.yml`](.github/workflows/release.yml)，每次推送 `v*` 標籤時會自動於雲端同步編譯 **Windows `.exe`、macOS、Linux** 三平台直出執行檔並上傳至 Release。

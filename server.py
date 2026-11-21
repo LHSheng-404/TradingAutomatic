@@ -1043,6 +1043,8 @@ class MultiAgentRequest(BaseModel):
             "bollinger": True,
             "vwap": True,
             "momentum": True,
+            "inst": True,
+            "rs": True,
         }
     )
     api_keys: dict[str, str] = Field(default_factory=dict)
@@ -1060,7 +1062,92 @@ def _calc_ema_list(vals: list[float], period: int) -> list[float]:
     return out
 
 
-def _evaluate_v68_indicators(candles: list[dict[str, Any]], switches: dict[str, bool]) -> dict[str, Any]:
+async def _fetch_institutional_summary(stock_id: str) -> Optional[dict[str, Any]]:
+    sid = stock_id.strip().upper()
+    if not sid.isdigit():
+        return None
+    cache_key = f"inst_chip:{sid}"
+    cached = cache_get(cache_key, 900)
+    if cached is not None:
+        return cached
+    try:
+        start_d = (datetime.now(TW_TZ) - timedelta(days=20)).strftime("%Y-%m-%d")
+        params = {
+            "dataset": "TaiwanStockInstitutionalInvestorsBuySell",
+            "data_id": sid,
+            "start_date": start_d,
+        }
+        use_token = next(_token_cycle) if _token_cycle else ""
+        if use_token:
+            params["token"] = use_token
+        url = "https://api.finmindtrade.com/api/v4/data?" + urllib.parse.urlencode(params)
+        st, body = await http_json(url, timeout=7.0)
+        if st != 200 or not isinstance(body, dict):
+            return None
+        rows = body.get("data") or []
+        if not rows:
+            return None
+        by_date: dict[str, int] = {}
+        for r in rows:
+            dt = str(r.get("date") or "")
+            net = int(r.get("buy") or 0) - int(r.get("sell") or 0)
+            by_date[dt] = by_date.get(dt, 0) + net
+        sorted_days = sorted(by_date.items())
+        recent = sorted_days[-5:]
+        net_3d_lots = round(sum(v for _, v in recent[-3:]) / 1000.0, 1)
+        latest_lots = round(recent[-1][1] / 1000.0, 1)
+        streak = 0
+        if recent[-1][1] > 0:
+            for _, v in reversed(recent):
+                if v > 0:
+                    streak += 1
+                else:
+                    break
+        elif recent[-1][1] < 0:
+            for _, v in reversed(recent):
+                if v < 0:
+                    streak -= 1
+                else:
+                    break
+        res = {
+            "last_date": recent[-1][0],
+            "latest_lots": latest_lots,
+            "net_3d_lots": net_3d_lots,
+            "streak_days": streak,
+        }
+        cache_set(cache_key, res)
+        return res
+    except Exception:
+        return None
+
+
+async def _fetch_taiex_benchmark_return() -> Optional[float]:
+    cache_key = "taiex_ret_20d"
+    cached = cache_get(cache_key, 900)
+    if cached is not None:
+        return cached
+    try:
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5ETWII?interval=1d&range=1mo"
+        st, body = await http_json(url, timeout=6.0)
+        if st == 200 and isinstance(body, dict) and (body.get("chart", {}).get("result") or []):
+            q = (body["chart"]["result"][0].get("indicators", {}).get("quote") or [{}])[0]
+            closes = [float(c) for c in (q.get("close") or []) if c is not None]
+            if len(closes) >= 2:
+                base = closes[max(0, len(closes) - 20)]
+                ret = round(((closes[-1] - base) / base) * 100.0, 2) if base > 0 else 0.0
+                cache_set(cache_key, ret)
+                return ret
+    except Exception:
+        pass
+    return None
+
+
+def _evaluate_v68_indicators(
+    candles: list[dict[str, Any]],
+    switches: dict[str, bool],
+    inst_info: Optional[dict[str, Any]] = None,
+    taiex_ret: Optional[float] = None,
+) -> dict[str, Any]:
     closes = [float(c["close"]) for c in candles]
     highs = [float(c["high"]) for c in candles]
     lows = [float(c["low"]) for c in candles]
@@ -1150,7 +1237,7 @@ def _evaluate_v68_indicators(candles: list[dict[str, Any]], switches: dict[str, 
     else:
         pv_regime = "價量盤整"
 
-    # Evaluate enabled v68 technical switches
+    # Evaluate enabled v68 technical + chip + RS switches (10 switches total)
     votes = []
     score = 0
     enabled_cnt = 0
@@ -1210,6 +1297,28 @@ def _evaluate_v68_indicators(candles: list[dict[str, Any]], switches: dict[str, 
         12 if (mom5 > 0 and mom20 > 0) else (-12 if (mom5 < 0 and mom20 < 0) else 0),
         "短中期動能共振向上" if (mom5 > 0 and mom20 > 0) else ("短中期動能偏弱" if (mom5 < 0 and mom20 < 0) else "動能分歧"),
     )
+    if inst_info:
+        net3 = float(inst_info.get("net_3d_lots") or 0)
+        stk = int(inst_info.get("streak_days") or 0)
+        inst_pts = 15 if (net3 > 0 and stk >= 1) else (-15 if (net3 < 0 and stk <= -1) else (8 if net3 > 0 else -8 if net3 < 0 else 0))
+        _add_vote(
+            "inst", "三大法人籌碼", f"3日{net3:+.0f}張 / 連{abs(stk)}日{'買' if stk > 0 else '賣' if stk < 0 else '平'}",
+            inst_pts,
+            f"法人近期偏多（{inst_info.get('last_date')}）" if inst_pts > 0 else (f"法人近期偏空（{inst_info.get('last_date')}）" if inst_pts < 0 else "法人籌碼中性"),
+        )
+    else:
+        _add_vote("inst", "三大法人籌碼", "盤後更新/無資料", 0, "FinMind 三大法人盤後 18:00 後更新")
+
+    if taiex_ret is not None:
+        rs_diff = round(mom20 - taiex_ret, 2)
+        rs_pts = 14 if rs_diff >= 1.5 else (-14 if rs_diff <= -1.5 else (6 if rs_diff > 0.3 else -6 if rs_diff < -0.3 else 0))
+        _add_vote(
+            "rs", "相對大盤 RS 強弱", f"RS {rs_diff:+.1f}% (大盤 {taiex_ret:+.1f}%)",
+            rs_pts,
+            "跑贏加權指數（強勢領漲）" if rs_pts > 0 else ("弱於加權指數（相對偏弱）" if rs_pts < 0 else "與大盤同步"),
+        )
+    else:
+        _add_vote("rs", "相對大盤 RS 強弱", "大盤基準待同步", 0, "暫無加權指數基準")
 
     norm_score = max(-100, min(100, round(score * (8 / max(1, enabled_cnt))))) if enabled_cnt > 0 else 0
     tech_signal = "BUY" if norm_score >= 25 else ("SELL" if norm_score <= -25 else "HOLD")
@@ -1228,6 +1337,8 @@ def _evaluate_v68_indicators(candles: list[dict[str, Any]], switches: dict[str, 
         "pv_regime": pv_regime,
         "mom5": mom5,
         "mom20": mom20,
+        "inst_info": inst_info,
+        "taiex_ret": taiex_ret,
         "enabled_count": enabled_cnt,
         "tech_score": norm_score,
         "tech_signal": tech_signal,
@@ -1289,48 +1400,61 @@ def _select_optimal_model_order(
 async def orchestrate_multi_agent(req: MultiAgentRequest):
     t0 = time.perf_counter()
     sid = req.symbol.strip().upper()
-    yh_sym = req.yahoo_symbol.strip() or (f"{sid}.TW" if sid.isdigit() else sid)
 
-    # Step 1: Real-time live quote detection (bypass cache for true real-time check)
+    # Step 1: Real-time live quote detection supporting both TWSE (.TW) and TPEx (.TWO)
+    yh_candidates = []
+    if req.yahoo_symbol.strip():
+        yh_candidates.append(req.yahoo_symbol.strip())
+    if sid.isdigit():
+        if f"{sid}.TW" not in yh_candidates:
+            yh_candidates.append(f"{sid}.TW")
+        if f"{sid}.TWO" not in yh_candidates:
+            yh_candidates.append(f"{sid}.TWO")
+    elif not yh_candidates:
+        yh_candidates.append(sid)
+
     live_data = None
     live_source = ""
-    try:
-        encoded = urllib.parse.quote(yh_sym, safe="^.-=")
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=15m&range=5d"
-        st, body = await http_json(url, timeout=8.0)
-        if st == 200 and isinstance(body, dict) and (body.get("chart", {}).get("result") or []):
-            res = body["chart"]["result"][0]
-            meta = res.get("meta", {})
-            q = (res.get("indicators", {}).get("quote") or [{}])[0]
-            ts_list = res.get("timestamp") or []
-            candles = []
-            for i, ts in enumerate(ts_list):
-                c = (q.get("close") or [None])[i] if i < len(q.get("close") or []) else None
-                if c is None:
-                    continue
-                candles.append({
-                    "open": round(float((q.get("open") or [c])[i] or c), 2),
-                    "high": round(float((q.get("high") or [c])[i] or c), 2),
-                    "low": round(float((q.get("low") or [c])[i] or c), 2),
-                    "close": round(float(c), 2),
-                    "volume": int((q.get("volume") or [0])[i] or 0),
-                })
-            if candles:
-                live_p = round(float(meta.get("regularMarketPrice") or candles[-1]["close"]), 2)
-                prev_c = float(meta.get("chartPreviousClose") or candles[0]["open"])
-                live_data = {
-                    "price": live_p,
-                    "open": round(float(meta.get("regularMarketOpen") or candles[-1]["open"]), 2),
-                    "high": round(float(meta.get("regularMarketDayHigh") or max(x["high"] for x in candles[-20:])), 2),
-                    "low": round(float(meta.get("regularMarketDayLow") or min(x["low"] for x in candles[-20:])), 2),
-                    "volume": int(meta.get("regularMarketVolume") or candles[-1]["volume"]),
-                    "change_pct": round(((live_p - prev_c) / prev_c) * 100.0, 2) if prev_c > 0 else 0.0,
-                    "last_date": tw_now_str()[:16],
-                    "candles": candles[-40:],
-                }
-                live_source = f"Yahoo Finance 即時偵測 ({yh_sym})"
-    except Exception:
-        pass
+    for yh_sym in yh_candidates:
+        try:
+            encoded = urllib.parse.quote(yh_sym, safe="^.-=")
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=15m&range=5d"
+            st, body = await http_json(url, timeout=7.0)
+            if st == 200 and isinstance(body, dict) and (body.get("chart", {}).get("result") or []):
+                res = body["chart"]["result"][0]
+                meta = res.get("meta", {})
+                q = (res.get("indicators", {}).get("quote") or [{}])[0]
+                ts_list = res.get("timestamp") or []
+                candles = []
+                for i, ts in enumerate(ts_list):
+                    c = (q.get("close") or [None])[i] if i < len(q.get("close") or []) else None
+                    if c is None:
+                        continue
+                    candles.append({
+                        "open": round(float((q.get("open") or [c])[i] or c), 2),
+                        "high": round(float((q.get("high") or [c])[i] or c), 2),
+                        "low": round(float((q.get("low") or [c])[i] or c), 2),
+                        "close": round(float(c), 2),
+                        "volume": int((q.get("volume") or [0])[i] or 0),
+                    })
+                if candles:
+                    live_p = round(float(meta.get("regularMarketPrice") or candles[-1]["close"]), 2)
+                    prev_c = float(meta.get("chartPreviousClose") or candles[0]["open"])
+                    mkt_tag = "TPEx上櫃" if yh_sym.endswith(".TWO") else "TWSE上市"
+                    live_data = {
+                        "price": live_p,
+                        "open": round(float(meta.get("regularMarketOpen") or candles[-1]["open"]), 2),
+                        "high": round(float(meta.get("regularMarketDayHigh") or max(x["high"] for x in candles[-20:])), 2),
+                        "low": round(float(meta.get("regularMarketDayLow") or min(x["low"] for x in candles[-20:])), 2),
+                        "volume": int(meta.get("regularMarketVolume") or candles[-1]["volume"]),
+                        "change_pct": round(((live_p - prev_c) / prev_c) * 100.0, 2) if prev_c > 0 else 0.0,
+                        "last_date": tw_now_str()[:16],
+                        "candles": candles[-40:],
+                    }
+                    live_source = f"Yahoo Finance 即時偵測 ({yh_sym} · {mkt_tag})"
+                    break
+        except Exception:
+            continue
 
     if not live_data:
         fm = await get_finmind_market_data(sid, dataset="TaiwanFuturesDaily" if sid == "TXF" else "TaiwanStockPrice", days=45)
@@ -1347,8 +1471,11 @@ async def orchestrate_multi_agent(req: MultiAgentRequest):
         }
         live_source = f"FinMind 真實偵測 ({sid})"
 
-    # Step 2: Price-Volume + v68 Technical Switches Agents
-    tech = _evaluate_v68_indicators(live_data["candles"], req.tech_switches)
+    # Step 2: Parallel fetch real v68 chip (FinMind institutional) + TAIEX RS benchmark + evaluate switches
+    inst_task = _fetch_institutional_summary(sid) if req.tech_switches.get("inst", False) else asyncio.sleep(0, result=None)
+    rs_task = _fetch_taiex_benchmark_return() if req.tech_switches.get("rs", False) else asyncio.sleep(0, result=None)
+    inst_info, taiex_ret = await asyncio.gather(inst_task, rs_task)
+    tech = _evaluate_v68_indicators(live_data["candles"], req.tech_switches, inst_info=inst_info, taiex_ret=taiex_ret)
 
     # Step 3: Risk Gatekeeper Agent (slippage + kill switch + extremes)
     slippage_pct = 0.0

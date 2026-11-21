@@ -6,11 +6,45 @@
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)
 ![RWD](https://img.shields.io/badge/UI-RWD%20Zero--Overflow-0f172a)
 
-**SYNAPSE TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**8 大台股技術分析開關自動買賣**、**LINE Bot / Telegram 條列通知**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
+**SYNAPSE TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關自動買賣**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
 
 ---
 
-## 介面截圖（v3.0.0 實機渲染）
+## 主頁與各畫面切換動態說明（GIF 實機錄製）
+
+### 🎬 1. 主頁指揮台 → 「功能選單 ▾」七大模組彈窗切換全導覽
+> 主頁保持極簡清爽；點擊頂部「**功能選單 ▾**」即可彈窗切換 **① 技術・籌碼・RS 10 大開關 & 多 Agent**、**② AI 六模型 & Ollama**、**③ 對帳單交易復盤**、**④ 台股真實定投回測**、**⑤ LINE / TG 通知**、**⑥ 雲端部署與 Pine Script**、**⑦ 折數與帳號設定**，零跳轉不打斷看盤。
+
+![主頁與七大功能彈窗切換動態演示](docs/screenshots/demo_main_navigation.gif)
+
+| 畫面順序 | 切換入口 | 主要功能說明 |
+| :--- | :--- | :--- |
+| **主頁指揮台** | 預設首頁 | 自選股即時列、60fps 雙向 `SYN-ACK` 資料交握網路、TradingView / Yahoo / FinMind 真實線圖、下單執行票與六模型快速共識。 |
+| **① 技術開關 & 多 Agent** | `功能選單 ▾` → 彈窗頁籤 1 | 10 大 v68 開關（技術＋FinMind 三大法人籌碼＋大盤 RS）、上市 `.TW`／上櫃 `.TWO` 偵測、模型自動路由與單一標的／全自選股自動買賣。 |
+| **② AI 六模型 & Ollama** | `功能選單 ▾` → 彈窗頁籤 2 | 設定 Groq 極速 API、地端 Ollama / LM Studio（一鍵偵測本機模型）及 Grok / Gemini / Claude / ChatGPT，平行輸出六模型研判。 |
+| **③ 對帳單交易復盤** | `功能選單 ▾` → 彈窗頁籤 3 | 匯入 PDF（含密碼）/ XLSX / CSV / JSON 對帳單，支援 2.8 折退佣計算、交易健康度評分與五維能力雷達圖。 |
+| **④ 台股真實定投回測** | `功能選單 ▾` → 彈窗頁籤 4 | 多標的權重＋多階段每月定投設定，即時抓取 FinMind 真實歷史日 K 與除權息配股計算含息報酬率。 |
+| **⑤ LINE / TG 通知中心** | `功能選單 ▾` → 彈窗頁籤 5 | LINE Bot 與 Telegram 單欄位 Token 加密自動綁定（免填 Chat ID）＋ 條列股票代號與中文名稱推播預覽。 |
+| **⑥ 雲端部署與腳本** | `功能選單 ▾` → 彈窗頁籤 6 | 雲端 FastAPI 代理網址測試、FinMind Token 設定與 TradingView Pine Script v5 Webhook 腳本匯出。 |
+| **⑦ 折數與帳號設定** | `功能選單 ▾` → 彈窗頁籤 7 | 全域手續費折數連動（預設 `2.8` 折，可修改，最低 `6.0` 折）與 TradingView 進階帳號／雲端 Layout 綁定。 |
+
+---
+
+### 🎬 2. 主頁雙向資料交握動畫 × 下單實時偵測多 Agent 預檢
+> 即時呈現系統各節點之間的雙向封包交握；送出下單前自動即時抓取最新股價、核對滑價與 10 大開關評分，並依盤中量比與波動自動切換最適 AI 模型。
+
+![主頁雙向交握與下單多 Agent 實時預檢演示](docs/screenshots/demo_handshake_order.gif)
+
+---
+
+### 🎬 3. Telegram Bot 僅填 Bot Token 加密自動綁定流程（免填 Chat ID）
+> 僅輸入 `@BotFather` 提供之 `Bot Token` → 驗證有效後加密存檔並遮罩 → 發行一次性防搶先 `/start <setup_code>` → 輪詢 `getUpdates` 自動鎖定建立者 `owner_chat_id` 並令設定碼失效 → 一鍵發送 HTML 測試與自動交易推播。
+
+![Telegram Bot 僅填 Token 自動綁定演示](docs/screenshots/demo_telegram_autobind.gif)
+
+---
+
+## 各模組高解析度靜態截圖（v3.2.0 實機渲染）
 
 ### 1. 總覽指揮台：雙向資料交流交握網路 × 選單彈窗架構
 > 60fps 呈現 Yahoo Finance、FinMind v4、TradingView、台股訊號引擎、AI 六模型 & 多 Agent、LINE Bot、Telegram 與永豐金 Shioaji 之間的即時 `SYN-ACK` 雙向交握封包；進階模組統一收合於頂部「**功能選單 ▾**」彈窗，保持主畫面簡潔。
@@ -18,7 +52,7 @@
 ![SYNAPSE TW 總覽指揮台](docs/screenshots/desk_overview.png)
 
 ### 2. 下單實時偵測最新股價 ＋ 價量多 Agent 自動選模預檢
-> 送單前自動繞過快取即時抓取最新真實股價、計算即時滑價，同步執行價量動能 Agent、8 大技術開關投票與風控守門員，並依盤中量比／振幅／背離自動切換最適 AI 模型（若遇超買賣、滑價超標或方向衝突，系統會彈出警示確認機制）。
+> 送單前自動繞過快取即時抓取最新真實股價、計算即時滑價，同步執行價量動能 Agent、10 大技術・籌碼・RS 開關投票與風控守門員，並依盤中量比／振幅／背離自動切換最適 AI 模型（若遇超買賣、滑價超標或方向衝突，系統會彈出警示確認機制）。
 
 ![下單實時價量多 Agent 預檢](docs/screenshots/order_agent_precheck.png)
 

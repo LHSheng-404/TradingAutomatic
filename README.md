@@ -17,17 +17,27 @@
 
 ![SYNAPSE TW 總覽指揮台](docs/screenshots/desk_overview.png)
 
-### 2. AI 四模型多維度解析（Grok · Gemini · Claude · ChatGPT）× 台股自動訊號掃描
+### 2. 對帳單交易復盤（支援 PDF 含密碼 / XLSX / CSV / JSON 匯入與退佣試算）
+> 透過頂部「**功能選單 ▾**」彈窗開啟，支援券商對帳單匯入、手續費折數（預設 `2.8` 折，可修改，最低 `6` 折）預估退佣計算、交易健康度評分、五維能力雷達圖與一鍵送交 AI 四模型復盤。
+
+![對帳單交易復盤彈窗](docs/screenshots/review_modal.png)
+
+### 3. 台股真實定投回測（FinMind 真實歷史股價＋除權息配股）
+> 支援多標的權重配置與多階段每月扣款設定，即時向 FinMind 抓取真實歷史日 K 與 `TaiwanStockDividend` 除權息配股資料，計算含息總報酬率 ROI 與手續費折數影響。
+
+![台股真實定投回測彈窗](docs/screenshots/dca_backtest_modal.png)
+
+### 4. AI 四模型多維度解析（Grok · Gemini · Claude · ChatGPT）× 台股自動訊號掃描
 > 僅注入已驗證的真實 OHLCV、EMA(5/12)、RSI(14)、VWAP 指標進行四模型平行研判與共識彙整，並完整呈現 **股票代號＋中文名稱**。
 
 ![AI 四模型解析與訊號掃描](docs/screenshots/ai_scanner.png)
 
-### 3. LINE Bot & Telegram 條列通知中心
+### 5. LINE Bot & Telegram 條列通知中心
 > 支援 LINE Messaging API Push 與 Telegram Bot，訊息採條列對齊格式，完整顯示每檔標的之**股票代號、中文名稱、現價、漲跌幅、RSI 與觸發依據**。
 
 ![LINE Bot 與 Telegram 通知中心](docs/screenshots/notify_line_tg.png)
 
-### 4. RWD 行動裝置自適應介面（390px 零水平溢出）
+### 6. RWD 行動裝置自適應介面（390px 零水平溢出）
 > 手機解析度下交握拓撲自動切換為 3 層不重疊排版，所有圖表、卡片與表格均嚴格防溢出。
 
 <p align="center">
@@ -36,16 +46,18 @@
 
 ---
 
-## 六大核心功能
+## 核心功能（v2.0.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 雙向資料交握視覺化 & RWD** | 高解析 Canvas 60fps 雙向 `SYN → ACK` 封包、旋轉交握環與節點即時檢視器；桌面／平板／手機零溢出自適應，並支援台股「紅漲綠跌／國際綠漲紅跌」切換。 |
-| **2. TradingView 進階線圖與帳號登入** | 內嵌 TradingView 即時線圖（支援多週期、EMA/RSI、MACD/布林、VWAP、KD、繪圖工具列與亮暗主題）；提供「登入 TradingView 進階圖表」與自訂雲端 Layout 網址綁定，並自動產生 Pine Script v5 Webhook 腳本。 |
-| **3. LINE Bot & Telegram 條列推播** | 透過後端 `/api/v1/notify/broadcast` 轉發免除瀏覽器 CORS 限制；單筆訊號、全市場彙整、AI 共識報告與成交回報皆完整條列**股票代號與中文名稱**。 |
-| **4. 四模型 AI 輔助解析** | 平行掛載 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)**，輸出各模型看多／觀望／看空評級、信心分數、支撐壓力與風控提醒；未設定 API Key 時自動以真實數據本地量化摘要透明運作，絕不造假。 |
-| **5. Yahoo & FinMind 真實台股行情** | 預設優先透過雲端後端代理抓取 **Yahoo Finance**（15m 盤中）與 **FinMind v4**（`TaiwanStockPrice` / `TaiwanFuturesDaily` / `TaiwanStockInfo`），嚴禁任何假報價猜測；支援輸入任意 4～6 碼台股代號即時驗證官方中文名稱並加入監控。 |
-| **6. 模擬下單 (SIM) / 真實下單 (LIVE)** | 預設為模擬盤 SIM（依真實同步報價紙上撮合，計算台股 2.8 折手續費與證交稅，記錄 SQLite 稽核日誌並匯出 CSV）；切換至真實盤 LIVE 須通過雙重安全檢核，並要求伺服器已配置永豐金 Shioaji 金鑰與 `Sinopac.pfx` 憑證，否則自動阻斷。 |
+| **1. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
+| **2. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
+| **3. 對帳單交易復盤** | 參考 `Trading Pro V11.3`：支援多選匯入 PDF（含密碼解鎖與台灣券商商品名稱映射）、XLSX、CSV、JSON，提供預估退佣、實際淨損益、勝率、獲利因子、最大回撤、五維能力雷達與 AI 復盤診斷。 |
+| **4. 台股真實定投回測查詢** | 參考 `台股真實定投回測 v16`：多標的權重＋多階段每月定投日設定，向 FinMind 即時抓取真實歷史日 K、現金股利、除權配股與分割／減資紀錄，嚴禁猜測假數據。 |
+| **5. TradingView 進階線圖與帳號登入** | 內嵌 TradingView 即時線圖（多週期、EMA/RSI、MACD/布林、VWAP、KD、繪圖工具列）；提供「登入 TradingView 進階圖表」、雲端 Layout 綁定與 Pine Script v5 Webhook 腳本。 |
+| **6. LINE Bot & Telegram 條列推播** | 透過後端 `/api/v1/notify/broadcast` 轉發免除 CORS；單筆訊號、全市場彙整、AI 共識報告與成交回報皆完整條列**股票代號與中文名稱**。 |
+| **7. 四模型 AI 輔助解析** | 平行掛載 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)**，輸出各模型評級、信心分數、支撐壓力與風控提醒。 |
+| **8. Yahoo & FinMind 真實行情＋SIM/LIVE 切換** | 優先抓取真實盤中與歷史數據，支援任意台股代號查詢；預設模擬盤 SIM，切換真實盤 LIVE 須通過雙重安全檢核與永豐金 Shioaji CA 憑證驗證。 |
 
 ---
 
@@ -56,12 +68,12 @@
 
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v1.0.0-linux-x64
-  ./SYNAPSE-TW-v1.0.0-linux-x64
+  chmod +x SYNAPSE-TW-v2.0.0-linux-x64
+  ./SYNAPSE-TW-v2.0.0-linux-x64
   ```
 - **Windows / macOS（自動建置或使用可攜版）**：
-  - 若下載 `SYNAPSE-TW-v1.0.0-windows-x64.exe`：直接雙擊執行即可自動開啟瀏覽器。
-  - 若下載 `SYNAPSE-TW-v1.0.0-portable.zip`：解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 若下載 `SYNAPSE-TW-v2.0.0-windows-x64.exe`：直接雙擊執行即可自動開啟瀏覽器。
+  - 若下載 `SYNAPSE-TW-v2.0.0-portable.zip`：解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
 

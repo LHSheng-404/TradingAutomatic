@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
       --bg-page: #f3f6fb;
@@ -1084,10 +1086,218 @@
     @media (max-width: 768px) {
       .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+
+    /* Feature Menu Dropdown */
+    .menu-wrap {
+      position: relative;
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 288px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.22);
+      padding: 6px;
+      z-index: 70;
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .menu-dropdown.open {
+      display: flex;
+      animation: slideUp 0.14s ease;
+    }
+
+    @media (max-width: 640px) {
+      .menu-dropdown {
+        left: 0;
+        width: min(296px, calc(100vw - 24px));
+      }
+    }
+
+    .menu-item {
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      padding: 9px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transition: background 0.14s ease;
+      font-family: inherit;
+    }
+
+    .menu-item:hover {
+      background: var(--bg-subtle);
+    }
+
+    .menu-item-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .menu-item-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--ink-1);
+      line-height: 1.25;
+    }
+
+    .menu-item-desc {
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 6px;
+    }
+
+    /* Large Unified Feature Studio Modal */
+    .modal-dialog-xl {
+      max-width: 1180px;
+      width: 100%;
+      max-height: 92vh;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .studio-modal-head {
+      padding: 14px 18px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .studio-pills {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .studio-pill {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--ink-2);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .studio-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .studio-pill.active {
+      background: var(--ink-1);
+      border-color: var(--ink-1);
+      color: #ffffff;
+    }
+
+    .studio-modal-body {
+      padding: 18px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      background: var(--bg-page);
+    }
+
+    .studio-pane {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .studio-pane.active {
+      display: flex;
+    }
+
+    .score-ring {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .score-ring-inner {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--ink-1);
+    }
+
+    .upload-dropzone {
+      border: 2px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      background: var(--bg-subtle);
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .upload-dropzone:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 960px) {
+      .grid-3 { grid-template-columns: minmax(0, 1fr); }
+    }
   </style>
 </head>
 <body>
-  <!-- Sticky Top Navigation -->
+  <!-- Sticky Top Navigation (Clean Menu-Driven Header) -->
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
@@ -1097,18 +1307,72 @@
             SYNAPSE TW
             <span class="badge badge-blue">全自動台股中控台</span>
           </h1>
-          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 多模型 AI × LINE / TG × 模擬 / 實盤</p>
+          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 四模型 AI × 復盤定投回測</p>
         </div>
       </div>
 
-      <nav class="nav-tabs" aria-label="主導覽">
-        <button class="nav-btn active" data-tab="desk"><i data-lucide="activity" style="width:14px;height:14px;"></i>總覽指揮台</button>
-        <button class="nav-btn" data-tab="ai"><i data-lucide="cpu" style="width:14px;height:14px;"></i>AI 多模型解析</button>
-        <button class="nav-btn" data-tab="notify"><i data-lucide="bell-ring" style="width:14px;height:14px;"></i>LINE / TG 通知中心</button>
-        <button class="nav-btn" data-tab="deploy"><i data-lucide="cloud" style="width:14px;height:14px;"></i>雲端部署與腳本</button>
-      </nav>
+      <!-- Unified Feature Menu Dropdown (Opens Modal Studio to keep main screen clean) -->
+      <div class="menu-wrap">
+        <button id="btnFeatureMenu" type="button" class="btn btn-dark" aria-expanded="false" aria-haspopup="true">
+          <i data-lucide="layout-grid" style="width:14px;height:14px;"></i>
+          <span>功能選單</span>
+          <i data-lucide="chevron-down" style="width:13px;height:13px;"></i>
+        </button>
+        <div id="featureMenuDropdown" class="menu-dropdown" role="menu">
+          <button type="button" class="menu-item" data-open-studio="review">
+            <span class="menu-item-icon"><i data-lucide="file-spreadsheet" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">對帳單交易復盤</div>
+              <div class="menu-item-desc">匯入 PDF / XLSX / CSV / JSON · 退佣與健康度雷達</div>
+            </div>
+          </button>
+          <button type="button" class="menu-item" data-open-studio="dca">
+            <span class="menu-item-icon" style="background:#f0fdfa;color:#0f766e;"><i data-lucide="trending-up" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">台股真實定投回測</div>
+              <div class="menu-item-desc">FinMind 歷史股價＋除權息配股 · 多標的權重回測</div>
+            </div>
+          </button>
+          <div class="menu-divider"></div>
+          <button type="button" class="menu-item" data-open-studio="ai">
+            <span class="menu-item-icon" style="background:#eef2ff;color:#4338ca;"><i data-lucide="cpu" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">AI 四模型解析中心</div>
+              <div class="menu-item-desc">Grok Bot · Gemini · Claude · ChatGPT 金鑰與研判</div>
+            </div>
+          </button>
+          <button type="button" class="menu-item" data-open-studio="notify">
+            <span class="menu-item-icon" style="background:#ecfdf5;color:#15803d;"><i data-lucide="bell-ring" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">LINE Bot / Telegram 通知中心</div>
+              <div class="menu-item-desc">條列股票代號＋中文名稱推播預覽與通道設定</div>
+            </div>
+          </button>
+          <button type="button" class="menu-item" data-open-studio="deploy">
+            <span class="menu-item-icon" style="background:#f1f5f9;color:#334155;"><i data-lucide="cloud" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">雲端部署與 Pine Script</div>
+              <div class="menu-item-desc">後端代理連線、FinMind Token、自動單腳本</div>
+            </div>
+          </button>
+          <div class="menu-divider"></div>
+          <button type="button" class="menu-item" data-open-studio="settings">
+            <span class="menu-item-icon" style="background:#fffbeb;color:#b45309;"><i data-lucide="sliders-horizontal" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">手續費折數與帳號設定</div>
+              <div class="menu-item-desc">預設 2.8 折（最低 6 折）· TradingView 帳號綁定</div>
+            </div>
+          </button>
+        </div>
+      </div>
 
       <div class="top-controls">
+        <!-- Quick Fee Discount Pill -->
+        <button id="btnHeaderFeePill" type="button" class="btn btn-sm" title="點擊修改手續費折數（預設 2.8 折，最低 6 折）">
+          <i data-lucide="percent" style="width:12px;height:12px;color:var(--amber);"></i>
+          <span>手續費 <strong id="headerFeeLabel" class="mono">2.8</strong> 折</span>
+        </button>
+
         <!-- SIM / LIVE Trading Mode Switch -->
         <div class="env-switch" role="group" aria-label="模擬與真實下單切換">
           <button id="btnModeSim" class="env-pill active-sim" title="模擬下單模式（依真實報價紙上撮合）">模擬下單 SIM</button>
@@ -1117,10 +1381,6 @@
 
         <button id="btnColorScheme" class="btn btn-sm" title="切換台股紅漲綠跌 / 國際綠漲紅跌">
           <span id="colorSchemeLabel">紅漲綠跌</span>
-        </button>
-
-        <button id="btnOpenSettings" class="btn btn-sm">
-          <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i>API / 金鑰
         </button>
 
         <button id="btnKillSwitch" class="btn btn-sm btn-danger">
@@ -1375,12 +1635,19 @@
               </div>
 
               <div class="order-summary mono">
+                <div class="order-summary-row" style="padding-bottom:4px;border-bottom:1px dashed var(--border);margin-bottom:2px;">
+                  <span style="font-family:inherit;font-weight:700;">手續費折數（預設2.8｜最低6折）</span>
+                  <div style="display:inline-flex;align-items:center;gap:4px;">
+                    <input id="orderFeeDiscountInput" type="number" min="0.1" max="6.0" step="0.1" value="2.8" class="input mono" style="width:66px;padding:3px 6px;text-align:center;font-weight:800;" />
+                    <span style="font-family:inherit;font-weight:700;">折</span>
+                  </div>
+                </div>
                 <div class="order-summary-row">
                   <span>預估委託金額</span>
                   <strong id="estNotional">$0</strong>
                 </div>
                 <div class="order-summary-row">
-                  <span>手續費 (2.8折) / 證交稅</span>
+                  <span>手續費 (<span id="ticketFeeRateLabel">2.8</span>折) / 證交稅</span>
                   <span id="estFeeTax">$0 / $0</span>
                 </div>
                 <div class="order-summary-row">
@@ -1515,9 +1782,14 @@
               <h2 class="card-title">模擬 / 實盤委託成交稽核紀錄</h2>
               <p class="card-subtitle">完整記錄交易模式 (SIM/LIVE)、時間戳、手續費與證交稅</p>
             </div>
-            <button id="btnExportOrdersCsv" class="btn btn-sm">
-              <i data-lucide="download" style="width:13px;height:13px;"></i>匯出 CSV
-            </button>
+            <div class="chart-group">
+              <button id="btnSendOrdersToReview" class="btn btn-sm btn-primary">
+                <i data-lucide="file-spreadsheet" style="width:13px;height:13px;"></i>送往對帳復盤
+              </button>
+              <button id="btnExportOrdersCsv" class="btn btn-sm">
+                <i data-lucide="download" style="width:13px;height:13px;"></i>匯出 CSV
+              </button>
+            </div>
           </div>
           <div class="card-body" style="padding:0;">
             <div class="table-wrap">
@@ -1539,202 +1811,606 @@
         </article>
       </div>
     </section>
+  </main>
 
-    <!-- ==================== TAB 2: AI MULTI-MODEL STUDIO ==================== -->
-    <section id="tab-ai" class="tab-section">
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2 class="card-title">多模型 AI 深度解析工作室（Grok Bot · Gemini · Claude · ChatGPT）</h2>
-            <p class="card-subtitle">支援自訂分析提問，同步調用四家主流大型語言模型 API（可透過雲端後端安全代理或瀏覽器金鑰直連）</p>
-          </div>
-          <button id="btnRunAiStudio" class="btn btn-primary">
-            <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行四模型深度解析
+  <!-- ==================== UNIFIED FEATURE STUDIO MODAL (6 MODULES) ==================== -->
+  <div id="featureStudioModal" class="modal-backdrop">
+    <div class="modal-dialog modal-dialog-xl">
+      <div class="studio-modal-head">
+        <div class="studio-pills" role="tablist" aria-label="功能彈窗切換">
+          <button type="button" class="studio-pill active" data-studio-pane="review">
+            <i data-lucide="file-spreadsheet" style="width:13px;height:13px;"></i>對帳單復盤
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="dca">
+            <i data-lucide="trending-up" style="width:13px;height:13px;"></i>台股真實定投回測
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="ai">
+            <i data-lucide="cpu" style="width:13px;height:13px;"></i>AI 四模型
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="notify">
+            <i data-lucide="bell-ring" style="width:13px;height:13px;"></i>LINE / TG 通知
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="deploy">
+            <i data-lucide="cloud" style="width:13px;height:13px;"></i>雲端部署與腳本
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="settings">
+            <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i>折數與設定
           </button>
         </div>
-        <div class="card-body">
-          <div class="grid-2" style="margin-bottom:14px;">
-            <div>
-              <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
-              <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
+        <button type="button" class="btn btn-sm" data-close-modal="featureStudioModal">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>關閉視窗
+        </button>
+      </div>
+
+      <div class="studio-modal-body">
+
+        <!-- ========== PANE 1: STATEMENT REVIEW & BACKTEST (Trading_Pro_V11.3_Analysis) ========== -->
+        <div id="studio-review" class="studio-pane active">
+          <!-- Top Control & Import Card -->
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">對帳單交易復盤與績效分析（支援 PDF / XLSX / CSV / JSON）</h2>
+                <p class="card-subtitle">參考 Trading Pro V11.3：支援多檔對帳單匯入、商品名稱自動映射、手續費退佣計算、交易健康評分與 AI 復盤</p>
+              </div>
+              <div class="chart-group">
+                <div style="display:inline-flex;align-items:center;gap:6px;background:var(--amber-soft);border:1px solid #fde68a;border-radius:9px;padding:4px 10px;font-size:12px;">
+                  <span style="font-weight:700;color:#92400e;">手續費折數</span>
+                  <input id="reviewFeeDiscountInput" type="number" min="0.1" max="6.0" step="0.1" value="2.8" class="input mono" style="width:62px;padding:3px 6px;text-align:center;font-weight:800;" />
+                  <span style="font-weight:700;color:#92400e;">折（最低6折）</span>
+                </div>
+                <button id="btnReviewLoadSample" type="button" class="btn btn-sm">載入範例對帳單</button>
+                <button id="btnReviewImportSysOrders" type="button" class="btn btn-sm btn-teal">導入本系統成交</button>
+                <button id="btnReviewExportCsv" type="button" class="btn btn-sm">匯出復盤 CSV</button>
+                <button id="btnReviewClear" type="button" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;">清空資料</button>
+              </div>
             </div>
-            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
-              <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">模型掛載與 API 金鑰狀態</div>
-              <div class="form-grid-2" style="margin-bottom:8px;">
-                <div>
-                  <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
-                  <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+            <div class="card-body">
+              <div class="grid-2" style="align-items:center;">
+                <div class="upload-dropzone">
+                  <div style="font-size:13px;font-weight:800;color:var(--ink-1);margin-bottom:4px;">匯入券商對帳單（可多選）</div>
+                  <div style="font-size:11.5px;color:var(--ink-3);margin-bottom:10px;">支援永豐／元大／凱基等台灣券商 PDF（含密碼）、XLSX、CSV、JSON</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;">
+                    <input id="reviewPdfPassword" type="password" class="input" style="max-width:210px;" placeholder="PDF 密碼（選填，如身分證字號）" />
+                    <label for="reviewFileInput" class="btn btn-primary" style="cursor:pointer;">
+                      <i data-lucide="upload" style="width:14px;height:14px;"></i>選擇對帳單檔案
+                    </label>
+                    <input id="reviewFileInput" type="file" accept=".pdf,.xlsx,.csv,.json,application/pdf" multiple style="display:none;" />
+                  </div>
+                  <div id="reviewSourceStatus" style="font-size:11px;color:var(--ink-3);margin-top:8px;">資料來源：尚未匯入（可上傳檔案或點「載入範例對帳單」）</div>
                 </div>
-                <div>
-                  <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
-                  <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
-                </div>
-                <div>
-                  <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
-                  <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
-                </div>
-                <div>
-                  <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
-                  <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+
+                <!-- Filters -->
+                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="font-size:12px;font-weight:800;color:var(--ink-1);">多維度篩選條件</div>
+                  <div class="form-grid-2" style="margin-bottom:0;">
+                    <div>
+                      <label class="field-label" for="revDateStart">起始日期</label>
+                      <input id="revDateStart" type="date" class="input mono" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="revDateEnd">結束日期</label>
+                      <input id="revDateEnd" type="date" class="input mono" />
+                    </div>
+                  </div>
+                  <div class="grid-3" style="gap:8px;">
+                    <div>
+                      <label class="field-label" for="revTypeFilter">交易類型</label>
+                      <select id="revTypeFilter" class="select">
+                        <option value="all">全部</option>
+                        <option value="day">當沖</option>
+                        <option value="hold">留倉</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label" for="revResultFilter">損益結果</label>
+                      <select id="revResultFilter" class="select">
+                        <option value="all">全部</option>
+                        <option value="win">僅獲利</option>
+                        <option value="loss">僅虧損</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label" for="revSymbolFilter">標的篩選</label>
+                      <select id="revSymbolFilter" class="select">
+                        <option value="all">全部標的</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機瀏覽器 localStorage；雲端部署建議寫入伺服器 .env</span>
-                <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存 AI 金鑰</button>
-              </div>
+            </div>
+          </article>
+
+          <!-- 8 KPI Summary Cards -->
+          <div class="kpi-strip">
+            <div class="card" style="padding:12px 14px;background:#ecfdf5;border-color:#a7f3d0;">
+              <div style="font-size:11px;font-weight:700;color:#065f46;">實際淨損益（含預估退佣）</div>
+              <div id="revRealPnl" class="mono" style="font-size:20px;font-weight:800;color:#047857;">--</div>
+              <div style="font-size:10.5px;color:#047857;">帳面損益 + 退佣折讓</div>
+            </div>
+            <div class="card" style="padding:12px 14px;background:#fffbeb;border-color:#fde68a;">
+              <div style="font-size:11px;font-weight:700;color:#92400e;">預估手續費退佣</div>
+              <div id="revRefundAmt" class="mono" style="font-size:20px;font-weight:800;color:#b45309;">--</div>
+              <div style="font-size:10.5px;color:#92400e;">依目前折數 <span id="revDiscountLabel" class="mono">2.8</span> 折計算</div>
+            </div>
+            <div class="card" style="padding:12px 14px;">
+              <div style="font-size:11px;font-weight:700;color:var(--ink-3);">帳面損益 (Net) / 勝率</div>
+              <div id="revNetWin" class="mono" style="font-size:16px;font-weight:800;color:var(--ink-1);">--</div>
+              <div id="revWinDetail" style="font-size:10.5px;color:var(--ink-3);">0 獲利 / 0 筆</div>
+            </div>
+            <div class="card" style="padding:12px 14px;">
+              <div style="font-size:11px;font-weight:700;color:var(--ink-3);">獲利因子 PF / 最大回撤 DD</div>
+              <div id="revPfDd" class="mono" style="font-size:16px;font-weight:800;color:var(--ink-1);">--</div>
+              <div id="revVolNote" class="mono" style="font-size:10.5px;color:var(--ink-3);">總成交量：$0</div>
             </div>
           </div>
-          <div id="aiStudioResults" class="grid-ai-4"></div>
+
+          <!-- Charts + Health Diagnosis -->
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title">損益與資金成長曲線</h3>
+                </div>
+                <select id="revChartMode" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;">
+                  <option value="cum" selected>累積損益曲線</option>
+                  <option value="daily">每日損益柱狀圖</option>
+                  <option value="capital">資金成長曲線</option>
+                </select>
+              </div>
+              <div class="card-body">
+                <div style="position:relative;height:250px;width:100%;">
+                  <canvas id="revPnlChart"></canvas>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title">交易健康度評分 &amp; 能力雷達</h3>
+                </div>
+                <button id="btnRevAskAi" type="button" class="btn btn-sm btn-primary">送交 AI 四模型復盤</button>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;">
+                  <div id="revScoreRing" class="score-ring" style="background:conic-gradient(#e2e8f0 100%, #e2e8f0 0);">
+                    <div class="score-ring-inner">
+                      <span id="revHealthScore" class="mono">0</span>
+                      <span style="font-size:9px;color:var(--ink-4);font-weight:700;">健康分</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;min-width:180px;position:relative;height:140px;">
+                    <canvas id="revRadarChart"></canvas>
+                  </div>
+                </div>
+                <div id="revAdviceList" style="display:flex;flex-direction:column;gap:6px;font-size:11.5px;"></div>
+              </div>
+            </article>
+          </div>
+
+          <!-- Symbol Ranking Chart + Day/Hold Doughnut + Top3 -->
+          <div class="grid-3">
+            <article class="card" style="grid-column:span 1;">
+              <div class="card-header"><h3 class="card-title">個股損益排行</h3></div>
+              <div class="card-body"><div style="position:relative;height:200px;"><canvas id="revSymbolChart"></canvas></div></div>
+            </article>
+            <article class="card">
+              <div class="card-header"><h3 class="card-title">當沖 / 留倉佔比</h3></div>
+              <div class="card-body"><div style="position:relative;height:200px;"><canvas id="revTypeChart"></canvas></div></div>
+            </article>
+            <article class="card">
+              <div class="card-header"><h3 class="card-title">獲利 / 虧損 Top 3</h3></div>
+              <div class="card-body" id="revTopRankList" style="display:flex;flex-direction:column;gap:6px;font-size:12px;"></div>
+            </article>
+          </div>
+
+          <!-- Detailed Statement Table -->
+          <article class="card">
+            <div class="card-header">
+              <h3 class="card-title">交易復盤明細表</h3>
+              <span id="revTableMeta" class="badge badge-slate">共 0 筆</span>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-wrap" style="max-height:280px;overflow-y:auto;">
+                <table class="data-table" style="min-width:640px;">
+                  <thead>
+                    <tr>
+                      <th>日期</th>
+                      <th>股票代號 / 名稱</th>
+                      <th>類型</th>
+                      <th class="num-right">買進金額</th>
+                      <th class="num-right">賣出金額</th>
+                      <th class="num-right">原始手續費</th>
+                      <th class="num-right">淨損益</th>
+                    </tr>
+                  </thead>
+                  <tbody id="revTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
         </div>
-      </article>
-    </section>
 
-    <!-- ==================== TAB 3: LINE BOT & TELEGRAM NOTIFICATION CENTER ==================== -->
-    <section id="tab-notify" class="tab-section">
-      <div class="grid-2">
-        <!-- Left: LINE & Telegram Credentials -->
-        <article class="card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h2 class="card-title">LINE Bot &amp; Telegram 推播通道設定</h2>
-              <p class="card-subtitle">採用 LINE Messaging API Push（支援個人與群組）與 Telegram Bot API</p>
-            </div>
-            <button id="btnSaveNotifyCfg" class="btn btn-sm btn-dark">儲存通道設定</button>
-          </div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
-            <div style="padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <strong style="color:#166534;font-size:13px;">LINE Bot (Messaging API)</strong>
-                <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
-                  <input id="cfgLineEnabled" type="checkbox" />啟用 LINE 推播
-                </label>
+        <!-- ========== PANE 2: REAL TAIWAN STOCK DCA BACKTEST (台股真實定投回測_v16) ========== -->
+        <div id="studio-dca" class="studio-pane">
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">台股真實定投回測查詢（FinMind 真實歷史股價＋除權息配股）</h2>
+                <p class="card-subtitle">參考台股真實定投回測 v16：支援多標的權重配置、多階段定投金額、真實現金股利、配股／分割計算與手續費折數連動，嚴禁假數據</p>
               </div>
-              <div class="form-grid-2">
-                <div>
-                  <label class="field-label" for="cfgLineToken">Channel Access Token</label>
-                  <input id="cfgLineToken" type="password" class="input mono" placeholder="貼上長期 Channel Access Token" />
-                </div>
-                <div>
-                  <label class="field-label" for="cfgLineTarget">Target User / Group ID</label>
-                  <input id="cfgLineTarget" type="text" class="input mono" placeholder="Uxxxx... 或 Cxxxx..." />
-                </div>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
-                <span style="font-size:11px;color:#15803d;">連接雲端後端時自動經 /api/v1/notify/broadcast 轉發，免除 CORS 限制</span>
-                <button id="btnTestLine" type="button" class="btn btn-sm btn-teal">發送 LINE 測試訊號</button>
+              <div class="chart-group">
+                <button id="btnRunDcaBacktest" type="button" class="btn btn-primary">
+                  <i data-lucide="play" style="width:14px;height:14px;"></i>開始真實回測
+                </button>
+                <button id="btnExportDcaCsv" type="button" class="btn btn-sm">匯出明細 CSV</button>
               </div>
             </div>
-
-            <div style="padding:12px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <strong style="color:#075985;font-size:13px;">Telegram Bot</strong>
-                <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
-                  <input id="cfgTgEnabled" type="checkbox" />啟用 Telegram 推播
-                </label>
-              </div>
-              <div class="form-grid-2">
-                <div>
-                  <label class="field-label" for="cfgTgToken">Bot Token (@BotFather)</label>
-                  <input id="cfgTgToken" type="password" class="input mono" placeholder="123456789:AAH..." />
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+              <!-- Portfolio & Search -->
+              <div class="grid-2">
+                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="font-size:12px;font-weight:800;">1. 加入台股回測標的（自動查 FinMind 官方名稱）</div>
+                  <div style="display:flex;gap:6px;">
+                    <input id="dcaAddStockInput" type="text" maxlength="8" class="input mono" placeholder="輸入代號如 0050、2330、0056、00878" />
+                    <button id="btnDcaAddStock" type="button" class="btn btn-dark btn-sm">加入組合</button>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-sm" data-dca-quick="0050|元大台灣50">+ 0050 元大台灣50</button>
+                    <button type="button" class="btn btn-sm" data-dca-quick="2330|台積電">+ 2330 台積電</button>
+                    <button type="button" class="btn btn-sm" data-dca-quick="0056|元大高股息">+ 0056 元大高股息</button>
+                    <button type="button" class="btn btn-sm" data-dca-quick="00878|國泰永續高股息">+ 00878 國泰高股息</button>
+                  </div>
                 </div>
-                <div>
-                  <label class="field-label" for="cfgTgChatId">Chat ID / 頻道 ID</label>
-                  <input id="cfgTgChatId" type="text" class="input mono" placeholder="例如 -1001234567890" />
+
+                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-size:12px;font-weight:800;">已選投資組合與權重配置</span>
+                    <span id="dcaWeightTotal" class="badge badge-blue mono">總權重：100%</span>
+                  </div>
+                  <div id="dcaPortfolioList" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;"></div>
                 </div>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
-                <span style="font-size:11px;color:#0369a1;">支援瀏覽器直連 api.telegram.org 與雲端後端雙模式發送</span>
-                <button id="btnTestTg" type="button" class="btn btn-sm btn-primary">發送 Telegram 測試訊號</button>
+
+              <!-- Multi-Phase Monthly DCA Strategy -->
+              <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                  <span style="font-size:12px;font-weight:800;">2. 多階段每月定期定額設定</span>
+                  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;">
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                      <input id="dcaCalcSplitChk" type="checkbox" checked />計算配股 / 分割 / 減資
+                    </label>
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                      <input id="dcaApplyFeeChk" type="checkbox" checked />扣除手續費 (<span id="dcaFeeRateLabel" class="mono">2.8</span>折)
+                    </label>
+                    <label style="display:inline-flex;align-items:center;gap:5px;">
+                      每月扣款日：
+                      <input id="dcaDeductionDay" type="number" min="1" max="31" value="6" class="input mono" style="width:58px;padding:3px 6px;text-align:center;" /> 日
+                    </label>
+                    <button id="btnDcaAddPhase" type="button" class="btn btn-sm">+ 新增投入階段</button>
+                  </div>
+                </div>
+                <div id="dcaPhasesList" style="display:flex;flex-direction:column;gap:6px;"></div>
+                <div id="dcaStatusBanner" style="font-size:11.5px;color:var(--ink-3);">就緒：點擊「開始真實回測」將即時向 FinMind 抓取真實日 K 與除權息資料。</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- DCA Results Area -->
+          <div id="dcaResultSection" style="display:none;flex-direction:column;gap:14px;">
+            <div class="kpi-strip">
+              <div class="card" style="padding:12px 14px;">
+                <div style="font-size:11px;font-weight:700;color:var(--ink-3);">總投入成本（含手續費）</div>
+                <div id="dcaKpiCost" class="mono" style="font-size:18px;font-weight:800;">$0</div>
+                <div id="dcaKpiFees" class="mono" style="font-size:10.5px;color:var(--ink-3);">累計手續費：$0</div>
+              </div>
+              <div class="card" style="padding:12px 14px;">
+                <div style="font-size:11px;font-weight:700;color:var(--ink-3);">累積真實現金股利</div>
+                <div id="dcaKpiDiv" class="mono" style="font-size:18px;font-weight:800;color:var(--accent-dark);">$0</div>
+                <div id="dcaKpiSplit" class="mono" style="font-size:10.5px;color:var(--ink-3);">配股/分割異動：0 股</div>
+              </div>
+              <div class="card" style="padding:12px 14px;">
+                <div style="font-size:11px;font-weight:700;color:var(--ink-3);">最新真實總市值</div>
+                <div id="dcaKpiValue" class="mono" style="font-size:18px;font-weight:800;">$0</div>
+                <div id="dcaKpiDateRange" class="mono" style="font-size:10.5px;color:var(--ink-3);">區間：--</div>
+              </div>
+              <div id="dcaKpiProfitCard" class="card" style="padding:12px 14px;background:#ecfdf5;border-color:#a7f3d0;">
+                <div style="font-size:11px;font-weight:700;color:#065f46;">總獲利（含息）與報酬率 ROI</div>
+                <div id="dcaKpiProfit" class="mono" style="font-size:18px;font-weight:800;color:#047857;">$0 (0%)</div>
+                <div style="font-size:10.5px;color:#047857;">市值 + 現金股利 - 投入成本</div>
               </div>
             </div>
 
-            <div>
-              <div style="font-size:12px;font-weight:800;margin-bottom:6px;">推播投遞日誌</div>
-              <div id="notifyLogsBox" class="msg-preview-box" style="max-height:190px;font-size:11px;">尚無推播紀錄。</div>
-            </div>
-          </div>
-        </article>
-
-        <!-- Right: Structured Itemized Message Preview -->
-        <article class="card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h2 class="card-title">訊號條列預覽（完整呈現股票代號與中文名稱）</h2>
-              <p class="card-subtitle">LINE Bot 與 Telegram 實際發送之整齊排版預覽</p>
-            </div>
-            <div class="chart-group">
-              <button id="btnRefreshPreview" class="btn btn-sm">更新預覽</button>
-              <button id="btnSendPreviewNow" class="btn btn-sm btn-teal">立即推播此份清單</button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div id="notifyPreviewBox" class="msg-preview-box"></div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 4: CLOUD DEPLOY & PINE SCRIPT ==================== -->
-    <section id="tab-deploy" class="tab-section">
-      <div class="grid-2">
-        <article class="card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h2 class="card-title">雲端後端連線與一鍵部署設定</h2>
-              <p class="card-subtitle">支援 Render / Railway / Fly.io / Docker 全棧部署，或純靜態 HTML 部署至 Cloudflare Pages / Vercel</p>
-            </div>
-            <span id="backendHealthBadge" class="badge badge-slate">檢查中...</span>
-          </div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
-            <div>
-              <label class="field-label" for="cloudBackendInput">雲端 FastAPI 後端網址（同源託管時留空即可自動偵測）</label>
-              <div style="display:flex;gap:8px;">
-                <input id="cloudBackendInput" type="text" class="input mono" placeholder="例如 https://synapse-tw-trading.onrender.com" />
-                <button id="btnTestBackend" type="button" class="btn btn-primary">測試並儲存</button>
+            <article class="card">
+              <div class="card-header">
+                <h3 id="dcaChartTitle" class="card-title">組合總市值 vs 累積投入成本走勢（真實歷史數據）</h3>
+                <span id="dcaSourceBadge" class="badge badge-teal">FinMind 真實數據</span>
               </div>
-            </div>
-
-            <div>
-              <label class="field-label" for="finmindTokenInput">FinMind API v4 Token（選填，免費註冊可由 300 升至 600 次/時）</label>
-              <div style="display:flex;gap:8px;">
-                <input id="finmindTokenInput" type="password" class="input mono" placeholder="貼上您的 FinMind Token" />
-                <button id="btnSaveFinmindToken" type="button" class="btn btn-dark">儲存 Token</button>
+              <div class="card-body">
+                <div style="position:relative;height:300px;width:100%;">
+                  <canvas id="dcaMainChart"></canvas>
+                </div>
               </div>
-            </div>
+            </article>
 
-            <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;line-height:1.7;">
-              <strong>三種雲端部署方案：</strong>
-              <ol style="margin:6px 0 0 18px;padding:0;color:var(--ink-2);">
-                <li><strong>全棧雲端（推薦，Yahoo + FinMind + AI + LINE + 實盤全通）</strong>：將 <code>tw-auto-trading-system/</code> 推送至 GitHub，連結 <strong>Render.com</strong> 自動讀取 <code>render.yaml</code> 免費部署。</li>
-                <li><strong>Docker 容器部署</strong>：執行 <code>docker build -t synapse-tw . &amp;&amp; docker run -p 8000:8000 --env-file .env synapse-tw</code>。</li>
-                <li><strong>純靜態單檔 HTML</strong>：直接將 <code>index.html</code> 拖曳上傳至 <strong>Cloudflare Pages / Vercel / Netlify</strong>（內建直連 FinMind <code>ACAO=*</code> 真實台股行情）。</li>
-              </ol>
-            </div>
+            <article class="card">
+              <div class="card-header">
+                <div class="chart-group">
+                  <button id="btnDcaTabBuy" type="button" class="btn btn-sm btn-dark">定期定額扣款明細 (<span id="dcaBuyCount">0</span>)</button>
+                  <button id="btnDcaTabCorp" type="button" class="btn btn-sm">配息與除權異動總表 (<span id="dcaCorpCount">0</span>)</button>
+                </div>
+              </div>
+              <div class="card-body" style="padding:0;">
+                <div id="dcaBuyTableWrap" class="table-wrap" style="max-height:280px;overflow-y:auto;">
+                  <table class="data-table" style="min-width:680px;">
+                    <thead>
+                      <tr>
+                        <th>扣款日期</th>
+                        <th>股票代號 / 名稱</th>
+                        <th class="num-right">真實收盤價</th>
+                        <th class="num-right">花費金額</th>
+                        <th class="num-right">手續費</th>
+                        <th class="num-right">買入股數</th>
+                        <th class="num-right">累積股數</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dcaBuyTableBody"></tbody>
+                  </table>
+                </div>
+                <div id="dcaCorpTableWrap" class="table-wrap" style="display:none;max-height:280px;overflow-y:auto;">
+                  <table class="data-table" style="min-width:680px;">
+                    <thead>
+                      <tr>
+                        <th>除權息日</th>
+                        <th>股票代號 / 名稱</th>
+                        <th>事件類型</th>
+                        <th class="num-right">當時股數</th>
+                        <th class="num-right">現金股利 (TWD)</th>
+                        <th class="num-right">異動股數</th>
+                        <th class="num-right">異動後總股數</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dcaCorpTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
 
-            <div class="chart-group">
-              <button id="btnDownloadHtml" type="button" class="btn btn-primary">
-                <i data-lucide="download" style="width:14px;height:14px;"></i>匯出目前設定為獨立 index.html
+        <!-- ========== PANE 3: AI MULTI-MODEL STUDIO ========== -->
+        <div id="studio-ai" class="studio-pane">
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">多模型 AI 深度解析工作室（Grok Bot · Gemini · Claude · ChatGPT）</h2>
+                <p class="card-subtitle">支援自訂分析提問，同步調用四家主流大型語言模型 API（可透過雲端後端安全代理或瀏覽器金鑰直連）</p>
+              </div>
+              <button id="btnRunAiStudio" class="btn btn-primary">
+                <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行四模型深度解析
               </button>
-              <button id="btnCopyWebhookUrl" type="button" class="btn">複製 TradingView Webhook 端點</button>
             </div>
-          </div>
-        </article>
+            <div class="card-body">
+              <div class="grid-2" style="margin-bottom:14px;">
+                <div>
+                  <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
+                  <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
+                </div>
+                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                  <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">模型掛載與 API 金鑰狀態</div>
+                  <div class="form-grid-2" style="margin-bottom:8px;">
+                    <div>
+                      <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
+                      <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+                    </div>
+                    <div>
+                      <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
+                      <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
+                    </div>
+                    <div>
+                      <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
+                      <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
+                    </div>
+                    <div>
+                      <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
+                      <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機瀏覽器 localStorage；雲端部署建議寫入伺服器 .env</span>
+                    <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存 AI 金鑰</button>
+                  </div>
+                </div>
+              </div>
+              <div id="aiStudioResults" class="grid-ai-4"></div>
+            </div>
+          </article>
+        </div>
 
-        <article class="card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h2 class="card-title">TradingView Pine Script v5 自動下單腳本（含股票代號與中文名稱）</h2>
-              <p class="card-subtitle">貼入 TradingView 帳號之 Pine Editor 並建立快訊（Alert）即可自動觸發 Webhook</p>
-            </div>
-            <button id="btnCopyPine" class="btn btn-sm btn-dark">複製 Pine Script</button>
+        <!-- ========== PANE 4: LINE BOT & TELEGRAM NOTIFICATION CENTER ========== -->
+        <div id="studio-notify" class="studio-pane">
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">LINE Bot &amp; Telegram 推播通道設定</h2>
+                  <p class="card-subtitle">採用 LINE Messaging API Push（支援個人與群組）與 Telegram Bot API</p>
+                </div>
+                <button id="btnSaveNotifyCfg" class="btn btn-sm btn-dark">儲存通道設定</button>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+                <div style="padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong style="color:#166534;font-size:13px;">LINE Bot (Messaging API)</strong>
+                    <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                      <input id="cfgLineEnabled" type="checkbox" />啟用 LINE 推播
+                    </label>
+                  </div>
+                  <div class="form-grid-2">
+                    <div>
+                      <label class="field-label" for="cfgLineToken">Channel Access Token</label>
+                      <input id="cfgLineToken" type="password" class="input mono" placeholder="貼上長期 Channel Access Token" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="cfgLineTarget">Target User / Group ID</label>
+                      <input id="cfgLineTarget" type="text" class="input mono" placeholder="Uxxxx... 或 Cxxxx..." />
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                    <span style="font-size:11px;color:#15803d;">連接雲端後端時自動經 /api/v1/notify/broadcast 轉發，免除 CORS 限制</span>
+                    <button id="btnTestLine" type="button" class="btn btn-sm btn-teal">發送 LINE 測試訊號</button>
+                  </div>
+                </div>
+
+                <div style="padding:12px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong style="color:#075985;font-size:13px;">Telegram Bot</strong>
+                    <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                      <input id="cfgTgEnabled" type="checkbox" />啟用 Telegram 推播
+                    </label>
+                  </div>
+                  <div class="form-grid-2">
+                    <div>
+                      <label class="field-label" for="cfgTgToken">Bot Token (@BotFather)</label>
+                      <input id="cfgTgToken" type="password" class="input mono" placeholder="123456789:AAH..." />
+                    </div>
+                    <div>
+                      <label class="field-label" for="cfgTgChatId">Chat ID / 頻道 ID</label>
+                      <input id="cfgTgChatId" type="text" class="input mono" placeholder="例如 -1001234567890" />
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                    <span style="font-size:11px;color:#0369a1;">支援瀏覽器直連 api.telegram.org 與雲端後端雙模式發送</span>
+                    <button id="btnTestTg" type="button" class="btn btn-sm btn-primary">發送 Telegram 測試訊號</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-size:12px;font-weight:800;margin-bottom:6px;">推播投遞日誌</div>
+                  <div id="notifyLogsBox" class="msg-preview-box" style="max-height:190px;font-size:11px;">尚無推播紀錄。</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">訊號條列預覽（完整呈現股票代號與中文名稱）</h2>
+                  <p class="card-subtitle">LINE Bot 與 Telegram 實際發送之整齊排版預覽</p>
+                </div>
+                <div class="chart-group">
+                  <button id="btnRefreshPreview" class="btn btn-sm">更新預覽</button>
+                  <button id="btnSendPreviewNow" class="btn btn-sm btn-teal">立即推播此份清單</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="notifyPreviewBox" class="msg-preview-box"></div>
+              </div>
+            </article>
           </div>
-          <div class="card-body">
-            <pre id="pineScriptBox" class="code-box"></pre>
+        </div>
+
+        <!-- ========== PANE 5: CLOUD DEPLOY & PINE SCRIPT ========== -->
+        <div id="studio-deploy" class="studio-pane">
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">雲端後端連線與一鍵部署設定</h2>
+                  <p class="card-subtitle">支援 Render / Railway / Fly.io / Docker 全棧部署，或純靜態 HTML 部署至 Cloudflare Pages / Vercel</p>
+                </div>
+                <span id="backendHealthBadge" class="badge badge-slate">檢查中...</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div>
+                  <label class="field-label" for="cloudBackendInput">雲端 FastAPI 後端網址（同源託管時留空即可自動偵測）</label>
+                  <div style="display:flex;gap:8px;">
+                    <input id="cloudBackendInput" type="text" class="input mono" placeholder="例如 https://synapse-tw-trading.onrender.com" />
+                    <button id="btnTestBackend" type="button" class="btn btn-primary">測試並儲存</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label" for="finmindTokenInput">FinMind API v4 Token（選填，免費註冊可由 300 升至 600 次/時）</label>
+                  <div style="display:flex;gap:8px;">
+                    <input id="finmindTokenInput" type="password" class="input mono" placeholder="貼上您的 FinMind Token" />
+                    <button id="btnSaveFinmindToken" type="button" class="btn btn-dark">儲存 Token</button>
+                  </div>
+                </div>
+                <div class="chart-group">
+                  <button id="btnDownloadHtml" type="button" class="btn btn-primary">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i>匯出獨立 index.html
+                  </button>
+                  <button id="btnCopyWebhookUrl" type="button" class="btn">複製 TradingView Webhook 端點</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">TradingView Pine Script v5 自動下單腳本</h2>
+                  <p class="card-subtitle">貼入 TradingView Pine Editor 建立快訊即可自動派單</p>
+                </div>
+                <button id="btnCopyPine" class="btn btn-sm btn-dark">複製 Pine Script</button>
+              </div>
+              <div class="card-body">
+                <pre id="pineScriptBox" class="code-box"></pre>
+              </div>
+            </article>
           </div>
-        </article>
+        </div>
+
+        <!-- ========== PANE 6: GLOBAL FEE DISCOUNT & ACCOUNT SETTINGS ========== -->
+        <div id="studio-settings" class="studio-pane">
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">全域手續費折數設定（預設 2.8 折 · 最低 6 折）</h2>
+                  <p class="card-subtitle">修改後將即時套用至下單執行票、對帳單退佣復盤與台股定投回測計算</p>
+                </div>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <label class="field-label" for="globalFeeDiscountInput" style="margin:0;">手續費折數（0.1 ~ 6.0 折）：</label>
+                  <input id="globalFeeDiscountInput" type="number" min="0.1" max="6.0" step="0.1" value="2.8" class="input mono" style="width:96px;text-align:center;font-weight:800;font-size:15px;" />
+                  <span style="font-weight:800;">折</span>
+                  <span id="globalFeeEffectiveRate" class="badge badge-blue mono">實付費率：0.0399%</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <button type="button" class="btn btn-sm" data-fee-preset="1.8">1.8 折（大戶電子單）</button>
+                  <button type="button" class="btn btn-sm btn-primary" data-fee-preset="2.8">2.8 折（預設電子單）</button>
+                  <button type="button" class="btn btn-sm" data-fee-preset="3.8">3.8 折（一般券商）</button>
+                  <button type="button" class="btn btn-sm" data-fee-preset="6.0">6.0 折（最低折數上限）</button>
+                </div>
+                <div style="padding:12px;border-radius:10px;background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;color:var(--ink-2);line-height:1.6;">
+                  <strong>台股法定公定費率：</strong>0.1425%（每筆最低手續費 $20 TWD）。<br />
+                  • 本系統預設 <strong>2.8 折</strong>（實付 0.0399%），可依您的券商方案自由修改。<br />
+                  • 折數上限為 <strong>6.0 折</strong>（最低 6 折優惠），若輸入大於 6.0 將自動校正為 6.0 折。
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">TradingView 帳號與進階功能快捷入口</h2>
+                  <p class="card-subtitle">管理您的 TradingView 方案等級與專屬雲端 Layout 連結</p>
+                </div>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <p style="margin:0;font-size:12.5px;color:var(--ink-2);">目前綁定狀態：<strong id="settingsTvSummary">尚未綁定帳號</strong></p>
+                <button type="button" id="btnSettingsOpenTvModal" class="btn btn-primary" style="align-self:flex-start;">開啟 TradingView 帳號綁定視窗</button>
+              </div>
+            </article>
+          </div>
+        </div>
+
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <!-- ==================== MODAL 1: LIVE TRADING SAFETY GATE ==================== -->
   <div id="liveSafetyModal" class="modal-backdrop">
@@ -1837,7 +2513,19 @@
       tvDrawTools: true,
       tvTheme: 'light',
       orderSide: 'BUY',
+      feeDiscount: 2.8, // 預設 2.8 折，可修改，最低 6 折（上限 6.0）
       autoTradeOnSignal: false,
+
+      reviewData: [],
+      reviewSource: '尚未匯入',
+      dcaPortfolio: [
+        { id: '0050', name: '元大台灣50', weight: 60 },
+        { id: '2330', name: '台積電', weight: 40 }
+      ],
+      dcaPhases: [
+        { id: 1, startDate: '2024-01-01', endDate: '2026-11-30', amount: 10000 }
+      ],
+      dcaResult: null,
 
       backendDetected: false,
       backendUrl: '', // empty = auto same-origin if available
@@ -1902,8 +2590,13 @@
           const saved = JSON.parse(raw);
           if (Array.isArray(saved.watchlist) && saved.watchlist.length > 0) state.watchlist = saved.watchlist;
           if (typeof saved.simCashTwd === 'number') state.simCashTwd = saved.simCashTwd;
+          if (typeof saved.feeDiscount === 'number') state.feeDiscount = Math.max(0.1, Math.min(6.0, saved.feeDiscount));
           if (Array.isArray(saved.positions)) state.positions = saved.positions;
           if (Array.isArray(saved.orders)) state.orders = saved.orders;
+          if (Array.isArray(saved.reviewData)) state.reviewData = saved.reviewData;
+          if (saved.reviewSource) state.reviewSource = saved.reviewSource;
+          if (Array.isArray(saved.dcaPortfolio) && saved.dcaPortfolio.length > 0) state.dcaPortfolio = saved.dcaPortfolio;
+          if (Array.isArray(saved.dcaPhases) && saved.dcaPhases.length > 0) state.dcaPhases = saved.dcaPhases;
           if (saved.backendUrl) state.backendUrl = saved.backendUrl;
           if (saved.finmindToken) state.finmindToken = saved.finmindToken;
           if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
@@ -1929,8 +2622,13 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           watchlist: state.watchlist,
           simCashTwd: state.simCashTwd,
+          feeDiscount: state.feeDiscount,
           positions: state.positions,
           orders: state.orders.slice(0, 120),
+          reviewData: state.reviewData.slice(0, 600),
+          reviewSource: state.reviewSource,
+          dcaPortfolio: state.dcaPortfolio,
+          dcaPhases: state.dcaPhases,
           backendUrl: state.backendUrl,
           finmindToken: state.finmindToken,
           tvAccount: state.tvAccount,
@@ -3524,12 +4222,15 @@
       const shares = unit === '張' ? qty * 1000 : qty;
       const notional = price * shares;
       const isEtf = state.activeSymbol.startsWith('00');
-      const fee = notional > 0 ? Math.max(20, Math.round(notional * 0.001425 * 0.28)) : 0;
+      const discountFactor = state.feeDiscount / 10;
+      const fee = notional > 0 ? Math.max(20, Math.round(notional * 0.001425 * discountFactor)) : 0;
       const tax = (state.orderSide === 'SELL' && notional > 0) ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
 
       const elNot = document.getElementById('estNotional');
       const elFt = document.getElementById('estFeeTax');
       const elCash = document.getElementById('simCashDisplay');
+      const elRate = document.getElementById('ticketFeeRateLabel');
+      if (elRate) elRate.textContent = state.feeDiscount.toFixed(1);
       if (elNot) elNot.textContent = fmtMoney(notional);
       if (elFt) elFt.textContent = `${fmtMoney(fee)} / ${fmtMoney(tax)}`;
       if (elCash) elCash.textContent = fmtMoney(state.simCashTwd);
@@ -3549,7 +4250,7 @@
       const shares = unit === '張' ? qty * 1000 : qty;
       const notional = shares * price;
       const isEtf = symbol.startsWith('00');
-      const fee = Math.max(20, Math.round(notional * 0.001425 * 0.28));
+      const fee = Math.max(20, Math.round(notional * 0.001425 * (state.feeDiscount / 10)));
       const tax = side === 'SELL' ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
 
       // LIVE MODE: Strictly require Cloud Backend + real API execution
@@ -3573,6 +4274,7 @@
               qty,
               unit,
               price,
+              fee_discount: state.feeDiscount,
               source
             })
           });
@@ -3645,7 +4347,8 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               env_mode: 'SIM', symbol: meta.symbol, stock_name: meta.name,
-              side, order_type: orderType, tif, qty, unit, price, source
+              side, order_type: orderType, tif, qty, unit, price,
+              fee_discount: state.feeDiscount, source
             })
           }).catch(() => {});
         }
@@ -4002,14 +4705,82 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     // =========================================================================
-    // 11. NAVIGATION, MODALS & EVENT BINDING
+    // 11. NAVIGATION, FEATURE STUDIO MODAL & FEE DISCOUNT SYNC
     // =========================================================================
+    function openFeatureModal(paneId = 'review') {
+      const dropdown = document.getElementById('featureMenuDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+      const btnMenu = document.getElementById('btnFeatureMenu');
+      if (btnMenu) btnMenu.setAttribute('aria-expanded', 'false');
+
+      document.querySelectorAll('.studio-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.studioPane === paneId);
+      });
+      document.querySelectorAll('.studio-pane').forEach(p => {
+        p.classList.toggle('active', p.id === `studio-${paneId}`);
+      });
+
+      openModal('featureStudioModal');
+
+      if (paneId === 'review') {
+        populateReviewSymbolFilter();
+        renderReviewDashboard();
+      } else if (paneId === 'dca') {
+        renderDcaConfigUI();
+      } else if (paneId === 'notify') {
+        renderNotifyCenter();
+      } else if (paneId === 'deploy') {
+        renderPineScript();
+      } else if (paneId === 'ai') {
+        renderAiPanels();
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
     function switchTab(tabId) {
-      state.activeTab = tabId;
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
-      document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === `tab-${tabId}`));
-      if (tabId === 'notify') renderNotifyCenter();
-      if (tabId === 'deploy') renderPineScript();
+      if (tabId === 'desk') {
+        closeModal('featureStudioModal');
+        return;
+      }
+      openFeatureModal(tabId);
+    }
+
+    function setFeeDiscount(rawVal, notifyClamp = false) {
+      let val = parseFloat(rawVal);
+      if (Number.isNaN(val) || val <= 0) val = 2.8;
+      if (val > 6.0) {
+        val = 6.0;
+        if (notifyClamp) {
+          showToast('已套用折數上限', '手續費折數最低優惠為 6.0 折（範圍 0.1 ~ 6.0 折）。', 'warn');
+        }
+      }
+      if (val < 0.1) val = 0.1;
+      val = Math.round(val * 10) / 10;
+      state.feeDiscount = val;
+      persistState();
+
+      const fmtVal = val.toFixed(1);
+      ['orderFeeDiscountInput', 'reviewFeeDiscountInput', 'globalFeeDiscountInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && (notifyClamp || document.activeElement !== el)) el.value = fmtVal;
+      });
+      const hLbl = document.getElementById('headerFeeLabel');
+      if (hLbl) hLbl.textContent = fmtVal;
+      const tLbl = document.getElementById('ticketFeeRateLabel');
+      if (tLbl) tLbl.textContent = fmtVal;
+      const rLbl = document.getElementById('revDiscountLabel');
+      if (rLbl) rLbl.textContent = fmtVal;
+      const dLbl = document.getElementById('dcaFeeRateLabel');
+      if (dLbl) dLbl.textContent = fmtVal;
+      const eff = document.getElementById('globalFeeEffectiveRate');
+      if (eff) eff.textContent = `實付費率：${(0.1425 * (val / 10)).toFixed(4)}%`;
+
+      updateOrderSummary();
+      if (document.getElementById('studio-review')?.classList.contains('active')) {
+        renderReviewDashboard();
+      }
     }
 
     function openModal(id) {
@@ -4039,23 +4810,77 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('tvTierSelect').value = state.tvAccount.tier || 'Essential';
       document.getElementById('tvLayoutUrlInput').value = state.tvAccount.layoutUrl || '';
 
-      if (state.tvAccount.username) {
-        document.getElementById('tvAccountStatusText').textContent = `已綁定 TradingView 帳號：${state.tvAccount.username} (${state.tvAccount.tier})`;
-      }
+      const tvSummary = state.tvAccount.username
+        ? `已綁定 TradingView 帳號：${state.tvAccount.username} (${state.tvAccount.tier})`
+        : '尚未綁定帳號（可點右側開啟綁定）';
+      const tvStatusEl = document.getElementById('tvAccountStatusText');
+      if (tvStatusEl && state.tvAccount.username) tvStatusEl.textContent = tvSummary;
+      const settingsTv = document.getElementById('settingsTvSummary');
+      if (settingsTv) settingsTv.textContent = tvSummary;
+
+      setFeeDiscount(state.feeDiscount, false);
     }
 
     function bindEvents() {
-      // Tabs
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      // Unified Feature Menu Dropdown
+      const btnMenu = document.getElementById('btnFeatureMenu');
+      const dropdown = document.getElementById('featureMenuDropdown');
+      if (btnMenu && dropdown) {
+        btnMenu.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !dropdown.classList.contains('open');
+          dropdown.classList.toggle('open', willOpen);
+          btnMenu.setAttribute('aria-expanded', String(willOpen));
+        });
+        document.addEventListener('click', e => {
+          if (!dropdown.contains(e.target) && e.target !== btnMenu) {
+            dropdown.classList.remove('open');
+            btnMenu.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+
+      // Open Feature Studio Modal from dropdown items or modal pills
+      document.querySelectorAll('[data-open-studio]').forEach(btn => {
+        btn.addEventListener('click', () => openFeatureModal(btn.dataset.openStudio));
+      });
+      document.querySelectorAll('[data-studio-pane]').forEach(btn => {
+        btn.addEventListener('click', () => openFeatureModal(btn.dataset.studioPane));
       });
 
-      // Modal close buttons
+      // Header Fee Discount quick pill -> Settings pane
+      document.getElementById('btnHeaderFeePill')?.addEventListener('click', () => openFeatureModal('settings'));
+      document.getElementById('btnSettingsOpenTvModal')?.addEventListener('click', () => openModal('tvAccountModal'));
+
+      // Fee Discount Inputs (Order Ticket, Statement Review, Global Settings)
+      ['orderFeeDiscountInput', 'reviewFeeDiscountInput', 'globalFeeDiscountInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', e => setFeeDiscount(e.target.value, true));
+        el.addEventListener('input', e => {
+          const v = parseFloat(e.target.value);
+          if (!Number.isNaN(v) && v >= 0.1 && v <= 6.0) setFeeDiscount(v, false);
+        });
+      });
+      document.querySelectorAll('[data-fee-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setFeeDiscount(parseFloat(btn.dataset.feePreset), false);
+          showToast('已更新手續費折數', `目前套用 ${state.feeDiscount.toFixed(1)} 折。`, 'success');
+        });
+      });
+
+      // Modal close buttons & Esc key
       document.querySelectorAll('[data-close-modal]').forEach(btn => {
         btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
       });
       document.querySelectorAll('.modal-backdrop').forEach(bg => {
         bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+          dropdown?.classList.remove('open');
+        }
       });
 
       // SIM / LIVE switcher
@@ -4093,8 +4918,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         );
       });
 
-      document.getElementById('btnOpenSettings').addEventListener('click', () => switchTab('ai'));
-      document.getElementById('btnOpenAiSettings').addEventListener('click', () => switchTab('ai'));
+      document.getElementById('btnOpenAiSettings').addEventListener('click', () => openFeatureModal('ai'));
+      document.getElementById('btnSendOrdersToReview')?.addEventListener('click', () => {
+        importSystemOrdersIntoReview();
+        openFeatureModal('review');
+      });
 
       // Add real stock
       document.getElementById('addStockForm').addEventListener('submit', e => {
@@ -4340,12 +5168,1004 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     // =========================================================================
+    // 11.5 STATEMENT REVIEW & TRADE BACKTEST ENGINE (Trading_Pro_V11.3 Parity)
+    // =========================================================================
+    const revCharts = { pnl: null, radar: null, symbol: null, type: null };
+
+    function normReviewRow(raw) {
+      const dateStr = String(raw.date || raw['日期'] || raw['交易日期'] || '').replace(/\//g, '-').slice(0, 10);
+      const symbolStr = String(raw.symbol || raw['商品代號名稱'] || raw['標的'] || raw['股名'] || '未知標的').trim();
+      const buyVal = Math.abs(Number(String(raw.buy ?? raw['買進金額'] ?? raw['買進金額(做多)'] ?? 0).replace(/,/g, '')) || 0);
+      const sellVal = Math.abs(Number(String(raw.sell ?? raw['賣出金額'] ?? raw['賣出金額(做空)'] ?? 0).replace(/,/g, '')) || 0);
+      const feesVal = Math.abs(Number(String(raw.fees ?? raw.fee ?? raw['手續費'] ?? 0).replace(/,/g, '')) || 0);
+      const taxVal = Math.abs(Number(String(raw.tax ?? raw['證交稅'] ?? raw['交易稅'] ?? 0).replace(/,/g, '')) || 0);
+      let pnlVal = raw.pnl ?? raw['淨損益'] ?? raw['淨損益金額'] ?? raw['損益'];
+      if (pnlVal !== undefined && pnlVal !== '') {
+        pnlVal = Number(String(pnlVal).replace(/,/g, '')) || 0;
+      } else {
+        pnlVal = sellVal - buyVal - feesVal - taxVal;
+      }
+      const rawType = String(raw.type || raw['類型'] || '');
+      const type = rawType.includes('留') || rawType === 'hold'
+        ? 'hold'
+        : ((buyVal > 0 && sellVal > 0) || rawType.includes('當沖') || rawType === 'day' ? 'day' : 'hold');
+      return {
+        date: dateStr,
+        symbol: symbolStr,
+        type,
+        buy: Math.round(buyVal),
+        sell: Math.round(sellVal),
+        pnl: Math.round(pnlVal),
+        fees: Math.round(feesVal || Math.round((buyVal + sellVal) * 0.001425)),
+        tax: Math.round(taxVal)
+      };
+    }
+
+    function revNet(row) {
+      return Number(row.pnl || 0);
+    }
+
+    function revCapital(row) {
+      return Math.max(row.buy || 0, row.sell || 0, 1);
+    }
+
+    function getFilteredReviewRows() {
+      const start = document.getElementById('revDateStart')?.value || '';
+      const end = document.getElementById('revDateEnd')?.value || '';
+      const typeF = document.getElementById('revTypeFilter')?.value || 'all';
+      const resF = document.getElementById('revResultFilter')?.value || 'all';
+      const symF = document.getElementById('revSymbolFilter')?.value || 'all';
+
+      return state.reviewData.filter(r => {
+        if (start && r.date < start) return false;
+        if (end && r.date > end) return false;
+        if (typeF !== 'all' && r.type !== typeF) return false;
+        if (resF === 'win' && revNet(r) <= 0) return false;
+        if (resF === 'loss' && revNet(r) >= 0) return false;
+        if (symF !== 'all' && r.symbol !== symF) return false;
+        return true;
+      }).sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function populateReviewSymbolFilter() {
+      const sel = document.getElementById('revSymbolFilter');
+      if (!sel) return;
+      const prev = sel.value;
+      const syms = Array.from(new Set(state.reviewData.map(r => r.symbol))).sort();
+      sel.innerHTML = '<option value="all">全部標的</option>' +
+        syms.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      if (syms.includes(prev)) sel.value = prev;
+    }
+
+    function calcReviewStats() {
+      const rows = getFilteredReviewRows();
+      let netSum = 0, capSum = 0, volSum = 0, feeSum = 0, taxSum = 0;
+      let winCount = 0, lossCount = 0, winSum = 0, lossSum = 0;
+      let cum = 0, peak = 0, maxDD = 0;
+
+      rows.forEach(x => {
+        const n = revNet(x);
+        netSum += n;
+        capSum += revCapital(x);
+        volSum += (x.buy + x.sell);
+        feeSum += x.fees;
+        taxSum += x.tax;
+        if (!x.symbol.includes('結算調整')) {
+          if (n > 0) { winCount++; winSum += n; }
+          else if (n < 0) { lossCount++; lossSum += Math.abs(n); }
+        }
+        cum += n;
+        peak = Math.max(peak, cum);
+        maxDD = Math.max(maxDD, peak - cum);
+      });
+
+      const discount = state.feeDiscount; // 預設 2.8 折，最低 6.0 折
+      const refund = Math.floor(feeSum * ((10 - discount) / 10));
+      const realPnl = netSum + refund;
+      const pf = lossSum > 0 ? (winSum / lossSum).toFixed(2) : (winSum > 0 ? '∞' : '0.00');
+      const totalTrades = winCount + lossCount;
+      const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0;
+
+      return { rows, netSum, capSum, volSum, feeSum, taxSum, refund, realPnl, pf, winSum, lossSum, maxDD, winCount, lossCount, winRate };
+    }
+
+    function renderReviewDashboard() {
+      const c = calcReviewStats();
+      const srcEl = document.getElementById('reviewSourceStatus');
+      if (srcEl) srcEl.textContent = `資料來源：${state.reviewSource}（共 ${state.reviewData.length} 筆原始紀錄）`;
+
+      const elReal = document.getElementById('revRealPnl');
+      const elRef = document.getElementById('revRefundAmt');
+      const elNetWin = document.getElementById('revNetWin');
+      const elWinDet = document.getElementById('revWinDetail');
+      const elPfDd = document.getElementById('revPfDd');
+      const elVol = document.getElementById('revVolNote');
+      const elMeta = document.getElementById('revTableMeta');
+
+      if (c.rows.length === 0) {
+        if (elReal) elReal.textContent = '--';
+        if (elRef) elRef.textContent = '--';
+        if (elNetWin) elNetWin.textContent = '--';
+        if (elWinDet) elWinDet.textContent = '0 獲利 / 0 筆';
+        if (elPfDd) elPfDd.textContent = '--';
+        if (elVol) elVol.textContent = '總成交量：$0';
+        if (elMeta) elMeta.textContent = '共 0 筆';
+        const tb = document.getElementById('revTableBody');
+        if (tb) tb.innerHTML = '<tr><td colspan="7" class="num-center" style="padding:20px;color:var(--ink-4);">尚未匯入對帳單，請上傳 PDF / XLSX / CSV / JSON 或點擊「載入範例對帳單」。</td></tr>';
+        document.getElementById('revHealthScore').textContent = '0';
+        document.getElementById('revScoreRing').style.background = 'conic-gradient(#e2e8f0 100%, #e2e8f0 0)';
+        document.getElementById('revAdviceList').innerHTML = '<div style="color:var(--ink-4);">匯入對帳單後即刻產生交易紀律診斷建議。</div>';
+        document.getElementById('revTopRankList').innerHTML = '<div style="color:var(--ink-4);">尚無資料</div>';
+        Object.keys(revCharts).forEach(k => { if (revCharts[k]) { revCharts[k].destroy(); revCharts[k] = null; } });
+        return;
+      }
+
+      if (elReal) {
+        elReal.textContent = (c.realPnl >= 0 ? '+' : '') + fmtMoney(c.realPnl);
+        elReal.style.color = c.realPnl >= 0 ? '#047857' : '#dc2626';
+      }
+      if (elRef) elRef.textContent = '+' + fmtMoney(c.refund);
+      if (elNetWin) elNetWin.textContent = `${c.netSum >= 0 ? '+' : ''}${fmtMoney(c.netSum)} ｜ ${c.winRate.toFixed(1)}%`;
+      if (elWinDet) elWinDet.textContent = `${c.winCount} 獲利 / ${c.winCount + c.lossCount} 筆（總盈 ${fmtMoney(c.winSum)} / 總虧 -${fmtMoney(c.lossSum)}）`;
+      if (elPfDd) elPfDd.textContent = `${c.pf}x ｜ -${fmtMoney(c.maxDD)}`;
+      if (elVol) elVol.textContent = `總成交量：${fmtMoney(c.volSum)}（原始手續費 ${fmtMoney(c.feeSum)}）`;
+      if (elMeta) {
+        const dayCnt = c.rows.filter(x => x.type === 'day').length;
+        const holdCnt = c.rows.filter(x => x.type === 'hold').length;
+        elMeta.textContent = `共 ${c.rows.length} 筆 · 當沖 ${dayCnt} 筆 · 留倉 ${holdCnt} 筆`;
+      }
+
+      // Trade Details Table
+      const tb = document.getElementById('revTableBody');
+      if (tb) {
+        tb.innerHTML = c.rows.map(x => {
+          const n = revNet(x);
+          return `
+            <tr style="${x.symbol.includes('結算調整') ? 'background:#fffbeb;' : ''}">
+              <td class="mono">${escapeHtml(x.date)}</td>
+              <td><strong>${escapeHtml(x.symbol)}</strong></td>
+              <td><span class="badge ${x.type === 'day' ? 'badge-blue' : 'badge-amber'}">${x.type === 'day' ? '當沖' : '留倉'}</span></td>
+              <td class="num-right mono">${fmtMoney(x.buy)}</td>
+              <td class="num-right mono">${fmtMoney(x.sell)}</td>
+              <td class="num-right mono">${fmtMoney(x.fees)}</td>
+              <td class="num-right mono ${n >= 0 ? 'text-up' : 'text-down'}" style="font-weight:800;">${n >= 0 ? '+' : ''}${fmtMoney(n)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Health Score & Radar
+      const riskPct = c.capSum > 0 ? (c.maxDD / c.capSum) * 100 : 0;
+      const riskScore = Math.max(0, Math.min(100, 100 - riskPct * 2));
+      const stabScore = Math.max(0, Math.min(100, c.winRate));
+      const pfNum = c.pf === '∞' ? 3 : parseFloat(c.pf) || 0;
+      const pfNorm = Math.min(pfNum, 3) / 3 * 100;
+      const health = Math.round(riskScore * 0.3 + stabScore * 0.4 + pfNorm * 0.3);
+      const ringCol = health >= 80 ? '#059669' : (health >= 60 ? '#d97706' : '#dc2626');
+      document.getElementById('revHealthScore').textContent = String(health);
+      document.getElementById('revScoreRing').style.background = `conic-gradient(${ringCol} ${health}%, #e2e8f0 0)`;
+
+      const radarData = [
+        Math.min(100, Math.max(0, 40 + pfNum * 20)),
+        Math.min(100, Math.max(0, c.winRate)),
+        Math.min(100, Math.max(0, 100 - riskPct)),
+        Math.min(100, Math.max(0, (c.winRate + (100 - riskPct)) / 2)),
+        Math.min(100, Math.max(0, 50 + (c.realPnl > 0 ? 25 : -20)))
+      ];
+      if (revCharts.radar) revCharts.radar.destroy();
+      revCharts.radar = new Chart(document.getElementById('revRadarChart').getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: ['紀律', '勝率', '風控', '穩定度', '趨勢'],
+          datasets: [{ data: radarData, backgroundColor: 'rgba(37,99,235,0.18)', borderColor: '#2563eb', borderWidth: 2, pointRadius: 2.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+      });
+
+      const advices = [];
+      if (c.winRate < 45) advices.push(`<div style="padding:6px 8px;border-radius:8px;background:#fef2f2;color:#991b1b;">⚠️ <strong>勝率偏低 (${c.winRate.toFixed(1)}%)</strong>：建議收斂進場條件，減少逆勢試單。</div>`);
+      else advices.push(`<div style="padding:6px 8px;border-radius:8px;background:#ecfdf5;color:#065f46;">✓ <strong>勝率表現健康 (${c.winRate.toFixed(1)}%)</strong>：進場判斷具備穩定性，請維持紀律。</div>`);
+      if (pfNum < 1) advices.push(`<div style="padding:6px 8px;border-radius:8px;background:#fef2f2;color:#991b1b;">⚠️ <strong>獲利因子偏低 (${pfNum.toFixed(2)}x)</strong>：呈現賺小賠大，請嚴格執行停損避免凹單。</div>`);
+      else advices.push(`<div style="padding:6px 8px;border-radius:8px;background:#eff6ff;color:#1e40af;">💎 <strong>獲利因子良好 (${pfNum.toFixed(2)}x)</strong>：搭配 ${state.feeDiscount.toFixed(1)} 折手續費退佣具明顯正期望值。</div>`);
+      document.getElementById('revAdviceList').innerHTML = advices.join('');
+
+      // Daily / Cumulative / Capital Chart
+      const mode = document.getElementById('revChartMode')?.value || 'cum';
+      const dailyMap = {};
+      c.rows.forEach(x => { dailyMap[x.date] = (dailyMap[x.date] || 0) + revNet(x); });
+      const labels = Object.keys(dailyMap).sort();
+      let acc = 0;
+      const vals = labels.map(dt => {
+        const v = dailyMap[dt];
+        if (mode === 'daily') return v;
+        acc += v;
+        return mode === 'capital' ? Math.round(c.capSum + acc) : acc;
+      });
+      if (revCharts.pnl) revCharts.pnl.destroy();
+      revCharts.pnl = new Chart(document.getElementById('revPnlChart').getContext('2d'), {
+        type: mode === 'daily' ? 'bar' : 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: vals,
+            borderColor: mode === 'daily' ? vals.map(v => v >= 0 ? '#dc2626' : '#059669') : '#2563eb',
+            backgroundColor: mode === 'daily' ? vals.map(v => v >= 0 ? 'rgba(220,38,38,0.75)' : 'rgba(5,150,105,0.75)') : 'rgba(37,99,235,0.1)',
+            fill: mode !== 'daily',
+            tension: 0.3
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmtMoney(v) } } } }
+      });
+
+      // Symbol Ranking & Top 3
+      const bySym = {};
+      c.rows.forEach(x => { if (!x.symbol.includes('結算調整')) bySym[x.symbol] = (bySym[x.symbol] || 0) + revNet(x); });
+      const symSorted = Object.entries(bySym).sort((a, b) => b[1] - a[1]);
+      const top8 = symSorted.slice(0, 8);
+      if (revCharts.symbol) revCharts.symbol.destroy();
+      revCharts.symbol = new Chart(document.getElementById('revSymbolChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: top8.map(x => x[0]),
+          datasets: [{ data: top8.map(x => x[1]), backgroundColor: top8.map(x => x[1] >= 0 ? '#dc2626' : '#059669') }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      const dayCnt = c.rows.filter(x => x.type === 'day' && !x.symbol.includes('調整')).length;
+      const holdCnt = c.rows.filter(x => x.type === 'hold').length;
+      if (revCharts.type) revCharts.type.destroy();
+      revCharts.type = new Chart(document.getElementById('revTypeChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: ['當沖', '留倉'], datasets: [{ data: [dayCnt, holdCnt], backgroundColor: ['#2563eb', '#d97706'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const topW = symSorted.filter(x => x[1] > 0).slice(0, 3);
+      const topL = symSorted.filter(x => x[1] < 0).reverse().slice(0, 3);
+      const rankHtml = [
+        ...topW.map(x => `<div style="display:flex;justify-content:space-between;padding:6px 8px;border-radius:8px;background:#fef2f2;"><strong>${escapeHtml(x[0])}</strong><span class="mono text-up" style="font-weight:800;">+${fmtMoney(x[1])}</span></div>`),
+        ...(topW.length && topL.length ? ['<div style="border-top:1px dashed var(--border);margin:2px 0;"></div>'] : []),
+        ...topL.map(x => `<div style="display:flex;justify-content:space-between;padding:6px 8px;border-radius:8px;background:#ecfdf5;"><strong>${escapeHtml(x[0])}</strong><span class="mono text-down" style="font-weight:800;">${fmtMoney(x[1])}</span></div>`)
+      ].join('');
+      document.getElementById('revTopRankList').innerHTML = rankHtml || '<div style="color:var(--ink-4);">尚無盈虧排行</div>';
+    }
+
+    function parseCsvStatement(text) {
+      const lines = text.replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const headers = lines.shift().split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      return lines.map(line => {
+        const cols = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = cols[i] ?? ''; });
+        return normReviewRow(obj);
+      }).filter(r => r.date);
+    }
+
+    function parsePdfStatementLines(lines, symbolMap) {
+      const res = [];
+      lines.forEach(line => {
+        const dm = line.match(/20\d{6}/);
+        if (dm && (line.includes('買') || line.includes('賣'))) {
+          const clean = line.replace(/\|/g, ' ');
+          const codes = clean.match(/\b([0-9]{4,6}[A-Z]?)\b/g) || [];
+          let code = '', name = '';
+          for (const pc of codes) {
+            if (symbolMap[pc]) { code = pc; name = symbolMap[pc]; break; }
+          }
+          if (!code && codes.length > 0) code = codes.find(c => c.length >= 4 && c !== '0000') || codes[0];
+          const finalSym = code ? (name ? `${code} ${name}` : code) : '未識別標的';
+          const nums = clean.replace(/,/g, '').match(/-?\d+(\.\d+)?/g);
+          if (nums && nums.length >= 3) {
+            const valid = nums.map(parseFloat).filter(n => Math.abs(n) < 20200101);
+            let sett = 0, maxAbs = 0, settIdx = -1;
+            valid.forEach((n, idx) => { if (Math.abs(n) > maxAbs) { maxAbs = Math.abs(n); sett = n; settIdx = idx; } });
+            let fee = 0, tax = 0;
+            if (settIdx !== -1) {
+              const after = valid.slice(settIdx + 1).filter(n => n >= 0);
+              if (after.length > 0) fee = after[0];
+              if (after.length > 1) tax = after[1];
+            }
+            res.push({
+              date: `${dm[0].slice(0, 4)}-${dm[0].slice(4, 6)}-${dm[0].slice(6, 8)}`,
+              symbol: finalSym,
+              action: line.includes('買') ? 'Buy' : 'Sell',
+              amount: line.includes('買') ? -Math.abs(sett) : Math.abs(sett),
+              fee, tax
+            });
+          }
+        }
+      });
+      return res;
+    }
+
+    async function importPdfStatement(file) {
+      if (!window.pdfjsLib) throw new Error('PDF.js 尚未載入完成，請確認網路連線或改用 CSV/JSON');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pwd = document.getElementById('reviewPdfPassword')?.value || '';
+      const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer(), password: pwd }).promise;
+      const lines = [], symbolMap = {};
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const items = content.items;
+        for (let j = 0; j < items.length; j++) {
+          const str = items[j].str.trim();
+          if (!str) continue;
+          const m1 = str.match(/^(.+?)[\s]*[\(（]([0-9]{4,6}[A-Z]?)[\)）]$/);
+          if (m1 && !m1[1].includes('名稱') && !/^\d+$/.test(m1[1])) symbolMap[m1[2]] = m1[1].trim();
+          const m2 = str.match(/^[\(（]([0-9]{4,6}[A-Z]?)[\)）]$/);
+          if (m2 && j > 0) {
+            const prev = items[j - 1].str.trim();
+            if (prev && !prev.includes('名稱') && !/^\d+$/.test(prev)) symbolMap[m2[1]] = prev;
+          }
+        }
+        fullText += items.map(it => it.str).join(' ') + '\n';
+        const rows = {};
+        items.forEach(it => {
+          if (!it.str.trim()) return;
+          const ky = Object.keys(rows).find(k => Math.abs(k - it.transform[5]) < 10);
+          if (ky) rows[ky].push(it); else rows[it.transform[5]] = [it];
+        });
+        Object.keys(rows).sort((a, b) => b - a).forEach(y => {
+          lines.push(rows[y].sort((a, b) => a.transform[4] - b.transform[4]).map(it => it.str.trim()).join(' | '));
+        });
+      }
+
+      const txs = parsePdfStatementLines(lines, symbolMap);
+      const grouped = {};
+      txs.forEach(t => {
+        const k = t.date + '|' + t.symbol;
+        if (!grouped[k]) grouped[k] = { date: t.date, symbol: t.symbol, type: 'hold', buy: 0, sell: 0, pnl: 0, fees: 0, tax: 0 };
+        if (t.action === 'Buy') grouped[k].buy += Math.abs(t.amount); else grouped[k].sell += Math.abs(t.amount);
+        grouped[k].pnl += t.amount; grouped[k].fees += t.fee; grouped[k].tax += t.tax;
+      });
+      const records = Object.values(grouped).map(x => {
+        x.type = (x.buy > 0 && x.sell > 0) ? 'day' : 'hold';
+        return normReviewRow(x);
+      });
+
+      const sumMatch = fullText.match(/客\s*戶\s*預\s*估\s*(收|付)?\s*總\s*額\s*[:：]?\s*([-\d,\.]+)/);
+      if (sumMatch && records.length > 0) {
+        let val = parseFloat(sumMatch[2].replace(/,/g, ''));
+        if (sumMatch[1] === '付') val = -Math.abs(val);
+        else if (sumMatch[1] === '收') val = Math.abs(val);
+        const diff = val - records.reduce((s, r) => s + revNet(r), 0);
+        if (Math.abs(diff) >= 1) {
+          records.push(normReviewRow({ date: records[0].date, symbol: '日結算調整 (依預估總額)', type: 'day', buy: 0, sell: 0, pnl: diff, fees: 0, tax: 0 }));
+        }
+      }
+      return records;
+    }
+
+    async function importExcelStatement(file) {
+      if (!window.ExcelJS) throw new Error('ExcelJS 尚未載入完成，請改用 CSV 或確認網路');
+      const wb = new window.ExcelJS.Workbook();
+      await wb.xlsx.load(await file.arrayBuffer());
+      const ws = wb.getWorksheet(1);
+      const rows = [];
+      ws.eachRow((row, idx) => {
+        if (idx === 1) return;
+        const r = row.values;
+        if (r[1]) {
+          rows.push(normReviewRow({
+            date: r[1] instanceof Date ? r[1].toISOString().slice(0, 10) : String(r[1]),
+            symbol: r[2],
+            type: String(r[3] || '').includes('留') ? 'hold' : 'day',
+            buy: Number(r[4]) || 0,
+            sell: Number(r[5]) || 0,
+            pnl: Number(r[7] ?? r[6]) || 0,
+            fees: Number(r[8]) || 0,
+            tax: Number(r[9]) || 0
+          }));
+        }
+      });
+      return rows;
+    }
+
+    async function handleReviewFileUpload(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      let added = [];
+      for (const f of files) {
+        const lower = f.name.toLowerCase();
+        try {
+          if (lower.endsWith('.pdf')) {
+            added = added.concat(await importPdfStatement(f));
+          } else if (lower.endsWith('.xlsx')) {
+            added = added.concat(await importExcelStatement(f));
+          } else if (lower.endsWith('.csv')) {
+            added = added.concat(parseCsvStatement(await f.text()));
+          } else if (lower.endsWith('.json')) {
+            const parsed = JSON.parse(await f.text());
+            const arr = Array.isArray(parsed) ? parsed : (parsed.data || []);
+            added = added.concat(arr.map(normReviewRow).filter(r => r.date));
+          }
+        } catch (err) {
+          showToast(`匯入失敗：${f.name}`, err.message, 'error');
+        }
+      }
+      if (added.length > 0) {
+        state.reviewData = state.reviewData.concat(added);
+        state.reviewSource = files.map(f => f.name).join(', ');
+        persistState();
+        populateReviewSymbolFilter();
+        renderReviewDashboard();
+        showToast('對帳單匯入成功', `已解析並匯入 ${added.length} 筆交易紀錄。`, 'success');
+      } else {
+        showToast('未解析到有效紀錄', '請確認檔案格式或 PDF 密碼是否正確。', 'warn');
+      }
+    }
+
+    function importSystemOrdersIntoReview() {
+      if (state.orders.length === 0) {
+        showToast('尚無本系統成交紀錄', '請先於主畫面送出模擬／實盤下單，或直接上傳券商對帳單。', 'warn');
+        return;
+      }
+      const grouped = {};
+      state.orders.forEach(o => {
+        const dt = String(o.iso_time || nowTwDateTime()).slice(0, 10);
+        const sym = `${o.symbol} ${o.stock_name || ''}`.trim();
+        const key = `${dt}|${sym}`;
+        const shares = o.unit === '張' ? o.qty * 1000 : o.qty;
+        const amt = Math.round(shares * Number(o.price || 0));
+        if (!grouped[key]) grouped[key] = { date: dt, symbol: sym, buy: 0, sell: 0, fees: 0, tax: 0 };
+        if (o.side === 'BUY') grouped[key].buy += amt; else grouped[key].sell += amt;
+        grouped[key].fees += Math.round(amt * 0.001425);
+        grouped[key].tax += Number(o.tax_twd || 0);
+      });
+      const rows = Object.values(grouped).map(g => normReviewRow({
+        date: g.date,
+        symbol: g.symbol,
+        type: (g.buy > 0 && g.sell > 0) ? 'day' : 'hold',
+        buy: g.buy,
+        sell: g.sell,
+        fees: g.fees,
+        tax: g.tax,
+        pnl: (g.buy > 0 && g.sell > 0) ? (g.sell - g.buy - Math.round(g.fees * (state.feeDiscount / 10)) - g.tax) : 0
+      }));
+      state.reviewData = rows;
+      state.reviewSource = `SYNAPSE 本系統成交紀錄 (${rows.length} 筆)`;
+      persistState();
+      populateReviewSymbolFilter();
+      renderReviewDashboard();
+      showToast('已導入本系統成交', `共轉換 ${rows.length} 筆交易至對帳復盤。`, 'success');
+    }
+
+    function loadSampleReviewStatement() {
+      const sample = [
+        { date: '2026-11-04', symbol: '2330 台積電', type: 'day', buy: 2260000, sell: 2295000, fees: 6490, tax: 3442, pnl: 25068 },
+        { date: '2026-11-06', symbol: '2317 鴻海', type: 'day', buy: 449000, sell: 442000, fees: 1270, tax: 663, pnl: -8933 },
+        { date: '2026-11-10', symbol: '2454 聯發科', type: 'day', buy: 3830000, sell: 3895000, fees: 11008, tax: 5842, pnl: 48150 },
+        { date: '2026-11-12', symbol: '3037 欣興', type: 'day', buy: 792000, sell: 816000, fees: 2291, tax: 1224, pnl: 20485 },
+        { date: '2026-11-16', symbol: '3189 景碩', type: 'hold', buy: 602000, sell: 582000, fees: 1687, tax: 1746, pnl: -23433 },
+        { date: '2026-11-18', symbol: '0050 元大台灣50', type: 'day', buy: 470500, sell: 478000, fees: 1351, tax: 478, pnl: 5671 },
+        { date: '2026-11-20', symbol: '2382 廣達', type: 'day', buy: 504000, sell: 516000, fees: 1453, tax: 774, pnl: 9773 }
+      ].map(normReviewRow);
+      state.reviewData = sample;
+      state.reviewSource = '範例台股券商對帳單（7 筆示範資料）';
+      persistState();
+      populateReviewSymbolFilter();
+      renderReviewDashboard();
+      showToast('已載入範例對帳單', '可嘗試修改手續費折數（2.8折～6.0折）觀察預估退佣即時變化。', 'info');
+    }
+
+    // =========================================================================
+    // 11.6 REAL TAIWAN STOCK DCA BACKTEST ENGINE (台股真實定投回測_v16 Parity)
+    // =========================================================================
+    let dcaChartInstance = null;
+
+    function renderDcaConfigUI() {
+      const pList = document.getElementById('dcaPortfolioList');
+      const totalW = state.dcaPortfolio.reduce((s, x) => s + Number(x.weight || 0), 0);
+      const wBadge = document.getElementById('dcaWeightTotal');
+      if (wBadge) wBadge.textContent = `總權重：${totalW}%`;
+
+      if (pList) {
+        pList.innerHTML = state.dcaPortfolio.length === 0
+          ? '<div style="font-size:12px;color:var(--ink-4);text-align:center;padding:12px;">請從左側加入至少一檔台股標的</div>'
+          : state.dcaPortfolio.map(s => `
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#ffffff;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;">
+                <div><strong class="mono" style="color:var(--accent-dark);">${escapeHtml(s.id)}</strong> ${escapeHtml(s.name)}</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" min="1" step="5" value="${s.weight}" data-dca-weight="${escapeHtml(s.id)}" class="input mono" style="width:62px;padding:3px 6px;text-align:center;" />
+                  <span style="color:var(--ink-3);">%</span>
+                  <button type="button" data-dca-del="${escapeHtml(s.id)}" class="btn btn-sm" style="padding:2px 7px;color:#dc2626;">✕</button>
+                </div>
+              </div>
+            `).join('');
+
+        pList.querySelectorAll('[data-dca-weight]').forEach(inp => {
+          inp.addEventListener('change', () => {
+            const item = state.dcaPortfolio.find(x => x.id === inp.dataset.dcaWeight);
+            if (item) item.weight = Math.max(1, Number(inp.value) || 10);
+            persistState();
+            renderDcaConfigUI();
+          });
+        });
+        pList.querySelectorAll('[data-dca-del]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.dcaPortfolio = state.dcaPortfolio.filter(x => x.id !== btn.dataset.dcaDel);
+            persistState();
+            renderDcaConfigUI();
+          });
+        });
+      }
+
+      const phList = document.getElementById('dcaPhasesList');
+      if (phList) {
+        phList.innerHTML = state.dcaPhases.map((p, idx) => `
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#ffffff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;">
+            <span class="badge badge-slate">階段 ${idx + 1}</span>
+            <span>起</span><input type="date" value="${escapeHtml(p.startDate)}" data-phase-id="${p.id}" data-phase-field="startDate" class="input mono" style="width:auto;padding:4px 6px;" />
+            <span>迄</span><input type="date" value="${escapeHtml(p.endDate)}" data-phase-id="${p.id}" data-phase-field="endDate" class="input mono" style="width:auto;padding:4px 6px;" />
+            <span>每月金額 $</span><input type="number" step="1000" min="1000" value="${p.amount}" data-phase-id="${p.id}" data-phase-field="amount" class="input mono" style="width:98px;padding:4px 6px;font-weight:800;color:var(--accent-dark);" />
+            ${state.dcaPhases.length > 1 ? `<button type="button" data-phase-del="${p.id}" class="btn btn-sm" style="margin-left:auto;color:#dc2626;">移除</button>` : ''}
+          </div>
+        `).join('');
+
+        phList.querySelectorAll('[data-phase-field]').forEach(inp => {
+          inp.addEventListener('change', () => {
+            const ph = state.dcaPhases.find(x => String(x.id) === inp.dataset.phaseId);
+            if (ph) ph[inp.dataset.phaseField] = inp.dataset.phaseField === 'amount' ? Math.max(1000, Number(inp.value) || 5000) : inp.value;
+            persistState();
+          });
+        });
+        phList.querySelectorAll('[data-phase-del]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.dcaPhases = state.dcaPhases.filter(x => String(x.id) !== btn.dataset.phaseDel);
+            persistState();
+            renderDcaConfigUI();
+          });
+        });
+      }
+    }
+
+    async function addDcaStockByCode(rawCode, presetName = '') {
+      const code = String(rawCode || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{4,6}$/.test(code)) {
+        showToast('代號格式錯誤', '請輸入 4~6 碼台股代號（例如 0050、2330）。', 'warn');
+        return;
+      }
+      if (state.dcaPortfolio.some(x => x.id === code)) {
+        showToast('已在組合中', `${code} 已存在於定投清單。`, 'info');
+        return;
+      }
+      let stockName = presetName;
+      if (!stockName) {
+        const known = state.watchlist.find(w => w.symbol === code);
+        if (known) {
+          stockName = known.name;
+        } else {
+          try {
+            const apiBase = getApiBase();
+            if (apiBase) {
+              const r = await fetch(`${apiBase}/api/v1/market/stock-info/${encodeURIComponent(code)}`);
+              if (r.ok) stockName = (await r.json()).stock_name;
+            }
+            if (!stockName) {
+              const r = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&data_id=${encodeURIComponent(code)}`);
+              const j = await r.json();
+              if (j.data && j.data[0]) stockName = j.data[0].stock_name;
+            }
+          } catch (e) {}
+        }
+      }
+      if (!stockName) {
+        showToast('查無此台股代號', `FinMind 找不到 ${code}（嚴禁猜測）。`, 'error');
+        return;
+      }
+      state.dcaPortfolio.push({ id: code, name: stockName, weight: 25 });
+      persistState();
+      renderDcaConfigUI();
+      showToast('已加入定投組合', `${code} ${stockName}`, 'success');
+    }
+
+    async function fetchDcaHistoryAndDivs(stockId, startDate) {
+      const apiBase = getApiBase();
+      const tok = state.finmindToken ? `&token=${encodeURIComponent(state.finmindToken)}` : '';
+      let prices = [], dividends = [], sourceLabel = 'FinMind v4';
+
+      if (apiBase) {
+        const [pRes, dRes] = await Promise.all([
+          fetch(`${apiBase}/api/v1/market/finmind-history/${encodeURIComponent(stockId)}?start_date=${encodeURIComponent(startDate)}${tok}`),
+          fetch(`${apiBase}/api/v1/market/finmind-dividend/${encodeURIComponent(stockId)}?start_date=${encodeURIComponent(startDate)}${tok}`)
+        ]);
+        if (pRes.ok) {
+          const pj = await pRes.json();
+          prices = pj.data || [];
+          sourceLabel = 'FinMind 真實日K (雲端代理)';
+        }
+        if (dRes.ok) {
+          const dj = await dRes.json();
+          dividends = dj.data || [];
+        }
+      }
+
+      if (prices.length === 0) {
+        const pUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${encodeURIComponent(stockId)}&start_date=${encodeURIComponent(startDate)}${tok}`;
+        const pResp = await fetch(pUrl, { mode: 'cors' });
+        if (!pResp.ok) throw new Error(`FinMind 歷史股價抓取失敗 HTTP ${pResp.status}`);
+        const pj = await pResp.json();
+        prices = (pj.data || []).filter(r => Number(r.close) > 0).map(r => ({
+          date: String(r.date), open: Number(r.open || r.close), max: Number(r.max || r.close),
+          min: Number(r.min || r.close), close: Number(r.close), Trading_Volume: Number(r.Trading_Volume || 0)
+        }));
+        sourceLabel = 'FinMind 真實日K (瀏覽器直連)';
+
+        try {
+          const dUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockDividend&data_id=${encodeURIComponent(stockId)}&start_date=${encodeURIComponent(startDate)}${tok}`;
+          const dResp = await fetch(dUrl, { mode: 'cors' });
+          if (dResp.ok) {
+            const dj = await dResp.json();
+            const exMap = {};
+            (dj.data || []).forEach(d => {
+              const cashVal = (Number(d.CashEarningsDistribution) || 0) + (Number(d.CashStatutorySurplus) || 0) || (Number(d.cash_dividend) || 0);
+              const stockVal = (Number(d.StockEarningsDistribution) || 0) + (Number(d.StockStatutorySurplus) || 0) || (Number(d.stock_dividend) || 0);
+              const exDate = (d.CashExDividendTradingDate || d.StockExDividendTradingDate || d.date || '').trim();
+              if (exDate && (cashVal > 0 || stockVal > 0)) {
+                exMap[exDate] = exMap[exDate] || { cash: 0, stock: 0 };
+                exMap[exDate].cash += cashVal;
+                exMap[exDate].stock += stockVal;
+              }
+            });
+            dividends = Object.keys(exMap).sort().map(dt => ({ date: dt, cash_dividend: exMap[dt].cash, stock_dividend: exMap[dt].stock }));
+          }
+        } catch (e) {}
+      }
+
+      if (prices.length === 0) throw new Error(`FinMind 查無 ${stockId} 自 ${startDate} 起之真實日 K 數據`);
+      prices.sort((a, b) => a.date.localeCompare(b.date));
+      return { prices, dividends, sourceLabel };
+    }
+
+    async function runDcaBacktest() {
+      if (state.dcaPortfolio.length === 0 || state.dcaPhases.length === 0) {
+        showToast('請確認回測參數', '請至少設定一檔台股標的與一個定投階段。', 'warn');
+        return;
+      }
+      const totalWeight = state.dcaPortfolio.reduce((s, x) => s + Number(x.weight || 0), 0);
+      if (totalWeight <= 0) return;
+
+      const btn = document.getElementById('btnRunDcaBacktest');
+      const banner = document.getElementById('dcaStatusBanner');
+      if (btn) btn.disabled = true;
+
+      const calcSplit = document.getElementById('dcaCalcSplitChk')?.checked ?? true;
+      const applyFee = document.getElementById('dcaApplyFeeChk')?.checked ?? true;
+      const dDay = Math.max(1, Math.min(31, parseInt(document.getElementById('dcaDeductionDay')?.value || '6', 10)));
+      const sortedPhases = [...state.dcaPhases].sort((a, b) => a.startDate.localeCompare(b.startDate));
+      const apiStart = sortedPhases[0].startDate.slice(0, 4) + '-01-01';
+
+      const allBuys = [], allCorps = [], stockDateMap = {};
+      const summary = { totalCost: 0, totalFees: 0, totalDiv: 0, totalSplit: 0, totalValue: 0, totalProfit: 0, roi: 0, firstDate: '9999-12-31', lastDate: '', sourceLabel: 'FinMind v4' };
+
+      try {
+        for (const stock of state.dcaPortfolio) {
+          if (banner) banner.textContent = `正在向 FinMind 抓取 ${stock.id} ${stock.name} 真實歷史日 K 與除權息資料...`;
+          const frac = Number(stock.weight) / totalWeight;
+          const stockPhases = sortedPhases.map(p => ({ ...p, amount: Number(p.amount) * frac }));
+          const { prices, dividends, sourceLabel } = await fetchDcaHistoryAndDivs(stock.id, apiStart);
+          summary.sourceLabel = sourceLabel;
+
+          const startYr = new Date(stockPhases[0].startDate).getFullYear();
+          const endDt = new Date(prices[prices.length - 1].date);
+          const targets = [];
+          for (let y = startYr; y <= endDt.getFullYear(); y++) {
+            for (let m = 1; m <= 12; m++) {
+              if (y === endDt.getFullYear() && m > endDt.getMonth() + 1) break;
+              const safeDay = Math.min(dDay, new Date(y, m, 0).getDate());
+              targets.push(`${y}-${String(m).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`);
+            }
+          }
+
+          let curShares = 0, curCost = 0, curFees = 0, curDiv = 0, curSplit = 0;
+          let prevRec = prices[0];
+          const pending = [...targets];
+          const dateMap = {};
+
+          for (let i = 0; i < prices.length; i++) {
+            const rec = prices[i];
+            const dt = rec.date;
+            let dayCash = 0, dayStock = 0, daySplit = 0, dayRed = 0;
+            const beforeShares = curShares;
+
+            const div = dividends.find(d => d.date === dt);
+            if (div && curShares > 0) {
+              if (div.cash_dividend > 0) {
+                dayCash = Math.floor(curShares * div.cash_dividend);
+                curDiv += dayCash;
+              }
+              if (calcSplit && div.stock_dividend > 0) {
+                dayStock = Math.floor(curShares * (div.stock_dividend / 10));
+                curShares += dayStock;
+                curSplit += dayStock;
+              }
+            }
+            if (calcSplit && i > 0 && rec.close > 0 && prevRec.close > 0 && beforeShares > 0) {
+              const adjPrev = Math.max(prevRec.close - (div?.cash_dividend || 0), 0.01);
+              const ratio = rec.close / adjPrev;
+              if (!dayStock && ratio <= 0.75) {
+                const mult = Math.round((adjPrev / rec.close) * 10) / 10;
+                if (mult >= 1.2) { daySplit = Math.floor(beforeShares * (mult - 1)); curShares += daySplit; curSplit += daySplit; }
+              } else if (ratio >= 1.25) {
+                const divd = Math.round(ratio * 10) / 10;
+                if (divd >= 1.2) { dayRed = beforeShares - Math.floor(beforeShares / divd); curShares -= dayRed; curSplit -= dayRed; }
+              }
+            }
+
+            if (dayCash > 0 || dayStock > 0 || daySplit > 0 || dayRed > 0) {
+              const tags = [];
+              if (dayCash > 0) tags.push(`現金配息 $${div.cash_dividend.toFixed(2)}/股`);
+              if (dayStock > 0) tags.push('除權配股');
+              if (daySplit > 0) tags.push('面額分割');
+              if (dayRed > 0) tags.push('減資換發');
+              allCorps.push({
+                date: dt, stockId: stock.id, stockName: stock.name,
+                typeLabel: tags.join(' + '), sharesBefore: beforeShares,
+                cashEarned: dayCash, shareDelta: dayStock + daySplit - dayRed, sharesAfter: curShares
+              });
+            }
+
+            while (pending.length > 0 && dt >= pending[0]) {
+              const tgt = pending.shift();
+              const diffDays = (new Date(dt) - new Date(tgt)) / 86400000;
+              if (diffDays >= 0 && diffDays <= 15) {
+                const ph = stockPhases.find(p => tgt >= p.startDate && tgt <= p.endDate);
+                if (ph && rec.close > 0) {
+                  const sharesBought = Math.floor(ph.amount / rec.close);
+                  if (sharesBought > 0) {
+                    const gross = sharesBought * rec.close;
+                    const fee = applyFee ? Math.max(1, Math.round(gross * 0.001425 * (state.feeDiscount / 10))) : 0;
+                    curShares += sharesBought;
+                    curCost += (gross + fee);
+                    curFees += fee;
+                    allBuys.push({
+                      date: dt, stockId: stock.id, stockName: stock.name,
+                      price: rec.close, spent: Math.round(gross), fee,
+                      shares: sharesBought, cumShares: curShares, cumCost: Math.round(curCost)
+                    });
+                    if (dt < summary.firstDate) summary.firstDate = dt;
+                  }
+                }
+                break;
+              }
+            }
+
+            dateMap[dt] = { close: rec.close, cumShares: curShares, cumCost: Math.round(curCost) };
+            prevRec = rec;
+          }
+
+          const lastClose = prices[prices.length - 1].close;
+          const lastDt = prices[prices.length - 1].date;
+          if (lastDt > summary.lastDate) summary.lastDate = lastDt;
+
+          summary.totalCost += curCost;
+          summary.totalFees += curFees;
+          summary.totalDiv += curDiv;
+          summary.totalSplit += curSplit;
+          summary.totalValue += (curShares * lastClose);
+          stockDateMap[stock.id] = dateMap;
+        }
+
+        summary.totalProfit = summary.totalValue + summary.totalDiv - summary.totalCost;
+        summary.roi = summary.totalCost > 0 ? (summary.totalProfit / summary.totalCost) * 100 : 0;
+
+        // Build combined timeline (sample evenly if > 160 points for crisp performance)
+        const allDates = Array.from(new Set(Object.values(stockDateMap).flatMap(m => Object.keys(m)))).sort();
+        const latestState = {};
+        state.dcaPortfolio.forEach(s => { latestState[s.id] = { cumCost: 0, shares: 0, close: 0 }; });
+        const timeline = allDates.map(dt => {
+          let dayCost = 0, dayVal = 0;
+          state.dcaPortfolio.forEach(s => {
+            const d = stockDateMap[s.id]?.[dt];
+            if (d) { latestState[s.id].cumCost = d.cumCost; latestState[s.id].shares = d.cumShares; latestState[s.id].close = d.close; }
+            dayCost += latestState[s.id].cumCost;
+            dayVal += latestState[s.id].shares * latestState[s.id].close;
+          });
+          return { date: dt, totalCost: Math.round(dayCost), totalValue: Math.round(dayVal) };
+        }).filter(pt => pt.totalCost > 0);
+
+        allBuys.sort((a, b) => b.date.localeCompare(a.date));
+        allCorps.sort((a, b) => b.date.localeCompare(a.date));
+
+        state.dcaResult = { summary, buys: allBuys, corps: allCorps, timeline };
+        renderDcaResults();
+        triggerHandshake('FINMIND', 'CORE', '#0d9488', true, 48, `真實定投回測完成：ROI ${summary.roi.toFixed(2)}%`);
+        if (banner) banner.textContent = `✓ 真實回測完成：${state.dcaPortfolio.map(s => `${s.id} ${s.name}`).join(' + ')}（共 ${allBuys.length} 次扣款、${allCorps.length} 筆真實除權息）`;
+        showToast('台股真實定投回測完成', `含息總報酬率 ${summary.roi.toFixed(2)}%，累積現金股利 ${fmtMoney(summary.totalDiv)}。`, 'success');
+      } catch (err) {
+        if (banner) banner.textContent = `❌ 回測異常：${err.message}`;
+        showToast('真實回測失敗', err.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function renderDcaResults() {
+      const r = state.dcaResult;
+      const sec = document.getElementById('dcaResultSection');
+      if (!r || !sec) return;
+      sec.style.display = 'flex';
+      const s = r.summary;
+
+      document.getElementById('dcaKpiCost').textContent = fmtMoney(s.totalCost);
+      document.getElementById('dcaKpiFees').textContent = `累計手續費 (${state.feeDiscount.toFixed(1)}折)：${fmtMoney(s.totalFees)}`;
+      document.getElementById('dcaKpiDiv').textContent = fmtMoney(s.totalDiv);
+      document.getElementById('dcaKpiSplit').textContent = `配股 / 分割異動：${s.totalSplit >= 0 ? '+' : ''}${fmtInt(s.totalSplit)} 股`;
+      document.getElementById('dcaKpiValue').textContent = fmtMoney(s.totalValue);
+      document.getElementById('dcaKpiDateRange').textContent = `區間：${s.firstDate} ~ ${s.lastDate}`;
+      document.getElementById('dcaKpiProfit').textContent = `${s.totalProfit >= 0 ? '+' : ''}${fmtMoney(s.totalProfit)} (${s.roi >= 0 ? '+' : ''}${s.roi.toFixed(2)}%)`;
+      const pCard = document.getElementById('dcaKpiProfitCard');
+      if (pCard) {
+        pCard.style.background = s.totalProfit >= 0 ? '#ecfdf5' : '#fef2f2';
+        pCard.style.borderColor = s.totalProfit >= 0 ? '#a7f3d0' : '#fecaca';
+      }
+      document.getElementById('dcaSourceBadge').textContent = s.sourceLabel;
+      document.getElementById('dcaBuyCount').textContent = String(r.buys.length);
+      document.getElementById('dcaCorpCount').textContent = String(r.corps.length);
+
+      // Downsample timeline slightly if very long so Chart.js stays super responsive
+      const step = Math.max(1, Math.floor(r.timeline.length / 180));
+      const pts = r.timeline.filter((_, i) => i % step === 0 || i === r.timeline.length - 1);
+
+      if (dcaChartInstance) dcaChartInstance.destroy();
+      dcaChartInstance = new Chart(document.getElementById('dcaMainChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: pts.map(p => p.date),
+          datasets: [
+            {
+              label: '投資組合真實總市值 (TWD)',
+              data: pts.map(p => p.totalValue),
+              borderColor: '#059669',
+              backgroundColor: 'rgba(5, 150, 105, 0.12)',
+              borderWidth: 2.4,
+              fill: true,
+              tension: 0.2,
+              pointRadius: 0
+            },
+            {
+              label: '累積投入成本 (TWD)',
+              data: pts.map(p => p.totalCost),
+              borderColor: '#2563eb',
+              borderDash: [5, 4],
+              borderWidth: 2,
+              fill: false,
+              tension: 0.1,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => fmtMoney(v), font: { size: 10 } } }
+          }
+        }
+      });
+
+      document.getElementById('dcaBuyTableBody').innerHTML = r.buys.map(b => `
+        <tr>
+          <td class="mono">${escapeHtml(b.date)}</td>
+          <td><strong class="mono" style="color:var(--accent-dark);">${escapeHtml(b.stockId)}</strong> ${escapeHtml(b.stockName)}</td>
+          <td class="num-right mono">${fmtNum(b.price, 2)}</td>
+          <td class="num-right mono" style="font-weight:700;">${fmtMoney(b.spent)}</td>
+          <td class="num-right mono">${fmtMoney(b.fee)}</td>
+          <td class="num-right mono" style="color:var(--accent-dark);font-weight:700;">+${fmtInt(b.shares)} 股</td>
+          <td class="num-right mono">${fmtInt(b.cumShares)} 股</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('dcaCorpTableBody').innerHTML = r.corps.length === 0
+        ? '<tr><td colspan="7" class="num-center" style="padding:18px;color:var(--ink-4);">該回測區間內尚無除權息紀錄</td></tr>'
+        : r.corps.map(c => `
+            <tr>
+              <td class="mono">${escapeHtml(c.date)}</td>
+              <td><strong class="mono" style="color:var(--accent-dark);">${escapeHtml(c.stockId)}</strong> ${escapeHtml(c.stockName)}</td>
+              <td><span class="badge badge-amber">${escapeHtml(c.typeLabel)}</span></td>
+              <td class="num-right mono">${fmtInt(c.sharesBefore)}</td>
+              <td class="num-right mono text-up" style="font-weight:800;">${c.cashEarned > 0 ? '+' + fmtMoney(c.cashEarned) : '--'}</td>
+              <td class="num-right mono">${c.shareDelta !== 0 ? (c.shareDelta > 0 ? '+' : '') + fmtInt(c.shareDelta) + ' 股' : '--'}</td>
+              <td class="num-right mono" style="font-weight:700;">${fmtInt(c.sharesAfter)} 股</td>
+            </tr>
+          `).join('');
+    }
+
+    function bindReviewAndDcaEvents() {
+      // Statement Review events
+      document.getElementById('reviewFileInput')?.addEventListener('change', e => {
+        handleReviewFileUpload(e.target.files);
+        e.target.value = '';
+      });
+      document.getElementById('btnReviewLoadSample')?.addEventListener('click', loadSampleReviewStatement);
+      document.getElementById('btnReviewImportSysOrders')?.addEventListener('click', importSystemOrdersIntoReview);
+      document.getElementById('btnReviewClear')?.addEventListener('click', () => {
+        state.reviewData = [];
+        state.reviewSource = '尚未匯入';
+        persistState();
+        populateReviewSymbolFilter();
+        renderReviewDashboard();
+        showToast('已清空復盤資料', '對帳單紀錄已歸零。', 'info');
+      });
+      document.getElementById('btnReviewExportCsv')?.addEventListener('click', () => {
+        const rows = getFilteredReviewRows();
+        if (!rows.length) { showToast('無資料可匯出', '請先匯入對帳單。', 'warn'); return; }
+        const hdr = '日期,商品代號名稱,類型,買進金額,賣出金額,原始手續費,淨損益\n';
+        const body = rows.map(r => [r.date, r.symbol, r.type === 'day' ? '當沖' : '留倉', r.buy, r.sell, r.fees, r.pnl].join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['\uFEFF' + hdr + body], { type: 'text/csv;charset=utf-8;' }));
+        a.download = `synapse_review_${Date.now()}.csv`;
+        a.click();
+      });
+      ['revDateStart', 'revDateEnd', 'revTypeFilter', 'revResultFilter', 'revSymbolFilter', 'revChartMode'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', renderReviewDashboard);
+      });
+      document.getElementById('btnRevAskAi')?.addEventListener('click', () => {
+        const c = calcReviewStats();
+        if (!c.rows.length) { showToast('請先匯入對帳單', '需要至少 1 筆對帳紀錄才能交由 AI 復盤。', 'warn'); return; }
+        const promptEl = document.getElementById('aiStudioPrompt');
+        if (promptEl) {
+          promptEl.value = `請幫我做交易對帳單復盤診斷：總筆數=${c.rows.length}，勝率=${c.winRate.toFixed(1)}%，獲利因子=${c.pf}x，帳面損益=${fmtMoney(c.netSum)}，手續費折數=${state.feeDiscount.toFixed(1)}折（預估退佣 ${fmtMoney(c.refund)}），實際淨損益=${fmtMoney(c.realPnl)}，最大回撤=${fmtMoney(c.maxDD)}。請指出最大弱點與改善紀律。`;
+        }
+        openFeatureModal('ai');
+        runMultiAiAnalysis(promptEl?.value || '');
+      });
+
+      // DCA Backtest events
+      document.getElementById('btnDcaAddStock')?.addEventListener('click', () => {
+        const inp = document.getElementById('dcaAddStockInput');
+        if (inp) { addDcaStockByCode(inp.value); inp.value = ''; }
+      });
+      document.querySelectorAll('[data-dca-quick]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const [code, name] = btn.dataset.dcaQuick.split('|');
+          addDcaStockByCode(code, name);
+        });
+      });
+      document.getElementById('btnDcaAddPhase')?.addEventListener('click', () => {
+        const nextId = state.dcaPhases.length ? Math.max(...state.dcaPhases.map(p => p.id)) + 1 : 1;
+        state.dcaPhases.push({ id: nextId, startDate: '2025-01-01', endDate: '2026-11-30', amount: 5000 });
+        persistState();
+        renderDcaConfigUI();
+      });
+      document.getElementById('btnRunDcaBacktest')?.addEventListener('click', runDcaBacktest);
+      document.getElementById('btnDcaTabBuy')?.addEventListener('click', () => {
+        document.getElementById('btnDcaTabBuy').className = 'btn btn-sm btn-dark';
+        document.getElementById('btnDcaTabCorp').className = 'btn btn-sm';
+        document.getElementById('dcaBuyTableWrap').style.display = 'block';
+        document.getElementById('dcaCorpTableWrap').style.display = 'none';
+      });
+      document.getElementById('btnDcaTabCorp')?.addEventListener('click', () => {
+        document.getElementById('btnDcaTabCorp').className = 'btn btn-sm btn-dark';
+        document.getElementById('btnDcaTabBuy').className = 'btn btn-sm';
+        document.getElementById('dcaBuyTableWrap').style.display = 'none';
+        document.getElementById('dcaCorpTableWrap').style.display = 'block';
+      });
+      document.getElementById('btnExportDcaCsv')?.addEventListener('click', () => {
+        if (!state.dcaResult?.buys?.length) { showToast('尚無回測結果', '請先點擊「開始真實回測」。', 'warn'); return; }
+        const hdr = '扣款日期,股票代號,中文名稱,真實收盤價,花費金額,手續費,買入股數,累積股數\n';
+        const body = state.dcaResult.buys.map(b => [b.date, b.stockId, b.stockName, b.price, b.spent, b.fee, b.shares, b.cumShares].join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['\uFEFF' + hdr + body], { type: 'text/csv;charset=utf-8;' }));
+        a.download = `synapse_dca_backtest_${Date.now()}.csv`;
+        a.click();
+      });
+    }
+
+    // =========================================================================
     // 12. BOOTSTRAP
     // =========================================================================
     async function initApp() {
       loadPersistedState();
       populateSettingsInputs();
       bindEvents();
+      bindReviewAndDcaEvents();
       setTradingMode('SIM');
       renderTradingViewChart();
       renderAllViews();

@@ -475,6 +475,113 @@ async def get_tw_stock_info(stock_id: str, token: str = ""):
     return info
 
 
+@app.get("/api/v1/market/finmind-history/{stock_id}")
+async def get_finmind_history(
+    stock_id: str,
+    start_date: str = "2023-01-01",
+    token: str = "",
+):
+    sid = stock_id.strip().upper()
+    cache_key = f"fmhist:{sid}:{start_date}"
+    cached = cache_get(cache_key, 600)
+    if cached:
+        return {"source": "finmind_history_cache", **cached}
+
+    params = {
+        "dataset": "TaiwanStockPrice",
+        "data_id": sid,
+        "start_date": start_date,
+    }
+    use_token = token.strip() or (next(_token_cycle) if _token_cycle else "")
+    if use_token:
+        params["token"] = use_token
+
+    url = "https://api.finmindtrade.com/api/v4/data?" + urllib.parse.urlencode(params)
+    status, data = await http_json(url, timeout=18.0)
+    if status != 200 or not isinstance(data, dict):
+        raise HTTPException(status_code=502, detail=f"FinMind History HTTP {status}")
+
+    rows = [
+        {
+            "date": str(r.get("date")),
+            "open": round(float(r.get("open") or r.get("close")), 2),
+            "max": round(float(r.get("max") or r.get("close")), 2),
+            "min": round(float(r.get("min") or r.get("close")), 2),
+            "close": round(float(r.get("close")), 2),
+            "Trading_Volume": int(r.get("Trading_Volume") or 0),
+        }
+        for r in (data.get("data") or [])
+        if float(r.get("close") or 0) > 0
+    ]
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"FinMind 查無 {sid} 自 {start_date} 起之真實歷史股價")
+
+    payload = {"stock_id": sid, "start_date": start_date, "count": len(rows), "data": rows}
+    cache_set(cache_key, payload)
+    return {"source": "finmind_history_live", **payload}
+
+
+@app.get("/api/v1/market/finmind-dividend/{stock_id}")
+async def get_finmind_dividend(
+    stock_id: str,
+    start_date: str = "2023-01-01",
+    token: str = "",
+):
+    sid = stock_id.strip().upper()
+    cache_key = f"fmdiv:{sid}:{start_date}"
+    cached = cache_get(cache_key, 3600)
+    if cached:
+        return {"source": "finmind_dividend_cache", **cached}
+
+    params = {
+        "dataset": "TaiwanStockDividend",
+        "data_id": sid,
+        "start_date": start_date,
+    }
+    use_token = token.strip() or (next(_token_cycle) if _token_cycle else "")
+    if use_token:
+        params["token"] = use_token
+
+    url = "https://api.finmindtrade.com/api/v4/data?" + urllib.parse.urlencode(params)
+    status, data = await http_json(url, timeout=15.0)
+    if status != 200 or not isinstance(data, dict):
+        raise HTTPException(status_code=502, detail=f"FinMind Dividend HTTP {status}")
+
+    ex_map: dict[str, dict[str, float]] = {}
+    for d in data.get("data") or []:
+        cash_val = (
+            float(d.get("CashEarningsDistribution") or 0)
+            + float(d.get("CashStatutorySurplus") or 0)
+            or float(d.get("cash_dividend") or 0)
+        )
+        stock_val = (
+            float(d.get("StockEarningsDistribution") or 0)
+            + float(d.get("StockStatutorySurplus") or 0)
+            or float(d.get("stock_dividend") or 0)
+        )
+        ex_date = (
+            str(d.get("CashExDividendTradingDate") or "").strip()
+            or str(d.get("StockExDividendTradingDate") or "").strip()
+            or str(d.get("date") or "").strip()
+        )
+        if ex_date and (cash_val > 0 or stock_val > 0):
+            cur = ex_map.setdefault(ex_date, {"cash": 0.0, "stock": 0.0})
+            cur["cash"] += cash_val
+            cur["stock"] += stock_val
+
+    dividends = [
+        {
+            "date": dt,
+            "cash_dividend": round(vals["cash"], 4),
+            "stock_dividend": round(vals["stock"], 4),
+        }
+        for dt, vals in sorted(ex_map.items())
+    ]
+    payload = {"stock_id": sid, "count": len(dividends), "data": dividends}
+    cache_set(cache_key, payload)
+    return {"source": "finmind_dividend_live", **payload}
+
+
 # ---------------------------------------------------------------------------
 # 2. Multi-Model AI Analysis Proxy (Grok, Gemini, Claude, ChatGPT)
 # ---------------------------------------------------------------------------
@@ -724,6 +831,7 @@ class PlaceOrderRequest(BaseModel):
     qty: int = 1
     unit: str = "張"  # 張 | 股 | 口
     price: float
+    fee_discount: float = 2.8  # 預設 2.8 折，可修改，最低 6 折（上限 6.0）
     source: str = "WEB_UI"
 
 
@@ -741,7 +849,8 @@ async def place_order(req: PlaceOrderRequest):
     shares = req.qty * 1000 if req.unit == "張" else req.qty
     notional = shares * req.price
     is_etf = req.symbol.startswith("00")
-    fee = max(20.0, round(notional * 0.001425 * 0.28, 2))
+    safe_discount = max(0.1, min(6.0, float(req.fee_discount or 2.8)))
+    fee = max(20.0, round(notional * 0.001425 * (safe_discount / 10.0), 2))
     tax = round(notional * (0.001 if is_etf else 0.003), 2) if req.side.upper() == "SELL" else 0.0
 
     ts_ms = int(time.time() * 1000)

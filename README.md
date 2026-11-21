@@ -42,10 +42,11 @@
 
 ![台股真實定投回測彈窗](docs/screenshots/dca_backtest_modal.png)
 
-### 7. LINE Bot & Telegram 條列通知中心
-> 支援 LINE Messaging API Push 與 Telegram Bot，訊息採條列對齊格式，完整顯示每檔標的之**股票代號、中文名稱、現價、漲跌幅、RSI 與觸發依據**。
+### 7. LINE Bot & Telegram 自動綁定通知中心（僅填 Bot Token・免填 Chat ID）
+> **Telegram Bot 零門檻安全串接**：畫面僅需貼上 `Bot Token`（免填 Chat ID），後端即以 Encrypt-then-MAC 加密存檔並遮罩顯示，自動產生一次性 `/start <setup_code>` 防搶先設定碼；建立者私訊 Bot 傳送該指令後，系統透過 `getUpdates` 自動取存 `owner_chat_id` 並令設定碼失效，後續交易警示自動以 HTML 格式推播至建立者。
 
-![LINE Bot 與 Telegram 通知中心](docs/screenshots/notify_line_tg.png)
+![Telegram 等待建立者傳送 /start 驗證](docs/screenshots/tg_awaiting_start.png)
+![LINE Bot 與 Telegram 已綁定通知中心](docs/screenshots/notify_line_tg.png)
 
 ### 8. RWD 行動裝置自適應介面（390px 零水平溢出）
 > 手機解析度下交握拓撲與卡片自動自適應排版，零水平溢出。
@@ -56,40 +57,40 @@
 
 ---
 
-## 核心功能（v3.0.0）
+## 核心功能（v3.1.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 六模型 AI（新增 Groq ＋ Ollama 地端）** | 除 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)** 外，新增 **Groq 極速雲端推理**（支援線上載入模型清單）與 **Ollama / LM Studio / vLLM 地端模型**（支援 `/api/tags` 一鍵偵測本機模型、原生 `/api/chat` 與 OpenAI 相容端點，並自動濾除 DeepSeek-R1/QwQ `<think>` 標籤）。 |
-| **2. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援四種路由策略：`AUTO`（高波動/放量切 Groq/Ollama、價量背離切 Claude/Gemini/Ollama、多頭動能切 Grok/Groq）、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING`，並具完整容錯切換（Failover）。 |
-| **3. 台股技術分析開關（v68）與自動買賣引擎** | 參考台股專家版 v68 報告整理為 8 大獨立技術開關（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動），提供全開／價量動能組／波段轉折組預設；啟用自動買賣後可定時實時偵測並依開關評分＋AI 信心門檻＋風控檢核自動執行 SIM / LIVE 委託。 |
-| **4. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
-| **5. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
-| **6. 對帳單交易復盤** | 參考 `Trading Pro V11.3`：支援多選匯入 PDF（含密碼解鎖與台灣券商商品名稱映射）、XLSX、CSV、JSON，提供預估退佣、實際淨損益、勝率、獲利因子、最大回撤與五維能力雷達。 |
-| **7. 台股真實定投回測查詢** | 參考 `台股真實定投回測 v16`：多標的權重＋多階段每月定投日設定，向 FinMind 即時抓取真實歷史日 K、現金股利、除權配股與分割／減資紀錄，嚴禁猜測假數據。 |
-| **8. TradingView × LINE / Telegram × SIM/LIVE 切換** | 內嵌 TradingView 進階線圖與帳號／雲端 Layout 綁定、Pine Script v5 Webhook；LINE Bot & Telegram 完整條列股票代號＋中文名稱；支援 SIM 模擬盤與永豐金 Shioaji LIVE 實盤安全切換與緊急熔斷。 |
+| **1. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情；支援一鍵「重新綁定通知目標」與「發送測試通知」。 |
+| **2. 六模型 AI（新增 Groq ＋ Ollama 地端）** | 除 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)** 外，新增 **Groq 極速雲端推理**（支援線上載入模型清單）與 **Ollama / LM Studio / vLLM 地端模型**（支援 `/api/tags` 一鍵偵測本機模型、原生 `/api/chat` 與 OpenAI 相容端點，並自動濾除 DeepSeek-R1/QwQ `<think>` 標籤）。 |
+| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援四種路由策略：`AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING`，並具完整容錯切換（Failover）。 |
+| **4. 台股技術分析開關（v68）與自動買賣引擎** | 參考台股專家版 v68 報告整理為 8 大獨立技術開關（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動），提供全開／價量動能組／波段轉折組預設；啟用自動買賣後可定時實時偵測並依開關評分＋AI 信心門檻＋風控檢核自動執行 SIM / LIVE 委託。 |
+| **5. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
+| **6. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
+| **7. 對帳單交易復盤 & 台股真實定投回測** | 支援多選匯入 PDF（含密碼解鎖）/ XLSX / CSV / JSON 對帳單復盤與退佣試算；並提供 FinMind 真實歷史股價＋除權息配股定投回測查詢，嚴禁猜測假數據。 |
+| **8. TradingView × LINE Bot × SIM/LIVE 切換** | 內嵌 TradingView 進階線圖與帳號／雲端 Layout 綁定、Pine Script v5 Webhook；LINE Bot 條列股票代號＋中文名稱；支援 SIM 模擬盤與永豐金 Shioaji LIVE 實盤安全切換與緊急熔斷。 |
 
 ---
 
 ## 快速開始（支援直接執行與一鍵打包）
 
 ### 方式一：直接下載 GitHub Release 執行（最簡單、免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.0.0`：
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.1.0`：
 
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.0.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
+  - 下載 `SYNAPSE-TW-v3.1.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.0.0-macos-arm64
-  ./SYNAPSE-TW-v3.0.0-macos-arm64
+  chmod +x SYNAPSE-TW-v3.1.0-macos-arm64
+  ./SYNAPSE-TW-v3.1.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.0.0-linux-x64
-  ./SYNAPSE-TW-v3.0.0-linux-x64
+  chmod +x SYNAPSE-TW-v3.1.0-linux-x64
+  ./SYNAPSE-TW-v3.1.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.0.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SYNAPSE-TW-v3.1.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
 
@@ -120,12 +121,12 @@ cd TradingAutomatic
 
 ```bash
 pip install -r requirements.txt pyinstaller
-python3 package.py --version v3.0.0
+python3 package.py --version v3.1.0
 ```
 
 執行完成後會在 `dist/` 目錄自動產出：
-1. `SYNAPSE-TW-v3.0.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
-2. `SYNAPSE-TW-v3.0.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
+1. `SYNAPSE-TW-v3.1.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
+2. `SYNAPSE-TW-v3.1.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
 3. `SHA256SUMS.txt`（完整性校驗檔）
 
 > 專案同時包含 GitHub Actions 自動發布管線 [`.github/workflows/release.yml`](.github/workflows/release.yml)，每次推送 `v*` 標籤時會自動於雲端同步編譯 **Windows `.exe`、macOS、Linux** 三平台直出執行檔並上傳至 Release。
@@ -134,7 +135,7 @@ python3 package.py --version v3.0.0
 
 ### 方式四：雲端一鍵部署
 
-#### A. Render.com 全棧部署（推薦，Yahoo / FinMind / 六模型 AI / 多 Agent / LINE / Shioaji 全支援）
+#### A. Render.com 全棧部署（推薦，Yahoo / FinMind / 六模型 AI / 多 Agent / LINE / Telegram 加密自動綁定 / Shioaji 全支援）
 1. 登入 [Render.com](https://render.com) → **New +** → **Blueprint**。
 2. 選擇 `LHSheng-404/TradingAutomatic`（自動讀取 [`render.yaml`](render.yaml)）。
 3. 於 Environment Variables 填入您的金鑰（見下方環境變數說明）即可取得 HTTPS 公開網址。
@@ -148,19 +149,22 @@ docker run -d -p 8000:8000 --env-file .env --name synapse-tw synapse-tw
 ```
 
 #### C. 純靜態前端部署（Cloudflare Pages / Vercel / GitHub Pages）
-- 本專案已內建 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 與 [`vercel.json`](vercel.json)，純靜態前端預設直連 FinMind v4 (`Access-Control-Allow-Origin: *`) 真實台股資料；亦可於網頁內「雲端部署與腳本」填入已部署的 FastAPI 後端網址，立即啟用 Yahoo 盤中代理、六模型 AI、多 Agent 與 LINE 推播。
+- 本專案已內建 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 與 [`vercel.json`](vercel.json)，純靜態前端預設直連 FinMind v4 (`Access-Control-Allow-Origin: *`) 真實台股資料；亦可於網頁內「雲端部署與腳本」填入已部署的 FastAPI 後端網址，立即啟用 Yahoo 盤中代理、六模型 AI、多 Agent 與加密 Telegram / LINE 推播。
 
 ---
 
 ## 詳細使用指南與環境設定
 
-複製 `.env.example` 為 `.env`（切勿將 `.env` 或 `.pfx` 憑證上傳至 Git）：
+複製 `.env.example` 為 `.env`（切勿將 `.env`、`.synapse_secret.key` 或 `.pfx` 憑證上傳至 Git）：
 
 ```env
 # 預設模擬盤 SIM；完成實盤風控測試與憑證驗證後方可改為 LIVE
 TRADING_MODE=SIM
 CHECK_TV_IP=true
 TV_WEBHOOK_SECRET=SYNAPSE_TV_SECRET_2026
+
+# 伺服器加密主金鑰（選填；未填時自動於本機生成 0600 權限 .synapse_secret.key 加密儲存 Bot Token）
+SYNAPSE_MASTER_KEY=
 
 # FinMind API v4 Token（選填，多組請以逗號分隔輪替）
 FINMIND_TOKENS=
@@ -179,11 +183,10 @@ CLAUDE_MODEL=claude-sonnet-4-20250514
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 
-# LINE Messaging API Bot & Telegram Bot
+# LINE Messaging API Bot & Telegram Bot（Telegram 建議直接於網頁貼上 Token 自動綁定，免填 Chat ID）
 LINE_CHANNEL_ACCESS_TOKEN=
 LINE_TARGET_ID=
 TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
 
 # 永豐金 Shioaji 實盤設定（僅 LIVE 模式需要）
 SHIOAJI_API_KEY=
@@ -193,6 +196,10 @@ SHIOAJI_CA_PASS=
 ```
 
 ### 各模組串接說明
+1. **Telegram Bot 一鍵自動綁定（僅填 Bot Token・免填 Chat ID）**
+   - 向 `@BotFather` 申請 `Bot Token` 後，開啟「**功能選單 → LINE / TG 通知中心**」，於 Telegram 區塊貼上 `Bot Token` 並點擊「**儲存並驗證 Bot Token**」。
+   - 系統驗證 Token 有效後即加密存檔（畫面遮罩且不於前端／日誌曝光明文），並產生一次性 `/start <setup_code>` 指令。
+   - 使用建立者私訊開啟您的 Bot 傳送該指令，系統會透過 `getUpdates` 自動取存 `owner_chat_id` 並令一次性設定碼失效，隨後點擊「**發送測試通知**」即可驗證；如需更換接收者，點擊「**重新綁定通知目標**」即可重設。
 1. **Groq 與 Ollama 地端模型串接**
    - **Groq**：至 [Groq Console](https://console.groq.com/) 取得 `gsk_...` 金鑰，於「功能選單 → AI 六模型 & Ollama」填入後可按「載入」即時抓回所有可用模型（預設 `llama-3.3-70b-versatile`）。
    - **Ollama 地端模型**：本機安裝 [Ollama](https://ollama.com/) 並執行 `ollama pull qwen2.5:14b`（或 `deepseek-r1:14b`、`llama3.1:8b`）後，於設定頁按「**偵測模型**」即可自動讀取本機清單。若經由本系統 Python 後端（`server.py` / 單檔執行檔）啟動則免設 CORS；若使用純靜態網頁直連本機 Ollama，啟動時加上 `OLLAMA_ORIGINS=* ollama serve` 即可。

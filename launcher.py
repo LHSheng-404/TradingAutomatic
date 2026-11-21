@@ -54,7 +54,7 @@ def main() -> None:
     url = f"http://{display_host}:{port}"
 
     print("=" * 64)
-    print("  SYNAPSE TW · 全自動台股交易系統 v3.0.0")
+    print("  SYNAPSE TW · 全自動台股交易系統 v3.1.0")
     print(f"  介面網址：{url}")
     print(f"  健康檢查：{url}/api/v1/health")
     print("  按 Ctrl+C 即可安全停止系統")

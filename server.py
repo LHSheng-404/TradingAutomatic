@@ -12,8 +12,14 @@ SYNAPSE TW — 全自動台股交易系統雲端後端 (FastAPI)
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
+import hmac
+import html
 import json
 import os
+import re
+import secrets
 import sqlite3
 import sys
 import time
@@ -61,6 +67,9 @@ _load_local_env()
 BASE_DIR = ASSET_DIR
 INDEX_HTML = ASSET_DIR / "index.html"
 DB_PATH = Path(os.getenv("SYNAPSE_DB_PATH", str(DATA_DIR / "synapse_trades.db")))
+SECRET_KEY_PATH = Path(os.getenv("SYNAPSE_SECRET_KEY_PATH", str(DATA_DIR / ".synapse_secret.key")))
+TELEGRAM_API_BASE = os.getenv("TELEGRAM_API_BASE", "https://api.telegram.org").rstrip("/")
+TG_SETUP_TTL_SEC = int(os.getenv("TG_SETUP_TTL_SEC", "900"))
 TW_TZ = timezone(timedelta(hours=8))
 
 TV_OFFICIAL_IPS = {
@@ -87,7 +96,108 @@ if SERVER_TRADING_MODE not in ("SIM", "LIVE"):
 
 
 # ---------------------------------------------------------------------------
-# Database Initialization (SQLite millisecond execution audit log)
+# Authenticated Secret Encryption (Encrypt-then-MAC, Zero Extra Dependencies)
+# & Strict Token Masking / Redaction
+# ---------------------------------------------------------------------------
+def _get_master_key() -> bytes:
+    env_key = os.getenv("SYNAPSE_MASTER_KEY", "").strip()
+    if env_key:
+        return hashlib.sha256(env_key.encode("utf-8")).digest()
+    if SECRET_KEY_PATH.exists():
+        raw = SECRET_KEY_PATH.read_bytes()
+        if len(raw) >= 32:
+            return raw[:32]
+    key = secrets.token_bytes(32)
+    try:
+        SECRET_KEY_PATH.write_bytes(key)
+        os.chmod(SECRET_KEY_PATH, 0o600)
+    except Exception:
+        pass
+    return key
+
+
+def _derive_subkeys(master: bytes) -> tuple[bytes, bytes]:
+    enc_key = hmac.new(master, b"synapse-tw-enc-v1", hashlib.sha256).digest()
+    mac_key = hmac.new(master, b"synapse-tw-mac-v1", hashlib.sha256).digest()
+    return enc_key, mac_key
+
+
+def _keystream(enc_key: bytes, nonce: bytes, length: int) -> bytes:
+    out = bytearray()
+    ctr = 0
+    while len(out) < length:
+        block = hmac.new(enc_key, nonce + ctr.to_bytes(4, "big"), hashlib.sha256).digest()
+        out.extend(block)
+        ctr += 1
+    return bytes(out[:length])
+
+
+def encrypt_secret(plaintext: str) -> str:
+    data = plaintext.encode("utf-8")
+    enc_key, mac_key = _derive_subkeys(_get_master_key())
+    nonce = secrets.token_bytes(16)
+    stream = _keystream(enc_key, nonce, len(data))
+    ct = bytes(a ^ b for a, b in zip(data, stream))
+    tag = hmac.new(mac_key, b"v1" + nonce + ct, hashlib.sha256).digest()
+    return "v1:" + base64.urlsafe_b64encode(nonce + ct + tag).decode("ascii")
+
+
+def decrypt_secret(blob: str) -> str:
+    if not blob or not blob.startswith("v1:"):
+        raise ValueError("無效的加密資料格式")
+    raw = base64.urlsafe_b64decode(blob[3:].encode("ascii"))
+    if len(raw) < 48:
+        raise ValueError("加密資料長度異常")
+    nonce, ct, tag = raw[:16], raw[16:-32], raw[-32:]
+    enc_key, mac_key = _derive_subkeys(_get_master_key())
+    expected = hmac.new(mac_key, b"v1" + nonce + ct, hashlib.sha256).digest()
+    if not hmac.compare_digest(tag, expected):
+        raise ValueError("加密憑證驗證失敗（金鑰不符或資料遭竄改）")
+    stream = _keystream(enc_key, nonce, len(ct))
+    return bytes(a ^ b for a, b in zip(ct, stream)).decode("utf-8")
+
+
+def mask_tg_token(token: str) -> str:
+    t = (token or "").strip()
+    if not t:
+        return ""
+    if ":" in t:
+        bot_id, secret_part = t.split(":", 1)
+        prefix = bot_id[:4] + ("*" * max(0, len(bot_id) - 4))
+        tail = secret_part[-4:] if len(secret_part) >= 8 else ""
+        return f"{prefix}:{'*' * 10}{tail}"
+    return t[:3] + "********" + (t[-3:] if len(t) > 8 else "")
+
+
+_TG_TOKEN_URL_RE = re.compile(r"bot\d+:[A-Za-z0-9_-]{8,}", re.IGNORECASE)
+_TG_RAW_TOKEN_RE = re.compile(r"\b\d{6,15}:[A-Za-z0-9_-]{20,}\b")
+
+
+def redact_secrets(text: Any, extra_secrets: Optional[list[str]] = None) -> str:
+    s = str(text or "")
+    for sec in (extra_secrets or []):
+        if sec:
+            s = s.replace(sec, "[REDACTED_TOKEN]")
+            s = s.replace(urllib.parse.quote(sec, safe=""), "[REDACTED_TOKEN]")
+    s = _TG_TOKEN_URL_RE.sub("bot[REDACTED_TOKEN]", s)
+    s = _TG_RAW_TOKEN_RE.sub("[REDACTED_TOKEN]", s)
+    return s
+
+
+def format_telegram_html(text: str) -> str:
+    """
+    安全轉換純文字、基本 Markdown (**粗體**, `等寬`) 與交易警示表情為 Telegram HTML，
+    避免 < > & 等符號導致 Telegram parse_mode=HTML 解析失敗。
+    """
+    escaped = html.escape(str(text or ""), quote=False)
+    # Basic safe Markdown -> HTML conversion
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
+    escaped = re.sub(r"`([^`\n]+)`", r"<code>\1</code>", escaped)
+    return escaped
+
+
+# ---------------------------------------------------------------------------
+# Database Initialization (SQLite millisecond execution audit log & TG binding)
 # ---------------------------------------------------------------------------
 def init_db() -> None:
     conn = sqlite3.connect(DB_PATH)
@@ -117,6 +227,26 @@ def init_db() -> None:
     )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_orders_ts ON trade_orders(ts_ms DESC)"
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS telegram_bindings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            token_hash TEXT NOT NULL,
+            token_enc TEXT NOT NULL,
+            token_masked TEXT NOT NULL,
+            bot_id TEXT DEFAULT '',
+            bot_username TEXT DEFAULT '',
+            bot_name TEXT DEFAULT '',
+            owner_chat_id TEXT DEFAULT '',
+            owner_label TEXT DEFAULT '',
+            setup_code TEXT DEFAULT '',
+            setup_code_expires_at INTEGER DEFAULT 0,
+            bound INTEGER DEFAULT 0,
+            last_update_id INTEGER DEFAULT 0,
+            updated_at TEXT NOT NULL
+        )
+        """
     )
     conn.commit()
     conn.close()
@@ -240,9 +370,10 @@ async def health_check():
                 os.getenv("LINE_CHANNEL_ACCESS_TOKEN") and os.getenv("LINE_TARGET_ID")
             ),
             "telegram": bool(
-                os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")
+                (_tg_get_binding_row() or {}).get("bound")
             ),
         },
+        "telegram_binding": _tg_build_public_status(_tg_get_binding_row()),
     }
 
 
@@ -1368,15 +1499,505 @@ async def orchestrate_multi_agent(req: MultiAgentRequest):
 
 
 # ---------------------------------------------------------------------------
-# 3. LINE Bot & Telegram Notification Proxy
+# 3. LINE Bot & Telegram Bot Secure Auto-Binding Notification Proxy
+#    - Token-only setup: validate via getMe, encrypt at rest, issue one-time setup_code
+#    - Creator sends `/start <setup_code>` -> poll getUpdates -> bind owner_chat_id -> invalidate setup_code
+#    - Strict zero-leakage: token never returned, never logged, masked in UI, redacted in errors
 # ---------------------------------------------------------------------------
+class TelegramSaveTokenRequest(BaseModel):
+    bot_token: str
+
+
 class NotifyRequest(BaseModel):
     text: str
     line_token: str = ""
     line_target_id: str = ""
-    tg_token: str = ""
-    tg_chat_id: str = ""
     channels: list[str] = Field(default_factory=lambda: ["line", "telegram"])
+    is_html: bool = False
+
+
+def _tg_get_binding_row() -> Optional[dict[str, Any]]:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM telegram_bindings WHERE id = 1").fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def _tg_issue_new_setup_code() -> tuple[str, int]:
+    code = secrets.token_hex(4).upper()
+    expires_at = int(time.time()) + TG_SETUP_TTL_SEC
+    return code, expires_at
+
+
+def _tg_build_public_status(row: Optional[dict[str, Any]]) -> dict[str, Any]:
+    if not row:
+        return {
+            "configured": False,
+            "bound": False,
+            "status": "unconfigured",
+            "status_text": "尚未設定 Bot Token",
+            "token_masked": "",
+            "bot_username": "",
+            "bot_name": "",
+            "owner_label": "",
+            "setup_code": "",
+            "setup_command": "",
+            "setup_deep_link": "",
+            "setup_expires_in_sec": 0,
+        }
+
+    is_bound = bool(row.get("bound")) and bool(row.get("owner_chat_id"))
+    bot_user = str(row.get("bot_username") or "")
+    if is_bound:
+        return {
+            "configured": True,
+            "bound": True,
+            "status": "bound",
+            "status_text": "已綁定通知目標",
+            "token_masked": str(row.get("token_masked") or ""),
+            "bot_username": bot_user,
+            "bot_name": str(row.get("bot_name") or ""),
+            "owner_label": str(row.get("owner_label") or "已綁定建立者私訊"),
+            "setup_code": "",
+            "setup_command": "",
+            "setup_deep_link": "",
+            "setup_expires_in_sec": 0,
+        }
+
+    code = str(row.get("setup_code") or "")
+    exp_at = int(row.get("setup_code_expires_at") or 0)
+    rem = max(0, exp_at - int(time.time()))
+    if not code or rem == 0:
+        code, exp_at = _tg_issue_new_setup_code()
+        rem = max(0, exp_at - int(time.time()))
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            "UPDATE telegram_bindings SET setup_code=?, setup_code_expires_at=?, updated_at=? WHERE id=1",
+            (code, exp_at, tw_now_str()),
+        )
+        conn.commit()
+        conn.close()
+
+    deep_link = f"https://t.me/{bot_user}?start={code}" if bot_user else ""
+    return {
+        "configured": True,
+        "bound": False,
+        "status": "awaiting_start",
+        "status_text": "等待建立者對 Bot 傳送 /start",
+        "token_masked": str(row.get("token_masked") or ""),
+        "bot_username": bot_user,
+        "bot_name": str(row.get("bot_name") or ""),
+        "owner_label": "",
+        "setup_code": code,
+        "setup_command": f"/start {code}",
+        "setup_deep_link": deep_link,
+        "setup_expires_in_sec": rem,
+    }
+
+
+async def _tg_api_call(
+    token: str,
+    method_name: str,
+    http_method: str = "GET",
+    params: Optional[dict[str, Any]] = None,
+    json_body: Optional[dict[str, Any]] = None,
+    timeout: float = 10.0,
+) -> tuple[int, Any]:
+    url = f"{TELEGRAM_API_BASE}/bot{urllib.parse.quote(token, safe=':')}/{method_name}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    try:
+        status, body = await http_json(url, method=http_method, json_body=json_body, timeout=timeout)
+        if isinstance(body, str):
+            body = redact_secrets(body, [token])
+        elif isinstance(body, dict) and "description" in body:
+            body = {**body, "description": redact_secrets(body["description"], [token])}
+        return status, body
+    except Exception as exc:
+        return 0, {"ok": False, "description": redact_secrets(str(exc), [token])}
+
+
+async def _send_telegram_bound_message(text: str, is_html: bool = False) -> dict[str, Any]:
+    row = _tg_get_binding_row()
+    if not row:
+        return {
+            "ok": False,
+            "code": "NOT_CONFIGURED",
+            "error": "尚未設定 Telegram Bot Token，請先於設定頁貼上 Bot Token 並儲存驗證。",
+        }
+
+    if not row.get("bound") or not row.get("owner_chat_id"):
+        pub = _tg_build_public_status(row)
+        return {
+            "ok": False,
+            "code": "NOT_BOUND",
+            "error": f"尚未綁定通知目標，禁止推播。請先開啟您的 Bot 傳送 {pub['setup_command']} 完成建立者綁定。",
+        }
+
+    try:
+        token = decrypt_secret(row["token_enc"])
+    except Exception:
+        return {
+            "ok": False,
+            "code": "DECRYPT_ERROR",
+            "error": "已儲存的 Bot Token 無法解密，請重新輸入 Bot Token 並驗證。",
+        }
+
+    payload_text = text if is_html else format_telegram_html(text)
+    status, body = await _tg_api_call(
+        token,
+        "sendMessage",
+        http_method="POST",
+        json_body={
+            "chat_id": str(row["owner_chat_id"]),
+            "text": payload_text,
+            "parse_mode": "HTML",
+        },
+        timeout=10.0,
+    )
+    ok = 200 <= status < 300 and isinstance(body, dict) and bool(body.get("ok", True))
+    if ok:
+        return {
+            "ok": True,
+            "status": status,
+            "owner_label": row.get("owner_label") or "已綁定通知目標",
+        }
+    desc = body.get("description") if isinstance(body, dict) else str(body)
+    return {
+        "ok": False,
+        "status": status,
+        "error": redact_secrets(desc or f"Telegram sendMessage HTTP {status}", [token]),
+    }
+
+
+@app.get("/api/v1/telegram/status")
+async def get_telegram_binding_status():
+    return _tg_build_public_status(_tg_get_binding_row())
+
+
+@app.post("/api/v1/telegram/save-token")
+async def save_telegram_bot_token(req: TelegramSaveTokenRequest):
+    token = (req.bot_token or "").strip()
+    if not token or ":" not in token or len(token) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Bot Token 格式不正確，請貼上 @BotFather 提供的完整 Token（例如 123456789:AAH...）。",
+        )
+
+    # 1. Verify token validity via Telegram getMe
+    status, body = await _tg_api_call(token, "getMe", http_method="GET", timeout=10.0)
+    if status != 200 or not isinstance(body, dict) or not body.get("ok"):
+        err_desc = body.get("description") if isinstance(body, dict) else f"HTTP {status}"
+        raise HTTPException(
+            status_code=400,
+            detail=f"Telegram Bot Token 驗證失敗：{redact_secrets(err_desc, [token])}",
+        )
+
+    bot_info = body.get("result") or {}
+    bot_id = str(bot_info.get("id") or "")
+    bot_username = str(bot_info.get("username") or "")
+    bot_name = str(bot_info.get("first_name") or bot_username or "Telegram Bot")
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    token_enc = encrypt_secret(token)
+    token_masked = mask_tg_token(token)
+
+    existing = _tg_get_binding_row()
+    # Keep existing verified owner binding only if exact same token was already bound
+    if existing and existing.get("token_hash") == token_hash and existing.get("bound") and existing.get("owner_chat_id"):
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            """
+            UPDATE telegram_bindings
+            SET token_enc=?, token_masked=?, bot_id=?, bot_username=?, bot_name=?, updated_at=?
+            WHERE id=1
+            """,
+            (token_enc, token_masked, bot_id, bot_username, bot_name, tw_now_str()),
+        )
+        conn.commit()
+        conn.close()
+        return {
+            "ok": True,
+            "message": "Token 驗證成功，保留既有已綁定通知目標。",
+            **_tg_build_public_status(_tg_get_binding_row()),
+        }
+
+    # New token or unbound token: issue one-time setup_code and clear any prior owner binding
+    last_update_id = 0
+    up_st, up_body = await _tg_api_call(
+        token,
+        "getUpdates",
+        http_method="GET",
+        params={"limit": 1, "offset": -1, "timeout": 0},
+        timeout=8.0,
+    )
+    if up_st == 200 and isinstance(up_body, dict) and up_body.get("ok"):
+        updates = up_body.get("result") or []
+        if updates:
+            last_update_id = int(updates[-1].get("update_id") or 0)
+
+    setup_code, expires_at = _tg_issue_new_setup_code()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        INSERT INTO telegram_bindings (
+            id, token_hash, token_enc, token_masked,
+            bot_id, bot_username, bot_name,
+            owner_chat_id, owner_label,
+            setup_code, setup_code_expires_at, bound, last_update_id, updated_at
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, '', '', ?, ?, 0, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            token_hash=excluded.token_hash,
+            token_enc=excluded.token_enc,
+            token_masked=excluded.token_masked,
+            bot_id=excluded.bot_id,
+            bot_username=excluded.bot_username,
+            bot_name=excluded.bot_name,
+            owner_chat_id='',
+            owner_label='',
+            setup_code=excluded.setup_code,
+            setup_code_expires_at=excluded.setup_code_expires_at,
+            bound=0,
+            last_update_id=excluded.last_update_id,
+            updated_at=excluded.updated_at
+        """,
+        (
+            token_hash,
+            token_enc,
+            token_masked,
+            bot_id,
+            bot_username,
+            bot_name,
+            setup_code,
+            expires_at,
+            last_update_id,
+            tw_now_str(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    pub = _tg_build_public_status(_tg_get_binding_row())
+    return {
+        "ok": True,
+        "message": f"Bot Token 驗證成功（@{bot_username}），請開啟 Bot 傳送 {pub['setup_command']} 完成建立者綁定。",
+        **pub,
+    }
+
+
+@app.post("/api/v1/telegram/poll-bind")
+async def poll_telegram_binding():
+    row = _tg_get_binding_row()
+    if not row:
+        return {"ok": False, "newly_bound": False, **_tg_build_public_status(None)}
+
+    if row.get("bound") and row.get("owner_chat_id"):
+        return {"ok": True, "newly_bound": False, **_tg_build_public_status(row)}
+
+    # Ensure valid unexpired one-time setup_code
+    pub_before = _tg_build_public_status(row)
+    row = _tg_get_binding_row() or row
+    expected_code = str(row.get("setup_code") or "").strip()
+    if not expected_code:
+        return {"ok": False, "newly_bound": False, **pub_before}
+
+    try:
+        token = decrypt_secret(row["token_enc"])
+    except Exception:
+        raise HTTPException(status_code=500, detail="已儲存之 Bot Token 解密失敗，請重新儲存。")
+
+    params: dict[str, Any] = {
+        "timeout": 0,
+        "allowed_updates": json.dumps(["message"]),
+    }
+    last_uid = int(row.get("last_update_id") or 0)
+    if last_uid > 0:
+        params["offset"] = last_uid + 1
+
+    status, body = await _tg_api_call(token, "getUpdates", http_method="GET", params=params, timeout=10.0)
+    if status != 200 or not isinstance(body, dict) or not body.get("ok"):
+        err_desc = body.get("description") if isinstance(body, dict) else f"HTTP {status}"
+        return {
+            "ok": False,
+            "newly_bound": False,
+            "error": redact_secrets(err_desc or "輪詢 getUpdates 失敗", [token]),
+            **pub_before,
+        }
+
+    updates = body.get("result") or []
+    max_uid = last_uid
+    matched_chat_id = ""
+    matched_label = ""
+    expected_cmd = f"/start {expected_code}".lower()
+
+    for upd in updates:
+        uid = int(upd.get("update_id") or 0)
+        if uid > max_uid:
+            max_uid = uid
+        msg = upd.get("message") or {}
+        chat = msg.get("chat") or {}
+        text = str(msg.get("text") or "").strip()
+        # Require private direct message + exact one-time setup_code
+        if chat.get("type") != "private":
+            continue
+        if text.lower() == expected_cmd:
+            cid = str(chat.get("id") or "").strip()
+            if cid:
+                matched_chat_id = cid
+                uname = str(chat.get("username") or "").strip()
+                fname = str(chat.get("first_name") or "").strip()
+                tail = cid[-4:] if len(cid) >= 4 else cid
+                if uname:
+                    matched_label = f"@{uname}（建立者私訊）"
+                elif fname:
+                    matched_label = f"{fname}（私訊 ••••{tail}）"
+                else:
+                    matched_label = f"建立者私訊（••••{tail}）"
+                break
+
+    conn = sqlite3.connect(DB_PATH)
+    if matched_chat_id:
+        # Bind owner_chat_id & immediately invalidate one-time setup_code (anti-hijack)
+        conn.execute(
+            """
+            UPDATE telegram_bindings
+            SET owner_chat_id=?, owner_label=?, bound=1,
+                setup_code='', setup_code_expires_at=0,
+                last_update_id=?, updated_at=?
+            WHERE id=1 AND bound=0
+            """,
+            (matched_chat_id, matched_label, max_uid, tw_now_str()),
+        )
+        conn.commit()
+        conn.close()
+
+        # Send immediate HTML welcome confirmation to owner_chat_id
+        welcome_html = (
+            "✅ <b>SYNAPSE TW 通知目標已綁定</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot：<code>@{html.escape(str(row.get('bot_username') or 'Bot'))}</code>\n"
+            "🔐 一次性設定碼已立即失效（每 Token 限 1 預設目標）\n"
+            "📈 後續台股交易訊號、多 Agent 警示與成交回報將自動推播至此私訊。"
+        )
+        await _tg_api_call(
+            token,
+            "sendMessage",
+            http_method="POST",
+            json_body={
+                "chat_id": matched_chat_id,
+                "text": welcome_html,
+                "parse_mode": "HTML",
+            },
+            timeout=10.0,
+        )
+        return {
+            "ok": True,
+            "newly_bound": True,
+            "message": "通知目標已綁定！已發送確認訊息至建立者 Telegram。",
+            **_tg_build_public_status(_tg_get_binding_row()),
+        }
+
+    if max_uid > last_uid:
+        conn.execute(
+            "UPDATE telegram_bindings SET last_update_id=?, updated_at=? WHERE id=1",
+            (max_uid, tw_now_str()),
+        )
+        conn.commit()
+    conn.close()
+
+    return {
+        "ok": True,
+        "newly_bound": False,
+        **_tg_build_public_status(_tg_get_binding_row()),
+    }
+
+
+@app.post("/api/v1/telegram/rebind")
+async def rebind_telegram_owner():
+    row = _tg_get_binding_row()
+    if not row:
+        raise HTTPException(status_code=400, detail="尚未設定 Bot Token，請先貼上 Bot Token 並儲存。")
+
+    # Advance update offset so any old messages are ignored when rebinding
+    last_uid = int(row.get("last_update_id") or 0)
+    try:
+        token = decrypt_secret(row["token_enc"])
+        up_st, up_body = await _tg_api_call(
+            token,
+            "getUpdates",
+            http_method="GET",
+            params={"limit": 1, "offset": -1, "timeout": 0},
+            timeout=8.0,
+        )
+        if up_st == 200 and isinstance(up_body, dict) and up_body.get("ok"):
+            updates = up_body.get("result") or []
+            if updates:
+                last_uid = max(last_uid, int(updates[-1].get("update_id") or 0))
+    except Exception:
+        pass
+
+    new_code, expires_at = _tg_issue_new_setup_code()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        UPDATE telegram_bindings
+        SET owner_chat_id='', owner_label='', bound=0,
+            setup_code=?, setup_code_expires_at=?,
+            last_update_id=?, updated_at=?
+        WHERE id=1
+        """,
+        (new_code, expires_at, last_uid, tw_now_str()),
+    )
+    conn.commit()
+    conn.close()
+
+    pub = _tg_build_public_status(_tg_get_binding_row())
+    return {
+        "ok": True,
+        "message": f"已清除原綁定目標，請開啟 Bot 傳送新一次性指令：{pub['setup_command']}",
+        **pub,
+    }
+
+
+@app.post("/api/v1/telegram/test")
+async def send_telegram_test_notification():
+    row = _tg_get_binding_row()
+    if not row:
+        raise HTTPException(status_code=400, detail="尚未設定 Bot Token，請先貼上 Bot Token 並驗證。")
+    if not row.get("bound") or not row.get("owner_chat_id"):
+        pub = _tg_build_public_status(row)
+        raise HTTPException(
+            status_code=400,
+            detail=f"尚未綁定通知目標！請先開啟您的 Telegram Bot 傳送 {pub['setup_command']} 完成綁定後再發送測試通知。",
+        )
+
+    test_html = (
+        "🔔 <b>SYNAPSE TW 交易推播測試通知</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"🕒 時間：<code>{tw_now_str()} (UTC+8)</code>\n"
+        f"🤖 模式：<code>{SERVER_TRADING_MODE}</code>\n"
+        "📈 範例訊號：🔴 <b>2330 台積電</b> ｜ <b>[買進 BUY]</b>\n"
+        "✅ <b>狀態：</b>已成功串接加密儲存之 Bot Token 與預設建立者目標。"
+    )
+    res = await _send_telegram_bound_message(test_html, is_html=True)
+    if not res.get("ok"):
+        raise HTTPException(status_code=502, detail=res.get("error") or "Telegram 測試發送失敗")
+    return {
+        "ok": True,
+        "timestamp": tw_now_str(),
+        "message": "測試通知已發送至已綁定之建立者 Telegram！",
+        "owner_label": res.get("owner_label", ""),
+    }
+
+
+@app.post("/api/v1/telegram/clear")
+async def clear_telegram_binding():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM telegram_bindings WHERE id=1")
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "已清除加密儲存之 Telegram Bot Token 與綁定設定。", **_tg_build_public_status(None)}
 
 
 @app.post("/api/v1/notify/broadcast")
@@ -1396,22 +2017,10 @@ async def broadcast_notify(req: NotifyRequest):
                 json_body={"to": target, "messages": [{"type": "text", "text": req.text}]},
                 timeout=10.0,
             )
-            out["line"] = {"ok": 200 <= status < 300, "status": status, "detail": body}
+            out["line"] = {"ok": 200 <= status < 300, "status": status, "detail": redact_secrets(body, [token])}
 
     if "telegram" in req.channels:
-        token = req.tg_token.strip() or os.getenv("TELEGRAM_BOT_TOKEN", "")
-        chat_id = req.tg_chat_id.strip() or os.getenv("TELEGRAM_CHAT_ID", "")
-        if not token or not chat_id:
-            out["telegram"] = {"ok": False, "error": "尚未設定 Telegram Bot Token 或 Chat ID"}
-        else:
-            url = f"https://api.telegram.org/bot{urllib.parse.quote(token)}/sendMessage"
-            status, body = await http_json(
-                url,
-                method="POST",
-                json_body={"chat_id": chat_id, "text": req.text},
-                timeout=10.0,
-            )
-            out["telegram"] = {"ok": 200 <= status < 300, "status": status, "detail": body}
+        out["telegram"] = await _send_telegram_bound_message(req.text, is_html=req.is_html)
 
     return {"timestamp": tw_now_str(), "results": out}
 

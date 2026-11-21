@@ -2614,26 +2614,62 @@
                   </div>
                 </div>
 
-                <div style="padding:12px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <strong style="color:#075985;font-size:13px;">Telegram Bot</strong>
+                <div style="padding:12px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <strong style="color:#075985;font-size:13px;">Telegram Bot（Token 一鍵串接・免填 Chat ID）</strong>
+                      <span id="tgBindBadge" class="badge badge-slate">尚未設定 Bot Token</span>
+                    </div>
                     <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
                       <input id="cfgTgEnabled" type="checkbox" />啟用 Telegram 推播
                     </label>
                   </div>
-                  <div class="form-grid-2">
-                    <div>
-                      <label class="field-label" for="cfgTgToken">Bot Token (@BotFather)</label>
-                      <input id="cfgTgToken" type="password" class="input mono" placeholder="123456789:AAH..." />
+
+                  <!-- Only Bot Token field — NO Chat ID input -->
+                  <div>
+                    <label class="field-label" for="cfgTgToken">Bot Token（@BotFather 提供 · 加密儲存且不顯示明文）</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <input id="cfgTgToken" type="password" autocomplete="off" class="input mono" style="flex:1;min-width:200px;" placeholder="貼上 Bot Token（如 123456789:AAH...），存後立即加密遮罩" />
+                      <button id="btnSaveTgToken" type="button" class="btn btn-sm btn-dark">儲存並驗證 Bot Token</button>
                     </div>
-                    <div>
-                      <label class="field-label" for="cfgTgChatId">Chat ID / 頻道 ID</label>
-                      <input id="cfgTgChatId" type="text" class="input mono" placeholder="例如 -1001234567890" />
+                    <div id="tgTokenMaskedRow" style="display:none;margin-top:5px;font-size:11px;color:#0369a1;">
+                      🔐 已加密儲存：<code id="tgTokenMaskedText" class="mono"></code>
+                      <span id="tgBotUsernameText" style="margin-left:6px;font-weight:700;"></span>
                     </div>
                   </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
-                    <span style="font-size:11px;color:#0369a1;">支援瀏覽器直連 api.telegram.org 與雲端後端雙模式發送</span>
-                    <button id="btnTestTg" type="button" class="btn btn-sm btn-primary">發送 Telegram 測試訊號</button>
+
+                  <!-- Awaiting /start <setup_code> Guide Box -->
+                  <div id="tgSetupGuideBox" style="display:none;padding:10px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;color:#78350f;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                      <strong>⏳ 等待建立者對 Bot 傳送 /start（一次性防搶先驗證）</strong>
+                      <span id="tgPollingDot" class="badge badge-amber" style="font-size:10px;">自動輪詢 getUpdates 中...</span>
+                    </div>
+                    <div style="line-height:1.55;margin-bottom:8px;">
+                      請使用<strong>建立者私訊帳號</strong>開啟您的 Telegram Bot，並傳送以下一次性設定指令：
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#ffffff;border:1px dashed #f59e0b;border-radius:8px;padding:7px 10px;margin-bottom:8px;">
+                      <code id="tgSetupCmdText" class="mono" style="font-size:13px;font-weight:800;color:#0f172a;flex:1;">/start --------</code>
+                      <button id="btnCopyTgSetupCmd" type="button" class="btn btn-sm">複製指令</button>
+                      <a id="tgDeepLinkBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;display:none;">開啟 Bot 傳送 /start</a>
+                      <button id="btnPollTgBindNow" type="button" class="btn btn-sm btn-teal">立即檢查綁定</button>
+                    </div>
+                    <div style="font-size:11px;color:#92400e;">
+                      • 驗證成功後將自動儲存建立者 Chat ID 並使此設定碼立即失效（每 Token 限 1 預設目標）。
+                    </div>
+                  </div>
+
+                  <!-- Bound Confirmation Box -->
+                  <div id="tgBoundInfoBox" style="display:none;padding:10px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:10px;font-size:12px;color:#166534;">
+                    <div style="font-weight:800;margin-bottom:3px;">✅ 通知目標已綁定（後續推播免填 Chat ID）</div>
+                    <div id="tgBoundOwnerText" style="font-size:11.5px;line-height:1.5;"></div>
+                    <div style="font-size:11px;color:#15803d;margin-top:3px;">
+                      預設僅推播至已驗證之建立者私訊（HTML 格式＋交易警示表情）；一次性設定碼已失效。
+                    </div>
+                  </div>
+
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <button id="btnRebindTg" type="button" class="btn btn-sm" style="color:#b45309;border-color:#fde68a;background:#fffbeb;">重新綁定通知目標</button>
+                    <button id="btnTestTg" type="button" class="btn btn-sm btn-primary">發送測試通知</button>
                   </div>
                 </div>
 
@@ -2933,9 +2969,22 @@
         lineToken: '',
         lineTargetId: '',
         tgEnabled: false,
-        tgToken: '',
-        tgChatId: '',
         logs: []
+      },
+
+      tgBinding: {
+        configured: false,
+        bound: false,
+        status: 'unconfigured',
+        status_text: '尚未設定 Bot Token',
+        token_masked: '',
+        bot_username: '',
+        bot_name: '',
+        owner_label: '',
+        setup_code: '',
+        setup_command: '',
+        setup_deep_link: '',
+        setup_expires_in_sec: 0
       },
 
       simCashTwd: 3000000,
@@ -2960,7 +3009,7 @@
           CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SYNAPSE 多 Agent 風控與路由中樞就緒' },
           AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Groq / Ollama / Grok / Gemini / Claude / ChatGPT 待命' },
           LINE_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 LINE Token' },
-          TG_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 Telegram Token' },
+          TG_BOT: { status: '未綁定', latencyMs: null, lastMsg: '僅需輸入 Bot Token 並傳送 /start 完成自動綁定' },
           BROKER: { status: '模擬盤 SIM', latencyMs: 24, lastMsg: '永豐金 Shioaji 模擬撮合就緒' }
         }
       }
@@ -2989,8 +3038,11 @@
           if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
           if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
           if (saved.notifier) {
-            Object.assign(state.notifier, saved.notifier);
-            if (!Array.isArray(state.notifier.logs)) state.notifier.logs = [];
+            state.notifier.lineEnabled = Boolean(saved.notifier.lineEnabled);
+            state.notifier.lineToken = String(saved.notifier.lineToken || '');
+            state.notifier.lineTargetId = String(saved.notifier.lineTargetId || '');
+            state.notifier.tgEnabled = Boolean(saved.notifier.tgEnabled);
+            state.notifier.logs = Array.isArray(saved.notifier.logs) ? saved.notifier.logs : [];
           }
           if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
         }
@@ -3024,7 +3076,13 @@
           techSwitches: state.techSwitches,
           agentConfig: state.agentConfig,
           agentLogs: state.agentLogs.slice(0, 40),
-          notifier: { ...state.notifier, logs: state.notifier.logs.slice(0, 30) },
+          notifier: {
+            lineEnabled: state.notifier.lineEnabled,
+            lineToken: state.notifier.lineToken,
+            lineTargetId: state.notifier.lineTargetId,
+            tgEnabled: state.notifier.tgEnabled,
+            logs: state.notifier.logs.slice(0, 30)
+          },
           activeSymbol: state.activeSymbol
         }));
       } catch (e) {}
@@ -3745,6 +3803,9 @@
               state.backendHealth = data;
               if (!state.backendUrl && base !== window.location.origin) {
                 state.backendUrl = base;
+              }
+              if (data.telegram_binding) {
+                applyTelegramBindingState(data.telegram_binding, false);
               }
               updateBackendBadges();
               return true;
@@ -5112,17 +5173,305 @@
       return lines.join('\n');
     }
 
+    let tgPollTimer = null;
+
+    function redactUiSecrets(str) {
+      return String(str || '')
+        .replace(/bot\d+:[A-Za-z0-9_-]{8,}/gi, 'bot[REDACTED_TOKEN]')
+        .replace(/\b\d{6,15}:[A-Za-z0-9_-]{20,}\b/g, '[REDACTED_TOKEN]');
+    }
+
     function pushNotifyLog(channel, status, text) {
-      state.notifier.logs.unshift({ time: nowTwTime(), channel, status, text: text.slice(0, 220) });
+      state.notifier.logs.unshift({
+        time: nowTwTime(),
+        channel,
+        status: redactUiSecrets(status),
+        text: redactUiSecrets(text).slice(0, 220)
+      });
       if (state.notifier.logs.length > 30) state.notifier.logs.pop();
       persistState();
       renderNotifyCenter();
     }
 
+    function stopTgBindPolling() {
+      if (tgPollTimer) {
+        clearInterval(tgPollTimer);
+        tgPollTimer = null;
+      }
+    }
+
+    function startTgBindPolling() {
+      stopTgBindPolling();
+      if (state.tgBinding.status !== 'awaiting_start') return;
+      tgPollTimer = setInterval(() => {
+        if (state.tgBinding.status !== 'awaiting_start') {
+          stopTgBindPolling();
+          return;
+        }
+        pollTelegramBindingOnce(true);
+      }, 3000);
+    }
+
+    function applyTelegramBindingState(data, notifyIfBound = false) {
+      if (!data || typeof data !== 'object') return;
+      const wasBound = Boolean(state.tgBinding.bound);
+      state.tgBinding = {
+        configured: Boolean(data.configured),
+        bound: Boolean(data.bound),
+        status: data.status || 'unconfigured',
+        status_text: data.status_text || '尚未設定 Bot Token',
+        token_masked: data.token_masked || '',
+        bot_username: data.bot_username || '',
+        bot_name: data.bot_name || '',
+        owner_label: data.owner_label || '',
+        setup_code: data.setup_code || '',
+        setup_command: data.setup_command || '',
+        setup_deep_link: data.setup_deep_link || '',
+        setup_expires_in_sec: Number(data.setup_expires_in_sec || 0)
+      };
+
+      if (state.tgBinding.bound) {
+        stopTgBindPolling();
+        if (!wasBound) {
+          state.notifier.tgEnabled = true;
+          const chk = document.getElementById('cfgTgEnabled');
+          if (chk) chk.checked = true;
+          persistState();
+        }
+        state.handshake.nodeStats.TG_BOT.status = '已綁定建立者';
+        state.handshake.nodeStats.TG_BOT.lastMsg = `${state.tgBinding.owner_label || '建立者私訊'} 已就緒`;
+        if (notifyIfBound && !wasBound) {
+          triggerHandshake('TG_BOT', 'CORE', '#0284c7', 'ACK', false, 24, 'Telegram 通知目標已綁定');
+          showToast('通知目標已綁定', `已自動鎖定建立者私訊（${state.tgBinding.owner_label}），後續交易警示將自動推播！`, 'success');
+        }
+      } else if (state.tgBinding.status === 'awaiting_start') {
+        state.handshake.nodeStats.TG_BOT.status = '等待 /start';
+        state.handshake.nodeStats.TG_BOT.lastMsg = '等待建立者對 Bot 傳送一次性 /start 指令';
+        startTgBindPolling();
+      } else {
+        stopTgBindPolling();
+        state.handshake.nodeStats.TG_BOT.status = '未設定';
+        state.handshake.nodeStats.TG_BOT.lastMsg = '請於通知中心貼上 Bot Token 驗證';
+      }
+
+      renderTelegramBindingUI();
+      renderTopRibbon();
+    }
+
+    function renderTelegramBindingUI() {
+      const b = state.tgBinding;
+      const badge = document.getElementById('tgBindBadge');
+      const maskedRow = document.getElementById('tgTokenMaskedRow');
+      const maskedTxt = document.getElementById('tgTokenMaskedText');
+      const botUserTxt = document.getElementById('tgBotUsernameText');
+      const setupBox = document.getElementById('tgSetupGuideBox');
+      const setupCmd = document.getElementById('tgSetupCmdText');
+      const deepLink = document.getElementById('tgDeepLinkBtn');
+      const boundBox = document.getElementById('tgBoundInfoBox');
+      const boundOwner = document.getElementById('tgBoundOwnerText');
+      const btnRebind = document.getElementById('btnRebindTg');
+      const tokenInput = document.getElementById('cfgTgToken');
+
+      if (badge) {
+        if (b.status === 'bound') {
+          badge.className = 'badge badge-down';
+          badge.textContent = '已綁定通知目標';
+        } else if (b.status === 'awaiting_start') {
+          badge.className = 'badge badge-amber';
+          badge.textContent = '等待建立者對 Bot 傳送 /start';
+        } else {
+          badge.className = 'badge badge-slate';
+          badge.textContent = '尚未設定 Bot Token';
+        }
+      }
+
+      if (maskedRow && maskedTxt) {
+        if (b.configured && b.token_masked) {
+          maskedRow.style.display = 'block';
+          maskedTxt.textContent = b.token_masked;
+          if (botUserTxt) botUserTxt.textContent = b.bot_username ? `· @${b.bot_username}` : '';
+          if (tokenInput) tokenInput.placeholder = `已加密儲存（${b.token_masked}）· 若要更換請貼上新 Token`;
+        } else {
+          maskedRow.style.display = 'none';
+          if (tokenInput) tokenInput.placeholder = '貼上 Bot Token（如 123456789:AAH...），存後立即加密遮罩';
+        }
+      }
+
+      if (setupBox) {
+        if (b.status === 'awaiting_start' && b.setup_command) {
+          setupBox.style.display = 'block';
+          if (setupCmd) setupCmd.textContent = b.setup_command;
+          if (deepLink) {
+            if (b.setup_deep_link) {
+              deepLink.href = b.setup_deep_link;
+              deepLink.style.display = 'inline-flex';
+            } else {
+              deepLink.style.display = 'none';
+            }
+          }
+        } else {
+          setupBox.style.display = 'none';
+        }
+      }
+
+      if (boundBox) {
+        if (b.status === 'bound') {
+          boundBox.style.display = 'block';
+          if (boundOwner) {
+            boundOwner.textContent = `Bot：@${b.bot_username || 'Bot'} ｜ 目標：${b.owner_label || '建立者私訊'}`;
+          }
+        } else {
+          boundBox.style.display = 'none';
+        }
+      }
+
+      if (btnRebind) {
+        btnRebind.disabled = !b.configured;
+        btnRebind.style.opacity = b.configured ? '1' : '0.55';
+      }
+    }
+
+    async function refreshTelegramBindingStatus() {
+      const apiBase = getApiBase();
+      if (!apiBase) {
+        renderTelegramBindingUI();
+        return;
+      }
+      try {
+        const r = await fetch(`${apiBase}/api/v1/telegram/status`);
+        if (r.ok) {
+          const data = await r.json();
+          applyTelegramBindingState(data, false);
+        }
+      } catch (e) {}
+    }
+
+    async function saveTelegramBotToken() {
+      const apiBase = getApiBase();
+      const input = document.getElementById('cfgTgToken');
+      const btn = document.getElementById('btnSaveTgToken');
+      const rawToken = (input?.value || '').trim();
+      if (!rawToken) {
+        showToast('請輸入 Bot Token', '請貼上 @BotFather 提供的 Telegram Bot Token（僅需 Token，免填 Chat ID）。', 'warn');
+        return;
+      }
+      if (!apiBase) {
+        showToast('需要連線後端服務', '為確保 Bot Token 加密儲存且不曝光明文，請透過本系統 server.py 或單檔執行檔操作 Telegram 綁定。', 'error');
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+      try {
+        const resp = await fetch(`${apiBase}/api/v1/telegram/save-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: rawToken })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          showToast('Bot Token 驗證失敗', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'error');
+          return;
+        }
+        // Immediately wipe plaintext token from DOM input
+        if (input) input.value = '';
+        applyTelegramBindingState(data, false);
+        pushNotifyLog('TELEGRAM', 'Bot Token 已驗證並加密儲存', data.status === 'bound' ? '保留既有已綁定通知目標' : `等待建立者傳送 ${data.setup_command}`);
+        showToast('Bot Token 驗證成功', data.message || '請開啟 Bot 傳送一次性 /start 指令完成綁定。', 'success');
+      } catch (err) {
+        showToast('連線異常', redactUiSecrets(err.message), 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function pollTelegramBindingOnce(silent = false) {
+      const apiBase = getApiBase();
+      if (!apiBase) return;
+      try {
+        const resp = await fetch(`${apiBase}/api/v1/telegram/poll-bind`, { method: 'POST' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        applyTelegramBindingState(data, true);
+        if (data.newly_bound) {
+          pushNotifyLog('TELEGRAM', '已綁定通知目標 (getUpdates)', `建立者 ${data.owner_label} 驗證成功，一次性設定碼已失效`);
+        } else if (!silent) {
+          showToast(
+            data.bound ? '已完成綁定' : '尚未偵測到 /start 指令',
+            data.bound
+              ? `目前綁定目標：${data.owner_label}`
+              : `請確認已私訊 @${data.bot_username || 'Bot'} 並傳送完整指令：${data.setup_command}`,
+            data.bound ? 'success' : 'info'
+          );
+        }
+      } catch (e) {}
+    }
+
+    async function rebindTelegramOwner() {
+      const apiBase = getApiBase();
+      if (!apiBase) {
+        showToast('需要連線後端服務', '請連線後端 server.py 後再執行重新綁定。', 'warn');
+        return;
+      }
+      const btn = document.getElementById('btnRebindTg');
+      if (btn) btn.disabled = true;
+      try {
+        const resp = await fetch(`${apiBase}/api/v1/telegram/rebind`, { method: 'POST' });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          showToast('無法重新綁定', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'warn');
+          return;
+        }
+        applyTelegramBindingState(data, false);
+        pushNotifyLog('TELEGRAM', '已清除原綁定目標', `重新等待建立者傳送 ${data.setup_command}`);
+        showToast('已重設通知目標', `請開啟 Bot 傳送新一次性指令：${data.setup_command}`, 'info');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function sendTelegramTestAlert() {
+      const apiBase = getApiBase();
+      if (!apiBase) {
+        showToast('需要連線後端服務', '請連線後端 server.py 後再發送 Telegram 測試通知。', 'warn');
+        return;
+      }
+      if (!state.tgBinding.configured) {
+        showToast('尚未設定 Bot Token', '請先於上方貼上 Bot Token 並點擊「儲存並驗證 Bot Token」。', 'warn');
+        return;
+      }
+      if (!state.tgBinding.bound) {
+        showToast(
+          '請先完成 /start 綁定',
+          `尚未綁定通知目標！請先開啟 Bot 傳送：${state.tgBinding.setup_command || '/start'}`,
+          'warn'
+        );
+        pushNotifyLog('TELEGRAM', '禁止發送（未綁定通知目標）', `請先對 Bot 傳送 ${state.tgBinding.setup_command || '/start'}`);
+        return;
+      }
+
+      const btn = document.getElementById('btnTestTg');
+      if (btn) btn.disabled = true;
+      try {
+        const resp = await fetch(`${apiBase}/api/v1/telegram/test`, { method: 'POST' });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          const msg = redactUiSecrets(data.detail || `HTTP ${resp.status}`);
+          pushNotifyLog('TELEGRAM', `測試失敗：${msg}`, '測試通知未送出');
+          showToast('測試通知發送失敗', msg, 'error');
+          return;
+        }
+        pushNotifyLog('TELEGRAM', '測試通知發送成功 (HTML)', `已送達建立者：${data.owner_label || '已綁定目標'}`);
+        triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 28, 'Telegram 測試通知已送達');
+        showToast('測試通知已送出', data.message || '請於您的 Telegram 確認測試訊息。', 'success');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     async function sendNotification(text, forceChannels = null) {
       const channels = forceChannels || [
         ...(state.notifier.lineEnabled ? ['line'] : []),
-        ...(state.notifier.tgEnabled ? ['telegram'] : [])
+        ...((state.notifier.tgEnabled || state.tgBinding.bound) && state.notifier.tgEnabled ? ['telegram'] : [])
       ];
 
       if (channels.length === 0) {
@@ -5141,49 +5490,39 @@
               text,
               line_token: state.notifier.lineToken,
               line_target_id: state.notifier.lineTargetId,
-              tg_token: state.notifier.tgToken,
-              tg_chat_id: state.notifier.tgChatId,
               channels
             })
           });
           if (resp.ok) {
             const j = await resp.json();
+            let anyErr = '';
             Object.entries(j.results || {}).forEach(([ch, res]) => {
               const chUpper = ch.toUpperCase();
               const ok = Boolean(res.ok);
-              pushNotifyLog(chUpper, ok ? '雲端發送成功 (200)' : `發送失敗：${res.error || res.status}`, text);
+              const errTxt = redactUiSecrets(res.error || res.status || '未知錯誤');
+              pushNotifyLog(chUpper, ok ? '加密後端發送成功 (HTML)' : `發送失敗：${errTxt}`, text);
+              if (!ok && !anyErr) anyErr = `${chUpper}: ${errTxt}`;
               if (ch === 'line') {
                 state.handshake.nodeStats.LINE_BOT.status = ok ? '推播成功' : '設定異常';
                 triggerHandshake('CORE', 'LINE_BOT', '#16a34a', 'PUSH', false, 35, ok ? 'LINE Bot 推播成功' : 'LINE 推播失敗');
               } else if (ch === 'telegram') {
-                state.handshake.nodeStats.TG_BOT.status = ok ? '推播成功' : '設定異常';
-                triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 29, ok ? 'Telegram 推播成功' : 'TG 推播失敗');
+                state.handshake.nodeStats.TG_BOT.status = ok ? '推播成功' : (res.code === 'NOT_BOUND' ? '等待 /start' : '設定異常');
+                triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 29, ok ? 'Telegram 推播成功' : 'TG 推播受阻');
               }
             });
-            showToast('推播指令已執行', '請於通知中心檢視各通道投遞結果。', 'success');
+            if (anyErr) {
+              showToast('部分推播未送出', anyErr, 'warn');
+            } else {
+              showToast('推播指令已執行', '交易通知已透過加密通道送出。', 'success');
+            }
             return;
           }
         } catch (e) {}
       }
 
-      // Direct Browser Fallback (Telegram supports CORS; LINE requires backend proxy)
       if (channels.includes('telegram')) {
-        if (!state.notifier.tgToken || !state.notifier.tgChatId) {
-          pushNotifyLog('TELEGRAM', '未填 Bot Token 或 Chat ID', text);
-        } else {
-          try {
-            const r = await fetch(`https://api.telegram.org/bot${encodeURIComponent(state.notifier.tgToken)}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: state.notifier.tgChatId, text })
-            });
-            const ok = r.ok;
-            pushNotifyLog('TELEGRAM', ok ? '直連發送成功 (200)' : `HTTP ${r.status}`, text);
-            triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 40, ok ? 'Telegram 直連成功' : 'Telegram 失敗');
-          } catch (err) {
-            pushNotifyLog('TELEGRAM', '連線受限：' + err.message, text);
-          }
-        }
+        pushNotifyLog('TELEGRAM', '未連線後端服務（加密 Token 與綁定目標由後端保護，前端不儲存明文 Token）', text);
+        showToast('Telegram 需要後端服務', '請透過 server.py 或單檔執行檔開啟系統以啟用加密 Telegram 自動推播。', 'warn');
       }
 
       if (channels.includes('line')) {
@@ -5632,13 +5971,14 @@
     }
 
     function renderNotifyCenter() {
+      renderTelegramBindingUI();
       const preview = document.getElementById('notifyPreviewBox');
       if (preview) preview.textContent = formatBatchSignalMessage();
 
       const logBox = document.getElementById('notifyLogsBox');
       if (logBox) {
         if (state.notifier.logs.length === 0) {
-          logBox.textContent = '尚無推播紀錄。填入 Token 並勾選啟用後，可點擊測試按鈕立即驗證。';
+          logBox.textContent = '尚無推播紀錄。填入 Bot Token 驗證並傳送 /start 完成綁定後，即可發送測試通知。';
         } else {
           logBox.textContent = state.notifier.logs.map(l => `[${l.time}] [${l.channel}] ${l.status}\n${l.text}\n---`).join('\n');
         }
@@ -5698,8 +6038,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       const ch = [];
       if (state.notifier.lineEnabled) ch.push('LINE');
-      if (state.notifier.tgEnabled) ch.push('Telegram');
-      document.getElementById('ribbonNotifyStatus').textContent = ch.length ? `已啟用 ${ch.join(' + ')}` : '未啟用';
+      if (state.notifier.tgEnabled && state.tgBinding.bound) ch.push('Telegram(已綁定)');
+      else if (state.tgBinding.status === 'awaiting_start') ch.push('Telegram(待/start)');
+      else if (state.notifier.tgEnabled) ch.push('Telegram(未綁定)');
+      document.getElementById('ribbonNotifyStatus').textContent = ch.length ? ch.join(' + ') : '未啟用';
     }
 
     function renderAllViews() {
@@ -5776,6 +6118,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderDcaConfigUI();
       } else if (paneId === 'notify') {
         renderNotifyCenter();
+        refreshTelegramBindingStatus();
       } else if (paneId === 'deploy') {
         renderPineScript();
       } else if (paneId === 'ai') {
@@ -5874,8 +6217,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('cfgLineToken').value = state.notifier.lineToken || '';
       document.getElementById('cfgLineTarget').value = state.notifier.lineTargetId || '';
       document.getElementById('cfgTgEnabled').checked = Boolean(state.notifier.tgEnabled);
-      document.getElementById('cfgTgToken').value = state.notifier.tgToken || '';
-      document.getElementById('cfgTgChatId').value = state.notifier.tgChatId || '';
+      document.getElementById('cfgTgToken').value = '';
+      renderTelegramBindingUI();
 
       document.getElementById('cloudBackendInput').value = state.backendUrl || '';
       document.getElementById('finmindTokenInput').value = state.finmindToken || '';
@@ -6303,26 +6646,48 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         a.click();
       });
 
-      // Notifier Center
-      document.getElementById('btnSaveNotifyCfg').addEventListener('click', () => {
+      // Notifier Center (LINE Bot + Telegram Token-Only Encrypted Auto-Binding)
+      document.getElementById('btnSaveNotifyCfg').addEventListener('click', async () => {
         state.notifier.lineEnabled = document.getElementById('cfgLineEnabled').checked;
         state.notifier.lineToken = document.getElementById('cfgLineToken').value.trim();
         state.notifier.lineTargetId = document.getElementById('cfgLineTarget').value.trim();
         state.notifier.tgEnabled = document.getElementById('cfgTgEnabled').checked;
-        state.notifier.tgToken = document.getElementById('cfgTgToken').value.trim();
-        state.notifier.tgChatId = document.getElementById('cfgTgChatId').value.trim();
         persistState();
         renderTopRibbon();
-        showToast('推播通道已儲存', 'LINE Bot 與 Telegram 設定已生效。', 'success');
+
+        const pendingTgToken = (document.getElementById('cfgTgToken')?.value || '').trim();
+        if (pendingTgToken) {
+          await saveTelegramBotToken();
+        } else {
+          showToast('推播通道已儲存', 'LINE Bot 與 Telegram 開關設定已生效。', 'success');
+        }
+      });
+      document.getElementById('cfgTgEnabled')?.addEventListener('change', e => {
+        state.notifier.tgEnabled = e.target.checked;
+        persistState();
+        renderTopRibbon();
+      });
+      document.getElementById('btnSaveTgToken')?.addEventListener('click', saveTelegramBotToken);
+      document.getElementById('btnPollTgBindNow')?.addEventListener('click', () => pollTelegramBindingOnce(false));
+      document.getElementById('btnRebindTg')?.addEventListener('click', rebindTelegramOwner);
+      document.getElementById('btnCopyTgSetupCmd')?.addEventListener('click', async () => {
+        const cmd = state.tgBinding.setup_command || '';
+        if (!cmd) return;
+        try {
+          await navigator.clipboard.writeText(cmd);
+          showToast('已複製 /start 指令', `請貼上至您的 Telegram Bot 私訊：${cmd}`, 'success');
+        } catch (e) {
+          showToast('請手動複製指令', cmd, 'info');
+        }
       });
       document.getElementById('btnTestLine').addEventListener('click', () => {
-        document.getElementById('btnSaveNotifyCfg').click();
+        state.notifier.lineEnabled = document.getElementById('cfgLineEnabled').checked;
+        state.notifier.lineToken = document.getElementById('cfgLineToken').value.trim();
+        state.notifier.lineTargetId = document.getElementById('cfgLineTarget').value.trim();
+        persistState();
         sendNotification(formatBatchSignalMessage(), ['line']);
       });
-      document.getElementById('btnTestTg').addEventListener('click', () => {
-        document.getElementById('btnSaveNotifyCfg').click();
-        sendNotification(formatBatchSignalMessage(), ['telegram']);
-      });
+      document.getElementById('btnTestTg').addEventListener('click', sendTelegramTestAlert);
       document.getElementById('btnRefreshPreview').addEventListener('click', () => renderNotifyCenter());
       document.getElementById('btnSendPreviewNow').addEventListener('click', () => sendNotification(formatBatchSignalMessage()));
 

@@ -506,21 +506,154 @@
       gap: 12px;
     }
 
+    .grid-ai-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
 
+    .tech-switch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tech-switch-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.16s ease;
+    }
+
+    .tech-switch-card.on {
+      background: #ffffff;
+      border-color: #93c5fd;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.07);
+    }
+
+    .tech-switch-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .switch-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 38px;
+      height: 20px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .switch-pill input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .switch-slider {
+      position: absolute;
+      inset: 0;
+      background: #cbd5e1;
+      border-radius: 999px;
+      transition: background 0.18s ease;
+    }
+
+    .switch-slider::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+      transition: transform 0.18s ease;
+    }
+
+    .switch-pill input:checked + .switch-slider {
+      background: var(--accent);
+    }
+
+    .switch-pill input:checked + .switch-slider::before {
+      transform: translateX(18px);
+    }
+
+    .agent-trace-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 11.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .agent-trace-box.warn {
+      background: #fffbeb;
+      border-color: #fcd34d;
+    }
+
+    .agent-trace-box.ok {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+    }
+
+    .agent-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .agent-vote-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .agent-vote-chip.bull { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .agent-vote-chip.bear { background: #ecfdf5; border-color: #bbf7d0; color: #15803d; }
+
     @media (max-width: 1200px) {
       .grid-handshake { grid-template-columns: minmax(0, 1fr); }
       .grid-chart-order { grid-template-columns: minmax(0, 1fr); }
       .grid-ai-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-ai-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tech-switch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 720px) {
       .grid-ai-4 { grid-template-columns: minmax(0, 1fr); }
+      .grid-ai-3 { grid-template-columns: minmax(0, 1fr); }
       .grid-2 { grid-template-columns: minmax(0, 1fr); }
+      .tech-switch-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     /* Handshake Topology Canvas */
@@ -1307,7 +1440,7 @@
             SYNAPSE TW
             <span class="badge badge-blue">全自動台股中控台</span>
           </h1>
-          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 四模型 AI × 復盤定投回測</p>
+          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 六模型 AI (Groq / Ollama) × 多 Agent 自動買賣</p>
         </div>
       </div>
 
@@ -1319,6 +1452,21 @@
           <i data-lucide="chevron-down" style="width:13px;height:13px;"></i>
         </button>
         <div id="featureMenuDropdown" class="menu-dropdown" role="menu">
+          <button type="button" class="menu-item" data-open-studio="strategy">
+            <span class="menu-item-icon" style="background:#fef2f2;color:#b91c1c;"><i data-lucide="bot" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">台股技術開關 &amp; 多 Agent 自動買賣</div>
+              <div class="menu-item-desc">8 大台股技術分析開關 · 實時價量偵測與自動切換最適模型</div>
+            </div>
+          </button>
+          <button type="button" class="menu-item" data-open-studio="ai">
+            <span class="menu-item-icon" style="background:#eef2ff;color:#4338ca;"><i data-lucide="cpu" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">AI 六模型 &amp; Ollama 地端中心</div>
+              <div class="menu-item-desc">Groq · Ollama 地端 · Grok · Gemini · Claude · ChatGPT</div>
+            </div>
+          </button>
+          <div class="menu-divider"></div>
           <button type="button" class="menu-item" data-open-studio="review">
             <span class="menu-item-icon"><i data-lucide="file-spreadsheet" style="width:15px;height:15px;"></i></span>
             <div>
@@ -1334,13 +1482,6 @@
             </div>
           </button>
           <div class="menu-divider"></div>
-          <button type="button" class="menu-item" data-open-studio="ai">
-            <span class="menu-item-icon" style="background:#eef2ff;color:#4338ca;"><i data-lucide="cpu" style="width:15px;height:15px;"></i></span>
-            <div>
-              <div class="menu-item-title">AI 四模型解析中心</div>
-              <div class="menu-item-desc">Grok Bot · Gemini · Claude · ChatGPT 金鑰與研判</div>
-            </div>
-          </button>
           <button type="button" class="menu-item" data-open-studio="notify">
             <span class="menu-item-icon" style="background:#ecfdf5;color:#15803d;"><i data-lucide="bell-ring" style="width:15px;height:15px;"></i></span>
             <div>
@@ -1355,7 +1496,6 @@
               <div class="menu-item-desc">後端代理連線、FinMind Token、自動單腳本</div>
             </div>
           </button>
-          <div class="menu-divider"></div>
           <button type="button" class="menu-item" data-open-studio="settings">
             <span class="menu-item-icon" style="background:#fffbeb;color:#b45309;"><i data-lucide="sliders-horizontal" style="width:15px;height:15px;"></i></span>
             <div>
@@ -1447,7 +1587,7 @@
               SYNAPSE 雙向資料交流交握網路
               <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
             </h2>
-            <p class="card-subtitle">即時視覺化呈現 Yahoo / FinMind 真實行情、TradingView 訊號、AI 四模型共識、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
+            <p class="card-subtitle">即時視覺化呈現 Yahoo / FinMind 真實行情、TradingView 訊號、AI 六模型 &amp; 多 Agent、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
           </div>
           <div class="chart-group">
             <button id="btnTriggerHandshake" class="btn btn-sm btn-primary">
@@ -1656,6 +1796,11 @@
                 </div>
               </div>
 
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:6px;cursor:pointer;">
+                <input id="orderMultiAgentChk" type="checkbox" checked />
+                <span>下單前<strong>實時偵測最新股價</strong> ＋ 價量多 Agent 自動選模預檢</span>
+              </label>
+
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
                 <input id="orderAutoNotify" type="checkbox" checked />
                 成交回報自動推播至 LINE Bot / Telegram
@@ -1665,40 +1810,46 @@
                 <i data-lucide="send" style="width:14px;height:14px;"></i>
                 <span id="submitOrderLabel">送出模擬下單 (SIM)</span>
               </button>
+
+              <!-- Real-Time Price Detection & Multi-Agent Pre-Check Live Trace -->
+              <div id="orderAgentTraceBox" class="agent-trace-box" style="display:none;"></div>
             </div>
           </div>
         </article>
       </div>
 
-      <!-- 4. Multi-Model AI Assistance Summary (Grok, Gemini, Claude, ChatGPT) -->
+      <!-- 4. Multi-Model AI Assistance Summary (Groq, Ollama Local, Grok, Gemini, Claude, ChatGPT) -->
       <article class="card">
         <div class="card-header">
           <div class="card-title-group">
             <h2 class="card-title">
               <i data-lucide="sparkles" style="width:16px;height:16px;color:var(--accent);"></i>
-              AI 四模型多維度解析（Grok Bot · Gemini · Claude · ChatGPT）
+              AI 六模型多維度解析（Groq · Ollama 地端 · Grok · Gemini · Claude · ChatGPT）
             </h2>
-            <p class="card-subtitle">僅注入已驗證的 Yahoo / FinMind 真實 OHLCV 與技術指標進行平行研判，嚴禁無數據猜測</p>
+            <p class="card-subtitle">僅注入已驗證的 Yahoo / FinMind 真實 OHLCV 與技術指標進行平行研判，並支援多 Agent 依盤中價量自動切換最適模型</p>
           </div>
           <div class="chart-group">
             <button id="btnRunAiQuick" class="btn btn-sm btn-primary">
-              <i data-lucide="play" style="width:13px;height:13px;"></i>一鍵四模型解析目前標的
+              <i data-lucide="play" style="width:13px;height:13px;"></i>一鍵六模型解析
+            </button>
+            <button id="btnOpenStrategyFromAi" class="btn btn-sm btn-dark">
+              <i data-lucide="bot" style="width:13px;height:13px;"></i>技術開關 &amp; 多 Agent
             </button>
             <button id="btnPushAiReport" class="btn btn-sm btn-teal">
               <i data-lucide="bell" style="width:13px;height:13px;"></i>推播 AI 共識至 LINE/TG
             </button>
-            <button id="btnOpenAiSettings" class="btn btn-sm">設定模型 API 金鑰</button>
+            <button id="btnOpenAiSettings" class="btn btn-sm">設定 API / Ollama</button>
           </div>
         </div>
         <div class="card-body">
           <div id="aiConsensusBar" class="consensus-bar">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <span class="badge badge-slate">四模型共識</span>
-              <strong id="consensusHeadline" style="font-size:13px;color:var(--ink-1);">請先同步真實行情，點擊「一鍵四模型解析目前標的」</strong>
+              <span class="badge badge-slate">六模型共識</span>
+              <strong id="consensusHeadline" style="font-size:13px;color:var(--ink-1);">請先同步真實行情，點擊「一鍵六模型解析」</strong>
             </div>
             <span id="consensusMeta" class="mono" style="font-size:11.5px;color:var(--ink-3);">標的：2330 台積電</span>
           </div>
-          <div id="aiQuickGrid" class="grid-ai-4"></div>
+          <div id="aiQuickGrid" class="grid-ai-3"></div>
         </div>
       </article>
 
@@ -1813,19 +1964,22 @@
     </section>
   </main>
 
-  <!-- ==================== UNIFIED FEATURE STUDIO MODAL (6 MODULES) ==================== -->
+  <!-- ==================== UNIFIED FEATURE STUDIO MODAL (7 MODULES) ==================== -->
   <div id="featureStudioModal" class="modal-backdrop">
     <div class="modal-dialog modal-dialog-xl">
       <div class="studio-modal-head">
         <div class="studio-pills" role="tablist" aria-label="功能彈窗切換">
-          <button type="button" class="studio-pill active" data-studio-pane="review">
+          <button type="button" class="studio-pill active" data-studio-pane="strategy">
+            <i data-lucide="bot" style="width:13px;height:13px;"></i>台股技術開關 &amp; 多 Agent
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="ai">
+            <i data-lucide="cpu" style="width:13px;height:13px;"></i>AI 六模型 &amp; Ollama
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="review">
             <i data-lucide="file-spreadsheet" style="width:13px;height:13px;"></i>對帳單復盤
           </button>
           <button type="button" class="studio-pill" data-studio-pane="dca">
             <i data-lucide="trending-up" style="width:13px;height:13px;"></i>台股真實定投回測
-          </button>
-          <button type="button" class="studio-pill" data-studio-pane="ai">
-            <i data-lucide="cpu" style="width:13px;height:13px;"></i>AI 四模型
           </button>
           <button type="button" class="studio-pill" data-studio-pane="notify">
             <i data-lucide="bell-ring" style="width:13px;height:13px;"></i>LINE / TG 通知
@@ -2180,51 +2334,247 @@
           </div>
         </div>
 
-        <!-- ========== PANE 3: AI MULTI-MODEL STUDIO ========== -->
+        <!-- ========== PANE 0: TAIWAN STOCK TECHNICAL SWITCHES & MULTI-AGENT AUTO-TRADE (v68) ========== -->
+        <div id="studio-strategy" class="studio-pane">
+          <!-- Top Master Auto-Trade & Routing Control Card -->
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">
+                  <i data-lucide="bot" style="width:16px;height:16px;color:#b91c1c;"></i>
+                  台股技術分析開關 &amp; 價量多 Agent 自動買賣中心（參考專家版 v68）
+                </h2>
+                <p class="card-subtitle">下單與自動巡檢皆即時抓取真實最新股價，結合 8 大台股技術開關、價量動能與風控守門員，自動切換最適 AI 模型判定買賣</p>
+              </div>
+              <div class="chart-group">
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;font-size:12px;font-weight:800;color:#991b1b;cursor:pointer;">
+                  <input id="autoAgentTradeToggle" type="checkbox" />
+                  <span>啟用多 Agent 自動買賣</span>
+                </label>
+                <button id="btnRunAgentStrategyNow" type="button" class="btn btn-primary">
+                  <i data-lucide="zap" style="width:14px;height:14px;"></i>立即實時偵測 &amp; 多 Agent 判斷
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+              <!-- Routing Policy & Auto-Trade Parameters -->
+              <div class="grid-3" style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                <div>
+                  <label class="field-label" for="agentRoutingPolicySelect">最適模型自動路由策略</label>
+                  <select id="agentRoutingPolicySelect" class="select">
+                    <option value="AUTO" selected>AUTO · 依盤中價量與波動自動切換最適模型（推薦）</option>
+                    <option value="SPEED_FIRST">SPEED_FIRST · Groq 極速優先（盤中毫秒決策）</option>
+                    <option value="LOCAL_FIRST">LOCAL_FIRST · Ollama 地端優先（零外傳隱私）</option>
+                    <option value="DEEP_REASONING">DEEP_REASONING · Claude / Gemini 深度風控推理</option>
+                  </select>
+                </div>
+                <div class="form-grid-2">
+                  <div>
+                    <label class="field-label" for="agentPollIntervalSelect">自動巡檢週期</label>
+                    <select id="agentPollIntervalSelect" class="select mono">
+                      <option value="30">每 30 秒</option>
+                      <option value="60" selected>每 60 秒</option>
+                      <option value="120">每 120 秒</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="field-label" for="agentAutoQtyInput">每次自動下單 (張)</label>
+                    <input id="agentAutoQtyInput" type="number" min="1" max="50" step="1" value="1" class="input mono" />
+                  </div>
+                </div>
+                <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+                  <div>
+                    <label class="field-label" for="agentMaxSlippageInput">最大滑價 %</label>
+                    <input id="agentMaxSlippageInput" type="number" min="0.1" max="5.0" step="0.1" value="1.0" class="input mono" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="agentScoreThresholdInput">開關觸發分</label>
+                    <input id="agentScoreThresholdInput" type="number" min="10" max="80" step="5" value="25" class="input mono" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="agentMinConfInput">AI 最低信心%</label>
+                    <input id="agentMinConfInput" type="number" min="40" max="95" step="5" value="60" class="input mono" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 8 Technical Analysis Switches -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                  <div>
+                    <strong style="font-size:13px;color:var(--ink-1);">台股技術分析開關矩陣（<span id="techSwitchEnabledCount" class="mono">8</span> / 8 已啟用）</strong>
+                    <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px;">開關變更後立即影響策略評分與自動買賣條件</span>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button id="btnTechPresetAll" type="button" class="btn btn-sm">全部開啟 (8/8)</button>
+                    <button id="btnTechPresetMomentum" type="button" class="btn btn-sm">價量動能組 (MA/MACD/OBV/VWAP)</button>
+                    <button id="btnTechPresetReversal" type="button" class="btn btn-sm">波段轉折組 (KDJ/RSI/布林)</button>
+                  </div>
+                </div>
+                <div id="techSwitchesGrid" class="tech-switch-grid"></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 4-Agent Live Decision Dashboard -->
+          <div id="strategyAgentDashboard" class="grid-2">
+            <article class="agent-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="font-size:13px;color:var(--ink-1);">Agent 1 · 實時股價偵測 &amp; 價量動能</strong>
+                <span id="agPvRegimeBadge" class="badge badge-slate">待偵測</span>
+              </div>
+              <div id="agPvBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                點擊上方「立即實時偵測 &amp; 多 Agent 判斷」或直接於主畫面送出下單，系統將繞過快取即時抓取最新真實報價並判讀價量結構。
+              </div>
+            </article>
+
+            <article class="agent-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="font-size:13px;color:var(--ink-1);">Agent 2 · 台股技術開關加權投票</strong>
+                <span id="agTechScoreBadge" class="badge badge-slate">評分 --</span>
+              </div>
+              <div id="agTechVotesBody" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--ink-2);">
+                尚未執行技術開關掃描。
+              </div>
+            </article>
+
+            <article class="agent-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="font-size:13px;color:var(--ink-1);">Agent 3 · 風控守門員（滑價 / 超買賣 / 熔斷）</strong>
+                <span id="agRiskBadge" class="badge badge-slate">待檢核</span>
+              </div>
+              <div id="agRiskBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                檢核項目：即時滑價上限、RSI 極端超買賣防追高殺低、全系統緊急熔斷開關。
+              </div>
+            </article>
+
+            <article class="agent-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="font-size:13px;color:var(--ink-1);">Agent 4 · 最適模型自動切換 &amp; 最終買賣決策</strong>
+                <span id="agFinalActionBadge" class="badge badge-slate">待決策</span>
+              </div>
+              <div id="agRouterBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                系統會依盤中量比、日內振幅、價量背離狀態自動在 Groq / Ollama / Grok / Gemini / Claude / ChatGPT 間選擇最適模型並容錯切換。
+              </div>
+            </article>
+          </div>
+
+          <!-- Auto-Trade Execution Audit Log -->
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">多 Agent 自動買賣與選模歷程紀錄</h2>
+                <p class="card-subtitle">完整記錄每次實時偵測價格、選用 AI 模型、技術開關評分與自動/手動觸發狀態</p>
+              </div>
+              <button id="btnClearAgentLogs" type="button" class="btn btn-sm">清空歷程</button>
+            </div>
+            <div class="card-body">
+              <div id="agentAutoLogBox" style="max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2);">
+                <div style="color:var(--ink-3);">尚無多 Agent 執行紀錄。</div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- ========== PANE 3: AI SIX-MODEL & OLLAMA LOCAL STUDIO ========== -->
         <div id="studio-ai" class="studio-pane">
           <article class="card">
             <div class="card-header">
               <div class="card-title-group">
-                <h2 class="card-title">多模型 AI 深度解析工作室（Grok Bot · Gemini · Claude · ChatGPT）</h2>
-                <p class="card-subtitle">支援自訂分析提問，同步調用四家主流大型語言模型 API（可透過雲端後端安全代理或瀏覽器金鑰直連）</p>
+                <h2 class="card-title">六模型 AI 深度解析 &amp; Ollama 地端工作室</h2>
+                <p class="card-subtitle">同步支援 Groq 極速推理、地端 Ollama / LM Studio、Grok Bot、Gemini、Claude、ChatGPT，並供多 Agent 自動切換最適模型</p>
               </div>
               <button id="btnRunAiStudio" class="btn btn-primary">
-                <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行四模型深度解析
+                <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行六模型深度解析
               </button>
             </div>
             <div class="card-body">
               <div class="grid-2" style="margin-bottom:14px;">
-                <div>
-                  <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
-                  <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
-                </div>
-                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
-                  <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">模型掛載與 API 金鑰狀態</div>
-                  <div class="form-grid-2" style="margin-bottom:8px;">
-                    <div>
-                      <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
-                      <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div>
+                    <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
+                    <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
+                  </div>
+                  <!-- Groq & Ollama Local Model Dedicated Card -->
+                  <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <strong style="font-size:12.5px;color:#0f766e;">Groq 極速雲端 ＋ Ollama 地端模型連線設定</strong>
+                      <span id="ollamaStatusBadge" class="badge badge-slate">地端待偵測</span>
                     </div>
-                    <div>
-                      <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
-                      <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
+                    <div class="form-grid-2">
+                      <div>
+                        <label class="field-label" for="keyGroq">Groq API Key（極速推理）</label>
+                        <input id="keyGroq" type="password" class="input mono" placeholder="gsk_..." />
+                      </div>
+                      <div>
+                        <label class="field-label" for="groqModelSelect">Groq 模型（支援線上載入）</label>
+                        <div style="display:flex;gap:6px;">
+                          <select id="groqModelSelect" class="select mono" style="flex:1;">
+                            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+                            <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
+                            <option value="qwen-qwq-32b">qwen-qwq-32b</option>
+                            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
+                          </select>
+                          <button id="btnFetchGroqModels" type="button" class="btn btn-sm" title="從 Groq API 載入可用模型">載入</button>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
-                      <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
-                    </div>
-                    <div>
-                      <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
-                      <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+                    <div class="form-grid-2">
+                      <div>
+                        <label class="field-label" for="ollamaUrlInput">Ollama / 地端網址（支援 LM Studio / vLLM）</label>
+                        <input id="ollamaUrlInput" type="url" class="input mono" value="http://127.0.0.1:11434" placeholder="http://127.0.0.1:11434" />
+                      </div>
+                      <div>
+                        <label class="field-label" for="ollamaModelInput">地端模型名稱（如 qwen2.5:14b / llama3.1）</label>
+                        <div style="display:flex;gap:6px;">
+                          <input id="ollamaModelInput" list="ollamaModelDatalist" type="text" class="input mono" value="qwen2.5:14b" placeholder="qwen2.5:14b" style="flex:1;" />
+                          <datalist id="ollamaModelDatalist">
+                            <option value="qwen2.5:14b"></option>
+                            <option value="qwen2.5:7b"></option>
+                            <option value="deepseek-r1:14b"></option>
+                            <option value="llama3.1:8b"></option>
+                            <option value="gemma3:12b"></option>
+                          </datalist>
+                          <button id="btnDetectOllamaModels" type="button" class="btn btn-sm btn-teal" title="自動掃描本機 Ollama 已安裝模型">偵測模型</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機瀏覽器 localStorage；雲端部署建議寫入伺服器 .env</span>
-                    <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存 AI 金鑰</button>
+                </div>
+
+                <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+                  <div>
+                    <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">雲端旗艦四模型 API 金鑰設定</div>
+                    <div class="form-grid-2" style="margin-bottom:8px;">
+                      <div>
+                        <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
+                        <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+                      </div>
+                      <div>
+                        <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
+                        <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
+                      </div>
+                      <div>
+                        <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
+                        <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
+                      </div>
+                      <div>
+                        <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
+                        <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+                      </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
+                      • 多 Agent 自動切換原則：高波動/放量優先 <strong>Groq / Ollama</strong>；價量背離風控優先 <strong>Claude / Gemini / Ollama</strong>；多頭突圍優先 <strong>Grok / Groq</strong>。<br />
+                      • 若本機執行 Ollama 需開放跨域直連，可啟動時加上 <code class="mono">OLLAMA_ORIGINS=* ollama serve</code>（經由本系統 Python 後端代理則免設 CORS）。
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border);">
+                    <span style="font-size:11px;color:var(--ink-3);">金鑰與 Ollama 設定僅存於本機瀏覽器 localStorage 或伺服器 .env</span>
+                    <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存六模型 &amp; Ollama 設定</button>
                   </div>
                 </div>
               </div>
-              <div id="aiStudioResults" class="grid-ai-4"></div>
+              <div id="aiStudioResults" class="grid-ai-3"></div>
             </div>
           </article>
         </div>
@@ -2539,11 +2889,44 @@
       },
 
       aiKeys: {
+        groq: '',
         grok: '',
         gemini: '',
         claude: '',
         chatgpt: ''
       },
+
+      modelOptions: {
+        groq_model: 'llama-3.3-70b-versatile',
+        ollama_url: 'http://127.0.0.1:11434',
+        ollama_model: 'qwen2.5:14b'
+      },
+
+      techSwitches: {
+        ma: true,
+        macd: true,
+        kdj: true,
+        rsi: true,
+        obv: true,
+        bollinger: true,
+        vwap: true,
+        momentum: true
+      },
+
+      agentConfig: {
+        precheckOnOrder: true,
+        autoTradeEnabled: false,
+        routingPolicy: 'AUTO',
+        pollSec: 60,
+        autoQty: 1,
+        maxSlippagePct: 1.0,
+        scoreThreshold: 25,
+        minConfidence: 60
+      },
+      lastAgentReport: null,
+      agentLogs: [],
+      pendingOverrideOrder: null,
+      lastAutoTradeKey: {},
 
       notifier: {
         lineEnabled: false,
@@ -2574,8 +2957,8 @@
           FINMIND: { status: '待命', latencyMs: null, lastMsg: '等待同步 FinMind v4' },
           TRADINGVIEW: { status: '已連線', latencyMs: 18, lastMsg: 'TradingView 進階線圖已就緒' },
           SCANNER: { status: '待命', latencyMs: null, lastMsg: '等待真實 K 線掃描' },
-          CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SYNAPSE 風控與路由中樞就緒' },
-          AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Grok / Gemini / Claude / ChatGPT 待命' },
+          CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SYNAPSE 多 Agent 風控與路由中樞就緒' },
+          AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Groq / Ollama / Grok / Gemini / Claude / ChatGPT 待命' },
           LINE_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 LINE Token' },
           TG_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 Telegram Token' },
           BROKER: { status: '模擬盤 SIM', latencyMs: 24, lastMsg: '永豐金 Shioaji 模擬撮合就緒' }
@@ -2601,6 +2984,10 @@
           if (saved.finmindToken) state.finmindToken = saved.finmindToken;
           if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
           if (saved.aiKeys) Object.assign(state.aiKeys, saved.aiKeys);
+          if (saved.modelOptions) Object.assign(state.modelOptions, saved.modelOptions);
+          if (saved.techSwitches) Object.assign(state.techSwitches, saved.techSwitches);
+          if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
+          if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
           if (saved.notifier) {
             Object.assign(state.notifier, saved.notifier);
             if (!Array.isArray(state.notifier.logs)) state.notifier.logs = [];
@@ -2633,6 +3020,10 @@
           finmindToken: state.finmindToken,
           tvAccount: state.tvAccount,
           aiKeys: state.aiKeys,
+          modelOptions: state.modelOptions,
+          techSwitches: state.techSwitches,
+          agentConfig: state.agentConfig,
+          agentLogs: state.agentLogs.slice(0, 40),
           notifier: { ...state.notifier, logs: state.notifier.logs.slice(0, 30) },
           activeSymbol: state.activeSymbol
         }));
@@ -2899,7 +3290,7 @@
         { id: 'SCANNER', label: '台股訊號引擎', sub: 'EMA · RSI · VWAP', color: '#0d9488' }
       ];
       const rightIds = [
-        { id: 'AI_CLUSTER', label: 'AI 四模型共識', sub: 'Grok·Gemini·Claude·GPT', color: '#4f46e5' },
+        { id: 'AI_CLUSTER', label: 'AI 六模型 & 多Agent', sub: 'Groq·Ollama·Grok·GPT', color: '#4f46e5' },
         { id: 'LINE_BOT', label: 'LINE Bot 推播', sub: '條列代號+中文名稱', color: '#16a34a' },
         { id: 'TG_BOT', label: 'Telegram Bot', sub: '即時訊號頻道推播', color: '#0284c7' },
         { id: 'BROKER', label: '永豐金 Shioaji', sub: state.envMode === 'LIVE' ? '真實下單 LIVE' : '模擬下單 SIM', color: state.envMode === 'LIVE' ? '#dc2626' : '#d97706' }
@@ -3744,13 +4135,26 @@
     }
 
     // =========================================================================
-    // 7. MULTI-MODEL AI ENGINE (GROK, GEMINI, CLAUDE, CHATGPT)
+    // 7. MULTI-MODEL AI ENGINE (GROQ, OLLAMA LOCAL, GROK, GEMINI, CLAUDE, CHATGPT)
     // =========================================================================
     const AI_MODELS = [
-      { id: 'grok', label: 'Grok Bot (xAI)', short: 'GK', color: '#0f172a', role: '短線動能與籌碼情緒' },
-      { id: 'gemini', label: 'Gemini (Google)', short: 'GM', color: '#2563eb', role: '技術結構與產業趨勢' },
-      { id: 'claude', label: 'Claude (Anthropic)', short: 'CL', color: '#d97706', role: '風控紀律與停損檢核' },
-      { id: 'chatgpt', label: 'ChatGPT (OpenAI)', short: 'GP', color: '#059669', role: '多空劇本與倉位策略' }
+      { id: 'groq', label: 'Groq (極速推理)', short: 'GQ', color: '#ea580c', role: '毫秒級爆量突圍與高波動盤中決策' },
+      { id: 'ollama', label: 'Ollama (地端模型)', short: 'OL', color: '#0f766e', role: '零外傳地端隱私推論（支援 LM Studio）' },
+      { id: 'grok', label: 'Grok Bot (xAI)', short: 'GK', color: '#0f172a', role: '短線動能與籌碼情緒轉折' },
+      { id: 'gemini', label: 'Gemini (Google)', short: 'GM', color: '#2563eb', role: '技術結構與產業趨勢脈絡' },
+      { id: 'claude', label: 'Claude (Anthropic)', short: 'CL', color: '#d97706', role: '風控紀律與價量背離稽核' },
+      { id: 'chatgpt', label: 'ChatGPT (OpenAI)', short: 'GP', color: '#059669', role: '多空劇本與分批倉位策略' }
+    ];
+
+    const V68_TECH_SWITCH_DEFS = [
+      { key: 'ma', label: 'MA / EMA 均線交叉', desc: 'EMA5/12 與 MA5/20 多空排列判定' },
+      { key: 'macd', label: 'MACD 動能柱狀', desc: 'DIF/DEA 柱狀翻紅翻綠轉折訊號' },
+      { key: 'kdj', label: 'KDJ 隨機指標 (9,3,3)', desc: '高低檔金叉死叉與超買超賣濾網' },
+      { key: 'rsi', label: 'RSI(14) 強弱濾網', desc: '超賣反彈 (≤32) 與過熱警戒 (≥75)' },
+      { key: 'obv', label: 'OBV 能量潮與量比', desc: '量比 ≥1.2x 搭配 OBV 資金流向判讀' },
+      { key: 'bollinger', label: '布林通道 (20, 2σ)', desc: '上下軌支撐壓力與中軌多空分水嶺' },
+      { key: 'vwap', label: 'VWAP 機構加權均價', desc: '盤中主力成本線乖離強弱驗證' },
+      { key: 'momentum', label: '5/20 日動能輪動', desc: '短中期價格動能共振方向過濾' }
     ];
 
     function buildDeterministicFallbackDigest(modelDef, sig, q) {
@@ -3762,7 +4166,13 @@
       let summary = '';
       let risk = '';
 
-      if (modelDef.id === 'grok') {
+      if (modelDef.id === 'groq') {
+        summary = `極速價量監測：現價 ${q.price}（${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%），EMA5=${sig.ema5} / EMA12=${sig.ema12}；${sig.reason}。`;
+        risk = `盤中放量若失守 ${support} 應立即縮手。`;
+      } else if (modelDef.id === 'ollama') {
+        summary = `地端策略核對：實時報價 ${q.price}、RSI(14)=${sig.rsi ?? '--'}、VWAP 乖離 ${sig.vwapDiff >= 0 ? '+' : ''}${sig.vwapDiff}%，本機量化訊號「${sig.signalLabel}」。`;
+        risk = `開啟本機 Ollama 即可零延遲接管 AI 判斷。`;
+      } else if (modelDef.id === 'grok') {
         summary = `依真實行情 ${q.price}（漲跌 ${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%），短線 EMA5=${sig.ema5} 與 EMA12=${sig.ema12}；${sig.reason}。`;
         risk = `短線留意量能變化，跌破 ${support} 宜防假突破。`;
       } else if (modelDef.id === 'gemini') {
@@ -3783,13 +4193,100 @@
       return {
         model: modelDef.id,
         connected: false,
-        modeLabel: '本地真實數據量化摘要（未填 API Key）',
+        modeLabel: modelDef.id === 'ollama' ? '本地量化摘要（地端 Ollama 未連線）' : '本地真實數據量化摘要（未填 API Key）',
         latency_ms: 4,
         verdict,
         confidence: conf,
         summary,
         key_levels: `支撐 ${support} ｜ 壓力 ${resist}`,
         risk_note: risk
+      };
+    }
+
+    function parseLooseAiJson(text) {
+      let cleaned = String(text || '').trim();
+      if (cleaned.includes('<think>') && cleaned.includes('</think>')) {
+        cleaned = cleaned.split('</think>').pop().trim();
+      }
+      cleaned = cleaned.replace(/```json|```/gi, '').trim();
+      const s = cleaned.indexOf('{');
+      const e = cleaned.lastIndexOf('}');
+      if (s !== -1 && e > s) {
+        return JSON.parse(cleaned.slice(s, e + 1));
+      }
+      return { verdict: 'NEUTRAL', confidence: 55, summary: cleaned.slice(0, 140), key_levels: '--', risk_note: '非標準 JSON 回覆' };
+    }
+
+    async function callSingleModelDirectBrowser(def, prompt) {
+      const t0 = performance.now();
+      let text = '';
+      if (def.id === 'groq') {
+        const key = (state.aiKeys.groq || '').trim();
+        if (!key) throw new Error('尚未填寫 Groq Key');
+        const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({ model: state.modelOptions.groq_model || 'llama-3.3-70b-versatile', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!r.ok) throw new Error(`Groq HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.choices?.[0]?.message?.content || '';
+      } else if (def.id === 'ollama') {
+        const base = (state.modelOptions.ollama_url || '').trim().replace(/\/+$/, '');
+        if (!base) throw new Error('尚未設定 Ollama 網址');
+        const model = (state.modelOptions.ollama_model || 'qwen2.5:14b').trim();
+        const r = await fetch(`${base}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, stream: false, options: { temperature: 0.2 }, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!r.ok) throw new Error(`Ollama HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.message?.content || '';
+      } else if (def.id === 'gemini') {
+        const key = (state.aiKeys.gemini || '').trim();
+        if (!key) throw new Error('尚未填寫 Gemini Key');
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } })
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else if (def.id === 'chatgpt') {
+        const key = (state.aiKeys.chatgpt || '').trim();
+        if (!key) throw new Error('尚未填寫 OpenAI Key');
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.choices?.[0]?.message?.content || '';
+      } else if (def.id === 'grok') {
+        const key = (state.aiKeys.grok || '').trim();
+        if (!key) throw new Error('尚未填寫 xAI Key');
+        const r = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({ model: 'grok-3-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.choices?.[0]?.message?.content || '';
+      } else {
+        throw new Error('Claude 瀏覽器直連需透過雲端後端代理避免 CORS');
+      }
+      const parsed = parseLooseAiJson(text);
+      return {
+        model: def.id,
+        connected: true,
+        modeLabel: def.id === 'ollama' ? `地端 Ollama (${state.modelOptions.ollama_model})` : '瀏覽器直連 LLM API',
+        latency_ms: Math.round(performance.now() - t0),
+        verdict: String(parsed.verdict || 'NEUTRAL').toUpperCase(),
+        confidence: Number(parsed.confidence || 65),
+        summary: String(parsed.summary || ''),
+        key_levels: String(parsed.key_levels || '--'),
+        risk_note: String(parsed.risk_note || '')
       };
     }
 
@@ -3822,8 +4319,8 @@
       if (btnQuick) btnQuick.disabled = true;
       if (btnStudio) btnStudio.disabled = true;
 
-      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送 ${meta.symbol} ${meta.name} 真實數據至四模型`);
-      showToast('AI 多模型平行解析中', `正在為 ${meta.symbol} ${meta.name}（現價 ${q.price}）執行 Grok / Gemini / Claude / ChatGPT 研判...`, 'info');
+      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送 ${meta.symbol} ${meta.name} 真實數據至六模型 (含 Groq / Ollama)`);
+      showToast('AI 六模型平行解析中', `正在為 ${meta.symbol} ${meta.name}（現價 ${q.price}）執行 Groq / Ollama / Grok / Gemini / Claude / ChatGPT 研判...`, 'info');
 
       const apiBase = getApiBase();
       let finalResults = [];
@@ -3837,8 +4334,9 @@
               symbol: meta.symbol,
               stock_name: meta.name,
               market_snapshot: snapshot,
-              models: ['grok', 'gemini', 'claude', 'chatgpt'],
+              models: AI_MODELS.map(m => m.id),
               api_keys: state.aiKeys,
+              model_options: state.modelOptions,
               custom_prompt: customPrompt
             })
           });
@@ -3847,70 +4345,35 @@
             finalResults = (data.results || []).map(r => {
               const def = AI_MODELS.find(m => m.id === r.model);
               if (r.connected) {
-                return { ...r, modeLabel: '雲端 LLM API 即時解析' };
+                return {
+                  ...r,
+                  modeLabel: r.model === 'ollama'
+                    ? `地端 Ollama (${r.model_name || state.modelOptions.ollama_model})`
+                    : `雲端 API (${r.model_name || r.model})`
+                };
               }
               return {
                 ...buildDeterministicFallbackDigest(def, sig, q),
-                modeLabel: `本地量化摘要（${r.error || '未填 API Key'}）`
+                modeLabel: `本地量化摘要（${r.error || '未設定'}）`
               };
             });
           }
         } catch (e) {}
       }
 
-      // If no backend or backend call skipped, try direct browser call for models with keys (Gemini/OpenAI/xAI) and transparent local digest for others
       if (finalResults.length === 0) {
         finalResults = await Promise.all(AI_MODELS.map(async def => {
-          const key = (state.aiKeys[def.id] || '').trim();
-          if (!key) return buildDeterministicFallbackDigest(def, sig, q);
+          const hasCred = def.id === 'ollama'
+            ? Boolean((state.modelOptions.ollama_url || '').trim())
+            : Boolean((state.aiKeys[def.id] || '').trim());
+          if (!hasCred) return buildDeterministicFallbackDigest(def, sig, q);
           try {
-            const t0 = performance.now();
             const prompt = `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${meta.symbol} ${meta.name}，來源=${q.source}，日期=${q.lastDate}，開=${q.open} 高=${q.high} 低=${q.low} 現價=${q.price} 漲跌=${sig.changePct}% 量=${q.volume} EMA5=${sig.ema5} EMA12=${sig.ema12} RSI14=${sig.rsi} VWAP乖離=${sig.vwapDiff}%。${customPrompt ? '額外提問：' + customPrompt : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"70字內研判","key_levels":"支撐與壓力","risk_note":"35字內風控"}`;
-            let text = '';
-            if (def.id === 'gemini') {
-              const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } })
-              });
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              const j = await r.json();
-              text = j.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            } else if (def.id === 'chatgpt') {
-              const r = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
-              });
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              const j = await r.json();
-              text = j.choices?.[0]?.message?.content || '';
-            } else if (def.id === 'grok') {
-              const r = await fetch('https://api.x.ai/v1/chat/completions', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({ model: 'grok-3-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
-              });
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              const j = await r.json();
-              text = j.choices?.[0]?.message?.content || '';
-            } else {
-              throw new Error('Claude 瀏覽器直連需透過雲端後端代理避免 CORS');
-            }
-            const cleaned = text.replace(/```json|```/g, '').trim();
-            const parsed = JSON.parse(cleaned.slice(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1));
-            return {
-              model: def.id,
-              connected: true,
-              modeLabel: '瀏覽器直連 LLM API',
-              latency_ms: Math.round(performance.now() - t0),
-              verdict: String(parsed.verdict || 'NEUTRAL').toUpperCase(),
-              confidence: Number(parsed.confidence || 65),
-              summary: String(parsed.summary || ''),
-              key_levels: String(parsed.key_levels || '--'),
-              risk_note: String(parsed.risk_note || '')
-            };
+            return await callSingleModelDirectBrowser(def, prompt);
           } catch (err) {
             return {
               ...buildDeterministicFallbackDigest(def, sig, q),
-              modeLabel: `本地量化摘要（API 受限：${err.message.slice(0, 32)}）`
+              modeLabel: `本地量化摘要（${err.message.slice(0, 34)}）`
             };
           }
         }));
@@ -3924,15 +4387,94 @@
       };
 
       const liveCount = finalResults.filter(x => x.connected).length;
-      state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/4 API 連線` : '本地量化摘要';
-      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${meta.symbol} ${meta.name} 四模型解析完成`;
+      state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/6 API 連線` : '本地量化摘要';
+      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${meta.symbol} ${meta.name} 六模型解析完成`;
       triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${meta.symbol} ${meta.name} 共識回傳完成`);
-      setRibbonEvent(`AI 四模型解析完成：${meta.symbol} ${meta.name}`);
+      setRibbonEvent(`AI 六模型解析完成：${meta.symbol} ${meta.name}`);
 
       if (btnQuick) btnQuick.disabled = false;
       if (btnStudio) btnStudio.disabled = false;
       renderAiPanels();
       renderTopRibbon();
+    }
+
+    async function detectOllamaModelsUI() {
+      const urlInput = document.getElementById('ollamaUrlInput');
+      const badge = document.getElementById('ollamaStatusBadge');
+      const datalist = document.getElementById('ollamaModelDatalist');
+      const modelInput = document.getElementById('ollamaModelInput');
+      const base = (urlInput?.value || state.modelOptions.ollama_url || 'http://127.0.0.1:11434').trim().replace(/\/+$/, '');
+      if (badge) { badge.className = 'badge badge-amber'; badge.textContent = '偵測中...'; }
+
+      let models = [];
+      let errMsg = '';
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/ai/ollama-models?base_url=${encodeURIComponent(base)}`);
+          if (r.ok) {
+            const j = await r.json();
+            if (j.ok && Array.isArray(j.models)) models = j.models;
+            else errMsg = j.error || '無法連線地端服務';
+          }
+        } catch (e) { errMsg = e.message; }
+      }
+      if (models.length === 0) {
+        try {
+          const r = await fetch(`${base}/api/tags`);
+          if (r.ok) {
+            const j = await r.json();
+            models = (j.models || []).map(m => m.name).filter(Boolean);
+          }
+        } catch (e) {
+          if (!errMsg) errMsg = '本機未啟動 Ollama 或未開 OLLAMA_ORIGINS=*';
+        }
+      }
+
+      if (models.length > 0) {
+        if (datalist) datalist.innerHTML = models.map(m => `<option value="${escapeHtml(m)}"></option>`).join('');
+        if (modelInput && !models.includes(modelInput.value)) modelInput.value = models[0];
+        state.modelOptions.ollama_url = base;
+        state.modelOptions.ollama_model = modelInput?.value || models[0];
+        persistState();
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = `已連線 · ${models.length} 模型`; }
+        showToast('Ollama 地端模型偵測成功', `找到 ${models.length} 個可用模型：${models.slice(0, 5).join(', ')}`, 'success');
+      } else {
+        if (badge) { badge.className = 'badge badge-slate'; badge.textContent = '地端離線'; }
+        showToast('未偵測到本機 Ollama', `${errMsg || '請確認本機已啟動 ollama serve'}（可透過後端代理連線本機 11434 埠）。`, 'warn');
+      }
+    }
+
+    async function fetchGroqModelsUI() {
+      const key = (document.getElementById('keyGroq')?.value || state.aiKeys.groq || '').trim();
+      const sel = document.getElementById('groqModelSelect');
+      let models = [];
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/ai/groq-models?api_key=${encodeURIComponent(key)}`);
+          if (r.ok) {
+            const j = await r.json();
+            if (Array.isArray(j.models) && j.models.length > 0) models = j.models;
+          }
+        } catch (e) {}
+      } else if (key) {
+        try {
+          const r = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': `Bearer ${key}` } });
+          if (r.ok) {
+            const j = await r.json();
+            models = (j.data || []).map(m => m.id).filter(id => id && !id.toLowerCase().includes('whisper')).sort();
+          }
+        } catch (e) {}
+      }
+      if (models.length > 0 && sel) {
+        const cur = sel.value;
+        sel.innerHTML = models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        if (models.includes(cur)) sel.value = cur;
+        showToast('已更新 Groq 模型清單', `載入 ${models.length} 個 Groq 可用模型。`, 'success');
+      } else {
+        showToast('Groq 清單使用預設值', '請先填入有效的 Groq API Key 以即時載入線上模型。', 'info');
+      }
     }
 
     function renderAiPanels() {
@@ -3948,6 +4490,12 @@
       const cardsHtml = AI_MODELS.map(def => {
         const res = pack?.models?.find(m => m.model === def.id);
         if (!res) {
+          const isCfg = def.id === 'ollama'
+            ? Boolean((state.modelOptions.ollama_url || '').trim())
+            : (Boolean(state.aiKeys[def.id]) || Boolean(state.backendHealth?.ai_env_configured?.[def.id]));
+          const statusLine = def.id === 'ollama'
+            ? `地端設定：${state.modelOptions.ollama_url || '未設定'} (${state.modelOptions.ollama_model || 'qwen2.5:14b'})`
+            : (isCfg ? 'API 狀態：已設定金鑰' : 'API 狀態：未設定金鑰（可切換本地量化摘要）');
           return `
             <div class="ai-card">
               <div class="ai-card-head">
@@ -3957,8 +4505,8 @@
                 </div>
                 <span class="badge badge-slate">待命</span>
               </div>
-              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。請點擊上方「一鍵四模型解析」以載入真實數據研判。</p>
-              <div class="ai-meta-line">API 狀態：${state.aiKeys[def.id] ? '已設定金鑰' : '未設定金鑰（可切換本地量化摘要）'}</div>
+              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊「一鍵六模型解析」或啟用多 Agent 自動選模。</p>
+              <div class="ai-meta-line">${escapeHtml(statusLine)}</div>
             </div>
           `;
         }
@@ -3991,15 +4539,508 @@
 
       if (headline) {
         if (!pack) {
-          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 四模型解析（點擊右側按鈕立即開始）`;
+          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 六模型解析（點擊右側按鈕立即開始）`;
         } else {
+          const total = pack.models.length || 6;
           const bulls = pack.models.filter(m => m.verdict === 'BULL').length;
           const bears = pack.models.filter(m => m.verdict === 'BEAR').length;
-          const avgConf = Math.round(pack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / pack.models.length);
-          const verdictText = bulls >= 3 ? '偏多共識' : (bears >= 3 ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
-          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${pack.price}）→ 四模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${4 - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
+          const avgConf = Math.round(pack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / total);
+          const verdictText = bulls >= Math.ceil(total * 0.6) ? '偏多共識' : (bears >= Math.ceil(total * 0.6) ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
+          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${pack.price}）→ 六模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${total - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
         }
       }
+    }
+
+    // =========================================================================
+    // 7.5 REAL-TIME PRICE DETECTION + PRICE-VOLUME MULTI-AGENT & V68 SWITCHES
+    // =========================================================================
+    let agentAutoTimer = null;
+
+    function calcEmaArr(vals, period) {
+      if (!vals.length) return [];
+      const k = 2 / (period + 1);
+      const out = [vals[0]];
+      for (let i = 1; i < vals.length; i++) out.push(vals[i] * k + out[i - 1] * (1 - k));
+      return out;
+    }
+
+    function evaluateV68ClientFallback(symbol, quote, intendedSide = 'AUTO', intendedPrice = null) {
+      const candles = (quote?.candles && quote.candles.length >= 2)
+        ? quote.candles
+        : [{ open: quote.open || quote.price, high: quote.high || quote.price, low: quote.low || quote.price, close: quote.price, volume: quote.volume || 1000 }];
+      const closes = candles.map(c => Number(c.close));
+      const highs = candles.map(c => Number(c.high || c.close));
+      const lows = candles.map(c => Number(c.low || c.close));
+      const vols = candles.map(c => Number(c.volume || 0));
+      const n = closes.length;
+      const latestP = Number(quote.price || closes[n - 1]);
+
+      const nzVols = vols.filter(v => v > 0);
+      let volRatio = 1.0;
+      if (nzVols.length >= 2) {
+        const lastV = nzVols[nzVols.length - 1];
+        const prevV = nzVols.slice(-6, -1);
+        const avgVol5 = prevV.reduce((a, b) => a + b, 0) / Math.max(1, prevV.length);
+        volRatio = avgVol5 > 0 ? Math.round((lastV / avgVol5) * 100) / 100 : 1.0;
+      }
+
+      let obv = 0;
+      const obvArr = [0];
+      for (let i = 1; i < n; i++) {
+        if (closes[i] > closes[i - 1]) obv += vols[i];
+        else if (closes[i] < closes[i - 1]) obv -= vols[i];
+        obvArr.push(obv);
+      }
+      const obvRising = obvArr[n - 1] > obvArr[Math.max(0, n - 5)];
+
+      const ema5 = calcEmaArr(closes, 5);
+      const ema12 = calcEmaArr(closes, 12);
+      const ema26 = calcEmaArr(closes, 26);
+      const ma5 = closes.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, n);
+      const ma20 = closes.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, n);
+      const dif = ema12.map((v, i) => v - ema26[i]);
+      const dea = calcEmaArr(dif, 9);
+      const osc = dif[n - 1] - dea[n - 1];
+
+      const rsiLen = Math.min(14, Math.max(1, n - 1));
+      let gains = 0, losses = 0;
+      for (let i = n - rsiLen; i < n; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff > 0) gains += diff; else losses -= diff;
+      }
+      const rsi = losses === 0 ? 100 : Math.round((100 - 100 / (1 + (gains / rsiLen) / (losses / rsiLen))) * 10) / 10;
+
+      let kVal = 50, dVal = 50;
+      for (let i = 0; i < n; i++) {
+        const lo9 = Math.min(...lows.slice(Math.max(0, i - 8), i + 1));
+        const hi9 = Math.max(...highs.slice(Math.max(0, i - 8), i + 1));
+        const rsv = hi9 === lo9 ? 50 : ((closes[i] - lo9) / (hi9 - lo9)) * 100;
+        kVal = (2 / 3) * kVal + (1 / 3) * rsv;
+        dVal = (2 / 3) * dVal + (1 / 3) * kVal;
+      }
+
+      const winBb = closes.slice(-20);
+      const bbMid = winBb.reduce((a, b) => a + b, 0) / winBb.length;
+      const bbStd = Math.sqrt(winBb.reduce((a, x) => a + (x - bbMid) ** 2, 0) / winBb.length);
+      const bbUpper = bbMid + 2 * bbStd;
+      const bbLower = bbMid - 2 * bbStd;
+
+      let cumPv = 0, cumV = 0;
+      candles.forEach(c => {
+        const v = Math.max(1, Number(c.volume || 1));
+        cumPv += ((Number(c.high || c.close) + Number(c.low || c.close) + Number(c.close)) / 3) * v;
+        cumV += v;
+      });
+      const vwap = cumV > 0 ? cumPv / cumV : latestP;
+      const vwapDiff = vwap > 0 ? Math.round(((latestP - vwap) / vwap) * 10000) / 100 : 0;
+
+      const mom5 = n >= 2 ? Math.round(((latestP - closes[Math.max(0, n - 6)]) / closes[Math.max(0, n - 6)]) * 10000) / 100 : 0;
+      const mom20 = n >= 2 ? Math.round(((latestP - closes[Math.max(0, n - 20)]) / closes[Math.max(0, n - 20)]) * 10000) / 100 : 0;
+      const sessHi = Math.max(...highs.slice(-18));
+      const sessLo = Math.min(...lows.slice(-18));
+      const intradayVolPct = Math.round(((sessHi - sessLo) / Math.max(0.01, sessLo)) * 10000) / 100;
+
+      const chgLast = n >= 2 && closes[n - 2] > 0 ? ((closes[n - 1] - closes[n - 2]) / closes[n - 2]) * 100 : 0;
+      let pvRegime = '價量盤整';
+      if (chgLast > 0.5 && volRatio >= 1.5) pvRegime = '爆量上攻';
+      else if (chgLast > 0 && volRatio >= 1.0) pvRegime = '價漲量增';
+      else if (chgLast > 0.3 && volRatio < 0.85) pvRegime = '價漲量縮背離';
+      else if (chgLast < -0.5 && volRatio >= 1.5) pvRegime = '爆量殺盤';
+      else if (chgLast < 0 && volRatio < 0.85) pvRegime = '量縮回測';
+
+      const votes = [];
+      let score = 0, enabledCnt = 0;
+      const addVote = (key, label, value, points, note) => {
+        if (!state.techSwitches[key]) return;
+        enabledCnt++;
+        score += points;
+        votes.push({ key, label, value, points, signal: points > 0 ? 'BULL' : (points < 0 ? 'BEAR' : 'NEUTRAL'), note });
+      };
+
+      addVote('ma', 'MA/EMA 均線', `EMA5=${ema5[n - 1].toFixed(1)} / MA20=${ma20.toFixed(1)}`,
+        (ema5[n - 1] > ema12[n - 1] && ma5 >= ma20) ? 18 : ((ema5[n - 1] < ema12[n - 1] && ma5 <= ma20) ? -18 : 0),
+        ema5[n - 1] > ema12[n - 1] ? '多頭均線排列' : '空頭均線壓制');
+      addVote('macd', 'MACD 動能', `OSC=${osc >= 0 ? '+' : ''}${osc.toFixed(2)}`, osc > 0 ? 16 : (osc < 0 ? -16 : 0), osc > 0 ? '柱狀翻紅偏多' : '柱狀翻綠偏空');
+      addVote('kdj', 'KDJ 隨機指標', `K=${kVal.toFixed(1)} / D=${dVal.toFixed(1)}`,
+        (kVal > dVal && kVal < 80) ? 15 : ((kVal < dVal && kVal > 20) ? -15 : (kVal <= 22 ? 12 : (kVal >= 82 ? -12 : 0))),
+        kVal >= dVal ? 'KD 偏多/金叉' : 'KD 偏空/死叉');
+      addVote('rsi', 'RSI(14) 強弱', `RSI=${rsi}`, rsi <= 32 ? 15 : (rsi >= 75 ? -15 : (rsi > 52 ? 8 : (rsi < 48 ? -8 : 0))), rsi <= 32 ? '超賣反彈' : (rsi >= 75 ? '超買警戒' : '多空常態'));
+      addVote('obv', 'OBV 能量潮與量比', `量比 ${volRatio}x`, (obvRising && volRatio >= 1.2) ? 16 : ((!obvRising && volRatio >= 1.2) ? -16 : 0), `${pvRegime}（OBV ${obvRising ? '上揚' : '走弱'}）`);
+      addVote('bollinger', '布林通道 (20,2σ)', `下${bbLower.toFixed(1)} / 上${bbUpper.toFixed(1)}`,
+        latestP <= bbLower * 1.01 ? 14 : (latestP >= bbUpper * 0.99 ? -14 : (latestP > bbMid ? 6 : -6)),
+        latestP <= bbLower * 1.01 ? '下軌支撐' : (latestP >= bbUpper * 0.99 ? '上軌壓力' : '中軌運行'));
+      addVote('vwap', 'VWAP 加權均價', `${vwapDiff >= 0 ? '+' : ''}${vwapDiff}%`, vwapDiff > 0.2 ? 14 : (vwapDiff < -0.2 ? -14 : 0), vwapDiff > 0 ? '站上機構均價' : '跌破機構均價');
+      addVote('momentum', '5/20日動能輪動', `5D:${mom5 >= 0 ? '+' : ''}${mom5}% / 20D:${mom20 >= 0 ? '+' : ''}${mom20}%`, (mom5 > 0 && mom20 > 0) ? 12 : ((mom5 < 0 && mom20 < 0) ? -12 : 0), '短中期動能檢核');
+
+      const normScore = enabledCnt > 0 ? Math.max(-100, Math.min(100, Math.round(score * (8 / enabledCnt)))) : 0;
+      const th = Number(state.agentConfig.scoreThreshold || 25);
+      const techSignal = normScore >= th ? 'BUY' : (normScore <= -th ? 'SELL' : 'HOLD');
+
+      const slippagePct = intendedPrice && intendedPrice > 0 ? Math.round(((latestP - intendedPrice) / intendedPrice) * 10000) / 100 : 0;
+      const maxSlip = Number(state.agentConfig.maxSlippagePct || 1.0);
+      const warnings = [];
+      if (state.killSwitch) warnings.push('緊急熔斷啟動中，禁止交易');
+      if (Math.abs(slippagePct) > maxSlip) warnings.push(`即時滑價 ${slippagePct >= 0 ? '+' : ''}${slippagePct}% 超過上限 ±${maxSlip}%`);
+      if (intendedSide === 'BUY' && rsi >= 76) warnings.push(`RSI(14)=${rsi} 嚴重超買，追高風險偏高`);
+      if (intendedSide === 'SELL' && rsi <= 24) warnings.push(`RSI(14)=${rsi} 嚴重超賣，殺低風險偏高`);
+
+      const policy = state.agentConfig.routingPolicy || 'AUTO';
+      let routeReason = '';
+      if (policy === 'LOCAL_FIRST') routeReason = '地端隱私優先 → 優先切換 Ollama';
+      else if (policy === 'SPEED_FIRST') routeReason = '極速低延遲優先 → 優先切換 Groq';
+      else if (policy === 'DEEP_REASONING') routeReason = '深度邏輯推理優先 → 優先切換 Claude / Gemini';
+      else if (volRatio >= 1.5 || intradayVolPct >= 2.5) routeReason = `高波動放量（${pvRegime}，量比 ${volRatio}x）→ 優先切換 Groq / Ollama`;
+      else if (pvRegime.includes('背離')) routeReason = `價量背離警戒（${pvRegime}）→ 優先切換 Claude / Gemini / Ollama`;
+      else routeReason = `常態格局（${pvRegime}）→ 優先切換 Ollama / Groq / Gemini`;
+
+      const verdict = techSignal === 'BUY' ? 'BULL' : (techSignal === 'SELL' ? 'BEAR' : 'NEUTRAL');
+      const conf = Math.min(92, Math.max(48, 52 + Math.floor(Math.abs(normScore) / 2)));
+      let finalAction = techSignal;
+      if (intendedSide === 'BUY' || intendedSide === 'SELL') {
+        const opposes = (intendedSide === 'BUY' && techSignal === 'SELL') || (intendedSide === 'SELL' && techSignal === 'BUY');
+        finalAction = opposes ? 'WARN_CONFLICT' : intendedSide;
+      }
+
+      return {
+        timestamp: nowTwDateTime(),
+        latency_ms: 18,
+        symbol,
+        stock_name: getStockMeta(symbol).name,
+        live_quote: {
+          price: latestP, open: quote.open, high: quote.high, low: quote.low, volume: quote.volume,
+          change_pct: quote.prevClose ? Math.round(((latestP - quote.prevClose) / quote.prevClose) * 10000) / 100 : 0,
+          source: quote.source || '前端即時偵測',
+          slippage_pct: slippagePct
+        },
+        agents: {
+          price_volume: { regime: pvRegime, volume_ratio: volRatio, obv_rising: obvRising, intraday_vol_pct: intradayVolPct, vwap: Math.round(vwap * 100) / 100, vwap_diff: vwapDiff },
+          technical_strategy: { enabled_count: enabledCnt, score: normScore, signal: techSignal, votes },
+          risk_gatekeeper: { approved: warnings.length === 0, slippage_pct: slippagePct, max_slippage_pct: maxSlip, warnings },
+          model_router: {
+            policy,
+            selected_model: 'local_quant_agent',
+            selected_model_name: '前端本地多 Agent 量化決策引擎',
+            reason: routeReason,
+            failover_log: [],
+            decision: {
+              verdict, confidence: conf,
+              summary: `實時偵測價 ${latestP}（${pvRegime}，量比 ${volRatio}x），${enabledCnt} 項開關綜合 ${normScore} 分，建議 ${techSignal}。`,
+              key_levels: `支撐 ${fmtNum(quote.low || latestP, 2)} ｜ 壓力 ${fmtNum(quote.high || latestP, 2)}`,
+              risk_note: warnings.join('；') || '風控守門員通過'
+            }
+          }
+        },
+        final_action: finalAction,
+        risk_approved: warnings.length === 0
+      };
+    }
+
+    async function runMultiAgentOrchestration({ symbol = state.activeSymbol, intendedSide = 'AUTO', intendedPrice = null, autoExecute = false } = {}) {
+      const meta = getStockMeta(symbol);
+      triggerHandshake('CORE', 'AI_CLUSTER', '#b91c1c', 'SYN', true, null, `多 Agent 啟動：${meta.symbol} ${meta.name} 實時偵測與選模`);
+
+      let report = null;
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/agent/orchestrate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: meta.symbol,
+              stock_name: meta.name,
+              yahoo_symbol: meta.yahoo,
+              intended_side: intendedSide,
+              intended_price: intendedPrice,
+              max_slippage_pct: Number(state.agentConfig.maxSlippagePct || 1.0),
+              tech_switches: state.techSwitches,
+              api_keys: state.aiKeys,
+              model_options: state.modelOptions,
+              routing_policy: state.agentConfig.routingPolicy || 'AUTO'
+            })
+          });
+          if (resp.ok) {
+            report = await resp.json();
+          }
+        } catch (e) {}
+      }
+
+      if (!report) {
+        await fetchMarketData(symbol, 'auto');
+        const q = getQuote(symbol);
+        if (!q || q.price === null) {
+          showToast('實時偵測失敗', `無法取得 ${meta.symbol} ${meta.name} 最新真實股價，多 Agent 已中止操作。`, 'error');
+          return null;
+        }
+        report = evaluateV68ClientFallback(symbol, q, intendedSide, intendedPrice);
+      }
+
+      // Sync freshly detected real-time price into local quote & order ticket
+      if (report.live_quote?.price) {
+        const existing = state.quotes[symbol] || {};
+        state.quotes[symbol] = {
+          ...existing,
+          price: report.live_quote.price,
+          open: report.live_quote.open ?? existing.open,
+          high: report.live_quote.high ?? existing.high,
+          low: report.live_quote.low ?? existing.low,
+          volume: report.live_quote.volume ?? existing.volume,
+          source: report.live_quote.source || existing.source || '即時偵測',
+          lastDate: report.timestamp.slice(0, 16)
+        };
+        if (symbol === state.activeSymbol) {
+          const priceEl = document.getElementById('orderPriceInput');
+          if (priceEl) priceEl.value = report.live_quote.price;
+          renderActiveStockHeaderAndOhlcv();
+          updateOrderSummary();
+        }
+      }
+
+      state.lastAgentReport = report;
+      const router = report.agents.model_router;
+      const tech = report.agents.technical_strategy;
+      const pv = report.agents.price_volume;
+
+      // Record audit log
+      let execTag = '僅偵測';
+      if (autoExecute && state.agentConfig.autoTradeEnabled && !state.killSwitch) {
+        const th = Number(state.agentConfig.scoreThreshold || 25);
+        const minConf = Number(state.agentConfig.minConfidence || 60);
+        const action = report.final_action;
+        const canAuto = (action === 'BUY' || action === 'SELL')
+          && report.risk_approved
+          && Math.abs(tech.score) >= th
+          && Number(router.decision?.confidence || 0) >= minConf;
+
+        const dedupKey = `${symbol}:${action}:${report.timestamp.slice(0, 15)}`;
+        if (canAuto && state.lastAutoTradeKey[symbol] !== dedupKey) {
+          state.lastAutoTradeKey[symbol] = dedupKey;
+          execTag = `自動送單 ${action} ${state.agentConfig.autoQty}張`;
+          await executeOrder({
+            symbol,
+            side: action,
+            qty: Math.max(1, Number(state.agentConfig.autoQty || 1)),
+            unit: '張',
+            price: report.live_quote.price,
+            orderType: 'LMT',
+            tif: 'ROD',
+            source: `AUTO_AGENT_${router.selected_model.toUpperCase()}`
+          });
+        } else if (!canAuto) {
+          execTag = `未達自動門檻 (${action} / 分數${tech.score} / 信心${router.decision?.confidence || 0}%)`;
+        } else {
+          execTag = `冷卻中略過重複 ${action}`;
+        }
+      }
+
+      state.agentLogs.unshift({
+        time: nowTwTime(),
+        symbol: meta.symbol,
+        name: meta.name,
+        price: report.live_quote.price,
+        regime: pv.regime,
+        score: tech.score,
+        model: router.selected_model_name,
+        action: report.final_action,
+        execTag
+      });
+      if (state.agentLogs.length > 40) state.agentLogs.pop();
+      persistState();
+
+      state.handshake.nodeStats.AI_CLUSTER.status = `路由：${router.selected_model.toUpperCase()}`;
+      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${meta.symbol} ${meta.name} → ${router.selected_model_name}`;
+      triggerHandshake('AI_CLUSTER', 'CORE', '#0d9488', 'ACK', false, report.latency_ms || 35, `選定 ${router.selected_model.toUpperCase()} · 決策 ${report.final_action}`);
+      setRibbonEvent(`多 Agent 實時偵測完成：${meta.symbol} ${meta.name} 現價 ${report.live_quote.price}（模型：${router.selected_model}）`);
+
+      renderStrategyModalUI();
+      renderOrderAgentTrace(report, intendedSide);
+      return report;
+    }
+
+    function renderOrderAgentTrace(report, intendedSide = 'AUTO') {
+      const box = document.getElementById('orderAgentTraceBox');
+      if (!box || !report) return;
+      const pv = report.agents.price_volume;
+      const tech = report.agents.technical_strategy;
+      const risk = report.agents.risk_gatekeeper;
+      const router = report.agents.model_router;
+      const isConflict = report.final_action === 'WARN_CONFLICT' || !report.risk_approved;
+
+      box.style.display = 'flex';
+      box.className = `agent-trace-box ${isConflict ? 'warn' : 'ok'}`;
+      const slipStr = `${report.live_quote.slippage_pct >= 0 ? '+' : ''}${report.live_quote.slippage_pct}%`;
+
+      box.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+          <strong style="color:var(--ink-1);">實時偵測：${escapeHtml(report.symbol)} ${escapeHtml(report.stock_name)} @ <span class="mono">${fmtNum(report.live_quote.price, 2)}</span>（滑價 ${slipStr}）</strong>
+          <span class="badge ${isConflict ? 'badge-amber' : 'badge-down'}">${isConflict ? '需確認警示' : '多 Agent 預檢通過'}</span>
+        </div>
+        <div style="color:var(--ink-2);line-height:1.5;">
+          • <strong>價量 Agent</strong>：${escapeHtml(pv.regime)}（量比 <span class="mono">${pv.volume_ratio}x</span>，VWAP乖離 <span class="mono">${pv.vwap_diff >= 0 ? '+' : ''}${pv.vwap_diff}%</span>）<br/>
+          • <strong>技術開關 (${tech.enabled_count}/8)</strong>：評分 <strong class="mono">${tech.score}</strong>（${tech.signal}）<br/>
+          • <strong>最適模型切換</strong>：<span class="badge badge-blue" style="font-size:10px;padding:1px 6px;">${escapeHtml(router.selected_model_name)}</span><br/>
+          <span style="color:var(--ink-3);font-size:11px;">路由依據：${escapeHtml(router.reason)}</span>
+        </div>
+        ${risk.warnings.length > 0 ? `<div style="color:#b45309;font-weight:700;">⚠ 風控警示：${escapeHtml(risk.warnings.join('；'))}</div>` : ''}
+        ${report.final_action === 'WARN_CONFLICT' ? `<div style="color:#b91c1c;font-weight:700;">⚠ 方向衝突：目前技術與 AI 皆傾向與您預定 ${intendedSide} 相反方向，請確認後再送出。</div>` : ''}
+        ${isConflict && state.pendingOverrideOrder ? `
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <button id="btnForceConfirmOrder" type="button" class="btn btn-sm btn-danger" style="flex:1;">確認忽略警告並送單 (${state.pendingOverrideOrder.side})</button>
+            <button id="btnCancelOverrideOrder" type="button" class="btn btn-sm">取消</button>
+          </div>
+        ` : ''}
+      `;
+
+      document.getElementById('btnForceConfirmOrder')?.addEventListener('click', () => {
+        if (!state.pendingOverrideOrder) return;
+        const ord = { ...state.pendingOverrideOrder, source: 'MANUAL_OVERRIDE_AFTER_AGENT' };
+        state.pendingOverrideOrder = null;
+        executeOrder(ord);
+        renderOrderAgentTrace(report, intendedSide);
+      });
+      document.getElementById('btnCancelOverrideOrder')?.addEventListener('click', () => {
+        state.pendingOverrideOrder = null;
+        box.style.display = 'none';
+      });
+    }
+
+    function renderTechSwitchesUI() {
+      const grid = document.getElementById('techSwitchesGrid');
+      const cntEl = document.getElementById('techSwitchEnabledCount');
+      const votesMap = {};
+      (state.lastAgentReport?.agents?.technical_strategy?.votes || []).forEach(v => { votesMap[v.key] = v; });
+
+      const enabledCount = V68_TECH_SWITCH_DEFS.filter(d => Boolean(state.techSwitches[d.key])).length;
+      if (cntEl) cntEl.textContent = String(enabledCount);
+
+      if (!grid) return;
+      grid.innerHTML = V68_TECH_SWITCH_DEFS.map(def => {
+        const isOn = Boolean(state.techSwitches[def.key]);
+        const v = votesMap[def.key];
+        const voteHtml = v
+          ? `<span class="badge ${v.signal === 'BULL' ? 'badge-up' : (v.signal === 'BEAR' ? 'badge-down' : 'badge-slate')}" style="font-size:10px;padding:1px 6px;">${v.points > 0 ? '+' : ''}${v.points} · ${escapeHtml(v.value)}</span>`
+          : `<span style="font-size:10.5px;color:var(--ink-3);">${isOn ? '已納入策略權重' : '已停用'}</span>`;
+        return `
+          <div class="tech-switch-card ${isOn ? 'on' : ''}">
+            <div class="tech-switch-head">
+              <strong style="font-size:12px;color:var(--ink-1);">${def.label}</strong>
+              <label class="switch-pill" title="切換 ${def.label}">
+                <input type="checkbox" data-tech-switch="${def.key}" ${isOn ? 'checked' : ''} />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);line-height:1.4;">${def.desc}</div>
+            <div>${voteHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('[data-tech-switch]').forEach(chk => {
+        chk.addEventListener('change', e => {
+          state.techSwitches[e.target.dataset.techSwitch] = e.target.checked;
+          persistState();
+          renderTechSwitchesUI();
+        });
+      });
+    }
+
+    function renderStrategyModalUI() {
+      renderTechSwitchesUI();
+      const rep = state.lastAgentReport;
+      if (rep) {
+        const pv = rep.agents.price_volume;
+        const tech = rep.agents.technical_strategy;
+        const risk = rep.agents.risk_gatekeeper;
+        const router = rep.agents.model_router;
+
+        const pvBadge = document.getElementById('agPvRegimeBadge');
+        if (pvBadge) {
+          pvBadge.className = `badge ${pv.regime.includes('上攻') || pv.regime.includes('量增') ? 'badge-up' : (pv.regime.includes('殺盤') || pv.regime.includes('背離') ? 'badge-amber' : 'badge-slate')}`;
+          pvBadge.textContent = pv.regime;
+        }
+        const pvBody = document.getElementById('agPvBody');
+        if (pvBody) {
+          pvBody.innerHTML = `
+            <div><strong>標的：</strong>${escapeHtml(rep.symbol)} ${escapeHtml(rep.stock_name)} ｜ <strong>實時價：</strong><span class="mono">${fmtNum(rep.live_quote.price, 2)}</span>（${rep.live_quote.change_pct >= 0 ? '+' : ''}${rep.live_quote.change_pct}%）</div>
+            <div><strong>量比：</strong><span class="mono">${pv.volume_ratio}x</span> ｜ <strong>OBV 能量潮：</strong>${pv.obv_rising ? '上升吸籌' : '走弱流出'} ｜ <strong>日內振幅：</strong><span class="mono">${pv.intraday_vol_pct}%</span></div>
+            <div><strong>VWAP：</strong><span class="mono">${pv.vwap}</span>（乖離 ${pv.vwap_diff >= 0 ? '+' : ''}${pv.vwap_diff}%） ｜ <strong>來源：</strong>${escapeHtml(rep.live_quote.source)}</div>
+          `;
+        }
+
+        const techBadge = document.getElementById('agTechScoreBadge');
+        if (techBadge) {
+          techBadge.className = `badge ${tech.signal === 'BUY' ? 'badge-up' : (tech.signal === 'SELL' ? 'badge-down' : 'badge-slate')}`;
+          techBadge.textContent = `評分 ${tech.score >= 0 ? '+' : ''}${tech.score} · ${tech.signal}`;
+        }
+        const votesBody = document.getElementById('agTechVotesBody');
+        if (votesBody) {
+          votesBody.innerHTML = tech.votes.length
+            ? tech.votes.map(v => `<span class="agent-vote-chip ${v.signal === 'BULL' ? 'bull' : (v.signal === 'BEAR' ? 'bear' : '')}">${escapeHtml(v.label)} (${v.points > 0 ? '+' : ''}${v.points})</span>`).join('')
+            : '<span style="color:var(--ink-3);">所有技術開關均已關閉，請至少開啟一項。</span>';
+        }
+
+        const riskBadge = document.getElementById('agRiskBadge');
+        if (riskBadge) {
+          riskBadge.className = `badge ${risk.approved ? 'badge-down' : 'badge-amber'}`;
+          riskBadge.textContent = risk.approved ? '風控通過' : `警示 (${risk.warnings.length})`;
+        }
+        const riskBody = document.getElementById('agRiskBody');
+        if (riskBody) {
+          riskBody.innerHTML = `
+            <div><strong>即時滑價：</strong><span class="mono">${risk.slippage_pct >= 0 ? '+' : ''}${risk.slippage_pct}%</span>（容忍上限 ±${risk.max_slippage_pct}%）</div>
+            <div><strong>檢核結論：</strong>${risk.warnings.length ? `<span style="color:#b45309;font-weight:700;">${escapeHtml(risk.warnings.join('；'))}</span>` : '<span style="color:#0f766e;font-weight:700;">無滑價異常、無極端過熱、熔斷未觸發，允許執行。</span>'}</div>
+          `;
+        }
+
+        const actBadge = document.getElementById('agFinalActionBadge');
+        if (actBadge) {
+          actBadge.className = `badge ${rep.final_action === 'BUY' ? 'badge-up' : (rep.final_action === 'SELL' ? 'badge-down' : 'badge-amber')}`;
+          actBadge.textContent = `決策：${rep.final_action}`;
+        }
+        const routerBody = document.getElementById('agRouterBody');
+        if (routerBody) {
+          const dec = router.decision || {};
+          routerBody.innerHTML = `
+            <div><strong>自動選定模型：</strong><span class="badge badge-blue">${escapeHtml(router.selected_model_name)}</span>（耗時 <span class="mono">${rep.latency_ms}ms</span>）</div>
+            <div><strong>自動切換理由：</strong>${escapeHtml(router.reason)}</div>
+            <div><strong>AI 研判 (${escapeHtml(dec.verdict || 'NEUTRAL')} · ${dec.confidence || 0}%)：</strong>${escapeHtml(dec.summary || '')}</div>
+            ${router.failover_log?.length ? `<div style="font-size:11px;color:var(--ink-3);">容錯紀錄：${escapeHtml(router.failover_log.join(' → '))}</div>` : ''}
+          `;
+        }
+      }
+
+      const logBox = document.getElementById('agentAutoLogBox');
+      if (logBox) {
+        logBox.innerHTML = state.agentLogs.length
+          ? state.agentLogs.map(l => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-subtle);">
+              <span><strong class="mono">${escapeHtml(l.time)}</strong> · <strong>${escapeHtml(l.symbol)} ${escapeHtml(l.name)}</strong> @ <span class="mono">${fmtNum(l.price, 2)}</span>（${escapeHtml(l.regime)} / 評分 ${l.score}）</span>
+              <span style="display:inline-flex;gap:6px;align-items:center;">
+                <span class="badge badge-blue" style="font-size:10px;">${escapeHtml(l.model)}</span>
+                <span class="badge ${l.action === 'BUY' ? 'badge-up' : (l.action === 'SELL' ? 'badge-down' : 'badge-slate')}" style="font-size:10px;">${escapeHtml(l.execTag)}</span>
+              </span>
+            </div>
+          `).join('')
+          : '<div style="color:var(--ink-3);">尚無多 Agent 執行紀錄。</div>';
+      }
+    }
+
+    function startOrUpdateAgentAutoLoop() {
+      if (agentAutoTimer) {
+        clearInterval(agentAutoTimer);
+        agentAutoTimer = null;
+      }
+      if (!state.agentConfig.autoTradeEnabled) return;
+      const ms = Math.max(15, Number(state.agentConfig.pollSec || 60)) * 1000;
+      agentAutoTimer = setInterval(async () => {
+        if (!state.agentConfig.autoTradeEnabled || state.killSwitch) return;
+        await runMultiAgentOrchestration({
+          symbol: state.activeSymbol,
+          intendedSide: 'AUTO',
+          intendedPrice: getQuote(state.activeSymbol)?.price || null,
+          autoExecute: true
+        });
+      }, ms);
     }
 
     // =========================================================================
@@ -4054,7 +5095,7 @@
       const pack = state.aiResults[state.activeSymbol];
       if (!pack) return '';
       const lines = [
-        '【SYNAPSE TW · AI 四模型共識報告】',
+        '【SYNAPSE TW · AI 六模型共識報告】',
         `標的：${meta.symbol} ${meta.name}`,
         `真實現價：${fmtNum(pack.price, 2)}（來源：${pack.source}）`,
         `時間：${pack.timestamp} (UTC+8)`,
@@ -4649,8 +5690,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       const synced = state.watchlist.filter(w => getQuote(w.symbol)?.price !== null && getQuote(w.symbol)?.price !== undefined).length;
       document.getElementById('ribbonSyncedCount').textContent = `${synced}/${state.watchlist.length}`;
 
-      const configuredAi = AI_MODELS.filter(m => Boolean(state.aiKeys[m.id]) || Boolean(state.backendHealth?.ai_env_configured?.[m.id])).length;
-      document.getElementById('ribbonAiStatus').textContent = configuredAi > 0 ? `${configuredAi}/4 API 已連線` : '4 模型就緒 (含本地量化)';
+      const configuredAi = AI_MODELS.filter(m => {
+        if (m.id === 'ollama') return Boolean((state.modelOptions.ollama_url || '').trim()) || Boolean(state.backendHealth?.ai_env_configured?.ollama);
+        return Boolean(state.aiKeys[m.id]) || Boolean(state.backendHealth?.ai_env_configured?.[m.id]);
+      }).length;
+      document.getElementById('ribbonAiStatus').textContent = configuredAi > 0 ? `${configuredAi}/6 模型就緒 (含多Agent)` : '6 模型就緒 (含本地量化)';
 
       const ch = [];
       if (state.notifier.lineEnabled) ch.push('LINE');
@@ -4664,6 +5708,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       renderSignalTable();
       renderPositionsAndOrders();
       renderAiPanels();
+      renderStrategyModalUI();
       renderNotifyCenter();
       renderHandshakeInspector();
       renderTopRibbon();
@@ -4707,7 +5752,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // =========================================================================
     // 11. NAVIGATION, FEATURE STUDIO MODAL & FEE DISCOUNT SYNC
     // =========================================================================
-    function openFeatureModal(paneId = 'review') {
+    function openFeatureModal(paneId = 'strategy') {
       const dropdown = document.getElementById('featureMenuDropdown');
       if (dropdown) dropdown.classList.remove('open');
       const btnMenu = document.getElementById('btnFeatureMenu');
@@ -4722,7 +5767,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       openModal('featureStudioModal');
 
-      if (paneId === 'review') {
+      if (paneId === 'strategy') {
+        renderStrategyModalUI();
+      } else if (paneId === 'review') {
         populateReviewSymbolFilter();
         renderReviewDashboard();
       } else if (paneId === 'dca') {
@@ -4792,10 +5839,36 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     function populateSettingsInputs() {
+      const kGroq = document.getElementById('keyGroq');
+      if (kGroq) kGroq.value = state.aiKeys.groq || '';
+      const gSel = document.getElementById('groqModelSelect');
+      if (gSel && state.modelOptions.groq_model) gSel.value = state.modelOptions.groq_model;
+      const oUrl = document.getElementById('ollamaUrlInput');
+      if (oUrl) oUrl.value = state.modelOptions.ollama_url || 'http://127.0.0.1:11434';
+      const oMod = document.getElementById('ollamaModelInput');
+      if (oMod) oMod.value = state.modelOptions.ollama_model || 'qwen2.5:14b';
+
       document.getElementById('keyGrok').value = state.aiKeys.grok || '';
       document.getElementById('keyGemini').value = state.aiKeys.gemini || '';
       document.getElementById('keyClaude').value = state.aiKeys.claude || '';
       document.getElementById('keyChatgpt').value = state.aiKeys.chatgpt || '';
+
+      const preChk = document.getElementById('orderMultiAgentChk');
+      if (preChk) preChk.checked = state.agentConfig.precheckOnOrder !== false;
+      const autoTog = document.getElementById('autoAgentTradeToggle');
+      if (autoTog) autoTog.checked = Boolean(state.agentConfig.autoTradeEnabled);
+      const polSel = document.getElementById('agentRoutingPolicySelect');
+      if (polSel) polSel.value = state.agentConfig.routingPolicy || 'AUTO';
+      const intSel = document.getElementById('agentPollIntervalSelect');
+      if (intSel) intSel.value = String(state.agentConfig.pollSec || 60);
+      const qtyInp = document.getElementById('agentAutoQtyInput');
+      if (qtyInp) qtyInp.value = String(state.agentConfig.autoQty || 1);
+      const slipInp = document.getElementById('agentMaxSlippageInput');
+      if (slipInp) slipInp.value = String(state.agentConfig.maxSlippagePct || 1.0);
+      const scInp = document.getElementById('agentScoreThresholdInput');
+      if (scInp) scInp.value = String(state.agentConfig.scoreThreshold || 25);
+      const cfInp = document.getElementById('agentMinConfInput');
+      if (cfInp) cfInp.value = String(state.agentConfig.minConfidence || 60);
 
       document.getElementById('cfgLineEnabled').checked = Boolean(state.notifier.lineEnabled);
       document.getElementById('cfgLineToken').value = state.notifier.lineToken || '';
@@ -5034,41 +6107,170 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.getElementById('orderPriceInput').value = q.price;
         updateOrderSummary();
       });
-      document.getElementById('btnSubmitOrder').addEventListener('click', () => {
-        executeOrder({
-          symbol: state.activeSymbol,
-          side: state.orderSide,
-          qty: Math.max(1, parseInt(document.getElementById('orderQtyInput').value || '1', 10)),
-          unit: document.getElementById('orderUnitSelect').value,
-          price: Number(document.getElementById('orderPriceInput').value || 0),
-          orderType: document.getElementById('orderTypeSelect').value,
-          tif: document.getElementById('orderTifSelect').value,
-          source: 'ORDER_TICKET'
-        });
+      document.getElementById('orderMultiAgentChk')?.addEventListener('change', e => {
+        state.agentConfig.precheckOnOrder = e.target.checked;
+        persistState();
       });
 
-      // AI Analysis
+      document.getElementById('btnSubmitOrder').addEventListener('click', async () => {
+        const btn = document.getElementById('btnSubmitOrder');
+        const qty = Math.max(1, parseInt(document.getElementById('orderQtyInput').value || '1', 10));
+        const unit = document.getElementById('orderUnitSelect').value;
+        const intendedPrice = Number(document.getElementById('orderPriceInput').value || 0);
+        const orderType = document.getElementById('orderTypeSelect').value;
+        const tif = document.getElementById('orderTifSelect').value;
+
+        const useMultiAgent = document.getElementById('orderMultiAgentChk')?.checked !== false;
+        if (!useMultiAgent) {
+          executeOrder({ symbol: state.activeSymbol, side: state.orderSide, qty, unit, price: intendedPrice, orderType, tif, source: 'ORDER_TICKET' });
+          return;
+        }
+
+        if (btn) btn.disabled = true;
+        showToast('實時偵測最新股價中', `正在為 ${state.activeSymbol} 執行實時行情偵測 ＋ 價量多 Agent 自動選模預檢...`, 'info');
+        try {
+          const report = await runMultiAgentOrchestration({
+            symbol: state.activeSymbol,
+            intendedSide: state.orderSide,
+            intendedPrice: intendedPrice > 0 ? intendedPrice : null,
+            autoExecute: false
+          });
+          if (!report) return;
+
+          const livePrice = report.live_quote?.price || intendedPrice;
+          const payload = {
+            symbol: state.activeSymbol,
+            side: state.orderSide,
+            qty,
+            unit,
+            price: livePrice,
+            orderType,
+            tif,
+            source: `MULTI_AGENT_${(report.agents.model_router.selected_model || 'AUTO').toUpperCase()}`
+          };
+
+          const needsConfirm = !report.risk_approved || report.final_action === 'WARN_CONFLICT';
+          if (needsConfirm) {
+            state.pendingOverrideOrder = payload;
+            renderOrderAgentTrace(report, state.orderSide);
+            showToast(
+              '多 Agent 風控/方向警示',
+              `已即時同步最新價 ${livePrice}，但偵測到風控警示或方向衝突；請檢視下單區下方多 Agent 報告後再決定是否強制送單。`,
+              'warn'
+            );
+            return;
+          }
+
+          state.pendingOverrideOrder = null;
+          renderOrderAgentTrace(report, state.orderSide);
+          await executeOrder(payload);
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      });
+
+      // AI Analysis (6 Models + Groq + Ollama Local)
       document.getElementById('btnRunAiQuick').addEventListener('click', () => runMultiAiAnalysis(''));
       document.getElementById('btnRunAiStudio').addEventListener('click', () => {
         runMultiAiAnalysis(document.getElementById('aiStudioPrompt').value.trim());
       });
+      document.getElementById('btnOpenStrategyFromAi')?.addEventListener('click', () => openFeatureModal('strategy'));
+      document.getElementById('btnFetchGroqModels')?.addEventListener('click', fetchGroqModelsUI);
+      document.getElementById('btnDetectOllamaModels')?.addEventListener('click', detectOllamaModelsUI);
       document.getElementById('btnPushAiReport').addEventListener('click', () => {
         const report = formatAiReportMessage();
         if (!report) {
-          showToast('尚無 AI 解析報告', '請先點擊「一鍵四模型解析目前標的」。', 'warn');
+          showToast('尚無 AI 解析報告', '請先點擊「一鍵六模型解析」。', 'warn');
           return;
         }
         sendNotification(report);
       });
       document.getElementById('btnSaveAiKeys').addEventListener('click', () => {
+        state.aiKeys.groq = (document.getElementById('keyGroq')?.value || '').trim();
         state.aiKeys.grok = document.getElementById('keyGrok').value.trim();
         state.aiKeys.gemini = document.getElementById('keyGemini').value.trim();
         state.aiKeys.claude = document.getElementById('keyClaude').value.trim();
         state.aiKeys.chatgpt = document.getElementById('keyChatgpt').value.trim();
+        state.modelOptions.groq_model = document.getElementById('groqModelSelect')?.value || 'llama-3.3-70b-versatile';
+        state.modelOptions.ollama_url = (document.getElementById('ollamaUrlInput')?.value || 'http://127.0.0.1:11434').trim().replace(/\/+$/, '');
+        state.modelOptions.ollama_model = (document.getElementById('ollamaModelInput')?.value || 'qwen2.5:14b').trim();
         persistState();
         renderAiPanels();
         renderTopRibbon();
-        showToast('AI 金鑰已儲存', '四模型設定已存入本機瀏覽器。', 'success');
+        showToast('六模型與 Ollama 設定已儲存', `已儲存 Groq (${state.modelOptions.groq_model})、Ollama (${state.modelOptions.ollama_model}) 與四大雲端模型金鑰。`, 'success');
+      });
+
+      // Multi-Agent Strategy Switches & Auto-Trade Studio Controls
+      document.getElementById('btnRunAgentStrategyNow')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btnRunAgentStrategyNow');
+        if (btn) btn.disabled = true;
+        try {
+          const rep = await runMultiAgentOrchestration({
+            symbol: state.activeSymbol,
+            intendedSide: 'AUTO',
+            intendedPrice: getQuote(state.activeSymbol)?.price || null,
+            autoExecute: state.agentConfig.autoTradeEnabled
+          });
+          if (rep) {
+            showToast(
+              '多 Agent 實時判斷完成',
+              `${rep.symbol} ${rep.stock_name} 現價 ${rep.live_quote.price}｜${rep.agents.price_volume.regime}｜模型：${rep.agents.model_router.selected_model_name}｜決策：${rep.final_action}`,
+              rep.final_action === 'BUY' || rep.final_action === 'SELL' ? 'success' : 'info'
+            );
+          }
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      });
+
+      document.getElementById('autoAgentTradeToggle')?.addEventListener('change', e => {
+        state.agentConfig.autoTradeEnabled = e.target.checked;
+        persistState();
+        startOrUpdateAgentAutoLoop();
+        showToast(
+          e.target.checked ? '已啟用多 Agent 自動買賣' : '已關閉多 Agent 自動買賣',
+          e.target.checked
+            ? `每 ${state.agentConfig.pollSec} 秒實時偵測 ${state.activeSymbol} 並依技術開關與最適模型自動下單（目前為 ${state.envMode} 模式）。`
+            : '自動巡檢下單已停止。',
+          e.target.checked ? 'success' : 'info'
+        );
+      });
+
+      ['agentRoutingPolicySelect', 'agentPollIntervalSelect', 'agentAutoQtyInput', 'agentMaxSlippageInput', 'agentScoreThresholdInput', 'agentMinConfInput'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => {
+          state.agentConfig.routingPolicy = document.getElementById('agentRoutingPolicySelect')?.value || 'AUTO';
+          state.agentConfig.pollSec = Math.max(15, parseInt(document.getElementById('agentPollIntervalSelect')?.value || '60', 10));
+          state.agentConfig.autoQty = Math.max(1, parseInt(document.getElementById('agentAutoQtyInput')?.value || '1', 10));
+          state.agentConfig.maxSlippagePct = Math.max(0.1, parseFloat(document.getElementById('agentMaxSlippageInput')?.value || '1.0'));
+          state.agentConfig.scoreThreshold = Math.max(10, parseInt(document.getElementById('agentScoreThresholdInput')?.value || '25', 10));
+          state.agentConfig.minConfidence = Math.max(40, parseInt(document.getElementById('agentMinConfInput')?.value || '60', 10));
+          persistState();
+          startOrUpdateAgentAutoLoop();
+        });
+      });
+
+      document.getElementById('btnTechPresetAll')?.addEventListener('click', () => {
+        Object.keys(state.techSwitches).forEach(k => { state.techSwitches[k] = true; });
+        persistState();
+        renderTechSwitchesUI();
+        showToast('已套用全指標開關', '8 大台股技術分析開關已全部啟用。', 'success');
+      });
+      document.getElementById('btnTechPresetMomentum')?.addEventListener('click', () => {
+        state.techSwitches = { ma: true, macd: true, kdj: false, rsi: false, obv: true, bollinger: false, vwap: true, momentum: true };
+        persistState();
+        renderTechSwitchesUI();
+        showToast('已套用價量動能組', '啟用 MA/EMA、MACD、OBV量比、VWAP、5/20日動能（5/8）。', 'info');
+      });
+      document.getElementById('btnTechPresetReversal')?.addEventListener('click', () => {
+        state.techSwitches = { ma: false, macd: false, kdj: true, rsi: true, obv: true, bollinger: true, vwap: false, momentum: false };
+        persistState();
+        renderTechSwitchesUI();
+        showToast('已套用波段轉折組', '啟用 KDJ、RSI(14)、OBV量比、布林通道（4/8）。', 'info');
+      });
+      document.getElementById('btnClearAgentLogs')?.addEventListener('click', () => {
+        state.agentLogs = [];
+        persistState();
+        renderStrategyModalUI();
       });
 
       // Signal Scanner & Portfolio
@@ -6169,6 +7371,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       setTradingMode('SIM');
       renderTradingViewChart();
       renderAllViews();
+      startOrUpdateAgentAutoLoop();
 
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();

@@ -228,6 +228,8 @@ async def health_check():
         "shioaji_configured": shioaji_configured,
         "shioaji_ca_ready": ca_ready,
         "ai_env_configured": {
+            "groq": bool(os.getenv("GROQ_API_KEY")),
+            "ollama": bool(os.getenv("OLLAMA_BASE_URL")),
             "grok": bool(os.getenv("XAI_API_KEY")),
             "gemini": bool(os.getenv("GEMINI_API_KEY")),
             "claude": bool(os.getenv("ANTHROPIC_API_KEY")),
@@ -583,14 +585,18 @@ async def get_finmind_dividend(
 
 
 # ---------------------------------------------------------------------------
-# 2. Multi-Model AI Analysis Proxy (Grok, Gemini, Claude, ChatGPT)
+# 2. Multi-Model AI Proxy (Groq, Ollama Local, Grok, Gemini, Claude, ChatGPT)
+#    + Real-Time Price-Volume Multi-Agent Orchestrator
 # ---------------------------------------------------------------------------
 class AIAnalyzeRequest(BaseModel):
     symbol: str
     stock_name: str
     market_snapshot: dict[str, Any]
-    models: list[str] = Field(default_factory=lambda: ["grok", "gemini", "claude", "chatgpt"])
+    models: list[str] = Field(
+        default_factory=lambda: ["groq", "ollama", "grok", "gemini", "claude", "chatgpt"]
+    )
     api_keys: dict[str, str] = Field(default_factory=dict)
+    model_options: dict[str, str] = Field(default_factory=dict)
     custom_prompt: str = ""
 
 
@@ -602,8 +608,8 @@ def _build_grounded_prompt(req: AIAnalyzeRequest, role_hint: str) -> str:
         f"- 標的：{req.symbol} {req.stock_name}\n"
         f"- 數據來源：{snap.get('source', '未知')}（日期：{snap.get('last_date', '--')}）\n"
         f"- 開盤：{snap.get('open')} ｜ 最高：{snap.get('high')} ｜ 最低：{snap.get('low')} ｜ 現價/收盤：{snap.get('price')}\n"
-        f"- 漲跌幅：{snap.get('change_pct')}% ｜ 成交量：{snap.get('volume')}\n"
-        f"- 技術指標：EMA5={snap.get('ema5')}, EMA12={snap.get('ema12')}, RSI(14)={snap.get('rsi')}, VWAP乖離={snap.get('vwap_diff')}%\n"
+        f"- 漲跌幅：{snap.get('change_pct')}% ｜ 成交量：{snap.get('volume')} ｜ 量比：{snap.get('volume_ratio', '--')}x\n"
+        f"- 技術指標：EMA5={snap.get('ema5')}, EMA12={snap.get('ema12')}, MACD_OSC={snap.get('macd_osc', '--')}, K/D={snap.get('kd', '--')}, RSI(14)={snap.get('rsi')}, VWAP乖離={snap.get('vwap_diff')}%\n"
         f"{('額外指令：' + req.custom_prompt) if req.custom_prompt else ''}\n\n"
         f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
         f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"80字內核心研判","key_levels":"支撐與壓力價位","risk_note":"40字內風控提醒"}}'
@@ -612,6 +618,8 @@ def _build_grounded_prompt(req: AIAnalyzeRequest, role_hint: str) -> str:
 
 def _extract_ai_json(text: str) -> dict[str, Any]:
     cleaned = text.strip()
+    if "<think>" in cleaned and "</think>" in cleaned:
+        cleaned = cleaned.split("</think>", 1)[-1].strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[-1]
         if cleaned.endswith("```"):
@@ -642,24 +650,84 @@ def _extract_ai_json(text: str) -> dict[str, Any]:
 async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any]:
     t0 = time.perf_counter()
     roles = {
+        "groq": "Groq 極速推理 — 毫秒級盤中爆量突圍、高波動短線訊號研判",
+        "ollama": "Ollama 地端模型 — 零外傳隱私本地推論、全天候低延遲策略判定",
         "grok": "Grok Bot (xAI) — 市場動能突圍、短線籌碼與情緒轉折",
         "gemini": "Gemini (Google) — 技術結構、量價配合與產業趨勢脈絡",
         "claude": "Claude (Anthropic) — 嚴格風控稽核、支撐壓力與停損紀律",
         "chatgpt": "ChatGPT (OpenAI) — 結構化多空交易劇本與倉位配置",
     }
     prompt = _build_grounded_prompt(req, roles.get(model_id, "量化分析"))
+    opts = req.model_options or {}
 
     try:
-        if model_id == "grok":
+        if model_id == "groq":
+            key = req.api_keys.get("groq") or os.getenv("GROQ_API_KEY", "")
+            if not key:
+                return {"model": "groq", "connected": False, "error": "尚未設定 Groq API Key"}
+            groq_model = opts.get("groq_model") or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+            status, body = await http_json(
+                "https://api.groq.com/openai/v1/chat/completions",
+                method="POST",
+                headers={"Authorization": f"Bearer {key}"},
+                json_body={
+                    "model": groq_model,
+                    "temperature": 0.2,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=18.0,
+            )
+            if status != 200:
+                return {"model": "groq", "connected": False, "error": f"Groq HTTP {status}"}
+            text = body["choices"][0]["message"]["content"]
+            used_name = groq_model
+
+        elif model_id == "ollama":
+            base_url = (opts.get("ollama_url") or os.getenv("OLLAMA_BASE_URL", "")).strip().rstrip("/")
+            if not base_url:
+                return {"model": "ollama", "connected": False, "error": "尚未設定地端 Ollama 網址"}
+            ollama_model = (opts.get("ollama_model") or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")).strip()
+            # Support native Ollama /api/chat first, then OpenAI-compatible /v1/chat/completions (LM Studio / vLLM)
+            status, body = await http_json(
+                f"{base_url}/api/chat",
+                method="POST",
+                json_body={
+                    "model": ollama_model,
+                    "stream": False,
+                    "options": {"temperature": 0.2},
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=30.0,
+            )
+            if status == 200 and isinstance(body, dict) and body.get("message", {}).get("content"):
+                text = body["message"]["content"]
+            else:
+                st2, body2 = await http_json(
+                    f"{base_url}/v1/chat/completions",
+                    method="POST",
+                    json_body={
+                        "model": ollama_model,
+                        "temperature": 0.2,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=30.0,
+                )
+                if st2 != 200 or not isinstance(body2, dict):
+                    return {"model": "ollama", "connected": False, "error": f"Ollama/地端連線失敗 (HTTP {status}/{st2})"}
+                text = body2["choices"][0]["message"]["content"]
+            used_name = ollama_model
+
+        elif model_id == "grok":
             key = req.api_keys.get("grok") or os.getenv("XAI_API_KEY", "")
             if not key:
                 return {"model": "grok", "connected": False, "error": "尚未設定 xAI Grok API Key"}
+            used_name = opts.get("grok_model") or os.getenv("GROK_MODEL", "grok-3-mini")
             status, body = await http_json(
                 "https://api.x.ai/v1/chat/completions",
                 method="POST",
                 headers={"Authorization": f"Bearer {key}"},
                 json_body={
-                    "model": os.getenv("GROK_MODEL", "grok-3-mini"),
+                    "model": used_name,
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
@@ -673,8 +741,8 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             key = req.api_keys.get("gemini") or os.getenv("GEMINI_API_KEY", "")
             if not key:
                 return {"model": "gemini", "connected": False, "error": "尚未設定 Google Gemini API Key"}
-            gm = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gm}:generateContent?key={urllib.parse.quote(key)}"
+            used_name = opts.get("gemini_model") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{used_name}:generateContent?key={urllib.parse.quote(key)}"
             status, body = await http_json(
                 url,
                 method="POST",
@@ -692,6 +760,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             key = req.api_keys.get("claude") or os.getenv("ANTHROPIC_API_KEY", "")
             if not key:
                 return {"model": "claude", "connected": False, "error": "尚未設定 Anthropic Claude API Key"}
+            used_name = opts.get("claude_model") or os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
             status, body = await http_json(
                 "https://api.anthropic.com/v1/messages",
                 method="POST",
@@ -700,7 +769,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                     "anthropic-version": "2023-06-01",
                 },
                 json_body={
-                    "model": os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+                    "model": used_name,
                     "max_tokens": 512,
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
@@ -715,12 +784,13 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             key = req.api_keys.get("chatgpt") or os.getenv("OPENAI_API_KEY", "")
             if not key:
                 return {"model": "chatgpt", "connected": False, "error": "尚未設定 OpenAI ChatGPT API Key"}
+            used_name = opts.get("chatgpt_model") or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
             status, body = await http_json(
                 "https://api.openai.com/v1/chat/completions",
                 method="POST",
                 headers={"Authorization": f"Bearer {key}"},
                 json_body={
-                    "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                    "model": used_name,
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
@@ -736,6 +806,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
         parsed = _extract_ai_json(text)
         return {
             "model": model_id,
+            "model_name": used_name,
             "connected": True,
             "latency_ms": round((time.perf_counter() - t0) * 1000),
             "verdict": str(parsed.get("verdict", "NEUTRAL")).upper(),
@@ -753,6 +824,58 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
         }
 
 
+@app.get("/api/v1/ai/ollama-models")
+async def list_ollama_models(base_url: str = ""):
+    url = (base_url or os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")).strip().rstrip("/")
+    try:
+        status, body = await http_json(f"{url}/api/tags", timeout=5.0)
+        if status == 200 and isinstance(body, dict):
+            models = [m.get("name") for m in (body.get("models") or []) if m.get("name")]
+            return {"ok": True, "base_url": url, "models": models}
+        # OpenAI-compatible local server (/v1/models)
+        st2, body2 = await http_json(f"{url}/v1/models", timeout=5.0)
+        if st2 == 200 and isinstance(body2, dict):
+            models = [m.get("id") for m in (body2.get("data") or []) if m.get("id")]
+            return {"ok": True, "base_url": url, "models": models}
+        return {"ok": False, "base_url": url, "models": [], "error": f"HTTP {status}/{st2}"}
+    except Exception as exc:
+        return {"ok": False, "base_url": url, "models": [], "error": str(exc)[:120]}
+
+
+@app.get("/api/v1/ai/groq-models")
+async def list_groq_models(api_key: str = ""):
+    key = api_key.strip() or os.getenv("GROQ_API_KEY", "")
+    if not key:
+        return {
+            "ok": False,
+            "models": [
+                "llama-3.3-70b-versatile",
+                "deepseek-r1-distill-llama-70b",
+                "qwen-qwq-32b",
+                "llama-3.1-8b-instant",
+            ],
+            "error": "未提供 Groq API Key（顯示預設推薦清單）",
+        }
+    try:
+        status, body = await http_json(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=8.0,
+        )
+        if status == 200 and isinstance(body, dict):
+            models = sorted(
+                [
+                    m.get("id")
+                    for m in (body.get("data") or [])
+                    if m.get("id") and "whisper" not in str(m.get("id")).lower()
+                ]
+            )
+            return {"ok": True, "models": models}
+        return {"ok": False, "models": [], "error": f"Groq HTTP {status}"}
+    except Exception as exc:
+        return {"ok": False, "models": [], "error": str(exc)[:120]}
+
+
 @app.post("/api/v1/ai/analyze")
 async def analyze_multi_ai(req: AIAnalyzeRequest):
     if req.market_snapshot.get("price") is None:
@@ -766,6 +889,481 @@ async def analyze_multi_ai(req: AIAnalyzeRequest):
         "stock_name": req.stock_name,
         "timestamp": tw_now_str(),
         "results": results,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 2.5 Real-Time Price Detection + Price-Volume Multi-Agent Orchestrator
+# ---------------------------------------------------------------------------
+class MultiAgentRequest(BaseModel):
+    symbol: str
+    stock_name: str = ""
+    yahoo_symbol: str = ""
+    intended_side: str = "AUTO"  # BUY | SELL | AUTO
+    intended_price: Optional[float] = None
+    max_slippage_pct: float = 1.0
+    tech_switches: dict[str, bool] = Field(
+        default_factory=lambda: {
+            "ma": True,
+            "macd": True,
+            "kdj": True,
+            "rsi": True,
+            "obv": True,
+            "bollinger": True,
+            "vwap": True,
+            "momentum": True,
+        }
+    )
+    api_keys: dict[str, str] = Field(default_factory=dict)
+    model_options: dict[str, str] = Field(default_factory=dict)
+    routing_policy: str = "AUTO"  # AUTO | SPEED_FIRST | LOCAL_FIRST | DEEP_REASONING
+
+
+def _calc_ema_list(vals: list[float], period: int) -> list[float]:
+    if not vals:
+        return []
+    k = 2.0 / (period + 1)
+    out = [vals[0]]
+    for v in vals[1:]:
+        out.append(v * k + out[-1] * (1.0 - k))
+    return out
+
+
+def _evaluate_v68_indicators(candles: list[dict[str, Any]], switches: dict[str, bool]) -> dict[str, Any]:
+    closes = [float(c["close"]) for c in candles]
+    highs = [float(c["high"]) for c in candles]
+    lows = [float(c["low"]) for c in candles]
+    vols = [float(c.get("volume") or 0) for c in candles]
+    n = len(closes)
+    latest_p = closes[-1]
+
+    # Volume Ratio & OBV (handle zero-volume closing auction tick gracefully)
+    nz_vols = [v for v in vols if v > 0]
+    if len(nz_vols) >= 2:
+        last_v = nz_vols[-1]
+        prev_v = nz_vols[-6:-1]
+        avg_vol5 = sum(prev_v) / max(1, len(prev_v))
+        vol_ratio = round(last_v / avg_vol5, 2) if avg_vol5 > 0 else 1.0
+    else:
+        vol_ratio = 1.0
+    obv = 0.0
+    obv_series = [0.0]
+    for i in range(1, n):
+        if closes[i] > closes[i - 1]:
+            obv += vols[i]
+        elif closes[i] < closes[i - 1]:
+            obv -= vols[i]
+        obv_series.append(obv)
+    obv_rising = obv_series[-1] > obv_series[max(0, n - 5)]
+
+    # EMA 5/12 & MA 5/20
+    ema5 = _calc_ema_list(closes, 5)
+    ema12 = _calc_ema_list(closes, 12)
+    ma5 = sum(closes[-5:]) / min(5, n)
+    ma20 = sum(closes[-20:]) / min(20, n)
+
+    # MACD (12, 26, 9)
+    ema26 = _calc_ema_list(closes, 26)
+    dif = [a - b for a, b in zip(ema12, ema26)]
+    dea = _calc_ema_list(dif, 9)
+    osc = dif[-1] - dea[-1] if dif else 0.0
+
+    # RSI(14)
+    rsi_len = min(14, max(1, n - 1))
+    gains = sum(max(0.0, closes[i] - closes[i - 1]) for i in range(n - rsi_len, n))
+    losses = sum(max(0.0, closes[i - 1] - closes[i]) for i in range(n - rsi_len, n))
+    rsi = 100.0 if losses == 0 else round(100.0 - 100.0 / (1.0 + (gains / rsi_len) / (losses / rsi_len)), 1)
+
+    # KDJ (9, 3, 3)
+    k_val, d_val = 50.0, 50.0
+    for i in range(n):
+        lo9 = min(lows[max(0, i - 8) : i + 1])
+        hi9 = max(highs[max(0, i - 8) : i + 1])
+        rsv = 50.0 if hi9 == lo9 else ((closes[i] - lo9) / (hi9 - lo9)) * 100.0
+        k_val = (2.0 / 3.0) * k_val + (1.0 / 3.0) * rsv
+        d_val = (2.0 / 3.0) * d_val + (1.0 / 3.0) * k_val
+    j_val = 3.0 * k_val - 2.0 * d_val
+
+    # Bollinger Bands (20, 2)
+    win_bb = closes[-20:]
+    bb_mid = sum(win_bb) / len(win_bb)
+    bb_std = (sum((x - bb_mid) ** 2 for x in win_bb) / len(win_bb)) ** 0.5
+    bb_upper = bb_mid + 2.0 * bb_std
+    bb_lower = bb_mid - 2.0 * bb_std
+
+    # VWAP
+    cum_pv = sum(((c["high"] + c["low"] + c["close"]) / 3.0) * max(1.0, float(c.get("volume") or 1.0)) for c in candles)
+    cum_v = sum(max(1.0, float(c.get("volume") or 1.0)) for c in candles)
+    vwap = cum_pv / cum_v if cum_v > 0 else latest_p
+    vwap_diff = round(((latest_p - vwap) / vwap) * 100.0, 2) if vwap > 0 else 0.0
+
+    # 5/20 Momentum & Session Intraday Volatility
+    mom5 = round(((latest_p - closes[max(0, n - 6)]) / closes[max(0, n - 6)]) * 100.0, 2) if n >= 2 else 0.0
+    mom20 = round(((latest_p - closes[max(0, n - 20)]) / closes[max(0, n - 20)]) * 100.0, 2) if n >= 2 else 0.0
+    sess_hi = max(highs[-18:])
+    sess_lo = min(lows[-18:])
+    intraday_vol_pct = round(((sess_hi - sess_lo) / max(0.01, sess_lo)) * 100.0, 2)
+
+    # Price-Volume Regime classification
+    chg_last = ((closes[-1] - closes[-2]) / closes[-2] * 100.0) if n >= 2 and closes[-2] > 0 else 0.0
+    if chg_last > 0.5 and vol_ratio >= 1.5:
+        pv_regime = "爆量上攻"
+    elif chg_last > 0 and vol_ratio >= 1.0:
+        pv_regime = "價漲量增"
+    elif chg_last > 0.3 and vol_ratio < 0.85:
+        pv_regime = "價漲量縮背離"
+    elif chg_last < -0.5 and vol_ratio >= 1.5:
+        pv_regime = "爆量殺盤"
+    elif chg_last < 0 and vol_ratio < 0.85:
+        pv_regime = "量縮回測"
+    else:
+        pv_regime = "價量盤整"
+
+    # Evaluate enabled v68 technical switches
+    votes = []
+    score = 0
+    enabled_cnt = 0
+
+    def _add_vote(key: str, label: str, val_str: str, pts: int, note: str):
+        nonlocal score, enabled_cnt
+        if not switches.get(key, False):
+            return
+        enabled_cnt += 1
+        score += pts
+        votes.append({
+            "key": key,
+            "label": label,
+            "value": val_str,
+            "points": pts,
+            "signal": "BULL" if pts > 0 else ("BEAR" if pts < 0 else "NEUTRAL"),
+            "note": note,
+        })
+
+    _add_vote(
+        "ma", "MA/EMA 均線", f"EMA5={ema5[-1]:.1f} / MA20={ma20:.1f}",
+        18 if (ema5[-1] > ema12[-1] and ma5 >= ma20) else (-18 if (ema5[-1] < ema12[-1] and ma5 <= ma20) else 0),
+        "多頭均線排列" if ema5[-1] > ema12[-1] else "空頭均線壓制",
+    )
+    _add_vote(
+        "macd", "MACD 動能", f"OSC={osc:+.2f}",
+        16 if osc > 0 else (-16 if osc < 0 else 0),
+        "柱狀偏多翻紅" if osc > 0 else "柱狀偏空翻綠",
+    )
+    _add_vote(
+        "kdj", "KDJ 隨機指標", f"K={k_val:.1f} / D={d_val:.1f}",
+        15 if (k_val > d_val and k_val < 80) else (-15 if (k_val < d_val and k_val > 20) else (12 if k_val <= 22 else -12 if k_val >= 82 else 0)),
+        "KD 偏多/低檔金叉" if k_val >= d_val else "KD 偏空/高檔死叉",
+    )
+    _add_vote(
+        "rsi", "RSI(14) 強弱", f"RSI={rsi}",
+        15 if rsi <= 32 else (-15 if rsi >= 75 else (8 if rsi > 52 else -8 if rsi < 48 else 0)),
+        "超賣反彈區" if rsi <= 32 else ("超買警戒區" if rsi >= 75 else "多空區間"),
+    )
+    _add_vote(
+        "obv", "OBV 能量潮與量比", f"量比 {vol_ratio}x",
+        16 if (obv_rising and vol_ratio >= 1.2) else (-16 if (not obv_rising and vol_ratio >= 1.2) else 0),
+        f"{pv_regime}（OBV {'上揚' if obv_rising else '走弱'}）",
+    )
+    _add_vote(
+        "bollinger", "布林通道 (20,2σ)", f"下{bb_lower:.1f} / 上{bb_upper:.1f}",
+        14 if latest_p <= bb_lower * 1.01 else (-14 if latest_p >= bb_upper * 0.99 else (6 if latest_p > bb_mid else -6)),
+        "觸及下軌支撐" if latest_p <= bb_lower * 1.01 else ("觸及上軌壓力" if latest_p >= bb_upper * 0.99 else "中軌附近運行"),
+    )
+    _add_vote(
+        "vwap", "VWAP 加權均價", f"{vwap_diff:+.2f}%",
+        14 if vwap_diff > 0.2 else (-14 if vwap_diff < -0.2 else 0),
+        "站上機構均價" if vwap_diff > 0 else "跌破機構均價",
+    )
+    _add_vote(
+        "momentum", "5/20日動能輪動", f"5D:{mom5:+.1f}% / 20D:{mom20:+.1f}%",
+        12 if (mom5 > 0 and mom20 > 0) else (-12 if (mom5 < 0 and mom20 < 0) else 0),
+        "短中期動能共振向上" if (mom5 > 0 and mom20 > 0) else ("短中期動能偏弱" if (mom5 < 0 and mom20 < 0) else "動能分歧"),
+    )
+
+    norm_score = max(-100, min(100, round(score * (8 / max(1, enabled_cnt))))) if enabled_cnt > 0 else 0
+    tech_signal = "BUY" if norm_score >= 25 else ("SELL" if norm_score <= -25 else "HOLD")
+
+    return {
+        "ema5": round(ema5[-1], 2),
+        "ema12": round(ema12[-1], 2),
+        "macd_osc": round(osc, 2),
+        "kd": f"{k_val:.1f}/{d_val:.1f}",
+        "rsi": rsi,
+        "vwap": round(vwap, 2),
+        "vwap_diff": vwap_diff,
+        "volume_ratio": vol_ratio,
+        "obv_rising": obv_rising,
+        "intraday_vol_pct": intraday_vol_pct,
+        "pv_regime": pv_regime,
+        "mom5": mom5,
+        "mom20": mom20,
+        "enabled_count": enabled_cnt,
+        "tech_score": norm_score,
+        "tech_signal": tech_signal,
+        "votes": votes,
+    }
+
+
+def _select_optimal_model_order(
+    pv_regime: str,
+    vol_ratio: float,
+    intraday_vol_pct: float,
+    policy: str,
+    api_keys: dict[str, str],
+    model_options: dict[str, str],
+) -> tuple[list[str], str]:
+    policy_u = (policy or "AUTO").upper()
+    if policy_u == "LOCAL_FIRST":
+        order = ["ollama", "groq", "gemini", "claude", "grok", "chatgpt"]
+        reason = "使用者指定地端隱私優先 → 優先切換 Ollama 地端模型"
+    elif policy_u == "SPEED_FIRST":
+        order = ["groq", "ollama", "gemini", "grok", "chatgpt", "claude"]
+        reason = "使用者指定極速低延遲優先 → 優先切換 Groq 毫秒推理"
+    elif policy_u == "DEEP_REASONING":
+        order = ["claude", "gemini", "groq", "ollama", "chatgpt", "grok"]
+        reason = "使用者指定深度邏輯推理 → 優先切換 Claude / Gemini"
+    else:
+        if vol_ratio >= 1.5 or intraday_vol_pct >= 2.5:
+            order = ["groq", "ollama", "grok", "gemini", "chatgpt", "claude"]
+            reason = f"偵測到高波動／放量（{pv_regime}，量比 {vol_ratio}x、振幅 {intraday_vol_pct}%）→ 自動切換極速模型 Groq / Ollama"
+        elif "背離" in pv_regime:
+            order = ["claude", "gemini", "ollama", "groq", "chatgpt", "grok"]
+            reason = f"偵測到「{pv_regime}」風險結構 → 自動切換深度風控模型 Claude / Gemini / Ollama"
+        elif pv_regime in ("爆量上攻", "價漲量增"):
+            order = ["grok", "groq", "gemini", "ollama", "chatgpt", "claude"]
+            reason = f"偵測到多頭動能（{pv_regime}）→ 自動切換動能趨勢模型 Grok / Groq"
+        else:
+            order = ["ollama", "groq", "gemini", "chatgpt", "claude", "grok"]
+            reason = f"常態整理格局（{pv_regime}）→ 自動優先地端 Ollama / 經濟高速模型 Groq・Gemini"
+
+    available = []
+    for m in order:
+        if m == "ollama" and (model_options.get("ollama_url") or os.getenv("OLLAMA_BASE_URL")):
+            available.append(m)
+        elif m == "groq" and (api_keys.get("groq") or os.getenv("GROQ_API_KEY")):
+            available.append(m)
+        elif m == "grok" and (api_keys.get("grok") or os.getenv("XAI_API_KEY")):
+            available.append(m)
+        elif m == "gemini" and (api_keys.get("gemini") or os.getenv("GEMINI_API_KEY")):
+            available.append(m)
+        elif m == "claude" and (api_keys.get("claude") or os.getenv("ANTHROPIC_API_KEY")):
+            available.append(m)
+        elif m == "chatgpt" and (api_keys.get("chatgpt") or os.getenv("OPENAI_API_KEY")):
+            available.append(m)
+
+    return available, reason
+
+
+@app.post("/api/v1/agent/orchestrate")
+async def orchestrate_multi_agent(req: MultiAgentRequest):
+    t0 = time.perf_counter()
+    sid = req.symbol.strip().upper()
+    yh_sym = req.yahoo_symbol.strip() or (f"{sid}.TW" if sid.isdigit() else sid)
+
+    # Step 1: Real-time live quote detection (bypass cache for true real-time check)
+    live_data = None
+    live_source = ""
+    try:
+        encoded = urllib.parse.quote(yh_sym, safe="^.-=")
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=15m&range=5d"
+        st, body = await http_json(url, timeout=8.0)
+        if st == 200 and isinstance(body, dict) and (body.get("chart", {}).get("result") or []):
+            res = body["chart"]["result"][0]
+            meta = res.get("meta", {})
+            q = (res.get("indicators", {}).get("quote") or [{}])[0]
+            ts_list = res.get("timestamp") or []
+            candles = []
+            for i, ts in enumerate(ts_list):
+                c = (q.get("close") or [None])[i] if i < len(q.get("close") or []) else None
+                if c is None:
+                    continue
+                candles.append({
+                    "open": round(float((q.get("open") or [c])[i] or c), 2),
+                    "high": round(float((q.get("high") or [c])[i] or c), 2),
+                    "low": round(float((q.get("low") or [c])[i] or c), 2),
+                    "close": round(float(c), 2),
+                    "volume": int((q.get("volume") or [0])[i] or 0),
+                })
+            if candles:
+                live_p = round(float(meta.get("regularMarketPrice") or candles[-1]["close"]), 2)
+                prev_c = float(meta.get("chartPreviousClose") or candles[0]["open"])
+                live_data = {
+                    "price": live_p,
+                    "open": round(float(meta.get("regularMarketOpen") or candles[-1]["open"]), 2),
+                    "high": round(float(meta.get("regularMarketDayHigh") or max(x["high"] for x in candles[-20:])), 2),
+                    "low": round(float(meta.get("regularMarketDayLow") or min(x["low"] for x in candles[-20:])), 2),
+                    "volume": int(meta.get("regularMarketVolume") or candles[-1]["volume"]),
+                    "change_pct": round(((live_p - prev_c) / prev_c) * 100.0, 2) if prev_c > 0 else 0.0,
+                    "last_date": tw_now_str()[:16],
+                    "candles": candles[-40:],
+                }
+                live_source = f"Yahoo Finance 即時偵測 ({yh_sym})"
+    except Exception:
+        pass
+
+    if not live_data:
+        fm = await get_finmind_market_data(sid, dataset="TaiwanFuturesDaily" if sid == "TXF" else "TaiwanStockPrice", days=45)
+        prev_c = float(fm.get("prev_close") or fm["open"] or fm["price"])
+        live_data = {
+            "price": fm["price"],
+            "open": fm["open"],
+            "high": fm["high"],
+            "low": fm["low"],
+            "volume": fm["volume"],
+            "change_pct": round(((fm["price"] - prev_c) / prev_c) * 100.0, 2) if prev_c > 0 else 0.0,
+            "last_date": fm["last_date"],
+            "candles": fm["candles"],
+        }
+        live_source = f"FinMind 真實偵測 ({sid})"
+
+    # Step 2: Price-Volume + v68 Technical Switches Agents
+    tech = _evaluate_v68_indicators(live_data["candles"], req.tech_switches)
+
+    # Step 3: Risk Gatekeeper Agent (slippage + kill switch + extremes)
+    slippage_pct = 0.0
+    if req.intended_price and req.intended_price > 0:
+        slippage_pct = round(((live_data["price"] - req.intended_price) / req.intended_price) * 100.0, 2)
+    risk_warnings = []
+    if KILL_SWITCH_ACTIVE:
+        risk_warnings.append("緊急熔斷啟動中，禁止任何自動或手動下單")
+    if abs(slippage_pct) > req.max_slippage_pct:
+        risk_warnings.append(f"即時滑價 {slippage_pct:+.2f}% 超過容忍上限 ±{req.max_slippage_pct}%")
+    if req.intended_side.upper() == "BUY" and tech["rsi"] >= 76:
+        risk_warnings.append(f"RSI(14)={tech['rsi']} 嚴重超買，追高風險偏高")
+    if req.intended_side.upper() == "SELL" and tech["rsi"] <= 24:
+        risk_warnings.append(f"RSI(14)={tech['rsi']} 嚴重超賣，殺低風險偏高")
+    risk_approved = len(risk_warnings) == 0
+
+    # Step 4: Adaptive Model Router Agent (auto-select optimal model & execute with failover)
+    candidate_models, route_reason = _select_optimal_model_order(
+        tech["pv_regime"],
+        tech["volume_ratio"],
+        tech["intraday_vol_pct"],
+        req.routing_policy,
+        req.api_keys,
+        req.model_options,
+    )
+
+    ai_snapshot = {
+        "source": live_source,
+        "last_date": live_data["last_date"],
+        "open": live_data["open"],
+        "high": live_data["high"],
+        "low": live_data["low"],
+        "price": live_data["price"],
+        "volume": live_data["volume"],
+        "change_pct": live_data["change_pct"],
+        "ema5": tech["ema5"],
+        "ema12": tech["ema12"],
+        "macd_osc": tech["macd_osc"],
+        "kd": tech["kd"],
+        "rsi": tech["rsi"],
+        "vwap_diff": tech["vwap_diff"],
+        "volume_ratio": tech["volume_ratio"],
+    }
+
+    selected_model = "local_quant_agent"
+    selected_model_name = "本地多 Agent 量化決策引擎（未設定外部/Ollama模型）"
+    ai_decision = None
+    failover_log = []
+
+    for cand in candidate_models:
+        ai_req = AIAnalyzeRequest(
+            symbol=sid,
+            stock_name=req.stock_name or sid,
+            market_snapshot=ai_snapshot,
+            models=[cand],
+            api_keys=req.api_keys,
+            model_options=req.model_options,
+            custom_prompt=(
+                f"價量Agent判讀：{tech['pv_regime']}（量比{tech['volume_ratio']}x、VWAP乖離{tech['vwap_diff']:+.2f}%）；"
+                f"已啟用 {tech['enabled_count']} 項台股技術開關綜合評分：{tech['tech_score']}（建議 {tech['tech_signal']}）；"
+                f"預定動作：{req.intended_side}。請給出最終下單判定。"
+            ),
+        )
+        res = await _call_single_ai(cand, ai_req)
+        if res.get("connected"):
+            selected_model = cand
+            selected_model_name = f"{cand.upper()} ({res.get('model_name', cand)})"
+            ai_decision = res
+            break
+        failover_log.append(f"{cand}: {res.get('error', '不可用')}")
+
+    if not ai_decision:
+        verdict = "BULL" if tech["tech_signal"] == "BUY" else ("BEAR" if tech["tech_signal"] == "SELL" else "NEUTRAL")
+        conf = min(92, max(48, 52 + abs(tech["tech_score"]) // 2))
+        ai_decision = {
+            "model": "local_quant_agent",
+            "connected": False,
+            "verdict": verdict,
+            "confidence": conf,
+            "summary": f"實時偵測價 {live_data['price']}（{tech['pv_regime']}，量比 {tech['volume_ratio']}x），已啟用 {tech['enabled_count']} 項台股技術開關總評 {tech['tech_score']} 分，建議 {tech['tech_signal']}。",
+            "key_levels": f"支撐 {live_data['low']} ｜ 壓力 {live_data['high']}",
+            "risk_note": "；".join(risk_warnings) if risk_warnings else "滑價與風控檢核通過",
+        }
+
+    # Combine Strategy + AI Decision into Final Action
+    ai_v = ai_decision["verdict"]
+    side_u = req.intended_side.upper()
+    if side_u in ("BUY", "SELL"):
+        opposes = (side_u == "BUY" and tech["tech_signal"] == "SELL" and ai_v == "BEAR") or (
+            side_u == "SELL" and tech["tech_signal"] == "BUY" and ai_v == "BULL"
+        )
+        final_action = "WARN_CONFLICT" if opposes else side_u
+    elif tech["tech_signal"] == "BUY" and ai_v == "BULL":
+        final_action = "BUY"
+    elif tech["tech_signal"] == "SELL" and ai_v == "BEAR":
+        final_action = "SELL"
+    else:
+        final_action = "HOLD"
+
+    return {
+        "timestamp": tw_now_str(),
+        "latency_ms": round((time.perf_counter() - t0) * 1000),
+        "symbol": sid,
+        "stock_name": req.stock_name or sid,
+        "live_quote": {
+            "price": live_data["price"],
+            "open": live_data["open"],
+            "high": live_data["high"],
+            "low": live_data["low"],
+            "volume": live_data["volume"],
+            "change_pct": live_data["change_pct"],
+            "source": live_source,
+            "slippage_pct": slippage_pct,
+        },
+        "agents": {
+            "price_volume": {
+                "regime": tech["pv_regime"],
+                "volume_ratio": tech["volume_ratio"],
+                "obv_rising": tech["obv_rising"],
+                "intraday_vol_pct": tech["intraday_vol_pct"],
+                "vwap": tech["vwap"],
+                "vwap_diff": tech["vwap_diff"],
+            },
+            "technical_strategy": {
+                "enabled_count": tech["enabled_count"],
+                "score": tech["tech_score"],
+                "signal": tech["tech_signal"],
+                "votes": tech["votes"],
+            },
+            "risk_gatekeeper": {
+                "approved": risk_approved,
+                "slippage_pct": slippage_pct,
+                "max_slippage_pct": req.max_slippage_pct,
+                "warnings": risk_warnings,
+            },
+            "model_router": {
+                "policy": req.routing_policy,
+                "selected_model": selected_model,
+                "selected_model_name": selected_model_name,
+                "reason": route_reason,
+                "failover_log": failover_log,
+                "decision": ai_decision,
+            },
+        },
+        "final_action": final_action,
+        "risk_approved": risk_approved,
     }
 
 

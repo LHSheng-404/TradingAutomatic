@@ -61,8 +61,8 @@
 
 ![台股技術開關與多 Agent 自動買賣彈窗](docs/screenshots/agent_strategy_modal.png)
 
-### 4. AI 六模型深度解析 & Ollama 地端模型工作室
-> 新增 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣。
+### 4. AI 六模型深度解析 & Ollama 地端模型工作室（支援各模型 Token 即時測試）
+> 新增 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣；**每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，並提供「一鍵測試全部模型」**（僅呼叫輕量模型清單端點，不消耗推論 Token 費用且嚴格脫敏）。
 
 ![AI 六模型與 Ollama 地端工作室](docs/screenshots/ai_six_models_modal.png)
 

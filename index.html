@@ -2510,13 +2510,19 @@
                     </div>
                     <div class="form-grid-2">
                       <div>
-                        <label class="field-label" for="keyGroq">Groq API Key（極速推理）</label>
-                        <input id="keyGroq" type="password" class="input mono" placeholder="gsk_..." />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyGroq" style="margin-bottom:0;">Groq API Key（極速推理）</label>
+                          <span id="aiTestStatus-groq" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="keyGroq" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="gsk_..." />
+                          <button type="button" class="btn btn-sm" data-test-ai="groq" title="測試 Groq API Token 是否有效">測試</button>
+                        </div>
                       </div>
                       <div>
                         <label class="field-label" for="groqModelSelect">Groq 模型（支援線上載入）</label>
                         <div style="display:flex;gap:6px;">
-                          <select id="groqModelSelect" class="select mono" style="flex:1;">
+                          <select id="groqModelSelect" class="select mono" style="flex:1;min-width:0;">
                             <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
                             <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
                             <option value="qwen-qwq-32b">qwen-qwq-32b</option>
@@ -2528,13 +2534,19 @@
                     </div>
                     <div class="form-grid-2">
                       <div>
-                        <label class="field-label" for="ollamaUrlInput">Ollama / 地端網址（支援 LM Studio / vLLM）</label>
-                        <input id="ollamaUrlInput" type="url" class="input mono" value="http://127.0.0.1:11434" placeholder="http://127.0.0.1:11434" />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="ollamaUrlInput" style="margin-bottom:0;">Ollama / 地端網址</label>
+                          <span id="aiTestStatus-ollama" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="ollamaUrlInput" type="url" class="input mono" style="flex:1;min-width:0;" value="http://127.0.0.1:11434" placeholder="http://127.0.0.1:11434" />
+                          <button type="button" class="btn btn-sm" data-test-ai="ollama" title="測試地端 Ollama 連線與模型是否就緒">測試</button>
+                        </div>
                       </div>
                       <div>
                         <label class="field-label" for="ollamaModelInput">地端模型名稱（如 qwen2.5:14b / llama3.1）</label>
                         <div style="display:flex;gap:6px;">
-                          <input id="ollamaModelInput" list="ollamaModelDatalist" type="text" class="input mono" value="qwen2.5:14b" placeholder="qwen2.5:14b" style="flex:1;" />
+                          <input id="ollamaModelInput" list="ollamaModelDatalist" type="text" class="input mono" value="qwen2.5:14b" placeholder="qwen2.5:14b" style="flex:1;min-width:0;" />
                           <datalist id="ollamaModelDatalist">
                             <option value="qwen2.5:14b"></option>
                             <option value="qwen2.5:7b"></option>
@@ -2551,33 +2563,62 @@
 
                 <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
                   <div>
-                    <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink-1);">雲端旗艦四模型 API 金鑰設定</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+                      <span style="font-size:12px;font-weight:800;color:var(--ink-1);">雲端旗艦四模型 API 金鑰設定（輸入後可即時測試）</span>
+                    </div>
                     <div class="form-grid-2" style="margin-bottom:8px;">
                       <div>
-                        <label class="field-label" for="keyGrok">Grok Bot (xAI API Key)</label>
-                        <input id="keyGrok" type="password" class="input mono" placeholder="xai-..." />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyGrok" style="margin-bottom:0;">Grok Bot (xAI)</label>
+                          <span id="aiTestStatus-grok" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="keyGrok" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="xai-..." />
+                          <button type="button" class="btn btn-sm" data-test-ai="grok" title="測試 Grok (xAI) API Token">測試</button>
+                        </div>
                       </div>
                       <div>
-                        <label class="field-label" for="keyGemini">Gemini (Google API Key)</label>
-                        <input id="keyGemini" type="password" class="input mono" placeholder="AIza..." />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyGemini" style="margin-bottom:0;">Gemini (Google)</label>
+                          <span id="aiTestStatus-gemini" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="keyGemini" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="AIza..." />
+                          <button type="button" class="btn btn-sm" data-test-ai="gemini" title="測試 Google Gemini API Token">測試</button>
+                        </div>
                       </div>
                       <div>
-                        <label class="field-label" for="keyClaude">Claude (Anthropic API Key)</label>
-                        <input id="keyClaude" type="password" class="input mono" placeholder="sk-ant-..." />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyClaude" style="margin-bottom:0;">Claude (Anthropic)</label>
+                          <span id="aiTestStatus-claude" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="keyClaude" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-ant-..." />
+                          <button type="button" class="btn btn-sm" data-test-ai="claude" title="測試 Anthropic Claude API Token">測試</button>
+                        </div>
                       </div>
                       <div>
-                        <label class="field-label" for="keyChatgpt">ChatGPT (OpenAI API Key)</label>
-                        <input id="keyChatgpt" type="password" class="input mono" placeholder="sk-..." />
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyChatgpt" style="margin-bottom:0;">ChatGPT (OpenAI)</label>
+                          <span id="aiTestStatus-chatgpt" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <input id="keyChatgpt" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-..." />
+                          <button type="button" class="btn btn-sm" data-test-ai="chatgpt" title="測試 OpenAI ChatGPT API Token">測試</button>
+                        </div>
                       </div>
                     </div>
                     <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
-                      • 多 Agent 自動切換原則：高波動/放量優先 <strong>Groq / Ollama</strong>；價量背離風控優先 <strong>Claude / Gemini / Ollama</strong>；多頭突圍優先 <strong>Grok / Groq</strong>。<br />
-                      • 若本機執行 Ollama 需開放跨域直連，可啟動時加上 <code class="mono">OLLAMA_ORIGINS=* ollama serve</code>（經由本系統 Python 後端代理則免設 CORS）。
+                      • 測試僅呼叫各家輕量級模型清單端點（<strong>不消耗推論 Token 費用</strong>），並對錯誤訊息嚴格脫敏。<br />
+                      • 多 Agent 自動切換原則：高波動/放量優先 <strong>Groq / Ollama</strong>；價量背離風控優先 <strong>Claude / Gemini / Ollama</strong>；多頭突圍優先 <strong>Grok / Groq</strong>。
                     </div>
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border);">
-                    <span style="font-size:11px;color:var(--ink-3);">金鑰與 Ollama 設定僅存於本機瀏覽器 localStorage 或伺服器 .env</span>
-                    <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存六模型 &amp; Ollama 設定</button>
+                    <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機或 .env</span>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      <button id="btnTestAllAiModels" type="button" class="btn btn-sm btn-teal">一鍵測試全部模型</button>
+                      <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存六模型 &amp; Ollama 設定</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2944,6 +2985,7 @@
         ollama_url: 'http://127.0.0.1:11434',
         ollama_model: 'qwen2.5:14b'
       },
+      aiTestStatus: {},
 
       techSwitches: {
         ma: true,
@@ -4550,6 +4592,220 @@
       }
     }
 
+    function readAiKeysFromInputs() {
+      return {
+        apiKeys: {
+          groq: (document.getElementById('keyGroq')?.value ?? state.aiKeys.groq ?? '').trim(),
+          grok: (document.getElementById('keyGrok')?.value ?? state.aiKeys.grok ?? '').trim(),
+          gemini: (document.getElementById('keyGemini')?.value ?? state.aiKeys.gemini ?? '').trim(),
+          claude: (document.getElementById('keyClaude')?.value ?? state.aiKeys.claude ?? '').trim(),
+          chatgpt: (document.getElementById('keyChatgpt')?.value ?? state.aiKeys.chatgpt ?? '').trim()
+        },
+        modelOptions: {
+          groq_model: document.getElementById('groqModelSelect')?.value || state.modelOptions.groq_model || 'llama-3.3-70b-versatile',
+          ollama_url: (document.getElementById('ollamaUrlInput')?.value ?? state.modelOptions.ollama_url ?? 'http://127.0.0.1:11434').trim().replace(/\/+$/, ''),
+          ollama_model: (document.getElementById('ollamaModelInput')?.value ?? state.modelOptions.ollama_model ?? 'qwen2.5:14b').trim()
+        }
+      };
+    }
+
+    function renderAiTestBadge(modelId, res) {
+      const el = document.getElementById(`aiTestStatus-${modelId}`);
+      if (!el) return;
+      if (!res) {
+        el.className = 'badge badge-slate';
+        el.textContent = '未測試';
+        el.title = '';
+        return;
+      }
+      if (res.testing) {
+        el.className = 'badge badge-amber';
+        el.textContent = '測試中...';
+        el.title = '正在驗證 API Token 連線';
+        return;
+      }
+      if (res.ok && res.warning) {
+        el.className = 'badge badge-amber';
+        el.textContent = `⚠ 在線・缺模型 (${res.latency_ms || 0}ms)`;
+        el.title = res.message || '';
+      } else if (res.ok) {
+        el.className = 'badge badge-down';
+        el.textContent = `✓ 成功 (${res.latency_ms || 0}ms)`;
+        el.title = res.message || 'API Token 驗證成功';
+      } else {
+        el.className = 'badge badge-up';
+        el.textContent = '✗ 驗證失敗';
+        el.title = res.message || '連線或 Token 驗證失敗';
+      }
+
+      if (modelId === 'ollama') {
+        const oBadge = document.getElementById('ollamaStatusBadge');
+        if (oBadge) {
+          if (res.ok && !res.warning) {
+            oBadge.className = 'badge badge-down';
+            oBadge.textContent = `已連線 · ${res.models_count || 0} 模型`;
+          } else if (res.ok && res.warning) {
+            oBadge.className = 'badge badge-amber';
+            oBadge.textContent = `在線 · 缺指定模型`;
+          } else {
+            oBadge.className = 'badge badge-slate';
+            oBadge.textContent = '地端離線';
+          }
+        }
+      }
+    }
+
+    async function testSingleAiDirectBrowser(modelId, apiKey, opts) {
+      const t0 = performance.now();
+      try {
+        if (modelId === 'groq') {
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Groq API Key' };
+          const r = await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          const lat = Math.round(performance.now() - t0);
+          return r.ok
+            ? { ok: true, model: modelId, latency_ms: lat, message: 'Groq API Token 驗證成功' }
+            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+        }
+        if (modelId === 'ollama') {
+          const base = (opts.ollama_url || '').replace(/\/+$/, '');
+          if (!base) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Ollama 網址' };
+          const r = await fetch(`${base}/api/tags`);
+          const lat = Math.round(performance.now() - t0);
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, message: `Ollama 連線失敗 (HTTP ${r.status})` };
+          const j = await r.json();
+          const models = (j.models || []).map(m => m.name);
+          const matched = !opts.ollama_model || models.some(m => m === opts.ollama_model || m.startsWith(opts.ollama_model + ':'));
+          return {
+            ok: true, warning: !matched, model: modelId, latency_ms: lat, models_count: models.length,
+            message: matched ? `Ollama 連線成功（共 ${models.length} 模型）` : `Ollama 在線，但尚未下載 ${opts.ollama_model}`
+          };
+        }
+        if (modelId === 'gemini') {
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Gemini API Key' };
+          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=5`);
+          const lat = Math.round(performance.now() - t0);
+          return r.ok
+            ? { ok: true, model: modelId, latency_ms: lat, message: 'Google Gemini API Token 驗證成功' }
+            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+        }
+        if (modelId === 'chatgpt') {
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 OpenAI API Key' };
+          const r = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          const lat = Math.round(performance.now() - t0);
+          return r.ok
+            ? { ok: true, model: modelId, latency_ms: lat, message: 'OpenAI ChatGPT API Token 驗證成功' }
+            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+        }
+        if (modelId === 'grok') {
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 xAI Grok API Key' };
+          const r = await fetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          const lat = Math.round(performance.now() - t0);
+          return r.ok
+            ? { ok: true, model: modelId, latency_ms: lat, message: 'xAI Grok API Token 驗證成功' }
+            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+        }
+        return { ok: false, model: modelId, latency_ms: 0, message: 'Claude 瀏覽器直連受 CORS 限制，請透過後端 server.py 代理測試' };
+      } catch (err) {
+        return { ok: false, model: modelId, latency_ms: Math.round(performance.now() - t0), message: `連線受限：${String(err.message || '').slice(0, 60)}` };
+      }
+    }
+
+    async function testSingleAiModel(modelId, silent = false) {
+      const def = AI_MODELS.find(m => m.id === modelId);
+      const { apiKeys, modelOptions } = readAiKeysFromInputs();
+      const btn = document.querySelector(`[data-test-ai="${modelId}"]`);
+      if (btn) btn.disabled = true;
+      renderAiTestBadge(modelId, { testing: true });
+
+      let res = null;
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/ai/test-connection`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: modelId,
+              api_key: apiKeys[modelId] || '',
+              model_options: modelOptions
+            })
+          });
+          if (r.ok) res = await r.json();
+        } catch (e) {}
+      }
+      if (!res) {
+        res = await testSingleAiDirectBrowser(modelId, apiKeys[modelId] || '', modelOptions);
+      }
+
+      state.aiTestStatus[modelId] = res;
+      renderAiTestBadge(modelId, res);
+      renderAiPanels();
+      if (btn) btn.disabled = false;
+
+      if (res.ok) {
+        triggerHandshake('CORE', 'AI_CLUSTER', def?.color || '#4f46e5', 'PING', true, res.latency_ms || 30, `${def?.label || modelId} Token 測試通過`);
+      }
+      if (!silent) {
+        showToast(
+          res.ok ? `${def?.label || modelId} 測試成功` : `${def?.label || modelId} 測試失敗`,
+          res.message || (res.ok ? 'API Token 連線正常' : '請檢查 Token 或網路設定'),
+          res.ok ? (res.warning ? 'warn' : 'success') : 'error'
+        );
+      }
+      return res;
+    }
+
+    async function testAllAiModels() {
+      const btn = document.getElementById('btnTestAllAiModels');
+      const { apiKeys, modelOptions } = readAiKeysFromInputs();
+      const targets = AI_MODELS.map(m => m.id).filter(id => {
+        if (id === 'ollama') return Boolean(modelOptions.ollama_url);
+        return Boolean(apiKeys[id]) || Boolean(state.backendHealth?.ai_env_configured?.[id]);
+      });
+
+      if (targets.length === 0) {
+        showToast('尚無可測試的模型', '請先於上方輸入任一模型 API Token 或 Ollama 網址再點擊測試。', 'warn');
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+      targets.forEach(id => renderAiTestBadge(id, { testing: true }));
+
+      let results = [];
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/ai/test-all`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_keys: apiKeys, model_options: modelOptions, models: targets })
+          });
+          if (r.ok) {
+            const data = await r.json();
+            results = data.results || [];
+          }
+        } catch (e) {}
+      }
+
+      if (results.length === 0) {
+        results = await Promise.all(targets.map(id => testSingleAiDirectBrowser(id, apiKeys[id] || '', modelOptions)));
+      }
+
+      results.forEach(res => {
+        state.aiTestStatus[res.model] = res;
+        renderAiTestBadge(res.model, res);
+      });
+      renderAiPanels();
+      if (btn) btn.disabled = false;
+
+      const okCnt = results.filter(x => x.ok).length;
+      showToast(
+        `批量模型連線測試完成（${okCnt}/${results.length} 成功）`,
+        results.map(r => `${r.model.toUpperCase()}: ${r.ok ? '✓' : '✗'}`).join(' ｜ '),
+        okCnt === results.length ? 'success' : (okCnt > 0 ? 'warn' : 'error')
+      );
+    }
+
     function renderAiPanels() {
       const meta = getStockMeta(state.activeSymbol);
       const pack = state.aiResults[state.activeSymbol];
@@ -4562,13 +4818,24 @@
 
       const cardsHtml = AI_MODELS.map(def => {
         const res = pack?.models?.find(m => m.model === def.id);
+        const testRes = state.aiTestStatus?.[def.id];
         if (!res) {
           const isCfg = def.id === 'ollama'
             ? Boolean((state.modelOptions.ollama_url || '').trim())
             : (Boolean(state.aiKeys[def.id]) || Boolean(state.backendHealth?.ai_env_configured?.[def.id]));
-          const statusLine = def.id === 'ollama'
+          let statusLine = def.id === 'ollama'
             ? `地端設定：${state.modelOptions.ollama_url || '未設定'} (${state.modelOptions.ollama_model || 'qwen2.5:14b'})`
             : (isCfg ? 'API 狀態：已設定金鑰' : 'API 狀態：未設定金鑰（可切換本地量化摘要）');
+          let badgeHtml = '<span class="badge badge-slate">待命</span>';
+          if (testRes && !testRes.testing) {
+            if (testRes.ok) {
+              badgeHtml = `<span class="badge badge-down">✓ 已驗證 ${testRes.latency_ms || 0}ms</span>`;
+              statusLine = `✓ ${testRes.message || 'API Token 連線測試成功'}`;
+            } else {
+              badgeHtml = '<span class="badge badge-up">✗ 驗證失敗</span>';
+              statusLine = `✗ ${testRes.message || 'API Token 無效'}`;
+            }
+          }
           return `
             <div class="ai-card">
               <div class="ai-card-head">
@@ -4576,7 +4843,7 @@
                   <span class="ai-avatar" style="background:${def.color};">${def.short}</span>
                   <span>${def.label}</span>
                 </div>
-                <span class="badge badge-slate">待命</span>
+                ${badgeHtml}
               </div>
               <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊「一鍵六模型解析」或啟用多 Agent 自動選模。</p>
               <div class="ai-meta-line">${escapeHtml(statusLine)}</div>
@@ -6540,6 +6807,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('btnOpenStrategyFromAi')?.addEventListener('click', () => openFeatureModal('strategy'));
       document.getElementById('btnFetchGroqModels')?.addEventListener('click', fetchGroqModelsUI);
       document.getElementById('btnDetectOllamaModels')?.addEventListener('click', detectOllamaModelsUI);
+      document.querySelectorAll('[data-test-ai]').forEach(btn => {
+        btn.addEventListener('click', () => testSingleAiModel(btn.dataset.testAi, false));
+      });
+      document.getElementById('btnTestAllAiModels')?.addEventListener('click', testAllAiModels);
       document.getElementById('btnPushAiReport').addEventListener('click', () => {
         const report = formatAiReportMessage();
         if (!report) {

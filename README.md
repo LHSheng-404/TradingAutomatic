@@ -6,22 +6,22 @@
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)
 ![RWD](https://img.shields.io/badge/UI-RWD%20Zero--Overflow-0f172a)
 
-**SYNAPSE TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關自動買賣**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
+**SYNAPSE TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT，附各模型 Token 即時測試）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關（策略版 v01）與 30 支 Pine 量化策略實驗室**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
 
 ---
 
 ## 主頁與各畫面切換動態說明（GIF 實機錄製）
 
 ### 🎬 1. 主頁指揮台 → 「功能選單 ▾」七大模組彈窗切換全導覽
-> 主頁保持極簡清爽；點擊頂部「**功能選單 ▾**」即可彈窗切換 **① 技術・籌碼・RS 10 大開關 & 多 Agent**、**② AI 六模型 & Ollama**、**③ 對帳單交易復盤**、**④ 台股真實定投回測**、**⑤ LINE / TG 通知**、**⑥ 雲端部署與 Pine Script**、**⑦ 折數與帳號設定**，零跳轉不打斷看盤。
+> 主頁保持極簡清爽；點擊頂部「**功能選單 ▾**」即可彈窗切換 **① 技術開關 (v01) · 量化策略實驗室 & 多 Agent**、**② AI 六模型 & Ollama**、**③ 對帳單交易復盤**、**④ 台股真實定投回測**、**⑤ LINE / TG 通知**、**⑥ 雲端部署與 Pine Script**、**⑦ 折數與帳號設定**，零跳轉不打斷看盤。
 
 ![主頁與七大功能彈窗切換動態演示](docs/screenshots/demo_main_navigation.gif)
 
 | 畫面順序 | 切換入口 | 主要功能說明 |
 | :--- | :--- | :--- |
 | **主頁指揮台** | 預設首頁 | 自選股即時列、60fps 雙向 `SYN-ACK` 資料交握網路、TradingView / Yahoo / FinMind 真實線圖、下單執行票與六模型快速共識。 |
-| **① 技術開關 & 多 Agent** | `功能選單 ▾` → 彈窗頁籤 1 | 10 大 v68 開關（技術＋FinMind 三大法人籌碼＋大盤 RS）、上市 `.TW`／上櫃 `.TWO` 偵測、模型自動路由與單一標的／全自選股自動買賣。 |
-| **② AI 六模型 & Ollama** | `功能選單 ▾` → 彈窗頁籤 2 | 設定 Groq 極速 API、地端 Ollama / LM Studio（一鍵偵測本機模型）及 Grok / Gemini / Claude / ChatGPT，平行輸出六模型研判。 |
+| **① 技術開關 (v01) & 量化實驗室** | `功能選單 ▾` → 彈窗頁籤 1 | 內建雙子分頁：① **v01 10 大開關**（技術＋FinMind 三大法人籌碼＋大盤 RS）與多 Agent 自動買賣；② **量化策略實驗室**（30 支 Alorse PineScript 策略即時台股回測、參數最佳化、多股批次、標的風險指標卡，並可一鍵將策略最新訊號連結至多 Agent 決策）。 |
+| **② AI 六模型 & Ollama** | `功能選單 ▾` → 彈窗頁籤 2 | 設定 Groq 極速 API、地端 Ollama / LM Studio（一鍵偵測本機模型）及 Grok / Gemini / Claude / ChatGPT，各模型皆附即時 Token 測試按鈕與一鍵全測。 |
 | **③ 對帳單交易復盤** | `功能選單 ▾` → 彈窗頁籤 3 | 匯入 PDF（含密碼）/ XLSX / CSV / JSON 對帳單，支援 2.8 折退佣計算、交易健康度評分與五維能力雷達圖。 |
 | **④ 台股真實定投回測** | `功能選單 ▾` → 彈窗頁籤 4 | 多標的權重＋多階段每月定投設定，即時抓取 FinMind 真實歷史日 K 與除權息配股計算含息報酬率。 |
 | **⑤ LINE / TG 通知中心** | `功能選單 ▾` → 彈窗頁籤 5 | LINE Bot 與 Telegram 單欄位 Token 加密自動綁定（免填 Chat ID）＋ 條列股票代號與中文名稱推播預覽。 |
@@ -44,7 +44,7 @@
 
 ---
 
-## 各模組高解析度靜態截圖（v3.2.0 實機渲染）
+## 各模組高解析度靜態截圖（v3.3.0 實機渲染）
 
 ### 1. 總覽指揮台：雙向資料交流交握網路 × 選單彈窗架構
 > 60fps 呈現 Yahoo Finance、FinMind v4、TradingView、台股訊號引擎、AI 六模型 & 多 Agent、LINE Bot、Telegram 與永豐金 Shioaji 之間的即時 `SYN-ACK` 雙向交握封包；進階模組統一收合於頂部「**功能選單 ▾**」彈窗，保持主畫面簡潔。
@@ -56,33 +56,38 @@
 
 ![下單實時價量多 Agent 預檢](docs/screenshots/order_agent_precheck.png)
 
-### 3. 台股技術・籌碼・大盤強弱開關（專家版 v68）& 多 Agent 自動買賣中心
-> 將台股專家版 v68 完整整理為 **10 大獨立開關**（`MA/EMA 均線`、`MACD 動能`、`KDJ 隨機指標`、`RSI(14)`、`OBV 能量潮與量比`、`布林通道 (20,2σ)`、`VWAP 機構加權均價`、`5/20 日動能輪動`、`FinMind 三大法人籌碼`、`相對大盤 RS 強弱 (^TWII)`），同時支援 **TWSE 上市 (`.TW`) 與 TPEx 上櫃 (`.TWO`)** 即時股價偵測及「單一標的／全自選股輪巡」自動買賣。
+### 3. 台股技術・籌碼・大盤強弱開關（策略版 v01）& 多 Agent 自動買賣中心
+> 整理 **10 大獨立開關（v01）**（`MA/EMA 均線`、`MACD 動能`、`KDJ 隨機指標`、`RSI(14)`、`OBV 能量潮與量比`、`布林通道 (20,2σ)`、`VWAP 機構加權均價`、`5/20 日動能輪動`、`FinMind 三大法人籌碼`、`相對大盤 RS 強弱 (^TWII)`），同時支援 **TWSE 上市 (`.TW`) 與 TPEx 上櫃 (`.TWO`)** 即時股價偵測、「單一標的／全自選股輪巡」自動買賣，並可直接接收來自「量化策略實驗室」的已連結策略訊號參與加權投票。
 
-![台股技術開關與多 Agent 自動買賣彈窗](docs/screenshots/agent_strategy_modal.png)
+![台股技術開關 v01 與多 Agent 自動買賣彈窗](docs/screenshots/agent_strategy_modal.png)
 
-### 4. AI 六模型深度解析 & Ollama 地端模型工作室（支援各模型 Token 即時測試）
-> 新增 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣；**每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，並提供「一鍵測試全部模型」**（僅呼叫輕量模型清單端點，不消耗推論 Token 費用且嚴格脫敏）。
+### 4. 量化策略實驗室（30 支 Alorse PineScript 策略 × 台股真實回測 × 風險指標卡）
+> 完整整合於「技術開關 (v01) & 量化實驗室」子分頁，內建 **30 支經典策略**（趨勢 9 · 動能 13 · 均值回歸 6 · 其他 2），透過真實 FinMind／Yahoo 日線與除權息資料執行台股現股規則回測（升降單位 tick、漲跌停 ±10% 鎖死延遲撮合、自動同步全域 `2.8` 折手續費、股票/ETF/債券 ETF 證交稅與二代健保 2.11%）。支援 **策略排行、K 線買賣點與參數即時微調、1D/2D 參數最佳化熱力圖、多股批次回測矩陣、標的風險指標卡（Sharpe / Sortino / Calmar / VaR 95% / CVaR / Beta / Alpha）**，並可一鍵將任一策略最新訊號連結至 v01 多 Agent。
+
+![量化策略實驗室 30 支策略排行與風險指標](docs/screenshots/quant_lab_modal.png)
+
+### 5. AI 六模型深度解析 & Ollama 地端模型工作室（支援各模型 Token 即時測試）
+> 整合 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣；**每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，並提供「一鍵測試全部模型」**（僅呼叫輕量模型清單端點，不消耗推論 Token 費用且嚴格脫敏）。
 
 ![AI 六模型與 Ollama 地端工作室](docs/screenshots/ai_six_models_modal.png)
 
-### 5. 對帳單交易復盤（支援 PDF 含密碼 / XLSX / CSV / JSON 匯入與退佣試算）
+### 6. 對帳單交易復盤（支援 PDF 含密碼 / XLSX / CSV / JSON 匯入與退佣試算）
 > 支援券商對帳單匯入、手續費折數（預設 `2.8` 折，可修改，最低 `6` 折）預估退佣計算、交易健康度評分、五維能力雷達圖與一鍵送交 AI 復盤。
 
 ![對帳單交易復盤彈窗](docs/screenshots/review_modal.png)
 
-### 6. 台股真實定投回測（FinMind 真實歷史股價＋除權息配股）
+### 7. 台股真實定投回測（FinMind 真實歷史股價＋除權息配股）
 > 支援多標的權重配置與多階段每月扣款設定，即時向 FinMind 抓取真實歷史日 K 與 `TaiwanStockDividend` 除權息配股資料，計算含息總報酬率 ROI 與手續費折數影響。
 
 ![台股真實定投回測彈窗](docs/screenshots/dca_backtest_modal.png)
 
-### 7. LINE Bot & Telegram 自動綁定通知中心（僅填 Bot Token・免填 Chat ID）
+### 8. LINE Bot & Telegram 自動綁定通知中心（僅填 Bot Token・免填 Chat ID）
 > **Telegram Bot 零門檻安全串接**：畫面僅需貼上 `Bot Token`（免填 Chat ID），後端即以 Encrypt-then-MAC 加密存檔並遮罩顯示，自動產生一次性 `/start <setup_code>` 防搶先設定碼；建立者私訊 Bot 傳送該指令後，系統透過 `getUpdates` 自動取存 `owner_chat_id` 並令設定碼失效，後續交易警示自動以 HTML 格式推播至建立者。
 
 ![Telegram 等待建立者傳送 /start 驗證](docs/screenshots/tg_awaiting_start.png)
 ![LINE Bot 與 Telegram 已綁定通知中心](docs/screenshots/notify_line_tg.png)
 
-### 8. RWD 行動裝置自適應介面（390px 零水平溢出）
+### 9. RWD 行動裝置自適應介面（390px 零水平溢出）
 > 手機解析度下交握拓撲與卡片自動自適應排版，零水平溢出。
 
 <p align="center">
@@ -91,16 +96,16 @@
 
 ---
 
-## 核心功能（v3.2.0）
+## 核心功能（v3.3.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 台股 10 大開關（v68 技術＋籌碼＋大盤 RS）與自動買賣** | 參考 `台股分析系統 專家版 v68` 整理為 10 大獨立開關（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱），自動支援上市 `.TW` 與上櫃 `.TWO` 雙市場；支援「僅目前標的」或「全自選股輪巡」自動執行 SIM / LIVE 買賣。 |
-| **2. 六模型 AI（新增 Groq ＋ Ollama 地端）** | 除 **Grok Bot (xAI)**、**Gemini (Google)**、**Claude (Anthropic)**、**ChatGPT (OpenAI)** 外，新增 **Groq 極速雲端推理**（支援線上載入模型清單）與 **Ollama / LM Studio / vLLM 地端模型**（支援 `/api/tags` 一鍵偵測本機模型、原生 `/api/chat` 與 OpenAI 相容端點，並自動濾除 DeepSeek-R1/QwQ `<think>` 標籤）。 |
-| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
+| **1. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
+| **2. 六模型 AI（Groq ＋ Ollama 地端 ＋ Token 即時測試）** | 整合 **Groq 極速雲端**、**Ollama / LM Studio 地端模型** 與 **Grok / Gemini / Claude / ChatGPT**；各模型皆附「測試」按鈕與「一鍵測試全部模型」，驗證是否有效且不消耗推論 Token 費用。 |
+| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
 | **4. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
 | **5. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
-| **6. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
+| **6. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測、量化策略實驗室與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
 | **7. 對帳單交易復盤 & 台股真實定投回測** | 支援多選匯入 PDF（含密碼解鎖）/ XLSX / CSV / JSON 對帳單復盤與退佣試算；並提供 FinMind 真實歷史股價＋除權息配股定投回測查詢，嚴禁猜測假數據。 |
 | **8. TradingView × LINE Bot × SIM/LIVE 切換** | 內嵌 TradingView 進階線圖與帳號／雲端 Layout 綁定、Pine Script v5 Webhook；LINE Bot 條列股票代號＋中文名稱；支援 SIM 模擬盤與永豐金 Shioaji LIVE 實盤安全切換與緊急熔斷。 |
 
@@ -109,22 +114,22 @@
 ## 快速開始（支援直接執行與一鍵打包）
 
 ### 方式一：直接下載 GitHub Release 執行（最簡單、免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.2.0`：
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.3.0`：
 
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.2.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
+  - 下載 `SYNAPSE-TW-v3.3.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.2.0-macos-arm64
-  ./SYNAPSE-TW-v3.2.0-macos-arm64
+  chmod +x SYNAPSE-TW-v3.3.0-macos-arm64
+  ./SYNAPSE-TW-v3.3.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.2.0-linux-x64
-  ./SYNAPSE-TW-v3.2.0-linux-x64
+  chmod +x SYNAPSE-TW-v3.3.0-linux-x64
+  ./SYNAPSE-TW-v3.3.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.2.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SYNAPSE-TW-v3.3.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
 
@@ -155,12 +160,12 @@ cd TradingAutomatic
 
 ```bash
 pip install -r requirements.txt pyinstaller
-python3 package.py --version v3.2.0
+python3 package.py --version v3.3.0
 ```
 
 執行完成後會在 `dist/` 目錄自動產出：
-1. `SYNAPSE-TW-v3.2.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
-2. `SYNAPSE-TW-v3.2.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
+1. `SYNAPSE-TW-v3.3.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
+2. `SYNAPSE-TW-v3.3.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
 3. `SHA256SUMS.txt`（完整性校驗檔）
 
 > 專案同時包含 GitHub Actions 自動發布管線 [`.github/workflows/release.yml`](.github/workflows/release.yml)，每次推送 `v*` 標籤時會自動於雲端同步編譯 **Windows `.exe`、macOS、Linux** 三平台直出執行檔並上傳至 Release。
@@ -234,18 +239,19 @@ SHIOAJI_CA_PASS=
    - 向 `@BotFather` 申請 `Bot Token` 後，開啟「**功能選單 → LINE / TG 通知中心**」，於 Telegram 區塊貼上 `Bot Token` 並點擊「**儲存並驗證 Bot Token**」。
    - 系統驗證 Token 有效後即加密存檔（畫面遮罩且不於前端／日誌曝光明文），並產生一次性 `/start <setup_code>` 指令。
    - 使用建立者私訊開啟您的 Bot 傳送該指令，系統會透過 `getUpdates` 自動取存 `owner_chat_id` 並令一次性設定碼失效，隨後點擊「**發送測試通知**」即可驗證；如需更換接收者，點擊「**重新綁定通知目標**」即可重設。
-1. **Groq 與 Ollama 地端模型串接**
-   - **Groq**：至 [Groq Console](https://console.groq.com/) 取得 `gsk_...` 金鑰，於「功能選單 → AI 六模型 & Ollama」填入後可按「載入」即時抓回所有可用模型（預設 `llama-3.3-70b-versatile`）。
-   - **Ollama 地端模型**：本機安裝 [Ollama](https://ollama.com/) 並執行 `ollama pull qwen2.5:14b`（或 `deepseek-r1:14b`、`llama3.1:8b`）後，於設定頁按「**偵測模型**」即可自動讀取本機清單。若經由本系統 Python 後端（`server.py` / 單檔執行檔）啟動則免設 CORS；若使用純靜態網頁直連本機 Ollama，啟動時加上 `OLLAMA_ORIGINS=* ollama serve` 即可。
-2. **台股技術分析開關 & 多 Agent 自動買賣**
-   - 透過「**功能選單 → 台股技術開關 & 多 Agent 自動買賣**」自由開關 8 項技術指標，選擇模型自動路由策略（推薦 `AUTO`），並設定巡檢週期、最大滑價容忍 %、觸發評分與 AI 最低信心門檻。
+2. **Groq 與 Ollama 地端模型串接（含各模型即時測試）**
+   - **Groq**：至 [Groq Console](https://console.groq.com/) 取得 `gsk_...` 金鑰，於「功能選單 → AI 六模型 & Ollama」填入後可按「**測試**」驗證有效並按「載入」抓回可用模型（預設 `llama-3.3-70b-versatile`）。
+   - **Ollama 地端模型**：本機安裝 [Ollama](https://ollama.com/) 並執行 `ollama pull qwen2.5:14b`（或 `deepseek-r1:14b`、`llama3.1:8b`）後，於設定頁按「**偵測模型**」或「**測試**」即可驗證連線與本機清單。
+3. **台股技術分析開關 (v01) · 量化策略實驗室 & 多 Agent 自動買賣**
+   - 透過「**功能選單 → 台股技術分析 (v01) · 量化實驗室 & 多 Agent**」切換兩大子分頁：
+     - **v01 技術開關 & 多 Agent**：自由開關 10 大技術・籌碼・大盤強弱開關，選擇模型自動路由策略（推薦 `AUTO`），並設定巡檢週期、最大滑價容忍 %、觸發評分與 AI 最低信心門檻。
+     - **量化策略實驗室**：對任一台股標的執行 **30 支 Alorse PineScript 經典策略** 真實台股規則回測、參數最佳化、多股批次與標的風險指標卡，並可於策略詳情點擊「**🔗 連結此策略至 v01 多 Agent**」將最新訊號直接納入自動決策。
    - 主畫面下單票預設勾選「**下單前實時偵測最新股價 ＋ 價量多 Agent 自動選模預檢**」，確保每次送單皆同步最新真實股價並通過滑價與多空衝突保護。
-3. **TradingView 帳號與進階快訊串接**
+4. **TradingView 帳號與進階快訊串接**
    - 點擊圖表區「**登入 TradingView 進階圖表**」即可在您的已登入帳號開啟同步台股標的，亦可綁定專屬雲端 Layout 網址與 Pine Script v5 Webhook。
-4. **LINE Bot & Telegram 設定**
-   - **LINE Bot**：至 [LINE Developers](https://developers.line.biz/) 建立 Messaging API Channel，取得 `Channel Access Token` 與 `User ID (U...)` / `Group ID (C...)`。
-   - **Telegram Bot**：向 `@BotFather` 申請 `Bot Token`，並取得目標聊天室或頻道的 `Chat ID`。
-5. **模擬下單（SIM）與真實下單（LIVE）切換**
+5. **LINE Bot 設定**
+   - 至 [LINE Developers](https://developers.line.biz/) 建立 Messaging API Channel，取得 `Channel Access Token` 與 `User ID (U...)` / `Group ID (C...)`。
+6. **模擬下單（SIM）與真實下單（LIVE）切換**
    - 頂部工具列可即時切換 **模擬下單 SIM** / **真實下單 LIVE**，隨時可按「**緊急熔斷**」立即鎖定所有手動與自動委託。
    - 若要啟用永豐金 Shioaji 實盤，請於 `requirements.txt` 取消 `shioaji` 註解並掛載有效的 `Sinopac.pfx` 憑證。
 

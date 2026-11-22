@@ -1427,6 +1427,363 @@
     @media (max-width: 960px) {
       .grid-3 { grid-template-columns: minmax(0, 1fr); }
     }
+
+    /* ========== STRATEGY SUB-TABS & QUANT STRATEGY LAB (v01 INTEGRATED) ========== */
+    .strat-sub-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px;
+    }
+    .strat-sub-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .strat-sub-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-2);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .strat-sub-btn:hover {
+      background: #fff;
+      color: var(--ink-1);
+    }
+    .strat-sub-btn.active {
+      background: var(--ink-1);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+    }
+    .strat-sub-pane {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .strat-sub-pane.active {
+      display: flex;
+    }
+
+    .ql-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .ql-fld {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .ql-fld label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-3);
+    }
+    .ql-dsrc {
+      margin-left: auto;
+      font-size: 11.5px;
+      color: var(--ink-2);
+      text-align: right;
+      max-width: 440px;
+      line-height: 1.45;
+    }
+    .ql-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .ql-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 13px;
+      cursor: pointer;
+      color: var(--ink-3);
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .ql-tab:hover { color: var(--ink-1); }
+    .ql-tab.on {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .ql-view { display: none; }
+    .ql-view.on { display: block; }
+    .ql-status {
+      font-size: 12px;
+      color: var(--ink-2);
+      min-height: 1.4em;
+      padding: 2px 2px;
+    }
+    .ql-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .ql-kpi {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 13px;
+    }
+    .ql-kpi .t { font-size: 11px; font-weight: 700; color: var(--ink-3); }
+    .ql-kpi .v { font-size: 19px; font-weight: 800; font-family: var(--mono); margin-top: 2px; line-height: 1.25; color: var(--ink-1); }
+    .ql-kpi .s { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+    .ql-grid { display: grid; gap: 12px; }
+    .ql-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ql-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ql-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .ql-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 14px;
+      min-width: 0;
+    }
+    .ql-card h3 {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--ink-1);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ql-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 12px;
+    }
+    .ql-row:last-child { border-bottom: none; }
+    .ql-row .k { color: var(--ink-3); }
+    .ql-row .v { font-family: var(--mono); font-weight: 700; color: var(--ink-1); }
+    .ql-hint { font-size: 11px; color: var(--ink-3); margin-top: 4px; line-height: 1.45; }
+    .ql-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .ql-chip {
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: var(--ink-2);
+      transition: all 0.12s ease;
+    }
+    .ql-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .ql-chip.on {
+      background: #eff6ff;
+      border-color: var(--accent);
+      color: #1d4ed8;
+    }
+    .ql-tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      line-height: 1.45;
+      white-space: nowrap;
+    }
+    .ql-tw { overflow-x: auto; max-width: 100%; }
+    table.ql-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.ql-t th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-subtle);
+      color: var(--ink-2);
+      font-weight: 700;
+      text-align: right;
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--border-strong);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      z-index: 2;
+    }
+    table.ql-t th:first-child, table.ql-t td:first-child { text-align: left; }
+    table.ql-t th.on { color: var(--accent); }
+    table.ql-t td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: var(--ink-1);
+    }
+    table.ql-t td.l { text-align: left; font-family: inherit; }
+    table.ql-t tr.clk { cursor: pointer; }
+    table.ql-t tr.clk:hover td { background: #f0f9ff; }
+    table.ql-t tr.bh td { background: #fffbeb; font-weight: 700; }
+    table.ql-t tr.sel td { background: #e0f2fe; }
+    .ql-up { color: #dc2626 !important; font-weight: 700; }
+    .ql-dn { color: #059669 !important; font-weight: 700; }
+    .ql-mut { color: var(--ink-3) !important; }
+    .ql-gold { color: #b45309 !important; font-weight: 700; }
+    .ql-cy { color: #0284c7 !important; font-weight: 700; }
+    .ql-cv { position: relative; width: 100%; }
+    .ql-cv canvas { display: block; width: 100%; }
+    .ql-tip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.94);
+      color: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 8;
+      display: none;
+      font-family: var(--mono);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+    }
+    .ql-legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-top: 6px;
+    }
+    .ql-legend i {
+      display: inline-block;
+      width: 11px;
+      height: 3px;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .ql-sbar {
+      height: 9px;
+      border-radius: 5px;
+      background: #f1f5f9;
+      overflow: hidden;
+      position: relative;
+    }
+    .ql-sbar > div { height: 100%; border-radius: 5px; }
+    .ql-banner {
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border-strong);
+      background: var(--bg-subtle);
+      margin-bottom: 12px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .ql-banner .big { font-size: 20px; font-weight: 900; }
+    .ql-params {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .ql-hm td { padding: 0; text-align: center; }
+    .ql-hm td div {
+      padding: 5px 3px;
+      font-size: 11px;
+      font-family: var(--mono);
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .ql-hm th {
+      font-size: 11px;
+      padding: 4px;
+      color: var(--ink-2);
+      font-weight: 700;
+      font-family: var(--mono);
+    }
+    .ql-lib {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+      gap: 10px;
+    }
+    .ql-lib .ql-card { display: flex; flex-direction: column; gap: 6px; }
+    .ql-lib .ql-card p { font-size: 11.5px; color: var(--ink-2); line-height: 1.45; }
+    .ql-empty {
+      text-align: center;
+      padding: 36px 18px;
+      color: var(--ink-3);
+      font-size: 13px;
+    }
+    .ql-spin {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #cbd5e1;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: qlSpin 0.85s linear infinite;
+      vertical-align: -2px;
+      margin-right: 6px;
+    }
+    @keyframes qlSpin { to { transform: rotate(360deg); } }
+    .ql-ai { font-size: 12.5px; line-height: 1.7; color: var(--ink-1); }
+    .ql-ai h4 { color: var(--accent); margin: 10px 0 4px; font-size: 13px; }
+    .ql-ai ul { padding-left: 1.3em; }
+    .ql-cfg-panel {
+      display: none;
+      background: #f8fafc;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 8px;
+    }
+    .ql-cfg-panel.open { display: block; }
+    .ql-link-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #1e3a8a;
+    }
+    .ql-link-banner.on { display: flex; }
+
+    @media (max-width: 960px) {
+      .ql-g2, .ql-g3, .ql-g4 { grid-template-columns: minmax(0, 1fr); }
+      .ql-dsrc { margin-left: 0; text-align: left; max-width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -1455,8 +1812,8 @@
           <button type="button" class="menu-item" data-open-studio="strategy">
             <span class="menu-item-icon" style="background:#fef2f2;color:#b91c1c;"><i data-lucide="bot" style="width:15px;height:15px;"></i></span>
             <div>
-              <div class="menu-item-title">台股技術開關 &amp; 多 Agent 自動買賣</div>
-              <div class="menu-item-desc">10 大台股技術・籌碼・RS 開關 · 實時價量偵測與自動選模</div>
+              <div class="menu-item-title">台股技術分析 (v01) · 量化實驗室 &amp; 多 Agent</div>
+              <div class="menu-item-desc">10 大開關自動買賣 · 30 支 Pine 量化策略回測與風險指標卡</div>
             </div>
           </button>
           <button type="button" class="menu-item" data-open-studio="ai">
@@ -1970,7 +2327,7 @@
       <div class="studio-modal-head">
         <div class="studio-pills" role="tablist" aria-label="功能彈窗切換">
           <button type="button" class="studio-pill active" data-studio-pane="strategy">
-            <i data-lucide="bot" style="width:13px;height:13px;"></i>台股技術開關 &amp; 多 Agent
+            <i data-lucide="bot" style="width:13px;height:13px;"></i>技術開關 (v01) &amp; 量化實驗室
           </button>
           <button type="button" class="studio-pill" data-studio-pane="ai">
             <i data-lucide="cpu" style="width:13px;height:13px;"></i>AI 六模型 &amp; Ollama
@@ -2334,153 +2691,310 @@
           </div>
         </div>
 
-        <!-- ========== PANE 0: TAIWAN STOCK TECHNICAL SWITCHES & MULTI-AGENT AUTO-TRADE (v68) ========== -->
+        <!-- ========== PANE 0: TAIWAN STOCK TECHNICAL SWITCHES (v01), MULTI-AGENT & QUANT STRATEGY LAB ========== -->
         <div id="studio-strategy" class="studio-pane">
-          <!-- Top Master Auto-Trade & Routing Control Card -->
-          <article class="card">
-            <div class="card-header">
-              <div class="card-title-group">
-                <h2 class="card-title">
-                  <i data-lucide="bot" style="width:16px;height:16px;color:#b91c1c;"></i>
-                  台股技術分析開關 &amp; 價量多 Agent 自動買賣中心（參考專家版 v68）
-                </h2>
-                <p class="card-subtitle">下單與自動巡檢皆即時抓取真實最新股價（支援上市 .TW / 上櫃 .TWO），結合 10 大台股技術・籌碼・大盤強弱開關與風控守門員，自動切換最適 AI 模型判定買賣</p>
-              </div>
-              <div class="chart-group">
-                <label style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;font-size:12px;font-weight:800;color:#991b1b;cursor:pointer;">
-                  <input id="autoAgentTradeToggle" type="checkbox" />
-                  <span>啟用多 Agent 自動買賣</span>
-                </label>
-                <button id="btnRunAgentStrategyNow" type="button" class="btn btn-primary">
-                  <i data-lucide="zap" style="width:14px;height:14px;"></i>立即實時偵測 &amp; 多 Agent 判斷
-                </button>
+          <!-- Sub-Tab Switcher: v01 Switches + Multi-Agent  |  Quant Strategy Lab (30 Strategies) -->
+          <div class="strat-sub-bar">
+            <div class="strat-sub-pills" role="tablist" aria-label="技術分析與量化實驗室切換">
+              <button type="button" class="strat-sub-btn active" data-strat-sub="switches">
+                <i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i>
+                <span>v01 技術開關 &amp; 多 Agent 自動買賣</span>
+              </button>
+              <button type="button" class="strat-sub-btn" data-strat-sub="quantlab">
+                <i data-lucide="flask-conical" style="width:14px;height:14px;"></i>
+                <span>量化策略實驗室（30 支經典策略 × 風險指標卡）</span>
+              </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3);padding:0 6px;">
+              <span>策略版本：<strong class="mono" style="color:var(--ink-1);">v01</strong></span>
+              <span>·</span>
+              <span>全域手續費：<strong id="stratSubFeeLabel" class="mono" style="color:#b45309;">2.8</strong> 折</span>
+            </div>
+          </div>
+
+          <!-- ========== SUB-PANE A: v01 TECHNICAL SWITCHES & MULTI-AGENT AUTO-TRADE ========== -->
+          <div id="stratSub-switches" class="strat-sub-pane active">
+            <!-- Linked Quant Lab Strategy Banner (visible when user links a Quant Lab strategy) -->
+            <div id="quantLinkStatusBanner" class="ql-link-banner">
+              <div id="quantLinkStatusText" style="line-height:1.45;"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button id="btnJumpLinkedQuant" type="button" class="btn btn-sm">前往量化實驗室檢視</button>
+                <button id="btnUnlinkQuantStrategy" type="button" class="btn btn-sm" style="color:#b91c1c;border-color:#fecaca;">取消連結</button>
               </div>
             </div>
-            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
-              <!-- Routing Policy & Auto-Trade Parameters -->
-              <div class="grid-3" style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+
+            <!-- Top Master Auto-Trade & Routing Control Card -->
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">
+                    <i data-lucide="bot" style="width:16px;height:16px;color:#b91c1c;"></i>
+                    台股技術分析開關 &amp; 價量多 Agent 自動買賣中心（策略版 v01）
+                  </h2>
+                  <p class="card-subtitle">下單與自動巡檢皆即時抓取真實最新股價（支援上市 .TW / 上櫃 .TWO），結合 10 大台股技術・籌碼・大盤強弱開關、量化策略實驗室訊號與風控守門員，自動切換最適 AI 模型判定買賣</p>
+                </div>
+                <div class="chart-group">
+                  <label style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;font-size:12px;font-weight:800;color:#991b1b;cursor:pointer;">
+                    <input id="autoAgentTradeToggle" type="checkbox" />
+                    <span>啟用多 Agent 自動買賣</span>
+                  </label>
+                  <button id="btnRunAgentStrategyNow" type="button" class="btn btn-primary">
+                    <i data-lucide="zap" style="width:14px;height:14px;"></i>立即實時偵測 &amp; 多 Agent 判斷
+                  </button>
+                </div>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+                <!-- Routing Policy & Auto-Trade Parameters -->
+                <div class="grid-3" style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                  <div>
+                    <label class="field-label" for="agentRoutingPolicySelect">最適模型自動路由策略</label>
+                    <select id="agentRoutingPolicySelect" class="select">
+                      <option value="AUTO" selected>AUTO · 依盤中價量與波動自動切換最適模型（推薦）</option>
+                      <option value="SPEED_FIRST">SPEED_FIRST · Groq 極速優先（盤中毫秒決策）</option>
+                      <option value="LOCAL_FIRST">LOCAL_FIRST · Ollama 地端優先（零外傳隱私）</option>
+                      <option value="DEEP_REASONING">DEEP_REASONING · Claude / Gemini 深度風控推理</option>
+                    </select>
+                  </div>
+                  <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+                    <div>
+                      <label class="field-label" for="agentScopeSelect">自動買賣範圍</label>
+                      <select id="agentScopeSelect" class="select">
+                        <option value="ACTIVE" selected>僅目前標的</option>
+                        <option value="WATCHLIST">全自選股輪巡</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label" for="agentPollIntervalSelect">自動巡檢週期</label>
+                      <select id="agentPollIntervalSelect" class="select mono">
+                        <option value="30">每 30 秒</option>
+                        <option value="60" selected>每 60 秒</option>
+                        <option value="120">每 120 秒</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label" for="agentAutoQtyInput">每次下單 (張)</label>
+                      <input id="agentAutoQtyInput" type="number" min="1" max="50" step="1" value="1" class="input mono" />
+                    </div>
+                  </div>
+                  <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+                    <div>
+                      <label class="field-label" for="agentMaxSlippageInput">最大滑價 %</label>
+                      <input id="agentMaxSlippageInput" type="number" min="0.1" max="5.0" step="0.1" value="1.0" class="input mono" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="agentScoreThresholdInput">開關觸發分</label>
+                      <input id="agentScoreThresholdInput" type="number" min="10" max="80" step="5" value="25" class="input mono" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="agentMinConfInput">AI 最低信心%</label>
+                      <input id="agentMinConfInput" type="number" min="40" max="95" step="5" value="60" class="input mono" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 10 Technical + Chip + RS Analysis Switches (Strategy v01) -->
                 <div>
-                  <label class="field-label" for="agentRoutingPolicySelect">最適模型自動路由策略</label>
-                  <select id="agentRoutingPolicySelect" class="select">
-                    <option value="AUTO" selected>AUTO · 依盤中價量與波動自動切換最適模型（推薦）</option>
-                    <option value="SPEED_FIRST">SPEED_FIRST · Groq 極速優先（盤中毫秒決策）</option>
-                    <option value="LOCAL_FIRST">LOCAL_FIRST · Ollama 地端優先（零外傳隱私）</option>
-                    <option value="DEEP_REASONING">DEEP_REASONING · Claude / Gemini 深度風控推理</option>
-                  </select>
-                </div>
-                <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
-                  <div>
-                    <label class="field-label" for="agentScopeSelect">自動買賣範圍</label>
-                    <select id="agentScopeSelect" class="select">
-                      <option value="ACTIVE" selected>僅目前標的</option>
-                      <option value="WATCHLIST">全自選股輪巡</option>
-                    </select>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                    <div>
+                      <strong style="font-size:13px;color:var(--ink-1);">台股技術・籌碼・強弱開關矩陣 v01（<span id="techSwitchEnabledCount" class="mono">10</span> / 10 已啟用）</strong>
+                      <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px;">支援上市 TWSE (.TW) 與上櫃 TPEx (.TWO)，開關即時影響自動買賣判定</span>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      <button id="btnTechPresetAll" type="button" class="btn btn-sm">全部開啟 (10/10)</button>
+                      <button id="btnTechPresetMomentum" type="button" class="btn btn-sm">價量籌碼動能組</button>
+                      <button id="btnTechPresetReversal" type="button" class="btn btn-sm">波段轉折組</button>
+                      <button id="btnOpenQuantLabQuick" type="button" class="btn btn-sm btn-teal">前往 30 策略量化實驗室 →</button>
+                    </div>
                   </div>
-                  <div>
-                    <label class="field-label" for="agentPollIntervalSelect">自動巡檢週期</label>
-                    <select id="agentPollIntervalSelect" class="select mono">
-                      <option value="30">每 30 秒</option>
-                      <option value="60" selected>每 60 秒</option>
-                      <option value="120">每 120 秒</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="field-label" for="agentAutoQtyInput">每次下單 (張)</label>
-                    <input id="agentAutoQtyInput" type="number" min="1" max="50" step="1" value="1" class="input mono" />
-                  </div>
-                </div>
-                <div class="form-grid-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
-                  <div>
-                    <label class="field-label" for="agentMaxSlippageInput">最大滑價 %</label>
-                    <input id="agentMaxSlippageInput" type="number" min="0.1" max="5.0" step="0.1" value="1.0" class="input mono" />
-                  </div>
-                  <div>
-                    <label class="field-label" for="agentScoreThresholdInput">開關觸發分</label>
-                    <input id="agentScoreThresholdInput" type="number" min="10" max="80" step="5" value="25" class="input mono" />
-                  </div>
-                  <div>
-                    <label class="field-label" for="agentMinConfInput">AI 最低信心%</label>
-                    <input id="agentMinConfInput" type="number" min="40" max="95" step="5" value="60" class="input mono" />
-                  </div>
+                  <div id="techSwitchesGrid" class="tech-switch-grid"></div>
                 </div>
               </div>
+            </article>
 
-              <!-- 10 Technical + Chip + RS Analysis Switches (v68 Expert Edition) -->
-              <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                  <div>
-                    <strong style="font-size:13px;color:var(--ink-1);">台股技術・籌碼・強弱開關矩陣（<span id="techSwitchEnabledCount" class="mono">10</span> / 10 已啟用）</strong>
-                    <span style="font-size:11.5px;color:var(--ink-3);margin-left:6px;">支援上市 TWSE (.TW) 與上櫃 TPEx (.TWO)，開關即時影響自動買賣判定</span>
-                  </div>
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button id="btnTechPresetAll" type="button" class="btn btn-sm">全部開啟 (10/10)</button>
-                    <button id="btnTechPresetMomentum" type="button" class="btn btn-sm">價量籌碼動能組</button>
-                    <button id="btnTechPresetReversal" type="button" class="btn btn-sm">波段轉折組</button>
-                  </div>
+            <!-- 4-Agent Live Decision Dashboard -->
+            <div id="strategyAgentDashboard" class="grid-2">
+              <article class="agent-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:var(--ink-1);">Agent 1 · 實時股價偵測 &amp; 價量動能</strong>
+                  <span id="agPvRegimeBadge" class="badge badge-slate">待偵測</span>
                 </div>
-                <div id="techSwitchesGrid" class="tech-switch-grid"></div>
-              </div>
+                <div id="agPvBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                  點擊上方「立即實時偵測 &amp; 多 Agent 判斷」或直接於主畫面送出下單，系統將繞過快取即時抓取最新真實報價並判讀價量結構。
+                </div>
+              </article>
+
+              <article class="agent-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:var(--ink-1);">Agent 2 · 台股技術開關加權投票 (v01)</strong>
+                  <span id="agTechScoreBadge" class="badge badge-slate">評分 --</span>
+                </div>
+                <div id="agTechVotesBody" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--ink-2);">
+                  尚未執行技術開關掃描。
+                </div>
+              </article>
+
+              <article class="agent-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:var(--ink-1);">Agent 3 · 風控守門員（滑價 / 超買賣 / 熔斷）</strong>
+                  <span id="agRiskBadge" class="badge badge-slate">待檢核</span>
+                </div>
+                <div id="agRiskBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                  檢核項目：即時滑價上限、RSI 極端超買賣防追高殺低、全系統緊急熔斷開關。
+                </div>
+              </article>
+
+              <article class="agent-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:var(--ink-1);">Agent 4 · 最適模型自動切換 &amp; 最終買賣決策</strong>
+                  <span id="agFinalActionBadge" class="badge badge-slate">待決策</span>
+                </div>
+                <div id="agRouterBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                  系統會依盤中量比、日內振幅、價量背離狀態自動在 Groq / Ollama / Grok / Gemini / Claude / ChatGPT 間選擇最適模型並容錯切換。
+                </div>
+              </article>
             </div>
-          </article>
 
-          <!-- 4-Agent Live Decision Dashboard -->
-          <div id="strategyAgentDashboard" class="grid-2">
-            <article class="agent-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong style="font-size:13px;color:var(--ink-1);">Agent 1 · 實時股價偵測 &amp; 價量動能</strong>
-                <span id="agPvRegimeBadge" class="badge badge-slate">待偵測</span>
+            <!-- Auto-Trade Execution Audit Log -->
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">多 Agent 自動買賣與選模歷程紀錄</h2>
+                  <p class="card-subtitle">完整記錄每次實時偵測價格、選用 AI 模型、技術開關評分與自動/手動觸發狀態</p>
+                </div>
+                <button id="btnClearAgentLogs" type="button" class="btn btn-sm">清空歷程</button>
               </div>
-              <div id="agPvBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
-                點擊上方「立即實時偵測 &amp; 多 Agent 判斷」或直接於主畫面送出下單，系統將繞過快取即時抓取最新真實報價並判讀價量結構。
-              </div>
-            </article>
-
-            <article class="agent-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong style="font-size:13px;color:var(--ink-1);">Agent 2 · 台股技術開關加權投票</strong>
-                <span id="agTechScoreBadge" class="badge badge-slate">評分 --</span>
-              </div>
-              <div id="agTechVotesBody" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--ink-2);">
-                尚未執行技術開關掃描。
-              </div>
-            </article>
-
-            <article class="agent-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong style="font-size:13px;color:var(--ink-1);">Agent 3 · 風控守門員（滑價 / 超買賣 / 熔斷）</strong>
-                <span id="agRiskBadge" class="badge badge-slate">待檢核</span>
-              </div>
-              <div id="agRiskBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
-                檢核項目：即時滑價上限、RSI 極端超買賣防追高殺低、全系統緊急熔斷開關。
-              </div>
-            </article>
-
-            <article class="agent-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong style="font-size:13px;color:var(--ink-1);">Agent 4 · 最適模型自動切換 &amp; 最終買賣決策</strong>
-                <span id="agFinalActionBadge" class="badge badge-slate">待決策</span>
-              </div>
-              <div id="agRouterBody" style="font-size:12px;color:var(--ink-2);line-height:1.6;">
-                系統會依盤中量比、日內振幅、價量背離狀態自動在 Groq / Ollama / Grok / Gemini / Claude / ChatGPT 間選擇最適模型並容錯切換。
+              <div class="card-body">
+                <div id="agentAutoLogBox" style="max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2);">
+                  <div style="color:var(--ink-3);">尚無多 Agent 執行紀錄。</div>
+                </div>
               </div>
             </article>
           </div>
 
-          <!-- Auto-Trade Execution Audit Log -->
-          <article class="card">
-            <div class="card-header">
-              <div class="card-title-group">
-                <h2 class="card-title">多 Agent 自動買賣與選模歷程紀錄</h2>
-                <p class="card-subtitle">完整記錄每次實時偵測價格、選用 AI 模型、技術開關評分與自動/手動觸發狀態</p>
+          <!-- ========== SUB-PANE B: QUANT STRATEGY LAB (30 ALORSE PINE STRATEGIES × RISK CARD) ========== -->
+          <div id="stratSub-quantlab" class="strat-sub-pane">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">
+                    <i data-lucide="flask-conical" style="width:16px;height:16px;color:#0284c7;"></i>
+                    量化策略實驗室（Alorse PineScript 30 支經典策略 × 台股真實回測 × 風險指標卡）
+                  </h2>
+                  <p class="card-subtitle">以真實 FinMind／Yahoo 日線與除權息資料執行完整台股規則回測（升降單位 tick、漲跌停 ±10%、自動套用全域手續費折數與證交稅、二代健保 2.11%），並可一鍵將任一策略最新訊號連結至 v01 多 Agent 自動決策</p>
+                </div>
+                <div class="chart-group">
+                  <button id="btnQlToggleCfg" type="button" class="btn btn-sm">⚙️ 回測規則</button>
+                  <button id="btnQlExportJson" type="button" class="btn btn-sm">⬇️ 匯出 JSON 報告</button>
+                </div>
               </div>
-              <button id="btnClearAgentLogs" type="button" class="btn btn-sm">清空歷程</button>
-            </div>
-            <div class="card-body">
-              <div id="agentAutoLogBox" style="max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2);">
-                <div style="color:var(--ink-3);">尚無多 Agent 執行紀錄。</div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <!-- Main Query & Action Bar -->
+                <div class="ql-bar">
+                  <div class="ql-fld">
+                    <label for="qlCodeInput">股票代號（上市／上櫃／ETF）</label>
+                    <input id="qlCodeInput" class="input mono" style="width:120px;font-weight:700;" value="2330" placeholder="2330" />
+                  </div>
+                  <div class="ql-fld">
+                    <label for="qlYearsSelect">回測期間</label>
+                    <select id="qlYearsSelect" class="select" style="width:110px;">
+                      <option value="1">近 1 年</option>
+                      <option value="2">近 2 年</option>
+                      <option value="3">近 3 年</option>
+                      <option value="5" selected>近 5 年</option>
+                      <option value="10">近 10 年</option>
+                    </select>
+                  </div>
+                  <button id="btnQlLoad" type="button" class="btn btn-primary">🔍 載入真實日線並回測全部 30 策略</button>
+                  <label class="btn btn-sm" style="cursor:pointer;height:36px;display:inline-flex;align-items:center;">
+                    📄 上傳 CSV<input id="qlCsvInput" type="file" accept=".csv,.txt" hidden />
+                  </label>
+                  <div id="qlDataSrc" class="ql-dsrc">尚未載入量化回測資料 · 請點選「載入真實日線並回測全部 30 策略」</div>
+                </div>
+
+                <!-- Collapsible Backtest Rules Config Panel -->
+                <div id="qlCfgPanel" class="ql-cfg-panel">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <strong style="font-size:12.5px;color:var(--ink-1);">⚙️ 台股量化回測規則與成本設定（手續費折數與全域同步）</strong>
+                    <div style="display:flex;gap:6px;">
+                      <button id="btnQlSaveCfg" type="button" class="btn btn-sm btn-primary">💾 套用並重算</button>
+                      <button id="btnQlResetCfg" type="button" class="btn btn-sm">↺ 還原預設</button>
+                    </div>
+                  </div>
+                  <div class="ql-grid ql-g4" style="gap:8px;margin-bottom:8px;">
+                    <div class="ql-fld"><label for="qlCfgCash">初始資金 (元)</label><input id="qlCfgCash" type="number" class="input mono" value="1000000" /></div>
+                    <div class="ql-fld"><label for="qlCfgPct">投入資金比例 (%)</label><input id="qlCfgPct" type="number" min="1" max="100" class="input mono" value="100" /></div>
+                    <div class="ql-fld">
+                      <label for="qlCfgUnit">交易單位</label>
+                      <select id="qlCfgUnit" class="select">
+                        <option value="mixed" selected>整張＋盤中零股</option>
+                        <option value="lot">只買整張 (1000股)</option>
+                        <option value="odd">全部零股</option>
+                      </select>
+                    </div>
+                    <div class="ql-fld">
+                      <label for="qlCfgFill">成交時點</label>
+                      <select id="qlCfgFill" class="select">
+                        <option value="open" selected>次根開盤成交 (Pine 預設)</option>
+                        <option value="close">當根收盤成交</option>
+                      </select>
+                    </div>
+                    <div class="ql-fld"><label for="qlCfgDisc">手續費折數 (預設2.8/上限6折)</label><input id="qlCfgDisc" type="number" step="0.1" min="0.1" max="6.0" class="input mono" value="2.8" /></div>
+                    <div class="ql-fld"><label for="qlCfgMinFee">最低手續費 (元)</label><input id="qlCfgMinFee" type="number" class="input mono" value="20" /></div>
+                    <div class="ql-fld">
+                      <label for="qlCfgTaxMode">證交稅模式</label>
+                      <select id="qlCfgTaxMode" class="select">
+                        <option value="auto" selected>自動 (股0.3%/ETF0.1%/債0%)</option>
+                        <option value="custom">自訂稅率</option>
+                      </select>
+                    </div>
+                    <div class="ql-fld"><label for="qlCfgTax">自訂證交稅 (%)</label><input id="qlCfgTax" type="number" step="0.05" class="input mono" value="0.3" /></div>
+                    <div class="ql-fld"><label for="qlCfgSlip">預估滑價 (%)</label><input id="qlCfgSlip" type="number" step="0.05" class="input mono" value="0.1" /></div>
+                    <div class="ql-fld"><label for="qlCfgRf">無風險利率 (%)</label><input id="qlCfgRf" type="number" step="0.1" class="input mono" value="1.5" /></div>
+                    <div class="ql-fld"><label for="qlCfgSplit">樣本外 OOS 比例 (%)</label><input id="qlCfgSplit" type="number" min="0" max="60" class="input mono" value="30" /></div>
+                    <div class="ql-fld">
+                      <label for="qlCfgSrc">日線資料來源</label>
+                      <select id="qlCfgSrc" class="select">
+                        <option value="auto" selected>自動 (FinMind 優先 / Yahoo 備援)</option>
+                        <option value="finmind">僅 FinMind (未還原＋除權息入帳)</option>
+                        <option value="yahoo">僅 Yahoo (還原權息價)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);">
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input id="qlCfgLimit" type="checkbox" checked /> 漲跌停 ±10% 鎖死延遲成交</label>
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input id="qlCfgTick" type="checkbox" checked /> 依台股升降單位 (tick) 撮合</label>
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input id="qlCfgDiv" type="checkbox" checked /> 除權息入帳 (FinMind 原始價)</label>
+                    <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input id="qlCfgNhi" type="checkbox" checked /> 單筆股利 ≥ 2 萬扣二代健保 2.11%</label>
+                  </div>
+                </div>
+
+                <!-- Quant Lab 6 Inner Tabs -->
+                <div class="ql-tabs" id="qlTabs">
+                  <button type="button" class="ql-tab on" data-ql-v="rank">🏆 策略排行 (30)</button>
+                  <button type="button" class="ql-tab" data-ql-v="detail">🔬 策略詳情與調參</button>
+                  <button type="button" class="ql-tab" data-ql-v="opt">🎛️ 參數最佳化</button>
+                  <button type="button" class="ql-tab" data-ql-v="batch">🧺 多股批次回測</button>
+                  <button type="button" class="ql-tab" data-ql-v="risk">⚖️ 標的風險指標卡</button>
+                  <button type="button" class="ql-tab" data-ql-v="lib">📚 策略庫說明</button>
+                </div>
+
+                <div id="qlStatus" class="ql-status"></div>
+
+                <!-- 6 Quant Lab View Sections -->
+                <section class="ql-view on" id="ql-v-rank">
+                  <div class="ql-empty">
+                    <div style="font-size:28px;margin-bottom:6px;">📐</div>
+                    輸入台股代號（預設帶入目前標的）並按「載入真實日線並回測全部 30 策略」，即可一次完成 30 支經典策略台股規則回測、風險指標評估與多 Agent 訊號串接。
+                  </div>
+                </section>
+                <section class="ql-view" id="ql-v-detail"></section>
+                <section class="ql-view" id="ql-v-opt"></section>
+                <section class="ql-view" id="ql-v-batch"></section>
+                <section class="ql-view" id="ql-v-risk"></section>
+                <section class="ql-view" id="ql-v-lib"></section>
               </div>
-            </div>
-          </article>
+            </article>
+          </div>
         </div>
 
         <!-- ========== PANE 3: AI SIX-MODEL & OLLAMA LOCAL STUDIO ========== -->
@@ -3015,6 +3529,7 @@
       agentLogs: [],
       pendingOverrideOrder: null,
       lastAutoTradeKey: {},
+      linkedQuantStrategy: null, // { symbol, id, name, signal, sharpe, win_rate, ann_ret, last_date, params }
 
       notifier: {
         lineEnabled: false,
@@ -3089,6 +3604,9 @@
           if (saved.techSwitches) Object.assign(state.techSwitches, saved.techSwitches);
           if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
           if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
+          if (saved.linkedQuantStrategy && typeof saved.linkedQuantStrategy === 'object') {
+            state.linkedQuantStrategy = saved.linkedQuantStrategy;
+          }
           if (saved.notifier) {
             state.notifier.lineEnabled = Boolean(saved.notifier.lineEnabled);
             state.notifier.lineToken = String(saved.notifier.lineToken || '');
@@ -3128,6 +3646,7 @@
           techSwitches: state.techSwitches,
           agentConfig: state.agentConfig,
           agentLogs: state.agentLogs.slice(0, 40),
+          linkedQuantStrategy: state.linkedQuantStrategy,
           notifier: {
             lineEnabled: state.notifier.lineEnabled,
             lineToken: state.notifier.lineToken,
@@ -4259,7 +4778,7 @@
       { id: 'chatgpt', label: 'ChatGPT (OpenAI)', short: 'GP', color: '#059669', role: '多空劇本與分批倉位策略' }
     ];
 
-    const V68_TECH_SWITCH_DEFS = [
+    const V01_TECH_SWITCH_DEFS = [
       { key: 'ma', label: 'MA / EMA 均線交叉', desc: 'EMA5/12 與 MA5/20 多空排列判定' },
       { key: 'macd', label: 'MACD 動能柱狀', desc: 'DIF/DEA 柱狀翻紅翻綠轉折訊號' },
       { key: 'kdj', label: 'KDJ 隨機指標 (9,3,3)', desc: '高低檔金叉死叉與超買超賣濾網' },
@@ -4892,7 +5411,7 @@
     }
 
     // =========================================================================
-    // 7.5 REAL-TIME PRICE DETECTION + PRICE-VOLUME MULTI-AGENT & V68 SWITCHES
+    // 7.5 REAL-TIME PRICE DETECTION + PRICE-VOLUME MULTI-AGENT & V01 SWITCHES
     // =========================================================================
     let agentAutoTimer = null;
 
@@ -4904,7 +5423,7 @@
       return out;
     }
 
-    function evaluateV68ClientFallback(symbol, quote, intendedSide = 'AUTO', intendedPrice = null) {
+    function evaluateV01ClientFallback(symbol, quote, intendedSide = 'AUTO', intendedPrice = null) {
       const candles = (quote?.candles && quote.candles.length >= 2)
         ? quote.candles
         : [{ open: quote.open || quote.price, high: quote.high || quote.price, low: quote.low || quote.price, close: quote.price, volume: quote.volume || 1000 }];
@@ -5012,6 +5531,22 @@
       addVote('vwap', 'VWAP 加權均價', `${vwapDiff >= 0 ? '+' : ''}${vwapDiff}%`, vwapDiff > 0.2 ? 14 : (vwapDiff < -0.2 ? -14 : 0), vwapDiff > 0 ? '站上機構均價' : '跌破機構均價');
       addVote('momentum', '5/20日動能輪動', `5D:${mom5 >= 0 ? '+' : ''}${mom5}% / 20D:${mom20 >= 0 ? '+' : ''}${mom20}%`, (mom5 > 0 && mom20 > 0) ? 12 : ((mom5 < 0 && mom20 < 0) ? -12 : 0), '短中期動能檢核');
 
+      const linkedQ = state.linkedQuantStrategy;
+      if (linkedQ && String(linkedQ.symbol || '').toUpperCase() === String(symbol || '').toUpperCase() && linkedQ.name) {
+        const qSig = String(linkedQ.signal || 'FLAT').toUpperCase();
+        const qPts = qSig === 'BUY' ? 16 : (qSig === 'SELL' ? -16 : (qSig === 'HOLD' ? 6 : 0));
+        enabledCnt++;
+        score += qPts;
+        votes.push({
+          key: 'quant_lab',
+          label: `量化實驗室：${linkedQ.name}`,
+          value: `${qSig}${linkedQ.sharpe != null ? ` · 夏普 ${linkedQ.sharpe}` : ''}`,
+          points: qPts,
+          signal: qPts > 0 ? 'BULL' : (qPts < 0 ? 'BEAR' : 'NEUTRAL'),
+          note: `已連結量化策略回測最新訊號 (${linkedQ.last_date || '最新'})`
+        });
+      }
+
       const normScore = enabledCnt > 0 ? Math.max(-100, Math.min(100, Math.round(score * (8 / enabledCnt)))) : 0;
       const th = Number(state.agentConfig.scoreThreshold || 25);
       const techSignal = normScore >= th ? 'BUY' : (normScore <= -th ? 'SELL' : 'HOLD');
@@ -5096,7 +5631,10 @@
               tech_switches: state.techSwitches,
               api_keys: state.aiKeys,
               model_options: state.modelOptions,
-              routing_policy: state.agentConfig.routingPolicy || 'AUTO'
+              routing_policy: state.agentConfig.routingPolicy || 'AUTO',
+              quant_lab_signal: (state.linkedQuantStrategy && String(state.linkedQuantStrategy.symbol || '').toUpperCase() === meta.symbol.toUpperCase())
+                ? state.linkedQuantStrategy
+                : null
             })
           });
           if (resp.ok) {
@@ -5112,7 +5650,7 @@
           showToast('實時偵測失敗', `無法取得 ${meta.symbol} ${meta.name} 最新真實股價，多 Agent 已中止操作。`, 'error');
           return null;
         }
-        report = evaluateV68ClientFallback(symbol, q, intendedSide, intendedPrice);
+        report = evaluateV01ClientFallback(symbol, q, intendedSide, intendedPrice);
       }
 
       // Sync freshly detected real-time price into local quote & order ticket
@@ -5217,7 +5755,7 @@
         </div>
         <div style="color:var(--ink-2);line-height:1.5;">
           • <strong>價量 Agent</strong>：${escapeHtml(pv.regime)}（量比 <span class="mono">${pv.volume_ratio}x</span>，VWAP乖離 <span class="mono">${pv.vwap_diff >= 0 ? '+' : ''}${pv.vwap_diff}%</span>）<br/>
-          • <strong>技術開關 (${tech.enabled_count}/${V68_TECH_SWITCH_DEFS.length})</strong>：評分 <strong class="mono">${tech.score}</strong>（${tech.signal}）<br/>
+          • <strong>技術開關 (${tech.enabled_count}/${V01_TECH_SWITCH_DEFS.length})</strong>：評分 <strong class="mono">${tech.score}</strong>（${tech.signal}）<br/>
           • <strong>最適模型切換</strong>：<span class="badge badge-blue" style="font-size:10px;padding:1px 6px;">${escapeHtml(router.selected_model_name)}</span><br/>
           <span style="color:var(--ink-3);font-size:11px;">路由依據：${escapeHtml(router.reason)}</span>
         </div>
@@ -5250,11 +5788,11 @@
       const votesMap = {};
       (state.lastAgentReport?.agents?.technical_strategy?.votes || []).forEach(v => { votesMap[v.key] = v; });
 
-      const enabledCount = V68_TECH_SWITCH_DEFS.filter(d => Boolean(state.techSwitches[d.key])).length;
+      const enabledCount = V01_TECH_SWITCH_DEFS.filter(d => Boolean(state.techSwitches[d.key])).length;
       if (cntEl) cntEl.textContent = String(enabledCount);
 
       if (!grid) return;
-      grid.innerHTML = V68_TECH_SWITCH_DEFS.map(def => {
+      grid.innerHTML = V01_TECH_SWITCH_DEFS.map(def => {
         const isOn = Boolean(state.techSwitches[def.key]);
         const v = votesMap[def.key];
         const voteHtml = v
@@ -5284,8 +5822,24 @@
       });
     }
 
+    function renderLinkedQuantBanner() {
+      const banner = document.getElementById('quantLinkStatusBanner');
+      const txt = document.getElementById('quantLinkStatusText');
+      if (!banner || !txt) return;
+      const lq = state.linkedQuantStrategy;
+      if (!lq || !lq.name) {
+        banner.classList.remove('on');
+        return;
+      }
+      banner.classList.add('on');
+      const sigBadge = lq.signal === 'BUY' ? 'badge-up' : (lq.signal === 'SELL' ? 'badge-down' : (lq.signal === 'HOLD' ? 'badge-amber' : 'badge-slate'));
+      const sigZh = { BUY: '買進訊號 BUY', SELL: '賣出訊號 SELL', HOLD: '多單持倉 HOLD', FLAT: '空手觀望 FLAT' }[lq.signal] || lq.signal;
+      txt.innerHTML = `🔗 <strong>已連結量化策略實驗室：</strong><span class="mono">${escapeHtml(lq.symbol)}</span> · <strong>${escapeHtml(lq.name)}</strong> <span class="badge ${sigBadge}" style="margin-left:4px;">${sigZh}</span> <span style="color:var(--ink-3);margin-left:6px;">夏普 ${lq.sharpe ?? '--'} · 勝率 ${lq.win_rate != null ? lq.win_rate + '%' : '--'} · 年化 ${lq.ann_ret != null ? lq.ann_ret + '%' : '--'}（${escapeHtml(lq.last_date || '最新日線')}）</span>`;
+    }
+
     function renderStrategyModalUI() {
       renderTechSwitchesUI();
+      renderLinkedQuantBanner();
       const rep = state.lastAgentReport;
       if (rep) {
         const pv = rep.agents.price_volume;
@@ -6379,6 +6933,21 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // =========================================================================
     // 11. NAVIGATION, FEATURE STUDIO MODAL & FEE DISCOUNT SYNC
     // =========================================================================
+    function switchStrategySubTab(subId = 'switches') {
+      document.querySelectorAll('[data-strat-sub]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.stratSub === subId);
+      });
+      document.querySelectorAll('.strat-sub-pane').forEach(p => {
+        p.classList.toggle('active', p.id === `stratSub-${subId}`);
+      });
+      if (subId === 'quantlab' && window.QLAB) {
+        window.QLAB.onEnterSubTab();
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
     function openFeatureModal(paneId = 'strategy') {
       const dropdown = document.getElementById('featureMenuDropdown');
       if (dropdown) dropdown.classList.remove('open');
@@ -6396,6 +6965,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       if (paneId === 'strategy') {
         renderStrategyModalUI();
+        if (window.QLAB && document.getElementById('stratSub-quantlab')?.classList.contains('active')) {
+          window.QLAB.onEnterSubTab();
+        }
       } else if (paneId === 'review') {
         populateReviewSymbolFilter();
         renderReviewDashboard();
@@ -6437,7 +7009,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       persistState();
 
       const fmtVal = val.toFixed(1);
-      ['orderFeeDiscountInput', 'reviewFeeDiscountInput', 'globalFeeDiscountInput'].forEach(id => {
+      ['orderFeeDiscountInput', 'reviewFeeDiscountInput', 'globalFeeDiscountInput', 'qlCfgDisc'].forEach(id => {
         const el = document.getElementById(id);
         if (el && (notifyClamp || document.activeElement !== el)) el.value = fmtVal;
       });
@@ -6449,10 +7021,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (rLbl) rLbl.textContent = fmtVal;
       const dLbl = document.getElementById('dcaFeeRateLabel');
       if (dLbl) dLbl.textContent = fmtVal;
+      const sLbl = document.getElementById('stratSubFeeLabel');
+      if (sLbl) sLbl.textContent = fmtVal;
       const eff = document.getElementById('globalFeeEffectiveRate');
       if (eff) eff.textContent = `實付費率：${(0.1425 * (val / 10)).toFixed(4)}%`;
 
       updateOrderSummary();
+      if (window.QLAB && typeof window.QLAB.syncGlobalFeeDiscount === 'function') {
+        window.QLAB.syncGlobalFeeDiscount(val);
+      }
       if (document.getElementById('studio-review')?.classList.contains('active')) {
         renderReviewDashboard();
       }
@@ -6885,10 +7462,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       });
 
       document.getElementById('btnTechPresetAll')?.addEventListener('click', () => {
-        V68_TECH_SWITCH_DEFS.forEach(d => { state.techSwitches[d.key] = true; });
+        V01_TECH_SWITCH_DEFS.forEach(d => { state.techSwitches[d.key] = true; });
         persistState();
         renderTechSwitchesUI();
-        showToast('已套用全指標開關', '10 大台股技術・籌碼・大盤強弱開關已全部啟用。', 'success');
+        showToast('已套用全指標開關', '10 大台股技術・籌碼・大盤強弱開關已全部啟用（v01）。', 'success');
       });
       document.getElementById('btnTechPresetMomentum')?.addEventListener('click', () => {
         state.techSwitches = { ma: true, macd: true, kdj: false, rsi: false, obv: true, bollinger: false, vwap: true, momentum: true, inst: true, rs: true };
@@ -6906,6 +7483,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         state.agentLogs = [];
         persistState();
         renderStrategyModalUI();
+      });
+
+      document.querySelectorAll('[data-strat-sub]').forEach(btn => {
+        btn.addEventListener('click', () => switchStrategySubTab(btn.dataset.stratSub));
+      });
+      document.getElementById('btnOpenQuantLabQuick')?.addEventListener('click', () => switchStrategySubTab('quantlab'));
+      document.getElementById('btnJumpLinkedQuant')?.addEventListener('click', () => {
+        switchStrategySubTab('quantlab');
+        if (window.QLAB && state.linkedQuantStrategy?.id && window.QLAB.hasData()) {
+          window.QLAB.openDetail(state.linkedQuantStrategy.id);
+        }
+      });
+      document.getElementById('btnUnlinkQuantStrategy')?.addEventListener('click', () => {
+        state.linkedQuantStrategy = null;
+        persistState();
+        renderLinkedQuantBanner();
+        if (window.QLAB && window.QLAB.hasData()) window.QLAB.renderDetail();
+        showToast('已取消量化策略連結', 'v01 多 Agent 決策將僅依 10 大技術開關與價量評估。', 'info');
       });
 
       // Signal Scanner & Portfolio
@@ -8018,6 +8613,1534 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     // =========================================================================
+    // 11.5 QUANT STRATEGY LAB (Alorse 30 Pine Strategies × TW Backtest × Risk Card)
+    // =========================================================================
+    const QLAB = (function () {
+      'use strict';
+      const $q = id => document.getElementById(id);
+      const isN = Number.isFinite;
+      const nan = n => new Array(n).fill(NaN);
+      const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+      const pct = (v, d = 1) => isN(v) ? (v >= 0 ? '+' : '') + (v * 100).toFixed(d) + '%' : '--';
+      const pctU = (v, d = 1) => isN(v) ? (v * 100).toFixed(d) + '%' : '--';
+      const num = (v, d = 2) => isN(v) ? v.toFixed(d) : (v === Infinity ? '∞' : '--');
+      const col = v => !isN(v) ? 'ql-mut' : v > 0 ? 'ql-up' : v < 0 ? 'ql-dn' : 'ql-mut';
+      const money = v => isN(v) ? Math.round(v).toLocaleString('zh-TW') : '--';
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const LS = {
+        get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+        set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      };
+
+      // ── QCORE: PineScript-aligned Indicators + 30 Strategies + Taiwan Backtest Engine + Risk Metrics ──
+      const QCORE = (function () {
+        function sma(a, n) {
+          const o = nan(a.length); let s = 0, bad = 0;
+          for (let i = 0; i < a.length; i++) {
+            const v = a[i]; if (isN(v)) s += v; else bad++;
+            if (i >= n) { const u = a[i - n]; if (isN(u)) s -= u; else bad--; }
+            if (i >= n - 1 && bad === 0) o[i] = s / n;
+          }
+          return o;
+        }
+        function smooth(a, n, alpha) {
+          const o = nan(a.length), s = sma(a, n); let prev = NaN;
+          for (let i = 0; i < a.length; i++) {
+            if (!isN(prev)) { if (isN(s[i])) { prev = s[i]; o[i] = prev; } }
+            else { const v = a[i]; if (isN(v)) prev = alpha * v + (1 - alpha) * prev; o[i] = prev; }
+          }
+          return o;
+        }
+        const ema = (a, n) => smooth(a, n, 2 / (n + 1));
+        const rma = (a, n) => smooth(a, n, 1 / n);
+        function roll(a, n, f) {
+          const o = nan(a.length);
+          for (let i = n - 1; i < a.length; i++) {
+            let ok = true; const w = new Array(n);
+            for (let j = 0; j < n; j++) { const v = a[i - n + 1 + j]; if (!isN(v)) { ok = false; break; } w[j] = v; }
+            if (ok) o[i] = f(w);
+          }
+          return o;
+        }
+        const stdev = (a, n) => roll(a, n, w => { let m = 0; for (const v of w) m += v; m /= w.length; let s = 0; for (const v of w) s += (v - m) ** 2; return Math.sqrt(s / w.length); });
+        const highest = (a, n) => roll(a, n, w => Math.max(...w));
+        const lowest = (a, n) => roll(a, n, w => Math.min(...w));
+        const linreg = (a, n) => roll(a, n, w => {
+          let sx = 0, sy = 0, sxy = 0, sxx = 0;
+          for (let j = 0; j < n; j++) { sx += j; sy += w[j]; sxy += j * w[j]; sxx += j * j; }
+          const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx || 1), icp = (sy - slope * sx) / n;
+          return icp + slope * (n - 1);
+        });
+        const barsAgoMax = (a, n) => roll(a, n, w => { let k = 0; for (let j = 1; j < w.length; j++) if (w[j] >= w[k]) k = j; return w.length - 1 - k; });
+        const change = a => a.map((v, i) => i ? v - a[i - 1] : NaN);
+        const sub = (a, b) => a.map((v, i) => v - (Array.isArray(b) ? b[i] : b));
+        const mul = (a, k) => a.map(v => v * k);
+        function trArr(D) { return D.c.map((_, i) => i ? Math.max(D.h[i] - D.l[i], Math.abs(D.h[i] - D.c[i - 1]), Math.abs(D.l[i] - D.c[i - 1])) : D.h[i] - D.l[i]); }
+        const atr = (D, n) => rma(trArr(D), n);
+        function rsi(a, n) {
+          const ch = change(a);
+          const up = rma(ch.map(v => isN(v) ? Math.max(v, 0) : NaN), n), dn = rma(ch.map(v => isN(v) ? -Math.min(v, 0) : NaN), n);
+          return up.map((u, i) => !isN(u) || !isN(dn[i]) ? NaN : dn[i] === 0 ? 100 : u === 0 ? 0 : 100 - 100 / (1 + u / dn[i]));
+        }
+        function macd(a, f, s, g) { const m = sub(ema(a, f), ema(a, s)); const sg = ema(m, g); return { m, s: sg, h: sub(m, sg) }; }
+        function bb(a, n, k) { const b = sma(a, n), d = stdev(a, n); return { b, u: b.map((v, i) => v + k * d[i]), l: b.map((v, i) => v - k * d[i]) }; }
+        function supertrend(D, factor, len) {
+          const n = D.c.length, A = atr(D, len), st = nan(n), dir = nan(n);
+          let pL = NaN, pU = NaN, pST = NaN;
+          for (let i = 0; i < n; i++) {
+            const src = (D.h[i] + D.l[i]) / 2;
+            if (!isN(A[i])) continue;
+            let L = src - factor * A[i], U = src + factor * A[i];
+            if (isN(pL)) L = (L > pL || D.c[i - 1] < pL) ? L : pL;
+            if (isN(pU)) U = (U < pU || D.c[i - 1] > pU) ? U : pU;
+            let d;
+            if (!isN(A[i - 1])) d = 1;
+            else if (pST === pU) d = D.c[i] > U ? -1 : 1;
+            else d = D.c[i] < L ? 1 : -1;
+            st[i] = d === -1 ? L : U; dir[i] = d;
+            pL = L; pU = U; pST = st[i];
+          }
+          return { st, dir };
+        }
+        function dmi(D, len, lensig) {
+          const n = D.c.length, pdm = nan(n), mdm = nan(n);
+          for (let i = 1; i < n; i++) {
+            const up = D.h[i] - D.h[i - 1], dn = D.l[i - 1] - D.l[i];
+            pdm[i] = up > dn && up > 0 ? up : 0; mdm[i] = dn > up && dn > 0 ? dn : 0;
+          }
+          const T = rma(trArr(D).map((v, i) => i ? v : NaN), len);
+          const plus = rma(pdm, len).map((v, i) => 100 * v / T[i]), minus = rma(mdm, len).map((v, i) => 100 * v / T[i]);
+          const adx = mul(rma(plus.map((p, i) => { const s = p + minus[i]; return Math.abs(p - minus[i]) / (s === 0 ? 1 : s); }), lensig), 100);
+          return { plus, minus, adx };
+        }
+        function stoch(src, h, l, n) { const H = highest(h, n), L = lowest(l, n); return src.map((v, i) => 100 * (v - L[i]) / (H[i] - L[i])); }
+        function heikin(D) {
+          const n = D.c.length, C = nan(n), O = nan(n), H = nan(n), L = nan(n);
+          for (let i = 0; i < n; i++) {
+            C[i] = (D.o[i] + D.h[i] + D.l[i] + D.c[i]) / 4;
+            O[i] = i ? (O[i - 1] + C[i - 1]) / 2 : (D.o[i] + D.c[i]) / 2;
+            H[i] = Math.max(D.h[i], O[i], C[i]); L[i] = Math.min(D.l[i], O[i], C[i]);
+          }
+          return { o: O, h: H, l: L, c: C };
+        }
+        function barssince(cond) { const o = nan(cond.length); let last = -1; cond.forEach((v, i) => { if (v) last = i; o[i] = last < 0 ? NaN : i - last; }); return o; }
+        const xo = (a, b, i) => { const b0 = Array.isArray(b) ? b[i] : b, b1 = Array.isArray(b) ? b[i - 1] : b; return i > 0 && a[i] > b0 && a[i - 1] <= b1; };
+        const xu = (a, b, i) => { const b0 = Array.isArray(b) ? b[i] : b, b1 = Array.isArray(b) ? b[i - 1] : b; return i > 0 && a[i] < b0 && a[i - 1] >= b1; };
+        const cross = (a, b, i) => xo(a, b, i) || xu(a, b, i);
+        function weekKey(ds) { const d = new Date(ds + 'T00:00:00Z'); const w = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - w); return d.toISOString().slice(0, 10); }
+        function htf(D, fn) {
+          const W = { d: [], o: [], h: [], l: [], c: [], v: [] }, wi = [];
+          D.d.forEach((ds, i) => {
+            const k = weekKey(ds), j = W.d.length - 1;
+            if (j < 0 || W.d[j] !== k) { W.d.push(k); W.o.push(D.o[i]); W.h.push(D.h[i]); W.l.push(D.l[i]); W.c.push(D.c[i]); W.v.push(D.v[i]); }
+            else { W.h[j] = Math.max(W.h[j], D.h[i]); W.l[j] = Math.min(W.l[j], D.l[i]); W.c[j] = D.c[i]; W.v[j] += D.v[i]; }
+            wi.push(W.d.length - 1);
+          });
+          const ws = fn(W);
+          return wi.map(k => k > 0 ? ws[k - 1] : NaN);
+        }
+
+        const B = n => new Array(n).fill(false);
+        const P = (k, label, def, min, max, step = 1) => ({ k, label, def, min, max, step });
+        const STRATS = [
+          // ─── 趨勢 (9) ───
+          { id: 'st', name: 'Supertrend', cat: 'trend', file: 'strategies/trend/Supertrend.pine', ver: 4,
+            desc: '自製 Supertrend（hl2、ATR 通道）翻多進場；停損設在進場前 N 根最低點，停利＝風險 × 倍數。',
+            params: [P('atr', 'ATR 週期', 10, 3, 40), P('mult', 'ATR 倍數', 3.7, 1, 8, 0.1), P('back', '停損回看根數', 2, 1, 20), P('tp', '停利倍數（R）', 1.5, 0.5, 6, 0.1)],
+            build(D, p) {
+              const n = D.c.length, A = atr(D, p.atr), up = nan(n), dn = nan(n), tr = nan(n), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) {
+                if (!isN(A[i])) continue;
+                const src = (D.h[i] + D.l[i]) / 2; let u = src - p.mult * A[i], d = src + p.mult * A[i];
+                const u1 = isN(up[i - 1]) ? up[i - 1] : u, d1 = isN(dn[i - 1]) ? dn[i - 1] : d;
+                up[i] = D.c[i - 1] > u1 ? Math.max(u, u1) : u; dn[i] = D.c[i - 1] < d1 ? Math.min(d, d1) : d;
+                let t = isN(tr[i - 1]) ? tr[i - 1] : 1; t = t === -1 && D.c[i] > d1 ? 1 : t === 1 && D.c[i] < u1 ? -1 : t; tr[i] = t;
+                E[i] = t === 1 && tr[i - 1] === -1;
+              }
+              const LL = lowest(D.l, p.back);
+              return { entry: E, exit: X, lines: { 'ST 多方': up.map((v, i) => tr[i] === 1 ? v : NaN), 'ST 空方': dn.map((v, i) => tr[i] === -1 ? v : NaN) },
+                onFill(pos) { const s = pos.sig; pos.sl = LL[s]; const ep = D.c[s]; pos.tp = ep + (ep - pos.sl) * p.tp; } };
+            } },
+          { id: 'dst', name: 'Double Supertrend', cat: 'trend', file: 'strategies/trend/Double Supertrend.pine', ver: 5,
+            desc: '快 Supertrend 在多方就進場，慢 Supertrend 翻空才出場，另有百分比停損。',
+            params: [P('a1', 'ST1 ATR', 10, 3, 40), P('f1', 'ST1 倍數', 3, 1, 8, 0.1), P('a2', 'ST2 ATR', 10, 3, 40), P('f2', 'ST2 倍數', 5, 1, 10, 0.1), P('sl', '停損 %', 10, 1, 30, 0.5)],
+            build(D, p) {
+              const n = D.c.length, s1 = supertrend(D, p.f1, p.a1), s2 = supertrend(D, p.f2, p.a2), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = s1.dir[i] < 0; X[i] = s2.dir[i] - s2.dir[i - 1] > 0; }
+              return { entry: E, exit: X, slPct: p.sl / 100, lines: { 'ST1': s1.st, 'ST2': s2.st } };
+            } },
+          { id: 'strsi', name: 'Supertrend + RSI', cat: 'trend', file: 'strategies/trend/Supertrend + RSI.pine', ver: 5,
+            desc: 'Supertrend 多方中、RSI 由下往上穿越 50 進場；RSI 超買或 Supertrend 翻空出場。',
+            params: [P('atr', 'ATR 週期', 10, 3, 40), P('f', '倍數', 3, 1, 8, 0.1), P('len', 'RSI 週期', 14, 2, 50), P('ob', '出場 RSI', 72, 55, 95)],
+            build(D, p) {
+              const n = D.c.length, s = supertrend(D, p.f, p.atr), r = rsi(D.c, p.len), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = s.dir[i] < 0 && r[i - 1] < 50 && r[i] > 50; X[i] = r[i] > p.ob || s.dir[i] - s.dir[i - 1] > 0; }
+              return { entry: E, exit: X, lines: { 'Supertrend': s.st } };
+            } },
+          { id: 'stema', name: 'Supertrend + EMA rebound', cat: 'trend', file: 'strategies/trend/Supertrend + EMA rebound [Alorse].pine', ver: 5,
+            desc: 'Supertrend 由空翻多進場、翻空出場（原策略的 EMA 回測加碼在不加碼設定下不會觸發）。',
+            params: [P('atr', 'ATR 週期', 10, 3, 40), P('f', '倍數', 3, 1, 8, 0.1)],
+            build(D, p) {
+              const n = D.c.length, s = supertrend(D, p.f, p.atr), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { const ch = s.dir[i] - s.dir[i - 1]; E[i] = ch < 0; X[i] = ch > 0; }
+              return { entry: E, exit: X, lines: { 'Supertrend': s.st } };
+            } },
+          { id: 'emaaway', name: 'EMA Moving away', cat: 'trend', file: 'strategies/trend/EMA Moving away Strategy [Alorse].pine', ver: 5,
+            desc: '收盤價跌離 EMA 超過 N%（且當根實體不大）就買，回到 EMA 之上賣出，另有停損。',
+            params: [P('len', 'EMA 週期', 55, 5, 200), P('away', '偏離 %', 2, 0.5, 15, 0.5), P('sl', '停損 %', 2, 0.5, 20, 0.5)],
+            build(D, p) {
+              const n = D.c.length, e = ema(D.c, p.len), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) { const lc = Math.abs((D.c[i] - D.o[i]) / D.o[i] * 100); E[i] = D.c[i] <= e[i] * (1 - p.away / 100) && lc < p.sl; X[i] = D.c[i] >= e[i]; }
+              return { entry: E, exit: X, slPct: p.sl / 100, lines: { ['EMA' + p.len]: e } };
+            } },
+          { id: 'macrossdmi', name: 'MA Cross + DMI', cat: 'trend', file: 'strategies/trend/MA Cross + DMI.pine', ver: 4,
+            desc: 'EMA 快線上穿慢線進場、下穿出場（原檔 DMI 條件未接到進出場）；停損可選。',
+            params: [P('f', '快 EMA', 10, 2, 60), P('s', '慢 EMA', 20, 5, 200), P('usesl', '啟用停損(1/0)', 0, 0, 1), P('sl', '停損 %', 10, 1, 30, 0.5)],
+            build(D, p) {
+              const n = D.c.length, a = ema(D.c, p.f), b = ema(D.c, p.s), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = xo(a, b, i); X[i] = xu(a, b, i); }
+              return { entry: E, exit: X, slPct: p.usesl ? p.sl / 100 : null, lines: { ['EMA' + p.f]: a, ['EMA' + p.s]: b } };
+            } },
+          { id: 'tendema', name: 'Tendency EMA + RSI', cat: 'trend', file: 'strategies/trend/Tendency EMA + RSI.pine', ver: 5,
+            desc: 'EMA10 上穿 EMA20、且在 EMA100 之上收紅 K 進場；RSI>70 或持有滿 N 根且獲利時出場。',
+            params: [P('a', 'EMA A', 10, 2, 60), P('b', 'EMA B', 20, 5, 120), P('c', 'EMA C（趨勢）', 100, 20, 300), P('len', 'RSI 週期', 14, 2, 50), P('xb', '持有根數', 24, 2, 120)],
+            build(D, p) {
+              const n = D.c.length, A = ema(D.c, p.a), Bb = ema(D.c, p.b), C = ema(D.c, p.c), r = rsi(D.c, p.len), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = xo(A, Bb, i) && A[i] > C[i] && D.c[i] > D.o[i]; X[i] = r[i] > 70; }
+              return { entry: E, exit: X, manage: (i, pos) => pos.bars >= p.xb && D.c[i] > D.o[pos.i0], lines: { ['EMA' + p.a]: A, ['EMA' + p.b]: Bb, ['EMA' + p.c]: C } };
+            } },
+          { id: 'ema3', name: '3 EMA/SMA + Cross', cat: 'trend', file: 'strategies/trend/3 EMA:SMA + Cross.pine', ver: 4,
+            desc: '快慢 EMA 黃金交叉後第 5～12 根內，價格回到均線之上收紅才進場；快線跌破中間線出場，移動停損＝近 2N 根最低。',
+            params: [P('f', '快 EMA', 10, 2, 60), P('s', '慢 EMA', 20, 5, 120), P('t', '趨勢 EMA', 100, 20, 300), P('back', '交叉回看根數', 12, 4, 40)],
+            build(D, p) {
+              const n = D.c.length, F = ema(D.c, p.f), S = ema(D.c, p.s), T = ema(D.c, p.t), M = ema(D.c, Math.round((p.f + p.s) / 2.4)), E = B(n), X = B(n);
+              const cu = F.map((_, i) => xo(F, S, i)), bs = barssince(F.map((_, i) => cross(F, S, i))), LL = lowest(D.l, p.back * 2);
+              for (let i = 1; i < n; i++) {
+                let was = false; for (let k = 1; k <= p.back; k++) if (cu[i - k]) was = true;
+                for (let k = 1; k <= 4; k++) if (cu[i - k]) was = false;
+                if (bs[i] <= 4) was = false;
+                const enter = F[i] >= S[i] && D.c[i] >= F[i] && F[i] >= D.l[i - 1] && D.c[i] >= T[i] && D.c[i] > D.o[i];
+                E[i] = was && enter; X[i] = xu(F, M, i);
+              }
+              return { entry: E, exit: X, trail: (i, pos) => { pos.sl = LL[i]; }, lines: { ['EMA' + p.f]: F, ['EMA' + p.s]: S, ['EMA' + p.t]: T } };
+            } },
+          { id: 'hassl', name: 'HA SSL Channel', cat: 'trend', file: 'strategies/trend/HA UnivLong&Short Futures.pine', ver: 5,
+            desc: '平均 K（Heikin Ashi）高低點 SMA 形成 SSL 通道，上軌翻上進場；原為期貨設定的小停損小停利，反向訊號也出場。',
+            params: [P('len', 'SSL 週期', 3, 2, 30), P('sl', '停損 %', 1, 0.2, 20, 0.1), P('tp', '停利 %', 0.3, 0.1, 30, 0.1)],
+            build(D, p) {
+              const n = D.c.length, H = heikin(D), sh = sma(H.h, p.len), sl = sma(H.l, p.len), up = nan(n), dn = nan(n), E = B(n), X = B(n);
+              let hl = NaN;
+              for (let i = 0; i < n; i++) { hl = H.c[i] > sh[i] ? 1 : H.c[i] < sl[i] ? -1 : hl; dn[i] = hl < 0 ? sh[i] : sl[i]; up[i] = hl < 0 ? sl[i] : sh[i]; }
+              for (let i = 1; i < n; i++) { E[i] = xo(up, dn, i); X[i] = xo(dn, up, i); }
+              return { entry: E, exit: X, slPct: p.sl / 100, tpPct: p.tp / 100, lines: { 'SSL 上': up, 'SSL 下': dn } };
+            } },
+          // ─── 動能 (13) ───
+          { id: 'ma2rsi', name: '2 EMA/SMA + RSI', cat: 'momentum', file: 'strategies/momentum/2 EMA:SMA + RSI.pine', ver: 4,
+            desc: '快 SMA 在慢 SMA 之上、前一根 RSI 落在 25～40 且收紅就進場；原檔以反向放空訊號平倉，這裡改為多單出場。',
+            params: [P('f', '快 SMA', 10, 2, 60), P('s', '慢 SMA', 30, 5, 200), P('len', 'RSI 週期', 8, 2, 30)],
+            build(D, p) {
+              const n = D.c.length, F = sma(D.c, p.f), S = sma(D.c, p.s), r = rsi(D.c, p.len), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) {
+                E[i] = F[i - 1] > S[i - 1] && r[i - 1] > 25 && r[i - 1] < 40 && D.c[i - 1] > D.o[i - 1];
+                X[i] = F[i - 1] < S[i - 1] && r[i - 1] < 75 && r[i - 1] > 60 && D.c[i - 1] < D.o[i - 1];
+              }
+              return { entry: E, exit: X, lines: { ['SMA' + p.f]: F, ['SMA' + p.s]: S } };
+            } },
+          { id: 'dmiwin', name: 'DMI Winner', cat: 'momentum', file: 'strategies/momentum/DMI Winner.pine', ver: 5,
+            desc: '+DI 連 3 根大於 -DI、ADX 高於關鍵值、站上 EMA 且收紅進場；出現反向條件出場。',
+            params: [P('len', 'DI 週期', 14, 5, 40), P('sig', 'ADX 平滑', 13, 3, 40), P('key', 'ADX 關鍵值', 23, 10, 50), P('ma', 'EMA 濾網', 55, 10, 200), P('usesl', '啟用停損(1/0)', 0, 0, 1), P('sl', '停損 %', 10, 1, 30, 0.5)],
+            build(D, p) {
+              const n = D.c.length, d = dmi(D, p.len, p.sig), m = ema(D.c, p.ma), E = B(n), X = B(n);
+              for (let i = 2; i < n; i++) {
+                const L = d.plus[i] > d.minus[i] && d.plus[i - 1] > d.minus[i - 1] && d.plus[i - 2] > d.minus[i - 2];
+                const S = d.plus[i] < d.minus[i] && d.plus[i - 1] < d.minus[i - 1] && d.plus[i - 2] < d.minus[i - 2];
+                E[i] = L && d.adx[i] > p.key && D.c[i] > m[i] && D.c[i] > D.o[i];
+                X[i] = S && d.adx[i] > p.key && D.c[i] < m[i] && D.c[i] < D.o[i];
+              }
+              return { entry: E, exit: X, slPct: p.usesl ? p.sl / 100 : null, lines: { ['EMA' + p.ma]: m } };
+            } },
+          { id: 'drsi', name: 'Double RSI', cat: 'momentum', file: 'strategies/momentum/Double RSI.pine', ver: 5,
+            desc: '日 RSI 上穿 30、且高時間框架 RSI < 35 進場，固定百分比停利。原 15 分鐘 MTF 改以週線近似。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('mtf', '週 RSI 上限', 35, 10, 60), P('tp', '停利 %', 1.2, 0.2, 30, 0.1)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.len), w = htf(D, W => rsi(W.c, p.len)), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = xo(r, 30, i) && w[i] < p.mtf; X[i] = xu(r, 70, i) && w[i] > 100 - p.mtf; }
+              return { entry: E, exit: X, tpPct: p.tp / 100, mtf: true };
+            } },
+          { id: 'macddmi', name: 'MACD + DMI', cat: 'momentum', file: 'strategies/momentum/MACD + DMI.pine', ver: 4,
+            desc: 'MACD 黃金交叉且 +DI>-DI 進場；MACD 死叉且 -DI 佔優、或跌破 Volatility Stop 出場。',
+            params: [P('len', 'vStop 週期', 20, 5, 60), P('f', 'vStop 倍數', 2, 0.5, 6, 0.25)],
+            build(D, p) {
+              const n = D.c.length, d = dmi(D, 14, 14), M = macd(D.c, 12, 26, 9), A = atr(D, p.len), T = trArr(D), vs = nan(n), E = B(n), X = B(n);
+              let mx = D.c[0], mn = D.c[0], upt = true, stop = 0;
+              for (let i = 0; i < n; i++) {
+                const src = D.c[i], am = isN(A[i]) ? A[i] * p.f : T[i];
+                mx = Math.max(mx, src); mn = Math.min(mn, src);
+                stop = upt ? Math.max(stop, mx - am) : Math.min(stop, mn + am); if (!isN(stop)) stop = src;
+                const prev = upt; upt = src - stop >= 0;
+                if (upt !== prev) { mx = src; mn = src; stop = upt ? mx - am : mn + am; }
+                vs[i] = stop;
+              }
+              for (let i = 1; i < n; i++) {
+                E[i] = xo(M.m, M.s, i) && d.plus[i] > d.minus[i];
+                X[i] = (xu(M.m, M.s, i) && d.plus[i] < d.minus[i]) || xu(D.c, vs, i);
+              }
+              return { entry: E, exit: X, lines: { 'vStop': vs } };
+            } },
+          { id: 'macdlong', name: 'MACD Long [Bunghole]', cat: 'momentum', file: 'strategies/momentum/MACD Long Strategy [Bunghole].pine', ver: 5,
+            desc: '近 10 根內 RSI 曾超賣，MACD 黃金交叉進場；近期曾超買且 MACD 死叉出場；寬停損停利。',
+            params: [P('os', '超賣', 30, 10, 45), P('ob', '超買', 70, 55, 90), P('look', '回看根數', 10, 2, 40), P('sl', '停損 %', 50, 2, 80), P('tp', '停利 %', 50, 2, 200)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, 14), M = macd(D.c, 12, 26, 9), so = barssince(r.map(v => v <= p.os)), sb = barssince(r.map(v => v >= p.ob)), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = so[i] <= p.look && xo(M.m, M.s, i); X[i] = sb[i] <= p.look && xu(M.m, M.s, i); }
+              return { entry: E, exit: X, slPct: p.sl / 100, tpPct: p.tp / 100 };
+            } },
+          { id: 'macdrsi', name: 'MACD + RSI', cat: 'momentum', file: 'strategies/momentum/MACD+RSI.pine', ver: 4,
+            desc: '前 N 根內 RSI 曾 ≤30，MACD 黃金交叉進場；前 N 根內 RSI 曾 ≥70 且死叉出場。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('back', '回看根數', 5, 1, 30), P('dn', '超賣', 30, 10, 45), P('up', '超買', 70, 55, 90), P('sl', '停損 %', 99, 1, 99)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.len), M = macd(D.c, 12, 26, 9), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) {
+                let wd = false, wu = false; for (let k = 1; k <= p.back; k++) { if (r[i - k] <= p.dn) wd = true; if (r[i - k] >= p.up) wu = true; }
+                E[i] = xo(M.m, M.s, i) && wd; X[i] = xu(M.m, M.s, i) && wu;
+              }
+              return { entry: E, exit: X, slPct: p.sl / 100 };
+            } },
+          { id: 'qqe', name: 'QQE signals', cat: 'momentum', file: 'strategies/momentum/QQE signals.pine', ver: 4,
+            desc: 'QQE（平滑 RSI ± 動態 ATR 帶）：RSI 站上快速追蹤線的第一根進場，跌破的第一根出場。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('sf', 'RSI 平滑', 5, 1, 20), P('q', 'QQE 係數', 4.238, 1, 8, 0.1)],
+            build(D, p) {
+              const n = D.c.length, W = p.len * 2 - 1, R = ema(rsi(D.c, p.len), p.sf), ar = R.map((v, i) => i ? Math.abs(R[i - 1] - v) : NaN);
+              const dar = mul(ema(ema(ar, W), W), p.q), lb = nan(n), sb = nan(n), tr = nan(n), TL = nan(n), E = B(n), X = B(n);
+              let cl = 0, cs = 0;
+              for (let i = 0; i < n; i++) {
+                const nl = R[i] - dar[i], ns = R[i] + dar[i];
+                lb[i] = i && R[i - 1] > lb[i - 1] && R[i] > lb[i - 1] ? Math.max(lb[i - 1], nl) : nl;
+                sb[i] = i && R[i - 1] < sb[i - 1] && R[i] < sb[i - 1] ? Math.min(sb[i - 1], ns) : ns;
+                const c1 = i > 1 && ((lb[i - 1] > R[i] && lb[i - 2] <= R[i - 1]) || (lb[i - 1] < R[i] && lb[i - 2] >= R[i - 1]));
+                const c0 = i > 1 && ((R[i] > sb[i - 1] && R[i - 1] <= sb[i - 2]) || (R[i] < sb[i - 1] && R[i - 1] >= sb[i - 2]));
+                tr[i] = c0 ? 1 : c1 ? -1 : (isN(tr[i - 1]) ? tr[i - 1] : 1);
+                TL[i] = tr[i] === 1 ? lb[i] : sb[i];
+                cl = TL[i] < R[i] ? cl + 1 : 0; cs = TL[i] > R[i] ? cs + 1 : 0;
+                E[i] = cl === 1 && isN(TL[i - 1]); X[i] = cs === 1 && isN(TL[i - 1]);
+              }
+              return { entry: E, exit: X };
+            } },
+          { id: 'rsi1200', name: 'RSI + 1200', cat: 'momentum', file: 'strategies/momentum/RSI + 1200.pine', ver: 5,
+            desc: '價格在長 EMA 之上 1% 以上、RSI 上穿超賣線進場；RSI 超買或貼近 EMA 連 3 黑 K 出場，另有停損。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('ob', '超買', 72, 55, 95), P('os', '超賣', 28, 5, 45), P('ema', 'EMA 週期', 150, 20, 400), P('sl', '停損 %', 10, 1, 30, 0.5)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.len), e = ema(D.c, p.ema), E = B(n), X = B(n);
+              for (let i = 2; i < n; i++) {
+                E[i] = D.c[i] > e[i] && xo(r, p.os, i) && D.c[i] > e[i] * 1.01;
+                const five = D.c[i] > e[i] && D.c[i] < e[i] * 1.02 && D.c[i] < D.o[i] && D.c[i - 1] < D.o[i - 1] && D.c[i - 2] < D.o[i - 2];
+                X[i] = r[i] > p.ob || five;
+              }
+              return { entry: E, exit: X, slPct: p.sl / 100, lines: { ['EMA' + p.ema]: e } };
+            } },
+          { id: 'rsiema', name: 'RSI + EMA', cat: 'momentum', file: 'strategies/momentum/RSI + EMA.pine', ver: 5,
+            desc: '長期多頭（EMA150 > EMA600）中 RSI 跌破超賣就買，RSI 超買賣出。需要長資料。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('ob', '超買', 70, 55, 95), P('os', '超賣', 30, 5, 45), P('m1', 'EMA 1', 150, 10, 400), P('m2', 'EMA 2', 600, 50, 1200, 10)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.len), a = ema(D.c, p.m1), b = ema(D.c, p.m2), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) { E[i] = r[i] < p.os && a[i] > b[i]; X[i] = r[i] > p.ob; }
+              return { entry: E, exit: X, lines: { ['EMA' + p.m1]: a, ['EMA' + p.m2]: b } };
+            } },
+          { id: 'mtfrsi', name: 'MTF RSI', cat: 'momentum', file: 'strategies/MTF RSI.pine', ver: 5,
+            desc: '價格在超長 EMA 之上且 RSI 超賣進場；RSI 超買或跌破 EMA 出場。EMA900 在日線約 3.6 年。',
+            params: [P('len', 'RSI 週期', 14, 2, 50), P('ob', '超買', 70, 55, 95), P('os', '超賣', 30, 5, 45), P('ma', 'EMA 週期', 900, 20, 1200, 10)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.len), e = ema(D.c, p.ma), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) { E[i] = D.c[i] > e[i] && r[i] < p.os; X[i] = r[i] > p.ob || D.c[i] < e[i]; }
+              return { entry: E, exit: X, lines: { ['EMA' + p.ma]: e } };
+            } },
+          { id: 'stochst', name: 'StochRSI + Supertrend', cat: 'momentum', file: 'strategies/momentum/StochRSI + Supertrend Strategy.pine', ver: 4,
+            desc: '站上 EMA200、Supertrend 多方、StochRSI 在 20 以下黃金交叉進場；80 以上死叉出場。',
+            params: [P('k', 'K 平滑', 3, 1, 10), P('d', 'D 平滑', 3, 1, 10), P('rl', 'RSI 週期', 14, 2, 50), P('sl', 'Stoch 週期', 14, 2, 50), P('ma', '趨勢 EMA', 200, 20, 400), P('atr', 'ST ATR', 11, 3, 40), P('f', 'ST 倍數', 2, 1, 8, 0.1)],
+            build(D, p) {
+              const n = D.c.length, r = rsi(D.c, p.rl), K = sma(stoch(r, r, r, p.sl), p.k), Dd = sma(K, p.d), m = ema(D.c, p.ma), s = supertrend(D, p.f, p.atr), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = D.c[i] > m[i] && K[i] < 20 && xo(K, Dd, i) && s.dir[i] < 0; X[i] = K[i] > 80 && xu(K, Dd, i); }
+              return { entry: E, exit: X, lines: { ['EMA' + p.ma]: m, 'Supertrend': s.st } };
+            } },
+          { id: 'ttm', name: 'TTM Squeeze', cat: 'momentum', file: 'strategies/momentum/TTM Squeeze.pine', ver: 5,
+            desc: '動能線在零軸下方轉強、且 RSI 上穿 30 進場，固定百分比停利；反向條件出場。',
+            params: [P('len', '動能週期', 20, 5, 60), P('rl', 'RSI 週期', 14, 2, 50), P('tp', '停利 %', 1.2, 0.2, 30, 0.1)],
+            build(D, p) {
+              const n = D.c.length, H = highest(D.h, p.len), L = lowest(D.l, p.len), S = sma(D.c, p.len);
+              const osc = linreg(D.c.map((c, i) => c - ((H[i] + L[i]) / 2 + S[i]) / 2), p.len), r = rsi(D.c, p.rl), E = B(n), X = B(n);
+              for (let i = 2; i < n; i++) {
+                E[i] = osc[i] < 0 && osc[i - 1] < osc[i] && osc[i - 2] < osc[i] && xo(r, 30, i);
+                X[i] = osc[i] > 0 && osc[i - 1] > osc[i] && osc[i - 2] > osc[i] && xu(r, 70, i);
+              }
+              return { entry: E, exit: X, tpPct: p.tp / 100 };
+            } },
+          { id: 'wvf', name: 'Williams Vix Fix', cat: 'momentum', file: 'strategies/momentum/Williams Vix Fix.pine', ver: 4,
+            desc: '恐慌指標 WVF 連兩根爆量（超過布林上緣或區間高百分位）且收在布林下軌之下進場，收上布林上軌出場。',
+            params: [P('bbl', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1), P('pd', 'WVF 回看', 20, 5, 60), P('lb', '百分位回看', 50, 10, 200), P('ph', '高百分位 %', 85, 50, 100)],
+            build(D, p) {
+              const n = D.c.length, bnd = bb(D.c, p.bbl, p.mult), hc = highest(D.c, p.pd);
+              const w = D.l.map((l, i) => (hc[i] - l) / hc[i] * 100), sd = stdev(w, p.bbl), mid = sma(w, p.bbl), ub = mid.map((v, i) => v + p.mult * sd[i]), rh = mul(highest(w, p.lb), p.ph / 100);
+              const hot = w.map((v, i) => v >= ub[i] || v >= rh[i]), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = hot[i] && hot[i - 1] && D.c[i] < bnd.l[i]; X[i] = D.c[i] > bnd.u[i]; }
+              return { entry: E, exit: X, lines: { 'BB 上': bnd.u, 'BB 下': bnd.l } };
+            } },
+          // ─── 均值回歸 (6) ───
+          { id: 'bbaroon', name: 'BB + Aroon', cat: 'meanrev', file: 'strategies/mean-reversion/BB + Aroon.pine', ver: 5,
+            desc: '收盤跌破布林下軌、但 Aroon Up 仍高（強勢中的回檔）進場；跌破上軌或 Aroon 轉弱出場。',
+            params: [P('bbl', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1), P('ar', 'Aroon 週期', 288, 10, 400), P('conf', '進場 Aroon', 90, 50, 100), P('stop', '出場 Aroon', 70, 10, 95)],
+            build(D, p) {
+              const n = D.c.length, b = bb(D.c, p.bbl, p.mult), ago = barsAgoMax(D.h, p.ar + 1), au = ago.map(a => 100 * (p.ar - a) / p.ar), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = xu(D.c, b.l, i) && au[i] > p.conf; X[i] = xu(D.c, b.u, i) || au[i] < p.stop; }
+              return { entry: E, exit: X, lines: { 'BB 上': b.u, 'BB 中': b.b, 'BB 下': b.l } };
+            } },
+          { id: 'bbwin', name: 'BB Winner LITE', cat: 'meanrev', file: 'strategies/mean-reversion/BB Winner LITE.pine', ver: 4,
+            desc: 'K 棒下方 30% 落在布林下軌之外、但實體多半在軌內（下影刺穿）進場；K 棒上方 30% 刺出上軌出場。',
+            params: [P('len', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1), P('per', 'K 棒刺穿 %', 30, 5, 90)],
+            build(D, p) {
+              const n = D.c.length, b = bb(D.c, p.len, p.mult), k = p.per / 100, E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) {
+                const cs = D.h[i] - D.l[i], body = Math.abs(D.c[i] - D.o[i]);
+                E[i] = (cs * k + D.l[i]) < b.l[i] && !(D.l[i] + body * 0.6 < b.l[i]);
+                X[i] = (D.h[i] - cs * k) > b.u[i];
+              }
+              return { entry: E, exit: X, lines: { 'BB 上': b.u, 'BB 中': b.b, 'BB 下': b.l } };
+            } },
+          { id: 'bbbreak', name: 'Bollinger Breakout [kodify]', cat: 'meanrev', file: 'strategies/mean-reversion/Bollinger Breakout [kodify].pine', ver: 4,
+            desc: '收盤突破長週期（350）布林上軌 2.5σ 進場，跌回中線出場。屬突破型策略。',
+            params: [P('len', 'SMA/σ 週期', 350, 20, 500, 5), P('k', '上軌倍數', 2.5, 0.5, 4, 0.1)],
+            build(D, p) {
+              const n = D.c.length, m = sma(D.c, p.len), s = stdev(D.c, p.len), ub = m.map((v, i) => v + s[i] * p.k), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) { E[i] = xo(D.c, ub, i); X[i] = xu(D.c, m, i); }
+              return { entry: E, exit: X, lines: { ['SMA' + p.len]: m, '上軌': ub } };
+            } },
+          { id: 'exceed', name: 'Exceeded candle', cat: 'meanrev', file: 'strategies/mean-reversion/Exceeded candle.pine', ver: 4,
+            desc: '布林中線以下出現「紅 K 吞噬前一根黑 K」，且前兩根不是連黑，進場；收上布林上軌出場。',
+            params: [P('len', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1)],
+            build(D, p) {
+              const n = D.c.length, b = bb(D.c, p.len, p.mult), E = B(n), X = B(n), { o, c } = D;
+              for (let i = 3; i < n; i++) {
+                const g = c[i - 1] < o[i - 1] && c[i] > o[i] && c[i] > o[i - 1], r3 = c[i - 2] < o[i - 2] && c[i - 3] < o[i - 3];
+                E[i] = g && c[i] < b.b[i] && !r3; X[i] = c[i] > b.u[i];
+              }
+              return { entry: E, exit: X, lines: { 'BB 上': b.u, 'BB 中': b.b, 'BB 下': b.l } };
+            } },
+          { id: 'bbdiv', name: 'BB Divergence', cat: 'meanrev', file: 'strategies/mean-reversion/BB Divergence.pine', ver: 4,
+            desc: '布林通道開口擴張、收紅且 K 棒大半站在上軌之外（噴出）進場；跌回中線出場。',
+            params: [P('len', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1), P('per', 'K 棒在軌外 %', 30, 5, 90)],
+            build(D, p) {
+              const n = D.c.length, b = bb(D.c, p.len, p.mult), E = B(n), X = B(n);
+              for (let i = 1; i < n; i++) {
+                const buy = D.c[i] > b.u[i] && b.u[i] > b.u[i - 1] && b.l[i] < b.l[i - 1] && D.c[i] > D.o[i];
+                const zone = D.h[i] - (D.h[i] - D.l[i]) * ((100 - p.per) / 100);
+                E[i] = buy && zone > b.u[i]; X[i] = D.c[i] < b.b[i];
+              }
+              return { entry: E, exit: X, lines: { 'BB 上': b.u, 'BB 中': b.b, 'BB 下': b.l } };
+            } },
+          { id: 'multibb', name: 'Multi BB', cat: 'meanrev', file: 'strategies/mean-reversion/Multi BB.pine', ver: 4,
+            desc: '日線與高時間框架布林下軌的平均值之下買進，收上日線上軌賣出。原 15 分鐘 MTF 改以週線近似。',
+            params: [P('len', '布林週期', 20, 5, 60), P('mult', '標準差', 2, 1, 4, 0.1)],
+            build(D, p) {
+              const n = D.c.length, b = bb(D.c, p.len, p.mult), wl = htf(D, W => bb(W.c, p.len, p.mult).l), av = b.l.map((v, i) => (v + wl[i]) / 2), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) { E[i] = D.c[i] < av[i]; X[i] = D.c[i] > b.u[i]; }
+              return { entry: E, exit: X, mtf: true, lines: { 'BB 上': b.u, '平均下軌': av } };
+            } },
+          // ─── 其他 (2) ───
+          { id: 'fullcandle', name: 'Full Candle', cat: 'other', file: 'strategies/other/Full Candle.pine', ver: 5,
+            desc: '站上 EMA10 的「光頭紅 K」（上影線 ≤ K 長 5%）進場；收紅且高於進場價 0.2% 就出場。',
+            params: [P('len', 'EMA 週期', 10, 2, 60), P('shadow', '影線上限 %', 5, 0, 30, 0.5), P('gain', '出場門檻 %', 0.2, 0, 10, 0.1)],
+            build(D, p) {
+              const n = D.c.length, e = ema(D.c, p.len), E = B(n), X = B(n);
+              for (let i = 0; i < n; i++) {
+                const cs = D.h[i] - D.l[i], sh = D.c[i] > D.o[i] ? D.h[i] - D.c[i] : D.c[i] - D.l[i];
+                E[i] = D.c[i] > D.o[i] && D.c[i] > e[i] && cs > 0 && sh * 100 / cs <= p.shadow;
+              }
+              return { entry: E, exit: X, manage: (i, pos) => D.c[i] > D.o[pos.i0] * (1 + p.gain / 100) && D.c[i] > D.o[i], lines: { ['EMA' + p.len]: e } };
+            } },
+          { id: 'improv', name: 'Improvising', cat: 'other', file: 'strategies/other/Improvising [Alorse].pine', ver: 5,
+            desc: '多頭吞噬 K、兩根都在 EMA10 之上、RSI<65 且 MACD 走升進場；停利停損＋過半停利後的保本停損＋連 3 漲出場。',
+            params: [P('len', 'EMA 週期', 10, 2, 60), P('tp', '停利 %', 1.2, 0.2, 30, 0.1), P('sl', '停損 %', 1.8, 0.2, 30, 0.1)],
+            build(D, p) {
+              const n = D.c.length, e = ema(D.c, p.len), r = rsi(D.c, 14), M = macd(D.c, 12, 26, 9), E = B(n), X = B(n), c = D.c;
+              for (let i = 1; i < n; i++) E[i] = c[i - 1] < D.o[i - 1] && c[i] > D.o[i - 1] && c[i] > e[i] && c[i - 1] > e[i] && r[i] < 65 && M.m[i] > M.m[i - 1];
+              return { entry: E, exit: X, slPct: p.sl / 100, tpPct: p.tp / 100,
+                manage(i, pos) {
+                  const avgTP = (pos.px * (1 + p.tp / 100) + D.o[pos.i0]) / 2, ls = pos.px * (1 - p.sl / 100);
+                  pos.tl = c[i] > avgTP ? pos.px * 1.002 : Math.max(isN(pos.tl) ? pos.tl : -Infinity, ls);
+                  const ex2 = i > 2 && c[i] > c[i - 1] && c[i - 1] > c[i - 2] && c[i - 2] > c[i - 3] && c[i] > pos.px * 1.004;
+                  return c[i] < pos.tl || ex2;
+                }, lines: { ['EMA' + p.len]: e } };
+            } },
+        ];
+        const CATS = { trend: ['趨勢', '#0284c7'], momentum: ['動能', '#7c3aed'], meanrev: ['均值回歸', '#d97706'], other: ['其他', '#64748b'], bh: ['基準', '#b45309'] };
+        const defaults = s => Object.fromEntries(s.params.map(x => [x.k, x.def]));
+
+        const EPS = 1e-9;
+        function tickOf(p, etf) {
+          if (etf) return p < 50 ? 0.01 : 0.05;
+          return p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5;
+        }
+        const fix = v => Math.round(v * 100) / 100;
+        function tickUp(p, etf) { const t = tickOf(p, etf); return fix(Math.ceil(p / t - EPS) * t); }
+        function tickDn(p, etf) { const t = tickOf(p, etf); return fix(Math.floor(p / t + EPS) * t); }
+        function limits(D, i, cfg) {
+          if (!cfg.limit || i === 0) return { up: Infinity, dn: -Infinity };
+          const pc = D.c[i - 1];
+          return { up: tickDn(pc * 1.1, cfg.etf), dn: tickUp(pc * 0.9, cfg.etf) };
+        }
+        function feeOf(amt, cfg) { return amt > 0 ? Math.max(cfg.minFee, Math.floor(amt * cfg.fee)) : 0; }
+        function sizeOrder(budget, px, cfg) {
+          const per = px * (1 + cfg.fee);
+          let total = Math.floor(budget / per);
+          if (cfg.unit === 'lot') total = Math.floor(total / 1000) * 1000;
+          const lots = Math.floor(total / 1000) * 1000, odd = cfg.unit === 'mixed' ? total - lots : 0;
+          const orders = cfg.unit === 'odd' ? [total] : cfg.unit === 'lot' ? [lots] : [lots, odd];
+          const fee = orders.reduce((s, q) => s + feeOf(px * q, cfg), 0);
+          if (total > 0 && px * total + fee > budget) return sizeOrder(budget - fee * 0.5 - px, px, cfg);
+          return { qty: total, fee, orders };
+        }
+        function backtest(D, strat, params, cfg) {
+          const n = D.c.length, p = Object.assign(defaults(strat), params || {});
+          const S = strat.build(D, p);
+          let cash = cfg.cash, pos = null, pend = null, fees = 0, inBars = 0, divIn = 0, blocked = 0;
+          const eq = new Array(n), trades = [], marks = [];
+          const bpx = (i, raw) => { const L = limits(D, i, cfg); let v = Math.min(raw * (1 + cfg.slip), L.up); return cfg.tick ? tickUp(v, cfg.etf) : v; };
+          const spx = (i, raw) => { const L = limits(D, i, cfg); let v = Math.max(raw * (1 - cfg.slip), L.dn); return cfg.tick ? tickDn(v, cfg.etf) : v; };
+          const locked = i => { const L = limits(D, i, cfg); const one = Math.abs(D.h[i] - D.l[i]) < EPS; return { up: one && D.h[i] >= L.up - EPS, dn: one && D.l[i] <= L.dn + EPS, L }; };
+          const buy = (i, raw, sig) => {
+            const px = bpx(i, raw), o = sizeOrder(cash * cfg.pct, px, cfg);
+            if (o.qty <= 0) return false;
+            cash -= px * o.qty + o.fee; fees += o.fee;
+            pos = { i0: i, sig, px, qty: o.qty, cost: px * o.qty + o.fee, bars: 0, sl: NaN, tp: NaN, div: 0 };
+            if (S.slPct) pos.sl = px * (1 - S.slPct);
+            if (S.tpPct) pos.tp = px * (1 + S.tpPct);
+            if (S.onFill) S.onFill(pos, i);
+            marks.push({ i, t: 'B', px }); return true;
+          };
+          const sell = (i, raw, why) => {
+            const px = spx(i, raw), g = px * pos.qty;
+            const lots = Math.floor(pos.qty / 1000) * 1000, fee = cfg.unit === 'mixed' ? feeOf(px * lots, cfg) + feeOf(px * (pos.qty - lots), cfg) : feeOf(g, cfg);
+            const tax = Math.floor(g * cfg.tax);
+            cash += g - fee - tax; fees += fee + tax;
+            const pnl = g - fee - tax - pos.cost + pos.div;
+            trades.push({ in: pos.i0, out: i, din: D.d[pos.i0], dout: D.d[i], pin: pos.px, pout: px, qty: pos.qty, pnl, ret: pnl / pos.cost, bars: i - pos.i0, why, div: pos.div });
+            marks.push({ i, t: 'S', px, why }); pos = null;
+          };
+          if (S.at0) buy(0, D.o[0], 0);
+          for (let i = 0; i < n; i++) {
+            const lk = locked(i);
+            if (pos && cfg.divs && pos.i0 < i && cfg.divs.has(D.d[i])) {
+              let amt = Math.floor(cfg.divs.get(D.d[i]) * pos.qty);
+              if (cfg.nhi && amt >= 20000) amt -= Math.round(amt * 0.0211);
+              cash += amt; pos.div += amt; divIn += amt; marks.push({ i, t: 'D', px: D.o[i], amt });
+            }
+            let keep = null;
+            if (pend && cfg.fill === 'open') {
+              if (pend.t === 'b' && !pos) { if (lk.up) { blocked++; keep = pend; } else if (!buy(i, D.o[i], pend.i)) keep = null; }
+              else if (pend.t === 'x' && pos) { if (lk.dn) { blocked++; keep = pend; } else sell(i, D.o[i], pend.why); }
+            }
+            pend = keep;
+            if (pos && !(cfg.fill === 'close' && pos.i0 === i) && !(pend && pend.t === 'x')) {
+              if (isN(pos.sl) && D.l[i] <= pos.sl) { if (lk.dn) blocked++; else sell(i, Math.min(D.o[i], pos.sl), '停損'); }
+              else if (isN(pos.tp) && D.h[i] >= pos.tp) sell(i, Math.max(D.o[i], pos.tp), '停利');
+            }
+            if (pos) {
+              pos.bars++; inBars++;
+              if (!pend) {
+                let ex = S.exit[i], why = '訊號出場';
+                if (!ex && S.manage && S.manage(i, pos)) ex = true;
+                if (ex) {
+                  if (cfg.fill === 'close') { if (D.c[i] <= lk.L.dn + EPS) { blocked++; pend = { t: 'x', why }; } else sell(i, D.c[i], why); }
+                  else if (i < n - 1) pend = { t: 'x', why };
+                } else if (S.trail) S.trail(i, pos);
+              }
+            } else if (!pend && S.entry[i] && !(cfg.fill === 'close' && trades.length && trades[trades.length - 1].out === i)) {
+              if (cfg.fill === 'close') { if (D.c[i] >= lk.L.up - EPS) blocked++; else buy(i, D.c[i], i); }
+              else if (i < n - 1) pend = { t: 'b', i };
+            }
+            if (pend && cfg.fill === 'close' && pend.t === 'x' && pos && i > pos.i0 && D.c[i] > lk.L.dn + EPS && pend.i0 !== i) { sell(i, D.c[i], pend.why); pend = null; }
+            if (pend) pend.i0 = i;
+            eq[i] = cash + (pos ? pos.qty * D.c[i] : 0);
+          }
+          const open = pos ? { in: pos.i0, din: D.d[pos.i0], pin: pos.px, qty: pos.qty, last: D.c[n - 1], div: pos.div, ret: (pos.qty * D.c[n - 1] * (1 - cfg.fee - cfg.tax) - pos.cost + pos.div) / pos.cost, bars: n - 1 - pos.i0, sl: pos.sl, tp: pos.tp } : null;
+          // Latest actionable bar signal for Multi-Agent integration
+          const lastIdx = n - 1;
+          let lastSignal = 'FLAT';
+          if (S.entry[lastIdx]) lastSignal = 'BUY';
+          else if (S.exit[lastIdx] || (trades.length && trades[trades.length - 1].out === lastIdx)) lastSignal = 'SELL';
+          else if (open) lastSignal = 'HOLD';
+          return { eq, trades, marks, open, fees, divIn, blocked, exposure: inBars / n, lines: S.lines || {}, params: p, mtf: !!S.mtf, lastSignal };
+        }
+        const BH = { id: 'bh', name: '買進持有', cat: 'bh', params: [], build: D => ({ entry: new Array(D.c.length).fill(false), exit: new Array(D.c.length).fill(false), at0: true }) };
+        const buyHold = (D, cfg) => backtest(D, BH, {}, cfg);
+
+        const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+        const std = a => { const m = mean(a); return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / (a.length - 1)); };
+        const cov = (a, b) => { const ma = mean(a), mb = mean(b); let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - ma) * (b[i] - mb); return s / (a.length - 1); };
+        const corr = (a, b) => cov(a, b) / (std(a) * std(b));
+        const rets = rows => rows.slice(1).map((x, i) => ({ d: x.d, r: x.c / rows[i].c - 1 })).filter(x => isN(x.r));
+        function riskCalc(rows, bench, rfY = 0.015) {
+          const R = rets(rows); if (R.length < 40) return null;
+          const r = R.map(x => x.r), n = r.length, rf = rfY / 252;
+          const annRet = Math.pow(rows[rows.length - 1].c / rows[0].c, 252 / n) - 1;
+          const sd = std(r), annVol = sd * Math.sqrt(252);
+          const sharpe = sd ? (mean(r) - rf) / sd * Math.sqrt(252) : null;
+          const dd = Math.sqrt(mean(r.map(x => Math.min(0, x - rf) ** 2)));
+          const sortino = dd ? (mean(r) - rf) / dd * Math.sqrt(252) : null;
+          let peak = rows[0].c, pd = rows[0].d, mdd = 0, mddPeak = pd, mddTrough = pd, longest = 0, uwStart = null; const uw = [];
+          rows.forEach((x, i) => {
+            if (x.c >= peak) { if (uwStart != null) longest = Math.max(longest, i - uwStart); uwStart = null; peak = x.c; pd = x.d; }
+            else if (uwStart == null) uwStart = i;
+            const v = x.c / peak - 1; uw.push(v); if (v < mdd) { mdd = v; mddPeak = pd; mddTrough = x.d; }
+          });
+          if (uwStart != null) longest = Math.max(longest, rows.length - uwStart);
+          const sorted = [...r].sort((a, b) => a - b), k = Math.floor(n * 0.05);
+          const var95 = sorted[k], cvar95 = mean(sorted.slice(0, Math.max(1, k)));
+          let beta = null, rho = null, alpha = null;
+          if (bench) {
+            const bm = new Map(rets(bench).map(x => [x.d, x.r])), a = [], b = [];
+            R.forEach(x => { if (bm.has(x.d)) { a.push(x.r); b.push(bm.get(x.d)); } });
+            if (a.length > 30 && std(b) > 0) { beta = cov(a, b) / (std(b) ** 2); rho = std(a) > 0 ? corr(a, b) : 0; alpha = (mean(a) - rf - beta * (mean(b) - rf)) * 252; }
+          }
+          return { n, annRet, annVol, sharpe, sortino, mdd, mddPeak, mddTrough, curDD: uw[uw.length - 1], var95, cvar95, beta, rho, alpha,
+            up: r.filter(x => x > 0).length / n, calmar: mdd < 0 ? annRet / Math.abs(mdd) : null, uw, longestUW: longest, from: rows[0].d, to: rows[rows.length - 1].d,
+            total: rows[rows.length - 1].c / rows[0].c - 1 };
+        }
+        function tradeStats(res) {
+          const T = res.trades, w = T.filter(t => t.pnl > 0), l = T.filter(t => t.pnl <= 0);
+          const gw = w.reduce((s, t) => s + t.pnl, 0), gl = -l.reduce((s, t) => s + t.pnl, 0);
+          let streak = 0, maxL = 0; T.forEach(t => { if (t.pnl <= 0) { streak++; maxL = Math.max(maxL, streak); } else streak = 0; });
+          return { n: T.length, win: T.length ? w.length / T.length : null, pf: gl > 0 ? gw / gl : (gw > 0 ? Infinity : null),
+            avgW: w.length ? mean(w.map(t => t.ret)) : null, avgL: l.length ? mean(l.map(t => t.ret)) : null,
+            exp: T.length ? mean(T.map(t => t.ret)) : null, hold: T.length ? mean(T.map(t => t.bars)) : null, maxL,
+            best: T.length ? Math.max(...T.map(t => t.ret)) : null, worst: T.length ? Math.min(...T.map(t => t.ret)) : null,
+            exposure: res.exposure, fees: res.fees };
+        }
+        function evaluate(D, res, bench, rf, split) {
+          const rows = D.d.map((d, i) => ({ d, c: res.eq[i] }));
+          const m = riskCalc(rows, bench, rf);
+          const t = tradeStats(res);
+          let oos = null, is = null;
+          if (split > 0 && split < 1) {
+            const k = Math.floor(rows.length * split);
+            is = riskCalc(rows.slice(0, k + 1), bench, rf); oos = riskCalc(rows.slice(k), bench, rf);
+          }
+          return { m, t, is, oos };
+        }
+        function riskLevel(m) {
+          if (!m) return null; let s = 0;
+          s += m.annVol > 0.45 ? 2 : m.annVol > 0.28 ? 1 : 0;
+          s += m.beta == null ? 0 : m.beta > 1.3 ? 2 : m.beta > 0.9 ? 1 : 0;
+          s += m.mdd < -0.35 ? 2 : m.mdd < -0.2 ? 1 : 0;
+          return s >= 4 ? ['高風險', '#dc2626', '波動大、跌起來深，部位宜小、停損要設'] : s >= 2 ? ['中風險', '#d97706', '波動與大盤相近，照一般部位控管'] : ['低風險', '#059669', '波動溫和，回檔幅度有限'];
+        }
+        function monthly(D, eq) {
+          const out = {}; let prevEnd = eq[0], curM = D.d[0].slice(0, 7);
+          for (let i = 0; i < D.d.length; i++) {
+            const m = D.d[i].slice(0, 7);
+            if (m !== curM) { out[curM] = eq[i - 1] / prevEnd - 1; prevEnd = eq[i - 1]; curM = m; }
+          }
+          out[curM] = eq[eq.length - 1] / prevEnd - 1;
+          return out;
+        }
+        return { STRATS, CATS, defaults, backtest, buyHold, riskCalc, tradeStats, evaluate, riskLevel, monthly };
+      })();
+
+      // ── Config & Taiwan Rules (Fee Discount synced with SYNAPSE TW global state.feeDiscount) ──
+      const CFG_DEF = { cash: 1000000, pct: 100, unit: 'mixed', limit: true, tick: true, div: true, nhi: true, discFold: 2.8, minFee: 20, taxMode: 'auto', tax: 0.3, slip: 0.1, fill: 'open', rf: 1.5, split: 30, src: 'auto' };
+      const CFG = Object.assign({}, CFG_DEF, (() => { try { return JSON.parse(LS.get('synapse_qlab_cfg', '{}')); } catch (e) { return {}; } })());
+      const UNIT_TXT = { lot: '整張', odd: '零股', mixed: '整張＋零股' };
+      const isETF = code => /^00\d{2,4}[A-Z]?$/.test(code || '');
+      const isBondETF = code => /^00\d{2,4}B$/.test(code || '');
+      function taxRate(code) { return CFG.taxMode === 'auto' ? (isBondETF(code) ? 0 : isETF(code) ? 0.001 : 0.003) : CFG.tax / 100; }
+      function engineCfg(code, divs) {
+        const fold = Math.min(6.0, Math.max(0.1, Number(CFG.discFold || state.feeDiscount || 2.8)));
+        return {
+          cash: +CFG.cash, pct: Math.min(1, Math.max(0.01, CFG.pct / 100)), unit: CFG.unit,
+          fee: 0.001425 * (fold / 10), minFee: +CFG.minFee, tax: taxRate(code), slip: CFG.slip / 100, fill: CFG.fill,
+          limit: !!CFG.limit, tick: !!CFG.tick, etf: isETF(code), divs: CFG.div ? divs || null : null, nhi: !!CFG.nhi
+        };
+      }
+
+      // ── Real Data Fetchers (Backend Proxy First → Direct FinMind v4 Fallback; Zero Fake Data) ──
+      const NAMES = { '2330': '台積電', '2317': '鴻海', '2454': '聯發科', '2308': '台達電', '2382': '廣達', '2412': '中華電', '2881': '富邦金', '2882': '國泰金', '2891': '中信金', '2303': '聯電', '2603': '長榮', '2609': '陽明', '3711': '日月光投控', '2002': '中鋼', '1301': '台塑', '2357': '華碩', '3231': '緯創', '2345': '智邦', '3008': '大立光', '3037': '欣興', '6505': '台塑化', '0050': '元大台灣50', '0056': '元大高股息', '00878': '國泰永續高股息', '006208': '富邦台50', '00919': '群益台灣精選高息', 'TAIEX': '加權指數' };
+      const ago = y => { const d = new Date(); d.setFullYear(d.getFullYear() - y); d.setDate(d.getDate() - 10); return d.toISOString().slice(0, 10); };
+      function clean(rows, years) {
+        const from = years > 0 ? ago(years) : '1900-01-01', map = new Map();
+        rows.forEach(x => {
+          if (!(x.c > 0) || !x.d || x.d < from) return;
+          const o = x.o > 0 ? x.o : x.c; const h = Math.max(x.h > 0 ? x.h : x.c, o, x.c), l = Math.min(x.l > 0 ? x.l : x.c, o, x.c);
+          map.set(x.d, { d: x.d, o, h, l, c: x.c, v: x.v || 0 });
+        });
+        const arr = [...map.values()].sort((a, b) => a.d < b.d ? -1 : 1);
+        return { d: arr.map(x => x.d), o: arr.map(x => x.o), h: arr.map(x => x.h), l: arr.map(x => x.l), c: arr.map(x => x.c), v: arr.map(x => x.v) };
+      }
+      async function fetchDirectFinMind(ds, id, start) {
+        const tok = encodeURIComponent(state.finmindToken || '');
+        const u = `https://api.finmindtrade.com/api/v4/data?dataset=${ds}${id ? '&data_id=' + encodeURIComponent(id) : ''}${start ? '&start_date=' + start : ''}${tok ? '&token=' + tok : ''}`;
+        const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 18000);
+        try {
+          const r = await fetch(u, { signal: ctrl.signal }); clearTimeout(t);
+          if (r.status === 402 || r.status === 429) return { err: 'FinMind 已達免費額度上限（可於雲端設定填寫 Token）' };
+          if (!r.ok) return { err: 'HTTP ' + r.status };
+          const j = await r.json();
+          if (j.status !== 200) return { err: j.msg || ('status ' + j.status) };
+          return { data: j.data || [] };
+        } catch (e) { clearTimeout(t); return { err: e.name === 'AbortError' ? '逾時' : e.message }; }
+      }
+      async function loadRealHistory(code, years) {
+        const apiBase = getApiBase();
+        if (apiBase) {
+          try {
+            const q = new URLSearchParams({ years: String(years), source: CFG.src || 'auto' });
+            if (state.finmindToken) q.set('token', state.finmindToken);
+            const r = await fetch(`${apiBase}/api/v1/market/quant-history/${encodeURIComponent(code)}?${q.toString()}`);
+            if (r.ok) {
+              const j = await r.json();
+              const divs = j.divs && Object.keys(j.divs).length ? new Map(Object.entries(j.divs).map(([k, v]) => [k, Number(v)])) : (j.adjusted ? null : new Map());
+              return { rows: j.rows || [], src: j.src || '後端真實日線', name: j.name || '', divs, adjusted: !!j.adjusted };
+            }
+          } catch (e) {}
+        }
+        // Standalone fallback: direct FinMind v4 CORS API
+        const p = await fetchDirectFinMind('TaiwanStockPrice', code, ago(years));
+        if (p.data && p.data.length > 30) {
+          let divs = null;
+          if (code !== 'TAIEX') {
+            const dv = await fetchDirectFinMind('TaiwanStockDividendResult', code, ago(years));
+            if (dv.data) {
+              divs = new Map();
+              dv.data.forEach(x => { const a = (+x.before_price) - (+x.after_price); if (a > 0 && x.date) divs.set(x.date, (divs.get(x.date) || 0) + a); });
+            }
+          }
+          return {
+            rows: p.data.map(x => ({ d: x.date, o: +x.open, h: +x.max, l: +x.min, c: +x.close, v: +x.Trading_Volume || 0 })),
+            src: 'FinMind TaiwanStockPrice（未還原權息）', name: '', divs, adjusted: false
+          };
+        }
+        return { err: p.err || '查無真實歷史日線資料' };
+      }
+      function resolveStockName(code) {
+        const wl = state.watchlist.find(w => w.symbol === code);
+        if (wl && wl.name) return wl.name;
+        return NAMES[code] || '';
+      }
+      function parseCSV(text) {
+        const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const split = l => l.split(/[,\t;]/).map(x => x.replace(/^"|"$/g, '').trim());
+        const head = split(lines[0]).map(h => h.toLowerCase());
+        const find = (...ks) => head.findIndex(h => ks.some(k => h.includes(k)));
+        let id = find('date', '日期', 'time'), io = find('open', '開盤'), ih = find('high', '最高', 'max'), il = find('low', '最低', 'min'), ic = find('close', '收盤'), iv = find('vol', '成交量', '成交股數');
+        let start = 1;
+        if (id < 0 || ic < 0) { id = 0; io = 1; ih = 2; il = 3; ic = 4; iv = 5; start = 0; }
+        const toD = s => {
+          s = s.replace(/\//g, '-').replace(/\./g, '-');
+          let m = s.match(/^(\d{2,4})-(\d{1,2})-(\d{1,2})/);
+          if (m) { let y = +m[1]; if (y < 1911) y += 1911; return `${y}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`; }
+          m = s.match(/^(\d{4})(\d{2})(\d{2})$/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+          return null;
+        };
+        const nv = s => parseFloat(String(s || '').replace(/,/g, ''));
+        const rows = [];
+        for (let k = start; k < lines.length; k++) {
+          const c = split(lines[k]), d = toD(c[id] || ''); if (!d) continue;
+          rows.push({ d, o: nv(c[io]), h: nv(c[ih]), l: nv(c[il]), c: nv(c[ic]), v: iv >= 0 ? nv(c[iv]) || 0 : 0 });
+        }
+        return rows;
+      }
+
+      // ── Light-Mode Executive Canvas Charts ──
+      const CH = {
+        prep(cv, h) {
+          const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || cv.parentNode.clientWidth || 600, H = h || cv.clientHeight || 240;
+          cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px';
+          const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.font = '10px "JetBrains Mono",monospace'; return { g, W, H };
+        },
+        tip(cv) { let t = cv.parentNode.querySelector('.ql-tip'); if (!t) { t = document.createElement('div'); t.className = 'ql-tip'; cv.parentNode.appendChild(t); } return t; },
+        showTip(cv, html, x, y) {
+          const t = this.tip(cv); t.innerHTML = html; t.style.display = 'block';
+          const W = cv.clientWidth, tw = t.offsetWidth; t.style.left = Math.min(W - tw - 4, Math.max(4, x + 14)) + 'px'; t.style.top = Math.max(0, y - 10) + 'px';
+        },
+        hideTip(cv) { const t = cv.parentNode.querySelector('.ql-tip'); if (t) t.style.display = 'none'; },
+        line(cv, o) {
+          if (!cv) return;
+          const { g, W, H } = this.prep(cv, o.h), pl = 56, pr = o.series.some(s => s.axis === 'R') ? 50 : 12, pt = 10, pb = 22, pw = W - pl - pr, ph = H - pt - pb, n = o.labels.length;
+          const X = i => pl + (n <= 1 ? pw / 2 : i / (n - 1) * pw);
+          const tf = (ax, v) => (ax === 'L' && o.log) ? Math.log(Math.max(1e-6, v)) : v;
+          const rng = ax => { const v = o.series.filter(s => (s.axis || 'L') === ax).flatMap(s => s.vals).filter(isN).map(v => tf(ax, v)).filter(isN); if (!v.length) return null; let a = Math.min(...v), b = Math.max(...v); if (o.zeroR && ax === 'R') b = Math.max(b, 0); if (a === b) { a -= 1; b += 1; } const p = (b - a) * 0.06; return [a - p, b + p]; };
+          const RL = rng('L'), RR = rng('R');
+          const Y = (ax, v) => { const R = ax === 'R' ? RR : RL; return pt + (R[1] - tf(ax, v)) / (R[1] - R[0]) * ph; };
+          g.strokeStyle = 'rgba(15,23,42,0.08)'; g.fillStyle = '#475569'; g.lineWidth = 1;
+          for (let k = 0; k <= 4; k++) {
+            const y = pt + ph * k / 4; g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + pw, y); g.stroke();
+            if (RL) { let v = RL[1] - (RL[1] - RL[0]) * k / 4; if (o.log) v = Math.exp(v); g.textAlign = 'right'; g.fillText((o.fmtL || (x => x.toFixed(0)))(v), pl - 6, y + 3); }
+            if (RR) { const v = RR[1] - (RR[1] - RR[0]) * k / 4; g.textAlign = 'left'; g.fillText((o.fmtR || (x => x.toFixed(0)))(v), pl + pw + 6, y + 3); }
+          }
+          g.textAlign = 'center'; const step = Math.max(1, Math.ceil(n / 8));
+          for (let i = 0; i < n; i += step) g.fillText(o.labels[i], X(i), H - 6);
+          o.series.forEach(s => {
+            const ax = s.axis || 'L'; if (!(ax === 'R' ? RR : RL)) return;
+            g.beginPath(); let first = true;
+            s.vals.forEach((v, i) => { if (!isN(v)) { first = true; return; } const x = X(i), y = Y(ax, v); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; });
+            g.strokeStyle = s.color; g.lineWidth = s.width || 1.8; g.setLineDash(s.dash || []); g.stroke(); g.setLineDash([]);
+            if (s.fill) { const z = Y(ax, Math.min(Math.max(0, (ax === 'R' ? RR : RL)[0]), (ax === 'R' ? RR : RL)[1])); g.lineTo(X(n - 1), z); g.lineTo(X(0), z); g.closePath(); g.fillStyle = s.color + '26'; g.fill(); }
+          });
+          if (o.marks) o.marks.filter(m => m.t !== 'D').forEach(m => { const s = o.series[0]; const v = s.vals[m.i]; if (!isN(v)) return; g.fillStyle = m.t === 'B' ? '#dc2626' : '#059669'; g.beginPath(); g.arc(X(m.i), Y('L', v), 2.5, 0, Math.PI * 2); g.fill(); });
+          cv.onmousemove = e => {
+            const r = cv.getBoundingClientRect(), x = e.clientX - r.left; const i = Math.round((x - pl) / pw * (n - 1)); if (i < 0 || i >= n) return this.hideTip(cv);
+            this.line(cv, Object.assign({}, o, { _noHover: true })); const gg = cv.getContext('2d');
+            gg.strokeStyle = 'rgba(15,23,42,0.3)'; gg.beginPath(); gg.moveTo(X(i), pt); gg.lineTo(X(i), pt + ph); gg.stroke();
+            this.showTip(cv, `<div style="color:#94a3b8">${o.labels[i]}</div>` + o.series.map(s => `<div><span style="color:${s.color}">●</span> ${s.name}：${isN(s.vals[i]) ? (s.fmt || (v => v.toFixed(2)))(s.vals[i]) : '--'}</div>`).join(''), X(i), e.clientY - r.top);
+          };
+          cv.onmouseleave = () => { this.hideTip(cv); if (!o._noHover) this.line(cv, Object.assign({}, o, { _noHover: true })); };
+        },
+        candle(cv, st) {
+          if (!cv) return;
+          const D = st.D, n = D.c.length;
+          st.to = Math.min(n, Math.max(st.to, 20)); st.from = Math.max(0, Math.min(st.from, st.to - 20));
+          const { g, W, H } = this.prep(cv, st.h || 340), pl = 8, pr = 60, pt = 10, pb = 22, volH = 44, pw = W - pl - pr, ph = H - pt - pb - volH - 6;
+          const a = st.from, b = st.to, cnt = b - a, bw = pw / cnt;
+          let lo = Infinity, hi = -Infinity, vmax = 0;
+          for (let i = a; i < b; i++) { lo = Math.min(lo, D.l[i]); hi = Math.max(hi, D.h[i]); vmax = Math.max(vmax, D.v[i]); Object.values(st.lines || {}).forEach(L => { if (isN(L[i])) { lo = Math.min(lo, L[i]); hi = Math.max(hi, L[i]); } }); }
+          const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+          const X = i => pl + (i - a + 0.5) * bw, Y = v => pt + (hi - v) / (hi - lo) * ph;
+          g.strokeStyle = 'rgba(15,23,42,0.08)'; g.fillStyle = '#475569'; g.textAlign = 'left';
+          for (let k = 0; k <= 5; k++) { const v = hi - (hi - lo) * k / 5, y = Y(v); g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + pw, y); g.stroke(); g.fillText(v >= 1000 ? v.toFixed(0) : v.toFixed(2), pl + pw + 6, y + 3); }
+          g.textAlign = 'center'; const step = Math.max(1, Math.ceil(cnt / 7));
+          for (let i = a; i < b; i += step) g.fillText(D.d[i].slice(2), X(i), H - 6);
+          (st.trades || []).concat(st.open ? [{ in: st.open.in, out: n - 1, open: true }] : []).forEach(t => {
+            if (t.out < a || t.in >= b) return; const x0 = X(Math.max(a, t.in)) - bw / 2, x1 = X(Math.min(b - 1, t.out)) + bw / 2;
+            g.fillStyle = t.open ? 'rgba(245,158,11,0.10)' : (t.pnl > 0 ? 'rgba(220,38,38,0.07)' : 'rgba(5,150,105,0.07)'); g.fillRect(x0, pt, x1 - x0, ph);
+          });
+          const vy = pt + ph + 6;
+          for (let i = a; i < b; i++) {
+            const up = D.c[i] >= D.o[i], c = up ? '#dc2626' : '#059669', x = X(i);
+            g.strokeStyle = c; g.fillStyle = c; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(x, Y(D.h[i])); g.lineTo(x, Y(D.l[i])); g.stroke();
+            const y0 = Y(Math.max(D.o[i], D.c[i])), y1 = Y(Math.min(D.o[i], D.c[i])), w = Math.max(1, bw * 0.7);
+            g.fillRect(x - w / 2, y0, w, Math.max(1, y1 - y0));
+            if (vmax > 0) { g.globalAlpha = 0.28; const vh = D.v[i] / vmax * volH; g.fillRect(x - w / 2, vy + volH - vh, w, vh); g.globalAlpha = 1; }
+          }
+          const LC = ['#0284c7', '#d97706', '#7c3aed', '#db2777', '#64748b'];
+          Object.entries(st.lines || {}).forEach(([k, L], j) => {
+            g.strokeStyle = LC[j % LC.length]; g.lineWidth = 1.4; g.beginPath(); let f = true;
+            for (let i = a; i < b; i++) { if (!isN(L[i])) { f = true; continue; } f ? g.moveTo(X(i), Y(L[i])) : g.lineTo(X(i), Y(L[i])); f = false; }
+            g.stroke();
+          });
+          (st.marks || []).forEach(m => {
+            if (m.i < a || m.i >= b) return; const x = X(m.i);
+            if (m.t === 'D') { g.fillStyle = '#7c3aed'; g.font = 'bold 10px "JetBrains Mono"'; g.textAlign = 'center'; g.fillText('息', x, pt + 10); g.font = '10px "JetBrains Mono",monospace'; return; }
+            if (m.t === 'B') { const y = Y(D.l[m.i]) + 6; g.fillStyle = '#d97706'; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 5, y + 9); g.lineTo(x + 5, y + 9); g.closePath(); g.fill(); }
+            else { const y = Y(D.h[m.i]) - 6; g.fillStyle = m.why === '停損' ? '#059669' : m.why === '停利' ? '#db2777' : '#334155'; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 5, y - 9); g.lineTo(x + 5, y - 9); g.closePath(); g.fill(); }
+          });
+          if (st.hover != null && st.hover >= a && st.hover < b) { g.strokeStyle = 'rgba(15,23,42,0.32)'; g.beginPath(); g.moveTo(X(st.hover), pt); g.lineTo(X(st.hover), pt + ph + volH + 6); g.stroke(); }
+          if (cv._bound) return; cv._bound = true;
+          let drag = null;
+          const idx = e => { const r = cv.getBoundingClientRect(); return st.from + Math.floor((e.clientX - r.left - pl) / ((r.width - pl - pr) / (st.to - st.from))); };
+          cv.addEventListener('wheel', e => {
+            e.preventDefault(); const c = idx(e), span = st.to - st.from, ns = Math.round(Math.min(n, Math.max(20, span * (e.deltaY > 0 ? 1.15 : 0.87))));
+            const k = (c - st.from) / span; st.from = Math.round(c - k * ns); st.to = st.from + ns; if (st.from < 0) { st.to -= st.from; st.from = 0; } if (st.to > n) { st.from -= st.to - n; st.to = n; } st.from = Math.max(0, st.from);
+            this.candle(cv, st);
+          }, { passive: false });
+          cv.addEventListener('mousedown', e => { drag = { x: e.clientX, f: st.from, t: st.to }; });
+          window.addEventListener('mouseup', () => { drag = null; });
+          cv.addEventListener('mousemove', e => {
+            const r = cv.getBoundingClientRect();
+            if (drag) { const per = (r.width - pl - pr) / (drag.t - drag.f), sh = Math.round((drag.x - e.clientX) / per); let f = drag.f + sh, t = drag.t + sh; if (f < 0) { t -= f; f = 0; } if (t > n) { f -= t - n; t = n; } st.from = f; st.to = t; this.candle(cv, st); return; }
+            const i = idx(e); if (i < st.from || i >= st.to) return;
+            st.hover = i; this.candle(cv, st);
+            const mk = (st.marks || []).filter(m => m.i === i).map(m => m.t === 'D' ? `<div style="color:#c4b5fd">💰 除權息入帳 ${money(m.amt)} 元</div>` : m.t === 'B' ? `<div style="color:#fbbf24">▲ 買進 ${m.px.toFixed(2)}</div>` : `<div style="color:#34d399">▼ 賣出 ${m.px.toFixed(2)}（${m.why}）</div>`).join('');
+            const ch = i ? D.c[i] / D.c[i - 1] - 1 : 0;
+            this.showTip(cv, `<div style="color:#94a3b8">${D.d[i]}</div><div>開 ${D.o[i].toFixed(2)}　高 ${D.h[i].toFixed(2)}</div><div>低 ${D.l[i].toFixed(2)}　收 <b style="color:${ch >= 0 ? '#f87171' : '#34d399'}">${D.c[i].toFixed(2)} (${pct(ch, 2)})</b></div>` +
+              Object.entries(st.lines || {}).map(([k, L]) => isN(L[i]) ? `<div style="color:#cbd5e1">${k}：${L[i].toFixed(2)}</div>` : '').join('') + mk, e.clientX - r.left, e.clientY - r.top);
+          });
+          cv.addEventListener('mouseleave', () => { st.hover = null; this.hideTip(cv); this.candle(cv, st); });
+        },
+        scatter(cv, o) {
+          if (!cv) return;
+          const { g, W, H } = this.prep(cv, o.h || 280), pl = 52, pr = 16, pt = 12, pb = 34, pw = W - pl - pr, ph = H - pt - pb;
+          const xs = o.pts.map(p => p.x).filter(isN), ys = o.pts.map(p => p.y).filter(isN);
+          let x0 = Math.min(...xs, 0), x1 = Math.max(...xs, 0), y0 = Math.min(...ys, 0), y1 = Math.max(...ys, 0);
+          const px = (x1 - x0) * 0.08 || 0.1, py = (y1 - y0) * 0.1 || 0.1; x0 -= px; x1 += px; y0 -= py; y1 += py;
+          const X = v => pl + (v - x0) / (x1 - x0) * pw, Y = v => pt + (y1 - v) / (y1 - y0) * ph;
+          g.strokeStyle = 'rgba(15,23,42,0.08)'; g.fillStyle = '#475569';
+          for (let k = 0; k <= 4; k++) { const v = y0 + (y1 - y0) * k / 4, y = Y(v); g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + pw, y); g.stroke(); g.textAlign = 'right'; g.fillText(o.fmtY(v), pl - 6, y + 3); }
+          for (let k = 0; k <= 4; k++) { const v = x0 + (x1 - x0) * k / 4; g.textAlign = 'center'; g.fillText(o.fmtX(v), X(v), H - 18); }
+          g.fillStyle = '#334155'; g.fillText(o.xLabel, pl + pw / 2, H - 3); g.save(); g.translate(11, pt + ph / 2); g.rotate(-Math.PI / 2); g.fillText(o.yLabel, 0, 0); g.restore();
+          g.strokeStyle = 'rgba(15,23,42,0.22)'; g.beginPath(); g.moveTo(X(0), pt); g.lineTo(X(0), pt + ph); g.moveTo(pl, Y(0)); g.lineTo(pl + pw, Y(0)); g.stroke();
+          const P = o.pts.filter(p => isN(p.x) && isN(p.y)).map(p => ({ ...p, sx: X(p.x), sy: Y(p.y) }));
+          P.forEach(p => {
+            g.fillStyle = p.color + (p.hi ? 'ee' : 'b8'); g.beginPath(); g.arc(p.sx, p.sy, p.r || 5, 0, Math.PI * 2); g.fill();
+            if (p.hi || p.label) { g.fillStyle = '#0f172a'; g.textAlign = 'left'; g.font = 'bold 10px "Noto Sans TC",sans-serif'; g.fillText(p.label || p.name, p.sx + 7, p.sy - 4); g.font = '10px "JetBrains Mono",monospace'; }
+          });
+          cv.onmousemove = e => { const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; const h = P.find(p => (p.sx - mx) ** 2 + (p.sy - my) ** 2 < 64); cv.style.cursor = h && o.onClick ? 'pointer' : 'default'; if (h) this.showTip(cv, h.tip, mx, my); else this.hideTip(cv); };
+          cv.onmouseleave = () => this.hideTip(cv);
+          cv.onclick = e => { const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; const h = P.find(p => (p.sx - mx) ** 2 + (p.sy - my) ** 2 < 64); if (h && o.onClick) o.onClick(h); };
+        },
+        hist(cv, vals, o = {}) {
+          if (!cv) return; const { g, W, H } = this.prep(cv, o.h || 200), pl = 36, pr = 10, pt = 14, pb = 22, pw = W - pl - pr, ph = H - pt - pb;
+          if (!vals.length) { g.fillStyle = '#64748b'; g.textAlign = 'center'; g.font = '12px "Noto Sans TC"'; g.fillText('沒有已平倉交易', W / 2, H / 2); return; }
+          const lo = Math.min(...vals, -0.01), hi = Math.max(...vals, 0.01), nb = Math.min(24, Math.max(8, Math.ceil(Math.sqrt(vals.length) * 2))), w = (hi - lo) / nb, cnt = new Array(nb).fill(0);
+          vals.forEach(v => cnt[Math.min(nb - 1, Math.floor((v - lo) / w))]++);
+          const mx = Math.max(...cnt), bw = pw / nb;
+          cnt.forEach((c, k) => { const v0 = lo + k * w, x = pl + k * bw, h = c / mx * ph; g.fillStyle = v0 + w / 2 >= 0 ? 'rgba(220,38,38,0.72)' : 'rgba(5,150,105,0.72)'; g.fillRect(x + 1, pt + ph - h, bw - 2, h); if (c) { g.fillStyle = '#334155'; g.textAlign = 'center'; g.fillText(c, x + bw / 2, pt + ph - h - 3); } });
+          g.fillStyle = '#475569'; g.textAlign = 'center'; [0, nb / 2, nb].forEach(k => g.fillText(((lo + k * w) * 100).toFixed(0) + '%', pl + k * bw, H - 6));
+          const zx = pl + (0 - lo) / (hi - lo) * pw; g.strokeStyle = 'rgba(15,23,42,0.35)'; g.beginPath(); g.moveTo(zx, pt); g.lineTo(zx, pt + ph); g.stroke();
+        }
+      };
+
+      const METRICS = [
+        ['name', '策略', null], ['cat', '類別', null], ['lastSignal', '最新訊號', null],
+        ['total', '總報酬', r => r.ev.m && r.ev.m.total], ['annRet', '年化', r => r.ev.m && r.ev.m.annRet],
+        ['sharpe', '夏普', r => r.ev.m && r.ev.m.sharpe], ['sortino', '索提諾', r => r.ev.m && r.ev.m.sortino],
+        ['calmar', '卡瑪', r => r.ev.m && r.ev.m.calmar], ['mdd', '最大回撤', r => r.ev.m && r.ev.m.mdd],
+        ['win', '勝率', r => r.ev.t.win], ['pf', '獲利因子', r => r.ev.t.pf], ['n', '交易數', r => r.ev.t.n],
+        ['exposure', '持倉時間', r => r.ev.t.exposure], ['oos', '樣本外夏普', r => r.ev.oos && r.ev.oos.sharpe],
+        ['beta', 'Beta', r => r.ev.m && r.ev.m.beta]
+      ];
+      const MV = Object.fromEntries(METRICS.map(m => [m[0], m[2]]));
+      const SIG_META = {
+        BUY: ['買進 BUY', 'badge-up'],
+        SELL: ['賣出 SELL', 'badge-down'],
+        HOLD: ['持倉 HOLD', 'badge-amber'],
+        FLAT: ['空手 FLAT', 'badge-slate']
+      };
+
+      const app = {
+        D: null, divs: null, bench: null, code: '', name: '', src: '', years: 5, results: [], bh: null,
+        params: (() => { try { return JSON.parse(LS.get('synapse_qlab_params', '{}')); } catch (e) { return {}; } })(),
+        sel: QCORE.STRATS[0].id, sortKey: 'sharpe', sortDir: -1, cat: 'all', curTab: 'rank',
+        detSt: null, optId: null, optCells: [], batchRows: [], riskPm: null,
+
+        status(m, busy) {
+          const el = $q('qlStatus');
+          if (el) el.innerHTML = m ? (busy ? '<span class="ql-spin"></span>' : '') + m : '';
+        },
+        hasData() { return !!this.D; },
+        pOf(id) { return Object.assign(QCORE.defaults(QCORE.STRATS.find(s => s.id === id)), this.params[id] || {}); },
+        syncGlobalFeeDiscount(val) {
+          CFG.discFold = Math.min(6.0, Math.max(0.1, Number(val || 2.8)));
+          const el = $q('qlCfgDisc');
+          if (el) el.value = CFG.discFold.toFixed(1);
+          LS.set('synapse_qlab_cfg', JSON.stringify(CFG));
+          if (this.D) this.runAll();
+        },
+        populateCfgInputs() {
+          CFG.discFold = Math.min(6.0, Math.max(0.1, Number(state.feeDiscount || CFG.discFold || 2.8)));
+          const setV = (id, v) => { const el = $q(id); if (el) el.value = v; };
+          const setC = (id, v) => { const el = $q(id); if (el) el.checked = !!v; };
+          setV('qlCfgCash', CFG.cash); setV('qlCfgPct', CFG.pct); setV('qlCfgUnit', CFG.unit); setV('qlCfgFill', CFG.fill);
+          setV('qlCfgDisc', CFG.discFold.toFixed(1)); setV('qlCfgMinFee', CFG.minFee); setV('qlCfgTaxMode', CFG.taxMode);
+          setV('qlCfgTax', CFG.tax); setV('qlCfgSlip', CFG.slip); setV('qlCfgRf', CFG.rf); setV('qlCfgSplit', CFG.split); setV('qlCfgSrc', CFG.src);
+          setC('qlCfgLimit', CFG.limit); setC('qlCfgTick', CFG.tick); setC('qlCfgDiv', CFG.div); setC('qlCfgNhi', CFG.nhi);
+        },
+        toggleCfg() {
+          const p = $q('qlCfgPanel');
+          if (!p) return;
+          p.classList.toggle('open');
+          if (p.classList.contains('open')) this.populateCfgInputs();
+        },
+        saveCfg() {
+          const nv = (id, def) => { const v = parseFloat($q(id)?.value); return isN(v) ? v : def; };
+          CFG.cash = Math.max(10000, nv('qlCfgCash', 1000000));
+          CFG.pct = Math.min(100, Math.max(1, nv('qlCfgPct', 100)));
+          CFG.discFold = Math.min(6.0, Math.max(0.1, nv('qlCfgDisc', state.feeDiscount || 2.8)));
+          CFG.minFee = Math.max(0, nv('qlCfgMinFee', 20));
+          CFG.tax = Math.max(0, nv('qlCfgTax', 0.3));
+          CFG.slip = Math.max(0, nv('qlCfgSlip', 0.1));
+          CFG.rf = Math.max(0, nv('qlCfgRf', 1.5));
+          CFG.split = Math.min(60, Math.max(0, nv('qlCfgSplit', 30)));
+          CFG.unit = $q('qlCfgUnit')?.value || 'mixed';
+          CFG.fill = $q('qlCfgFill')?.value || 'open';
+          CFG.taxMode = $q('qlCfgTaxMode')?.value || 'auto';
+          CFG.src = $q('qlCfgSrc')?.value || 'auto';
+          CFG.limit = !!$q('qlCfgLimit')?.checked;
+          CFG.tick = !!$q('qlCfgTick')?.checked;
+          CFG.div = !!$q('qlCfgDiv')?.checked;
+          CFG.nhi = !!$q('qlCfgNhi')?.checked;
+          LS.set('synapse_qlab_cfg', JSON.stringify(CFG));
+          if (Math.abs(CFG.discFold - state.feeDiscount) >= 0.05) {
+            setFeeDiscount(CFG.discFold, true);
+          }
+          $q('qlCfgPanel')?.classList.remove('open');
+          if (this.D) this.runAll();
+          showToast('回測規則已更新', `手續費 ${CFG.discFold.toFixed(1)} 折 · 交易單位 ${UNIT_TXT[CFG.unit]}`, 'success');
+        },
+        resetCfg() {
+          Object.assign(CFG, CFG_DEF, { discFold: state.feeDiscount || 2.8 });
+          LS.set('synapse_qlab_cfg', JSON.stringify(CFG));
+          this.populateCfgInputs();
+          if (this.D) this.runAll();
+        },
+        onEnterSubTab() {
+          const inp = $q('qlCodeInput');
+          if (inp && !this.D && state.activeSymbol && /^[0-9A-Z]{4,6}$/.test(state.activeSymbol)) {
+            inp.value = state.activeSymbol;
+          }
+          this.renderLib();
+          this.renderBatch();
+          if (this.D) {
+            setTimeout(() => { this.drawRank(); this.drawDetail(); this.drawRisk(); }, 30);
+          }
+        },
+        tab(v) {
+          this.curTab = v;
+          document.querySelectorAll('#qlTabs .ql-tab').forEach(b => b.classList.toggle('on', b.dataset.qlV === v));
+          document.querySelectorAll('#stratSub-quantlab .ql-view').forEach(s => s.classList.toggle('on', s.id === 'ql-v-' + v));
+          if (v === 'rank') setTimeout(() => this.drawRank(), 20);
+          if (v === 'detail') setTimeout(() => this.drawDetail(), 20);
+          if (v === 'risk') setTimeout(() => this.drawRisk(), 20);
+        },
+        async load() {
+          const code = ($q('qlCodeInput')?.value || '').trim().toUpperCase();
+          if (!/^[0-9A-Z^]{2,8}$/.test(code)) { this.status('⚠️ 股票代號格式不正確（例如 2330、0050、6488）'); return; }
+          const years = +($q('qlYearsSelect')?.value || 5);
+          this.status(`📡 抓取 ${code} 近 ${years} 年真實日線與加權指數基準…`, true);
+          const [p, b] = await Promise.all([loadRealHistory(code, years), loadRealHistory('TAIEX', years)]);
+          if (p.err) {
+            this.status('');
+            const vr = $q('ql-v-rank');
+            if (vr) vr.innerHTML = `<div class="ql-card ql-empty"><div style="font-size:26px;margin-bottom:6px;">📡</div><div>無法取得 <b>${esc(code)}</b> 真實日線資料</div><div class="ql-mut" style="margin:6px 0 12px">${esc(p.err)}</div><button type="button" class="btn btn-sm btn-primary" onclick="QLAB.load()">🔄 重新抓取</button></div>`;
+            this.tab('rank');
+            return;
+          }
+          const D = clean(p.rows, years);
+          if (D.c.length < 60) { this.status(`⚠️ 真實交易日不足（僅 ${D.c.length} 根，至少需要 60 個交易日）`); return; }
+          const bench = b.err ? null : clean(b.rows, years);
+          const dtxt = p.adjusted ? ' · 價格已還原權息' : (p.divs && p.divs.size ? ` · 除權息 ${p.divs.size} 次入帳` : ' · 無除權息紀錄');
+          const nm = resolveStockName(code) || p.name || '';
+          this.setData(D, bench, code, nm, p.src + dtxt + (bench ? ' · 基準：加權指數' : ' · 無基準 Beta 不計'), years, p.divs);
+        },
+        loadCSV(file) {
+          if (!file) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            try {
+              const rows = parseCSV(String(rd.result));
+              const D = clean(rows, 0);
+              if (D.c.length < 60) throw new Error('有效資料只有 ' + D.c.length + ' 列（至少 60）');
+              const code = (file.name.match(/\d{4,6}[A-Z]?/) || ['CSV'])[0];
+              this.setData(D, null, code, file.name.replace(/\.[^.]+$/, ''), 'CSV 上傳：' + file.name, 0, null);
+            } catch (e) { this.status('⚠️ CSV 解析失敗：' + e.message + '（需含 日期、開盤、最高、最低、收盤）'); }
+          };
+          rd.readAsText(file, 'utf-8');
+        },
+        setData(D, bench, code, name, src, years, divs) {
+          this.D = D; this.divs = divs || null; this.bench = bench ? bench.d.map((d, i) => ({ d, c: bench.c[i] })) : null;
+          this.code = code; this.name = name; this.src = src; this.years = years;
+          const inp = $q('qlCodeInput');
+          if (inp && code !== 'CSV') inp.value = code;
+          const ds = $q('qlDataSrc');
+          if (ds) ds.innerHTML = `<strong>${esc(name || code)}</strong>（<span class="mono">${esc(code)}</span>）· ${D.d[0]} ～ ${D.d[D.d.length - 1]} · <span class="mono">${D.c.length}</span> 根<br>${esc(src)}`;
+          this.runAll();
+        },
+        runAll() {
+          if (!this.D) return;
+          const t0 = performance.now(), cfg = engineCfg(this.code, this.divs), rf = CFG.rf / 100, split = 1 - CFG.split / 100;
+          const bhRes = QCORE.buyHold(this.D, cfg);
+          this.bh = { s: { id: 'bh', name: '買進持有（基準）', cat: 'bh' }, res: bhRes, ev: QCORE.evaluate(this.D, bhRes, this.bench, rf, split) };
+          this.results = QCORE.STRATS.map(s => {
+            const res = QCORE.backtest(this.D, s, this.pOf(s.id), cfg);
+            return { s, res, ev: QCORE.evaluate(this.D, res, this.bench, rf, split) };
+          });
+          this.status(`✅ 30 支策略台股真實回測完成（${Math.round(performance.now() - t0)} ms）· ${CFG.fill === 'open' ? '次根開盤成交' : '當根收盤成交'} · ${UNIT_TXT[CFG.unit]} · 手續費 ${CFG.discFold.toFixed(1)} 折 (${(0.1425 * CFG.discFold / 10).toFixed(4)}%) · 證交稅 ${(cfg.tax * 100).toFixed(1)}% · 滑價 ${CFG.slip}%`);
+          this.renderAll();
+        },
+        rerunOne(id) {
+          const s = QCORE.STRATS.find(x => x.id === id), cfg = engineCfg(this.code, this.divs);
+          const res = QCORE.backtest(this.D, s, this.pOf(id), cfg);
+          const k = this.results.findIndex(r => r.s.id === id);
+          if (k >= 0) this.results[k] = { s, res, ev: QCORE.evaluate(this.D, res, this.bench, CFG.rf / 100, 1 - CFG.split / 100) };
+        },
+        renderAll() { this.renderRank(); this.renderDetail(); this.renderOpt(); this.renderBatch(); this.renderRisk(); this.renderLib(); },
+        sorted() {
+          const f = MV[this.sortKey], list = this.results.filter(r => this.cat === 'all' || r.s.cat === this.cat);
+          const all = list.concat(this.bh ? [this.bh] : []);
+          if (this.sortKey === 'name') return all.sort((a, b) => this.sortDir * a.s.name.localeCompare(b.s.name));
+          if (this.sortKey === 'cat') return all.sort((a, b) => this.sortDir * a.s.cat.localeCompare(b.s.cat));
+          if (this.sortKey === 'lastSignal') {
+            const rk = { BUY: 4, HOLD: 3, FLAT: 2, SELL: 1 };
+            return all.sort((a, b) => this.sortDir * ((rk[a.res.lastSignal] || 0) - (rk[b.res.lastSignal] || 0)));
+          }
+          return all.sort((a, b) => { const x = f(a), y = f(b); const xa = isN(x) ? x : (x === Infinity ? 1e9 : -1e9), ya = isN(y) ? y : (y === Infinity ? 1e9 : -1e9); return this.sortDir * (xa - ya); });
+        },
+        setCat(k) { this.cat = k; this.renderRank(); },
+        sortBy(k) { if (this.sortKey === k) this.sortDir *= -1; else { this.sortKey = k; this.sortDir = (k === 'name' || k === 'cat') ? 1 : -1; } this.renderRank(); },
+        renderRank() {
+          const V = $q('ql-v-rank'); if (!V || !this.D) return;
+          const bh = this.bh.ev, R = this.results, valid = R.filter(r => r.ev.m && r.ev.t.n > 0);
+          const best = valid.slice().sort((a, b) => (b.ev.m.sharpe || -9) - (a.ev.m.sharpe || -9))[0];
+          const beatBH = valid.filter(r => r.ev.m.annRet > (bh.m ? bh.m.annRet : 0)).length;
+          const beatRisk = valid.filter(r => bh.m && r.ev.m.sharpe > bh.m.sharpe).length;
+          const lvl = QCORE.riskLevel(bh.m);
+          const C = QCORE.CATS;
+          V.innerHTML = `
+          <div class="ql-kpis">
+            <div class="ql-kpi"><div class="t">買進持有基準 · 年化</div><div class="v ${col(bh.m && bh.m.annRet)}">${pct(bh.m && bh.m.annRet)}</div><div class="s">夏普 ${num(bh.m && bh.m.sharpe)} · 最大回撤 ${pct(bh.m && bh.m.mdd)}</div></div>
+            <div class="ql-kpi"><div class="t">夏普最高策略</div><div class="v ql-cy" style="font-size:15px;font-family:inherit">${best ? esc(best.s.name) : '—'}</div><div class="s">${best ? `夏普 ${num(best.ev.m.sharpe)} · 年化 <span class="${col(best.ev.m.annRet)}">${pct(best.ev.m.annRet)}</span> · ${best.ev.t.n} 筆` : '尚無交易策略'}</div></div>
+            <div class="ql-kpi"><div class="t">年化勝過買進持有</div><div class="v">${beatBH}<span style="font-size:12px;color:var(--ink-3)"> / ${valid.length}</span></div><div class="s">夏普勝過持有：${beatRisk} 支</div></div>
+            <div class="ql-kpi"><div class="t">標的風險等級</div><div class="v" style="color:${lvl ? lvl[1] : '#64748b'};font-family:inherit">${lvl ? lvl[0] : '--'}</div><div class="s">年化波動 ${pctU(bh.m && bh.m.annVol)} · Beta ${num(bh.m && bh.m.beta)}</div></div>
+            <div class="ql-kpi"><div class="t">最新觸發買進/持倉</div><div class="v ql-up">${R.filter(r => r.res.lastSignal === 'BUY' || r.res.lastSignal === 'HOLD').length}<span style="font-size:12px;color:var(--ink-3)"> / 30</span></div><div class="s">新買進 ${R.filter(r => r.res.lastSignal === 'BUY').length} · 持倉中 ${R.filter(r => r.res.lastSignal === 'HOLD').length}</div></div>
+          </div>
+          <div class="ql-card" style="margin-bottom:12px">
+            <h3><span>30 支經典策略績效排行 · 點標題排序、點列看詳情並可連結多 Agent</span>
+              <span class="ql-chips">${[['all', '全部']].concat(Object.entries(C).filter(([k]) => k !== 'bh').map(([k, v]) => [k, v[0]])).map(([k, t]) => `<button type="button" class="ql-chip ${this.cat === k ? 'on' : ''}" onclick="QLAB.setCat('${k}')">${t}</button>`).join('')}
+              <button type="button" class="btn btn-sm" onclick="QLAB.csvRank()">⬇️ CSV</button><button type="button" class="btn btn-sm btn-teal" onclick="QLAB.aiRank()">🤖 AI 排行解讀</button></span></h3>
+            <div class="ql-tw" style="max-height:460px"><table class="ql-t"><thead><tr>${METRICS.map(([k, t]) => `<th class="${this.sortKey === k ? 'on' : ''}" onclick="QLAB.sortBy('${k}')">${t}${this.sortKey === k ? (this.sortDir < 0 ? ' ▼' : ' ▲') : ''}</th>`).join('')}</tr></thead>
+            <tbody>${this.sorted().map(r => this.rankRow(r)).join('')}</tbody></table></div>
+            <div class="ql-hint">樣本外夏普＝資金曲線最後 ${CFG.split}% 區間夏普；差距越大代表越依賴特定行情。點擊任一策略即可查看 K 線買賣點、微調參數並連結至 v01 多 Agent。</div>
+          </div>
+          <div id="qlAiRankBox"></div>
+          <div class="ql-grid ql-g2">
+            <div class="ql-card"><h3>風險 × 報酬分布（點擊泡泡看詳情）</h3><div class="ql-cv"><canvas id="qlRkScatter"></canvas></div>
+              <div class="ql-legend">${Object.entries(C).map(([k, v]) => `<span><i style="background:${v[1]};height:8px;width:8px;border-radius:50%"></i>${v[0]}</span>`).join('')}<span>泡泡大小＝交易次數</span></div></div>
+            <div class="ql-card"><h3>夏普值排行（虛線＝買進持有基準）</h3><div id="qlRkBars" style="max-height:290px;overflow-y:auto;"></div></div>
+          </div>`;
+          this.drawRank();
+        },
+        rankRow(r) {
+          const m = r.ev.m || {}, t = r.ev.t, c = QCORE.CATS[r.s.cat], isBH = r.s.id === 'bh';
+          const q = (v, g, b) => !isN(v) ? 'ql-mut' : v >= g ? 'ql-up' : v >= b ? '' : 'ql-dn';
+          const sm = SIG_META[r.res.lastSignal] || ['--', 'badge-slate'];
+          const isLinked = state.linkedQuantStrategy && state.linkedQuantStrategy.id === r.s.id && state.linkedQuantStrategy.symbol === this.code;
+          return `<tr class="${isBH ? 'bh' : 'clk'} ${r.s.id === this.sel ? 'sel' : ''}" ${isBH ? '' : `onclick="QLAB.openDetail('${r.s.id}')"`}>
+            <td class="l">${esc(r.s.name)}${r.res.mtf ? ' <span class="ql-tag" style="color:#0284c7">MTF</span>' : ''}${isLinked ? ' <span class="badge badge-blue" style="font-size:9.5px;padding:1px 5px;">已連結</span>' : ''}</td>
+            <td class="l"><span class="ql-tag" style="color:${c[1]}">${c[0]}</span></td>
+            <td class="l">${isBH ? '<span class="ql-mut">—</span>' : `<span class="badge ${sm[1]}" style="font-size:10px;padding:1px 6px;">${sm[0]}</span>`}</td>
+            <td class="${col(m.total)}">${pct(m.total)}</td><td class="${col(m.annRet)}">${pct(m.annRet)}</td>
+            <td class="${q(m.sharpe, 1, 0)}">${num(m.sharpe)}</td><td>${num(m.sortino)}</td><td>${num(m.calmar)}</td>
+            <td class="ql-dn">${pct(m.mdd)}</td><td>${isBH ? '—' : pctU(t.win, 0)}</td><td>${isBH ? '—' : num(t.pf)}</td><td>${isBH ? '—' : t.n}</td>
+            <td>${pctU(t.exposure, 0)}</td><td class="${q(r.ev.oos && r.ev.oos.sharpe, 1, 0)}">${num(r.ev.oos && r.ev.oos.sharpe)}</td><td>${num(m.beta)}</td></tr>`;
+        },
+        drawRank() {
+          if (!this.D || this.curTab !== 'rank' || !$q('qlRkScatter')) return;
+          const all = this.results.filter(r => r.ev.m && r.ev.t.n > 0).concat([this.bh]);
+          const maxN = Math.max(1, ...all.map(r => r.ev.t.n));
+          CH.scatter($q('qlRkScatter'), {
+            h: 280, xLabel: '最大回撤 →（越靠右越淺）', yLabel: '年化報酬', fmtX: v => (v * 100).toFixed(0) + '%', fmtY: v => (v * 100).toFixed(0) + '%',
+            pts: all.map(r => ({ x: r.ev.m.mdd, y: r.ev.m.annRet, color: QCORE.CATS[r.s.cat][1], r: r.s.id === 'bh' ? 7 : 4 + 6 * Math.sqrt(r.ev.t.n / maxN), hi: r.s.id === 'bh' || r.s.id === this.sel, label: r.s.id === 'bh' ? '買進持有' : '', name: r.s.name, id: r.s.id,
+              tip: `<b>${esc(r.s.name)}</b><div>年化 ${pct(r.ev.m.annRet)} · 回撤 ${pct(r.ev.m.mdd)}</div><div>夏普 ${num(r.ev.m.sharpe)} · ${r.ev.t.n} 筆</div>` })),
+            onClick: p => { if (p.id !== 'bh') this.openDetail(p.id); }
+          });
+          const L = this.results.filter(r => r.ev.m && r.ev.t.n > 0).sort((a, b) => (b.ev.m.sharpe || -9) - (a.ev.m.sharpe || -9));
+          const bhS = this.bh.ev.m ? this.bh.ev.m.sharpe : 0, mx = Math.max(0.5, ...L.map(r => Math.abs(r.ev.m.sharpe || 0)), Math.abs(bhS));
+          const zx = 50, sc = v => 50 * v / mx;
+          const barsEl = $q('qlRkBars');
+          if (barsEl) barsEl.innerHTML = `<div style="position:relative">${L.map(r => {
+            const v = r.ev.m.sharpe || 0, w = Math.abs(sc(v)), left = v >= 0 ? zx : zx - w;
+            return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;cursor:pointer" onclick="QLAB.openDetail('${r.s.id}')"><span style="width:142px;font-size:11.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.s.name)}</span>
+              <div class="ql-sbar" style="flex:1"><div style="position:absolute;left:${left}%;width:${w}%;background:${v >= 0 ? '#dc2626' : '#059669'}"></div><div style="position:absolute;left:${zx + sc(bhS)}%;top:0;bottom:0;border-left:1.5px dashed #d97706"></div></div>
+              <span class="mono ${col(v)}" style="width:42px;text-align:right;font-size:11.5px">${num(v)}</span></div>`;
+          }).join('')}</div>`;
+        },
+        openDetail(id) { this.sel = id; this.renderDetail(); this.tab('detail'); },
+        linkStrategyToAgent(id) {
+          if (!this.D) return;
+          const r = this.results.find(x => x.s.id === id);
+          if (!r) return;
+          const m = r.ev.m || {}, t = r.ev.t || {};
+          state.linkedQuantStrategy = {
+            symbol: this.code,
+            id: r.s.id,
+            name: r.s.name,
+            signal: r.res.lastSignal,
+            sharpe: isN(m.sharpe) ? +m.sharpe.toFixed(2) : null,
+            win_rate: isN(t.win) ? Math.round(t.win * 100) : null,
+            ann_ret: isN(m.annRet) ? +(m.annRet * 100).toFixed(1) : null,
+            last_date: this.D.d[this.D.d.length - 1],
+            params: r.res.params
+          };
+          persistState();
+          renderLinkedQuantBanner();
+          this.renderRank();
+          this.renderDetail();
+          showToast('已連結至 v01 多 Agent 決策', `${this.code} · ${r.s.name}（最新訊號：${r.res.lastSignal}）將自動納入多 Agent 加權投票！`, 'success');
+        },
+        renderDetail() {
+          const V = $q('ql-v-detail'); if (!V) return;
+          if (!this.D) { V.innerHTML = '<div class="ql-card ql-empty">請先載入真實日線資料並回測全部策略。</div>'; return; }
+          const r = this.results.find(x => x.s.id === this.sel), s = r.s, p = this.pOf(s.id), m = r.ev.m, t = r.ev.t, bh = this.bh.ev.m, c = QCORE.CATS[s.cat];
+          const row = (k, v, cls, note) => `<div class="ql-row"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></div>${note ? `<div class="ql-hint" style="margin:0 0 4px;">${note}</div>` : ''}`;
+          const q = (v, g, b) => !isN(v) ? 'ql-mut' : v >= g ? 'ql-up' : v >= b ? 'ql-gold' : 'ql-dn';
+          const lvl = QCORE.riskLevel(m), op = r.res.open;
+          const sm = SIG_META[r.res.lastSignal] || ['--', 'badge-slate'];
+          const isLinked = state.linkedQuantStrategy && state.linkedQuantStrategy.id === s.id && state.linkedQuantStrategy.symbol === this.code;
+          V.innerHTML = `
+          <div class="ql-bar" style="margin-bottom:12px;align-items:center;">
+            <div class="ql-fld"><label>選擇策略</label><select class="select" onchange="QLAB.openDetail(this.value)">${Object.entries(QCORE.CATS).filter(([k]) => k !== 'bh').map(([k, v]) => `<optgroup label="${v[0]}">${QCORE.STRATS.filter(x => x.cat === k).map(x => `<option value="${x.id}" ${x.id === s.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+            <span class="ql-tag" style="color:${c[1]}">${c[0]}</span><span class="ql-tag" style="color:#64748b">Pine v${s.ver}</span>${r.res.mtf ? '<span class="ql-tag" style="color:#0284c7">MTF→週線</span>' : ''}
+            <span class="badge ${sm[1]}">最新訊號：${sm[0]}</span>
+            <div style="flex:1;min-width:200px;font-size:12px;color:var(--ink-2)">${esc(s.desc)}</div>
+            <button type="button" class="btn btn-sm ${isLinked ? 'btn-teal' : 'btn-primary'}" onclick="QLAB.linkStrategyToAgent('${s.id}')">${isLinked ? '✅ 已連結至 v01 多 Agent' : '🔗 連結此策略至 v01 多 Agent'}</button>
+            <a class="btn btn-sm" href="https://github.com/Alorse/pinescript-strategies/blob/master/${encodeURI(s.file)}" target="_blank" rel="noopener" style="text-decoration:none">Pine 原始碼 ↗</a>
+          </div>
+          <div class="ql-card" style="margin-bottom:12px"><h3><span>🎛️ 策略參數微調（修改後即時重算並自動記憶）</span><button type="button" class="btn btn-sm" onclick="QLAB.resetParams('${s.id}')">↺ 還原預設參數</button></h3>
+            <div class="ql-params">${s.params.map(x => `<div class="ql-fld"><label>${esc(x.label)}${p[x.k] !== x.def ? ' <span class="ql-gold">●</span>' : ''}</label><input class="input mono" type="number" step="${x.step}" min="${x.min}" max="${x.max}" value="${p[x.k]}" onchange="QLAB.setParam('${s.id}','${x.k}',this.value)"></div>`).join('')}</div></div>
+          ${!m ? '<div class="ql-card ql-empty">資料太短，無法計算績效指標</div>' : `
+          <div class="ql-banner" style="border-color:${lvl[1]}66">
+            <div class="big" style="color:${lvl[1]}">${lvl[0]}</div>
+            <div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:700;color:var(--ink-1)">${lvl[2]}</div><div class="ql-hint" style="margin:2px 0 0">區間 ${m.from} ～ ${m.to}（${m.n} 個交易日）· 無風險利率 ${CFG.rf}% · Beta 對比加權指數</div></div>
+            <div style="text-align:right"><div class="ql-mut" style="font-size:11px">期末資產</div><div class="mono" style="font-size:18px;font-weight:800;color:var(--ink-1)">$${money(r.res.eq[r.res.eq.length - 1])}</div><div class="${col(m.total)} mono" style="font-size:12px">${pct(m.total)} · 持有 ${pct(bh && bh.total)}</div></div>
+            <button type="button" class="btn btn-sm btn-teal" onclick="QLAB.aiDetail()">🤖 AI 策略診斷</button>
+          </div>
+          <div class="ql-grid ql-g4" style="margin-bottom:12px">
+            <div class="ql-card"><h3>報酬與效率</h3>
+              ${row('年化報酬', pct(m.annRet), col(m.annRet), '買進持有：' + pct(bh && bh.annRet))}
+              ${row('夏普值', num(m.sharpe), q(m.sharpe, 1, 0))}
+              ${row('索提諾', num(m.sortino), q(m.sortino, 1.5, 0))}
+              ${row('卡瑪比', num(m.calmar), q(m.calmar, 1, 0.3))}
+              ${row('Alpha（年化）', pct(m.alpha), col(m.alpha))}</div>
+            <div class="ql-card"><h3>波動與大盤敏感度</h3>
+              ${row('年化波動率', pctU(m.annVol), m.annVol > 0.45 ? 'ql-dn' : m.annVol > 0.28 ? 'ql-gold' : 'ql-up', '持有：' + pctU(bh && bh.annVol))}
+              ${row('Beta', num(m.beta))}
+              ${row('與大盤相關', num(m.rho))}
+              ${row('上漲日比例', pctU(m.up))}
+              ${row('持倉時間', pctU(t.exposure, 0))}</div>
+            <div class="ql-card"><h3>下檔風險</h3>
+              ${row('最大回撤', pct(m.mdd), 'ql-dn', `${m.mddPeak} → ${m.mddTrough}`)}
+              ${row('目前距高點', pct(m.curDD), m.curDD < -0.1 ? 'ql-dn' : '')}
+              ${row('最長水下期', m.longestUW + ' 交易日')}
+              ${row('單日 VaR 95%', pct(m.var95, 2), 'ql-dn')}
+              ${row('CVaR 95%', pct(m.cvar95, 2), 'ql-dn')}</div>
+            <div class="ql-card"><h3>交易統計</h3>
+              ${row('已平倉交易', t.n + ' 筆' + (op ? ' ＋1持倉' : ''))}
+              ${row('勝率', pctU(t.win, 0), q(t.win, 0.55, 0.4))}
+              ${row('獲利因子', num(t.pf), q(t.pf, 1.5, 1))}
+              ${row('平均賺 / 賠', pct(t.avgW) + ' / ' + pct(t.avgL))}
+              ${row('每筆期望值', pct(t.exp, 2), col(t.exp))}
+              ${row('平均持有 / 連虧', num(t.hold, 1) + '根 / ' + t.maxL + '連虧')}
+              ${row('交易成本 / 權息', `$${money(t.fees)} / $${money(r.res.divIn || 0)}`, 'ql-mut')}
+              ${row('漲跌停順延', (r.res.blocked || 0) + ' 次', r.res.blocked ? 'ql-gold' : 'ql-mut')}</div>
+          </div>
+          ${r.ev.oos ? `<div class="ql-card" style="margin-bottom:12px"><h3>樣本內 vs 樣本外（前 ${100 - CFG.split}% / 後 ${CFG.split}%）</h3><div class="ql-tw"><table class="ql-t"><thead><tr><th>期間</th><th>區間</th><th>年化</th><th>夏普</th><th>最大回撤</th><th>持有同期年化</th></tr></thead><tbody>
+            ${[['樣本內', r.ev.is, this.bh.ev.is], ['樣本外', r.ev.oos, this.bh.ev.oos]].map(([k, x, b]) => x ? `<tr><td class="l">${k}</td><td>${x.from} ～ ${x.to}</td><td class="${col(x.annRet)}">${pct(x.annRet)}</td><td>${num(x.sharpe)}</td><td class="ql-dn">${pct(x.mdd)}</td><td class="${col(b && b.annRet)}">${pct(b && b.annRet)}</td></tr>` : '').join('')}</tbody></table></div></div>` : ''}
+          <div class="ql-card" style="margin-bottom:12px"><h3><span>K 線與買賣點（滾輪縮放、拖曳平移）</span><span class="ql-chips"><button type="button" class="ql-chip" onclick="QLAB.zoom(120)">近 120 根</button><button type="button" class="ql-chip" onclick="QLAB.zoom(250)">近 250 根</button><button type="button" class="ql-chip" onclick="QLAB.zoom(0)">全部</button></span></h3>
+            <div class="ql-cv"><canvas id="qlDtCandle"></canvas></div>
+            <div class="ql-legend"><span><i style="background:#d97706"></i>▲ 買進</span><span><i style="background:#334155"></i>▼ 訊號出場</span><span><i style="background:#059669"></i>▼ 停損</span><span><i style="background:#db2777"></i>▼ 停利</span>${Object.keys(r.res.lines).map((k, j) => `<span><i style="background:${['#0284c7', '#d97706', '#7c3aed', '#db2777', '#64748b'][j % 5]}"></i>${esc(k)}</span>`).join('')}</div></div>
+          <div class="ql-grid ql-g2" style="margin-bottom:12px">
+            <div class="ql-card"><h3><span>資金曲線 vs 買進持有</span><label style="font-size:11.5px;color:var(--ink-3);font-weight:600;cursor:pointer;"><input type="checkbox" id="qlDtLog" onchange="QLAB.drawDetail()" ${LS.get('synapse_qlab_log', '') ? 'checked' : ''}> 對數座標</label></h3><div class="ql-cv"><canvas id="qlDtEq"></canvas></div>
+              <div class="ql-legend"><span><i style="background:#0284c7"></i>策略</span><span><i style="background:#d97706"></i>買進持有</span>${this.bench ? '<span><i style="background:#64748b"></i>加權指數</span>' : ''}</div></div>
+            <div class="ql-card"><h3>水下回撤曲線</h3><div class="ql-cv"><canvas id="qlDtUw"></canvas></div>
+              <div class="ql-legend"><span><i style="background:#059669"></i>策略距前高</span><span><i style="background:#d97706"></i>買進持有距前高</span></div></div>
+          </div>
+          <div class="ql-grid ql-g2" style="margin-bottom:12px">
+            <div class="ql-card"><h3>月報酬熱力圖 (%)</h3><div class="ql-tw" id="qlDtMonthly"></div></div>
+            <div class="ql-card"><h3>單筆交易報酬分布</h3><div class="ql-cv"><canvas id="qlDtHist"></canvas></div></div>
+          </div>
+          <div class="ql-card"><h3><span>交易明細（${t.n} 筆${op ? '＋持倉中' : ''}）</span><button type="button" class="btn btn-sm" onclick="QLAB.csvTrades()">⬇️ CSV</button></h3>
+            <div class="ql-tw" style="max-height:360px"><table class="ql-t"><thead><tr><th>#</th><th>進場日</th><th>進場價</th><th>出場日</th><th>出場價</th><th>股數</th><th>持有根</th><th>權息</th><th>報酬</th><th>損益</th><th>出場原因</th></tr></thead><tbody>
+            ${op ? `<tr class="bh"><td class="l">持倉中</td><td>${op.din}</td><td>${num(op.pin)}</td><td class="ql-mut">—</td><td>${num(op.last)}（現價）</td><td>${op.qty.toLocaleString()}</td><td>${op.bars}</td><td>${op.div ? money(op.div) : '—'}</td><td class="${col(op.ret)}">${pct(op.ret, 2)}</td><td class="ql-mut">未實現</td><td class="l ql-mut">${isN(op.sl) ? '停損 ' + num(op.sl) : ''}${isN(op.tp) ? ' 停利 ' + num(op.tp) : ''}</td></tr>` : ''}
+            ${r.res.trades.slice().reverse().map((x, k) => `<tr><td class="l">${t.n - k}</td><td>${x.din}</td><td>${num(x.pin)}</td><td>${x.dout}</td><td>${num(x.pout)}</td><td>${x.qty.toLocaleString()}</td><td>${x.bars}</td><td>${x.div ? money(x.div) : '—'}</td><td class="${col(x.ret)}">${pct(x.ret, 2)}</td><td class="${col(x.pnl)}">${money(x.pnl)}</td><td class="l">${x.why}</td></tr>`).join('') || '<tr><td colspan="11" class="l ql-mut">此期間沒有已平倉交易</td></tr>'}
+            </tbody></table></div></div>
+          <div class="ql-card" id="qlAiDetailBox" style="margin-top:12px;display:none"></div>`}`;
+          this.detSt = null;
+          this.drawDetail();
+        },
+        zoom(nb) { if (!this.detSt) return; const n = this.D.c.length; this.detSt.to = n; this.detSt.from = nb ? Math.max(0, n - nb) : 0; CH.candle($q('qlDtCandle'), this.detSt); },
+        drawDetail() {
+          if (!this.D || this.curTab !== 'detail' || !$q('qlDtEq')) return;
+          const r = this.results.find(x => x.s.id === this.sel), D = this.D, n = D.c.length, lab = D.d.map(d => d.slice(2));
+          if (!this.detSt || this.detSt.id !== r.s.id || this.detSt.D !== D) { const cv = $q('qlDtCandle'); cv._bound = false; this.detSt = { id: r.s.id, D, from: Math.max(0, n - 250), to: n, h: 340 }; }
+          Object.assign(this.detSt, { lines: r.res.lines, marks: r.res.marks, trades: r.res.trades, open: r.res.open });
+          CH.candle($q('qlDtCandle'), this.detSt);
+          const log = $q('qlDtLog') && $q('qlDtLog').checked; LS.set('synapse_qlab_log', log ? '1' : '');
+          const bh = this.bh.res.eq, series = [{ name: '策略', vals: r.res.eq, color: '#0284c7', width: 2, fmt: money }, { name: '買進持有', vals: bh, color: '#d97706', fmt: money }];
+          if (this.bench) { const bm = new Map(this.bench.map(x => [x.d, x.c])); const b0 = bm.get(D.d.find(d => bm.has(d))); series.push({ name: '加權指數', vals: D.d.map(d => bm.has(d) ? CFG.cash * bm.get(d) / b0 : NaN), color: '#64748b', dash: [4, 4], width: 1.2, fmt: money }); }
+          CH.line($q('qlDtEq'), { h: 240, labels: lab, series, log, fmtL: v => v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : (v / 1e3).toFixed(0) + 'K', marks: r.res.marks });
+          const uw = a => { let pk = -Infinity; return a.map(v => { pk = Math.max(pk, v); return (v / pk - 1) * 100; }); };
+          CH.line($q('qlDtUw'), { h: 240, labels: lab, series: [{ name: '策略', vals: uw(r.res.eq), color: '#059669', fill: true, fmt: v => v.toFixed(1) + '%' }, { name: '買進持有', vals: uw(bh), color: '#d97706', width: 1.2, fmt: v => v.toFixed(1) + '%' }], fmtL: v => v.toFixed(0) + '%' });
+          const M = QCORE.monthly(D, r.res.eq), years = [...new Set(Object.keys(M).map(k => k.slice(0, 4)))];
+          const cell = v => {
+            if (!isN(v)) return '<td class="ql-mut">·</td>';
+            const a = Math.min(1, Math.abs(v) / 0.1), alpha = 0.12 + a * 0.65;
+            const fg = alpha > 0.45 ? '#ffffff' : '#0f172a';
+            return `<td style="background:${v >= 0 ? `rgba(220,38,38,${alpha})` : `rgba(5,150,105,${alpha})`};text-align:center;color:${fg};font-size:11px">${(v * 100).toFixed(1)}</td>`;
+          };
+          const moEl = $q('qlDtMonthly');
+          if (moEl) moEl.innerHTML = `<table class="ql-t"><thead><tr><th>年</th>${Array.from({ length: 12 }, (_, k) => `<th style="text-align:center">${k + 1}</th>`).join('')}<th>全年</th></tr></thead><tbody>${years.map(y => {
+            let yr = 1; const cells = Array.from({ length: 12 }, (_, k) => { const v = M[`${y}-${String(k + 1).padStart(2, '0')}`]; if (isN(v)) yr *= 1 + v; return cell(v); }).join('');
+            return `<tr><td class="l">${y}</td>${cells}<td class="${col(yr - 1)}" style="font-weight:800">${pct(yr - 1)}</td></tr>`;
+          }).join('')}</tbody></table>`;
+          CH.hist($q('qlDtHist'), r.res.trades.map(x => x.ret), { h: 205 });
+        },
+        setParam(id, k, v) {
+          const s = QCORE.STRATS.find(x => x.id === id), d = s.params.find(x => x.k === k);
+          let val = parseFloat(v); if (!isN(val)) val = d.def; val = Math.min(d.max, Math.max(d.min, val));
+          this.params[id] = Object.assign({}, this.params[id] || {}, { [k]: val });
+          LS.set('synapse_qlab_params', JSON.stringify(this.params));
+          this.rerunOne(id); this.renderDetail(); this.renderRank();
+        },
+        resetParams(id) { delete this.params[id]; LS.set('synapse_qlab_params', JSON.stringify(this.params)); this.rerunOne(id); this.renderDetail(); this.renderRank(); },
+        renderOpt() {
+          const V = $q('ql-v-opt'); if (!V) return;
+          if (!this.D) { V.innerHTML = '<div class="ql-card ql-empty">請先載入真實日線資料。</div>'; return; }
+          const s = QCORE.STRATS.find(x => x.id === (this.optId || this.sel)); this.optId = s.id;
+          const ps = s.params.filter(x => x.max > x.min && !(x.min === 0 && x.max === 1));
+          const pf = (x, k) => { const v = this.pOf(s.id)[x.k]; return k === 'f' ? Math.max(x.min, +(v * 0.5).toFixed(2)) : Math.min(x.max, +(v * 1.5).toFixed(2)); };
+          const px = ps[0], py = ps[1];
+          V.innerHTML = `
+          <div class="ql-card" style="margin-bottom:12px"><h3>🎛️ 參數最佳化網格掃描（支援樣本內挑參＋樣本外防過度擬合檢驗）</h3>
+            <div class="ql-bar" style="background:none;border:none;padding:0;">
+              <div class="ql-fld"><label>策略</label><select class="select" id="qlOpS" onchange="QLAB.optId=this.value;QLAB.renderOpt()">${QCORE.STRATS.map(x => `<option value="${x.id}" ${x.id === s.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+              <div class="ql-fld"><label>X 參數</label><select class="select" id="qlOpX">${ps.map((x, k) => `<option value="${x.k}" ${k === 0 ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></div>
+              <div class="ql-fld"><label>X 從</label><input class="input mono" id="qlOpX0" style="width:76px" value="${px ? pf(px, 'f') : ''}"></div>
+              <div class="ql-fld"><label>X 到</label><input class="input mono" id="qlOpX1" style="width:76px" value="${px ? pf(px, 't') : ''}"></div>
+              <div class="ql-fld"><label>Y 參數</label><select class="select" id="qlOpY"><option value="">（一維）</option>${ps.map((x, k) => `<option value="${x.k}" ${k === 1 ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></div>
+              <div class="ql-fld"><label>Y 從</label><input class="input mono" id="qlOpY0" style="width:76px" value="${py ? pf(py, 'f') : ''}"></div>
+              <div class="ql-fld"><label>Y 到</label><input class="input mono" id="qlOpY1" style="width:76px" value="${py ? pf(py, 't') : ''}"></div>
+              <div class="ql-fld"><label>格數</label><select class="select" id="qlOpN"><option>6</option><option selected>9</option><option>12</option></select></div>
+              <div class="ql-fld"><label>目標</label><select class="select" id="qlOpObj"><option value="sharpe">夏普</option><option value="annRet">年化報酬</option><option value="calmar">卡瑪比</option><option value="sortino">索提諾</option></select></div>
+              <label style="font-size:12px;color:var(--ink-2);display:inline-flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="qlOpIS" checked>只用樣本內（前 ${100 - CFG.split}%）</label>
+              <button type="button" class="btn btn-primary btn-sm" onclick="QLAB.runOpt()">▶ 開始掃描</button>
+            </div>
+            <div class="ql-hint">建議選擇整片表現穩定的參數高原，並觀察樣本外（OOS）是否衰退，避免單點過度擬合。</div>
+          </div>
+          <div id="qlOpOut"></div>`;
+        },
+        async runOpt() {
+          const s = QCORE.STRATS.find(x => x.id === this.optId), kx = $q('qlOpX').value, ky = $q('qlOpY').value, N = +$q('qlOpN').value, obj = $q('qlOpObj').value, useIS = $q('qlOpIS').checked;
+          const dx = s.params.find(x => x.k === kx), dy = ky && ky !== kx ? s.params.find(x => x.k === ky) : null;
+          const mk = (d, a, b) => { a = Math.max(d.min, +a); b = Math.min(d.max, +b); if (!(b > a)) b = a; const out = []; for (let k = 0; k < N; k++) { let v = a + (b - a) * (N === 1 ? 0 : k / (N - 1)); v = d.step >= 1 ? Math.round(v) : Math.round(v / d.step) * d.step; v = +v.toFixed(4); if (!out.includes(v)) out.push(v); } return out; };
+          const xs = mk(dx, $q('qlOpX0').value, $q('qlOpX1').value), ys = dy ? mk(dy, $q('qlOpY0').value, $q('qlOpY1').value) : [null];
+          const cfg = engineCfg(this.code, this.divs), base = this.pOf(s.id), split = 1 - CFG.split / 100, cells = [];
+          let done = 0; const total = xs.length * ys.length;
+          for (const y of ys) for (const x of xs) {
+            const p = Object.assign({}, base, { [kx]: x }); if (dy) p[ky] = y;
+            const res = QCORE.backtest(this.D, s, p, cfg), ev = QCORE.evaluate(this.D, res, this.bench, CFG.rf / 100, split);
+            const pick = m => m ? m[obj] : NaN;
+            cells.push({ x, y, p, n: ev.t.n, full: pick(ev.m), is: pick(ev.is), oos: pick(ev.oos), mFull: ev.m });
+            if (++done % 12 === 0) { this.status(`🎛️ 掃描中 ${done}/${total}…`, true); await sleep(0); }
+          }
+          this.status(`✅ 參數掃描完成：${total} 組`);
+          const score = c => c.n === 0 ? NaN : (useIS ? c.is : c.full);
+          const vals = cells.map(score).filter(isN), lo = Math.min(...vals), hi = Math.max(...vals);
+          const fmt = v => !isN(v) ? '—' : obj === 'annRet' ? (v * 100).toFixed(1) : v.toFixed(2);
+          const cellStyle = v => {
+            if (!isN(v)) return 'background:#f1f5f9;color:#94a3b8;';
+            const k = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+            const alpha = k >= 0.5 ? 0.14 + (k - 0.5) * 1.4 : 0.14 + (0.5 - k) * 1.4;
+            return `background:${k >= 0.5 ? `rgba(220,38,38,${alpha})` : `rgba(5,150,105,${alpha})`};color:${alpha > 0.45 ? '#fff' : '#0f172a'};`;
+          };
+          const top = cells.filter(c => isN(score(c))).sort((a, b) => score(b) - score(a)).slice(0, 10);
+          const cur = Object.assign({}, base);
+          this.optCells = cells;
+          $q('qlOpOut').innerHTML = `
+          <div class="ql-grid ql-g2">
+            <div class="ql-card"><h3>${esc(s.name)} 參數熱力圖（點格子套用）</h3>
+              <div class="ql-tw"><table class="ql-hm" style="border-collapse:separate;border-spacing:2px;width:100%"><thead><tr><th>${dy ? esc(dy.label) + ' ╲ ' : ''}${esc(dx.label)}</th>${xs.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>
+              ${ys.map(y => `<tr><th>${y == null ? '' : y}</th>${xs.map(x => { const c = cells.find(z => z.x === x && z.y === y), v = score(c), isCur = cur[kx] === x && (!dy || cur[ky] === y); return `<td><div style="${cellStyle(v)}${isCur ? 'outline:2px solid #d97706;' : ''}" title="交易 ${c.n} 筆 · 全期 ${fmt(c.full)} · 樣本外 ${fmt(c.oos)}" onclick="QLAB.applyOpt(${cells.indexOf(c)})">${fmt(v)}</div></td>`; }).join('')}</tr>`).join('')}
+              </tbody></table></div></div>
+            <div class="ql-card"><h3>前 10 名參數組合</h3><div class="ql-tw"><table class="ql-t"><thead><tr><th>參數</th><th>${useIS ? '樣本內' : '全期'}</th><th>樣本外</th><th>全期年化</th><th>回撤</th><th>交易</th><th></th></tr></thead><tbody>
+              ${top.map(c => `<tr><td class="l">${esc(dx.label)}=${c.x}${dy ? `，${esc(dy.label)}=${c.y}` : ''}</td><td>${fmt(score(c))}</td><td class="${isN(c.oos) && isN(score(c)) && c.oos < score(c) * 0.5 ? 'ql-dn' : ''}">${fmt(c.oos)}</td><td class="${col(c.mFull && c.mFull.annRet)}">${pct(c.mFull && c.mFull.annRet)}</td><td class="ql-dn">${pct(c.mFull && c.mFull.mdd)}</td><td>${c.n}</td><td><button type="button" class="btn btn-sm" onclick="QLAB.applyOpt(${cells.indexOf(c)})">套用</button></td></tr>`).join('')}
+              </tbody></table></div></div>
+          </div>`;
+        },
+        applyOpt(k) {
+          const c = this.optCells[k], s = QCORE.STRATS.find(x => x.id === this.optId);
+          const changed = {}; s.params.forEach(d => { if (c.p[d.k] !== d.def) changed[d.k] = c.p[d.k]; });
+          this.params[s.id] = changed; LS.set('synapse_qlab_params', JSON.stringify(this.params));
+          this.rerunOne(s.id); this.renderRank(); this.openDetail(s.id);
+          this.status(`✅ 已套用 ${s.name} 最佳化參數`);
+        },
+        renderBatch() {
+          const V = $q('ql-v-batch'); if (!V || V.dataset.ready) return; V.dataset.ready = '1';
+          const defCodes = state.watchlist.filter(w => /^[0-9A-Z]{4,6}$/.test(w.symbol)).map(w => w.symbol).slice(0, 8).join(', ') || '2330, 2317, 2454, 2308, 2881, 0050';
+          V.innerHTML = `
+          <div class="ql-card" style="margin-bottom:12px"><h3>🧺 多股批次回測：檢驗策略跨標的普遍性</h3>
+            <div class="ql-bar" style="background:none;border:none;padding:0;align-items:flex-end;">
+              <div class="ql-fld" style="flex:1;min-width:220px"><label>股票代號（逗號或空白分隔，最多 20 檔）</label><input class="input mono" id="qlBtCodes" value="${esc(LS.get('synapse_qlab_batch', defCodes))}"></div>
+              <div class="ql-fld"><label>策略</label><select class="select" id="qlBtS"><option value="__all">全部 30 支（矩陣）</option>${QCORE.STRATS.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>
+              <div class="ql-fld"><label>指標</label><select class="select" id="qlBtM"><option value="sharpe">夏普</option><option value="annRet">年化報酬</option><option value="excess">年化超額（vs 持有）</option></select></div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="QLAB.runBatch()">▶ 開始批次回測</button>
+            </div></div>
+          <div id="qlBtOut"></div>`;
+        },
+        async runBatch() {
+          const codes = [...new Set(($q('qlBtCodes')?.value || '').toUpperCase().split(/[\s,，、]+/).filter(c => /^[0-9A-Z]{4,6}$/.test(c)))].slice(0, 20);
+          if (!codes.length) return; LS.set('synapse_qlab_batch', codes.join(', '));
+          const sid = $q('qlBtS').value, metric = $q('qlBtM').value, years = +($q('qlYearsSelect')?.value || 5);
+          const strats = sid === '__all' ? QCORE.STRATS : QCORE.STRATS.filter(s => s.id === sid);
+          this.status('📡 抓取加權指數基準…', true);
+          const b = await loadRealHistory('TAIEX', years), benchD = b.err ? null : clean(b.rows, years), bench = benchD ? benchD.d.map((d, i) => ({ d, c: benchD.c[i] })) : null;
+          const rows = []; this.batchRows = rows;
+          for (let k = 0; k < codes.length; k++) {
+            const code = codes[k]; this.status(`📡 ${k + 1}/${codes.length} 抓取 ${code} 真實日線…`, true);
+            const p = await loadRealHistory(code, years);
+            const nm = resolveStockName(code) || p.name || '';
+            if (p.err) { rows.push({ code, name: nm, err: p.err }); continue; }
+            const D = clean(p.rows, years); if (D.c.length < 60) { rows.push({ code, name: nm, err: '資料不足' }); continue; }
+            const cfg = engineCfg(code, p.divs), rf = CFG.rf / 100, split = 1 - CFG.split / 100;
+            const bhEv = QCORE.evaluate(D, QCORE.buyHold(D, cfg), bench, rf, split);
+            const res = strats.map(s => { const r = QCORE.backtest(D, s, this.pOf(s.id), cfg); return { s, ev: QCORE.evaluate(D, r, bench, rf, split) }; });
+            rows.push({ code, name: nm, bh: bhEv, res });
+            this.drawBatch(strats, metric); await sleep(0);
+          }
+          this.status(`✅ 多股批次完成：${rows.filter(r => !r.err).length}/${codes.length} 檔`);
+          this.drawBatch(strats, metric);
+        },
+        drawBatch(strats, metric) {
+          const rows = this.batchRows || [], out = $q('qlBtOut'); if (!out) return;
+          const val = (x, row) => { const m = x.ev.m; if (!m || x.ev.t.n === 0) return NaN; return metric === 'excess' ? m.annRet - (row.bh.m ? row.bh.m.annRet : 0) : m[metric]; };
+          const fmt = v => !isN(v) ? '—' : metric === 'sharpe' ? v.toFixed(2) : (v * 100).toFixed(1);
+          if (strats.length === 1) {
+            const s = strats[0];
+            out.innerHTML = `<div class="ql-card"><h3>${esc(s.name)} · 多股結果（點列載入該股詳情）</h3><div class="ql-tw"><table class="ql-t"><thead><tr><th>股票</th><th>持有年化</th><th>策略年化</th><th>超額</th><th>夏普</th><th>持有夏普</th><th>最大回撤</th><th>勝率</th><th>交易</th><th>樣本外夏普</th></tr></thead><tbody>
+              ${rows.map(r => r.err ? `<tr><td class="l">${r.code} ${esc(r.name)}</td><td colspan="9" class="l ql-mut">${esc(r.err)}</td></tr>` : (() => { const x = r.res[0].ev, m = x.m || {}, b = r.bh.m || {}; return `<tr class="clk" onclick="QLAB.jump('${r.code}','${s.id}')"><td class="l">${r.code} ${esc(r.name)}</td><td class="${col(b.annRet)}">${pct(b.annRet)}</td><td class="${col(m.annRet)}">${pct(m.annRet)}</td><td class="${col(m.annRet - b.annRet)}">${pct(m.annRet - b.annRet)}</td><td>${num(m.sharpe)}</td><td>${num(b.sharpe)}</td><td class="ql-dn">${pct(m.mdd)}</td><td>${pctU(x.t.win, 0)}</td><td>${x.t.n}</td><td>${num(x.oos && x.oos.sharpe)}</td></tr>`; })()).join('')}
+              </tbody></table></div></div>`;
+            return;
+          }
+          const ok = rows.filter(r => !r.err), all = ok.flatMap(r => r.res.map(x => val(x, r))).filter(isN);
+          const lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+          const cellSt = v => {
+            if (!isN(v)) return 'background:#f1f5f9;color:#94a3b8;';
+            const alpha = v >= 0 ? 0.14 + 0.72 * (hi ? v / hi : 0) : 0.14 + 0.72 * (lo ? v / lo : 0);
+            return `background:${v >= 0 ? `rgba(220,38,38,${alpha})` : `rgba(5,150,105,${alpha})`};color:${alpha > 0.45 ? '#fff' : '#0f172a'};`;
+          };
+          const avg = strats.map((s, j) => { const v = ok.map(r => val(r.res[j], r)).filter(isN); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN; });
+          const pos = strats.map((s, j) => ok.filter(r => { const v = val(r.res[j], r); return isN(v) && v > 0; }).length);
+          const order = strats.map((_, j) => j).sort((a, b) => (isN(avg[b]) ? avg[b] : -9) - (isN(avg[a]) ? avg[a] : -9));
+          out.innerHTML = `<div class="ql-card"><h3>策略 × 股票 矩陣（${metric === 'sharpe' ? '夏普' : metric === 'annRet' ? '年化報酬 %' : '年化超額 %'}，點格子看詳情）</h3>
+            <div class="ql-tw"><table class="ql-hm" style="border-collapse:separate;border-spacing:2px"><thead><tr><th style="text-align:left">策略</th><th>平均</th><th>正值檔數</th>${ok.map(r => `<th>${r.code}<br><span style="font-weight:400">${esc((r.name || '').slice(0, 4))}</span></th>`).join('')}</tr></thead><tbody>
+            ${order.map(j => `<tr><th style="text-align:left;white-space:nowrap">${esc(strats[j].name)}</th><td><div style="${cellSt(avg[j])}font-weight:800">${fmt(avg[j])}</div></td><td><div>${pos[j]}/${ok.length}</div></td>${ok.map(r => { const v = val(r.res[j], r); return `<td><div style="${cellSt(v)}" onclick="QLAB.jump('${r.code}','${strats[j].id}')" title="${r.code} · ${esc(strats[j].name)} · 交易 ${r.res[j].ev.t.n} 筆">${fmt(v)}</div></td>`; }).join('')}</tr>`).join('')}
+            <tr><th style="text-align:left;color:#b45309">買進持有</th><td></td><td></td>${ok.map(r => { const v = metric === 'excess' ? 0 : r.bh.m && r.bh.m[metric]; return `<td><div style="outline:1px dashed #d97706;color:#92400e">${fmt(v)}</div></td>`; }).join('')}</tr>
+            </tbody></table></div></div>`;
+        },
+        async jump(code, sid) { const inp = $q('qlCodeInput'); if (inp) inp.value = code; this.sel = sid; await this.load(); this.openDetail(sid); },
+        renderRisk() {
+          const V = $q('ql-v-risk'); if (!V) return;
+          if (!this.D) { V.innerHTML = '<div class="ql-card ql-empty">請先載入真實日線資料。</div>'; return; }
+          const D = this.D, pm = QCORE.riskCalc(D.d.map((d, i) => ({ d, c: D.c[i] })), this.bench, CFG.rf / 100);
+          if (!pm) { V.innerHTML = '<div class="ql-card ql-empty">⚠️ 日線資料不足（至少需 40 個交易日）</div>'; return; }
+          const lvl = QCORE.riskLevel(pm), q = (v, g, b) => !isN(v) ? 'ql-mut' : v >= g ? 'ql-up' : v >= b ? 'ql-gold' : 'ql-dn';
+          const row = (k, v, cls, note) => `<div class="ql-row"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></div>${note ? `<div class="ql-hint" style="margin:0 0 4px;">${note}</div>` : ''}`;
+          V.innerHTML = `
+          <div class="ql-banner" style="border-color:${lvl[1]}66"><div class="big" style="color:${lvl[1]}">${lvl[0]}</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--ink-1)">${lvl[2]}</div><div class="ql-hint" style="margin:2px 0 0">${esc(this.name || this.code)}（${esc(this.code)}）· 區間 ${pm.from} ～ ${pm.to}（${pm.n} 交易日）· 無風險利率 ${CFG.rf}% · Beta 對比加權指數</div></div></div>
+          <div class="ql-grid ql-g3" style="margin-bottom:12px">
+            <div class="ql-card"><h3>報酬與效率</h3>${row('年化報酬', pct(pm.annRet), col(pm.annRet))}${row('夏普值', num(pm.sharpe), q(pm.sharpe, 1, 0))}${row('索提諾', num(pm.sortino), q(pm.sortino, 1.5, 0))}${row('卡瑪比', num(pm.calmar), q(pm.calmar, 1, 0.3))}${row('上漲日比例', pctU(pm.up))}</div>
+            <div class="ql-card"><h3>波動與市場敏感度</h3>${row('年化波動率', pctU(pm.annVol), pm.annVol > 0.45 ? 'ql-dn' : pm.annVol > 0.28 ? 'ql-gold' : 'ql-up', '台股個股常見 25%–45%')}${row('Beta', num(pm.beta), '', 'Beta 1.2 ≈ 大盤波動 1%，該股平均波動 1.2%')}${row('與大盤相關', num(pm.rho))}${row('Alpha（年化）', pct(pm.alpha), col(pm.alpha))}</div>
+            <div class="ql-card"><h3>下檔風險</h3>${row('最大回撤', pct(pm.mdd), 'ql-dn', `${pm.mddPeak} → ${pm.mddTrough}`)}${row('目前距高點', pct(pm.curDD), pm.curDD < -0.1 ? 'ql-dn' : '')}${row('最長水下期', pm.longestUW + ' 交易日')}${row('單日 VaR 95%', pct(pm.var95, 2), 'ql-dn')}${row('CVaR 95%', pct(pm.cvar95, 2), 'ql-dn')}</div>
+          </div>
+          <div class="ql-card"><h3>股價與水下回撤曲線</h3><div class="ql-cv"><canvas id="qlRkPx"></canvas></div><div class="ql-legend"><span><i style="background:#0284c7"></i>收盤價（左軸）</span><span><i style="background:#059669"></i>距前高回撤（右軸）</span></div></div>`;
+          this.riskPm = pm;
+          this.drawRisk();
+        },
+        drawRisk() {
+          if (!this.D || this.curTab !== 'risk' || !$q('qlRkPx') || !this.riskPm) return;
+          const D = this.D, pm = this.riskPm;
+          CH.line($q('qlRkPx'), { h: 270, labels: D.d.map(d => d.slice(2)), series: [{ name: '收盤', vals: D.c, color: '#0284c7', axis: 'L', fmt: v => v.toFixed(2) }, { name: '回撤', vals: pm.uw.map(v => v * 100), color: '#059669', axis: 'R', fill: true, fmt: v => v.toFixed(1) + '%' }], fmtL: v => v >= 1000 ? v.toFixed(0) : v.toFixed(1), fmtR: v => v.toFixed(0) + '%' });
+        },
+        renderLib() {
+          const V = $q('ql-v-lib'); if (!V) return;
+          V.innerHTML = `<div class="ql-card" style="margin-bottom:12px;font-size:12px;color:var(--ink-2);line-height:1.75;">
+            <strong style="color:var(--ink-1)">Alorse PineScript 30 支策略 × 台股現股規則說明</strong>：
+            ① 只做多現股（原放空訊號轉為多單出場）；② 支援整張 1000 股／零股／整張＋盤中零股；③ 手續費 0.1425% × 全域折數（預設 2.8 折，上限 6.0 折，最低 20 元），證交稅自動判定（股票 0.3%、ETF 0.1%、債券 ETF 免徵）；④ 依台股升降單位 (tick) 與漲跌停 ±10% 鎖死延遲撮合；⑤ FinMind 原始價自動計入除權息入帳與單筆 ≥2 萬二代健保 2.11%；⑥ 任一策略皆可一鍵連結至 v01 多 Agent 自動決策。
+          </div>
+          <div class="ql-lib">${QCORE.STRATS.map(s => {
+            const c = QCORE.CATS[s.cat];
+            return `<div class="ql-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>${esc(s.name)}</strong><span><span class="ql-tag" style="color:${c[1]}">${c[0]}</span> <span class="ql-tag" style="color:#64748b">v${s.ver}</span></span></div>
+              <p>${esc(s.desc)}</p><div class="ql-hint">${s.params.map(p => `${esc(p.label)} ${p.def}`).join(' · ')}</div>
+              <div style="display:flex;gap:6px;margin-top:auto"><button type="button" class="btn btn-sm" onclick="QLAB.openDetail('${s.id}')" ${this.D ? '' : 'disabled'}>🔬 檢視回測</button><a class="btn btn-sm" style="text-decoration:none" href="https://github.com/Alorse/pinescript-strategies/blob/master/${encodeURI(s.file)}" target="_blank" rel="noopener">GitHub ↗</a></div></div>`;
+          }).join('')}</div>`;
+        },
+        dl(name, text, type = 'text/csv') {
+          const b = new Blob([type === 'text/csv' ? '\uFEFF' + text : text], { type: type + ';charset=utf-8' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        },
+        csvRank() {
+          if (!this.D) return;
+          const h = ['策略', '類別', '最新訊號', '總報酬%', '年化%', '夏普', '索提諾', '卡瑪', '最大回撤%', '勝率%', '獲利因子', '交易數', '持倉%', '樣本外夏普', 'Beta'];
+          const f = v => isN(v) ? +v.toFixed(4) : '';
+          const lines = this.sorted().map(r => { const m = r.ev.m || {}, t = r.ev.t; return [r.s.name, QCORE.CATS[r.s.cat][0], r.res.lastSignal, f(m.total * 100), f(m.annRet * 100), f(m.sharpe), f(m.sortino), f(m.calmar), f(m.mdd * 100), f(t.win * 100), f(t.pf), t.n, f(t.exposure * 100), f(r.ev.oos && r.ev.oos.sharpe), f(m.beta)]; });
+          this.dl(`量化策略排行_${this.code}_${this.D.d[this.D.d.length - 1]}.csv`, [h].concat(lines).map(l => l.join(',')).join('\n'));
+        },
+        csvTrades() {
+          if (!this.D) return;
+          const r = this.results.find(x => x.s.id === this.sel);
+          const h = ['進場日', '進場價', '出場日', '出場價', '股數', '持有根數', '權息', '報酬%', '損益', '出場原因'];
+          this.dl(`交易明細_${this.code}_${r.s.id}.csv`, [h].concat(r.res.trades.map(t => [t.din, t.pin.toFixed(2), t.dout, t.pout.toFixed(2), t.qty, t.bars, Math.round(t.div || 0), (t.ret * 100).toFixed(2), Math.round(t.pnl), t.why])).map(l => l.join(',')).join('\n'));
+        },
+        exportAll() {
+          if (!this.D) { showToast('尚無回測資料', '請先載入真實日線並執行 30 支策略回測。', 'warn'); return; }
+          const slim = m => m ? Object.fromEntries(Object.entries(m).filter(([k]) => k !== 'uw')) : null;
+          const rep = {
+            tool: 'SYNAPSE TW v01 量化策略實驗室', generatedAt: new Date().toISOString(),
+            stock: { code: this.code, name: this.name, source: this.src, from: this.D.d[0], to: this.D.d[this.D.d.length - 1], bars: this.D.c.length },
+            config: CFG, buyHold: slim(this.bh.ev.m),
+            strategies: this.results.map(r => ({ id: r.s.id, name: r.s.name, category: QCORE.CATS[r.s.cat][0], lastSignal: r.res.lastSignal, params: r.res.params, metrics: slim(r.ev.m), trades: r.ev.t, outOfSample: slim(r.ev.oos) }))
+          };
+          this.dl(`SYNAPSE_量化回測報告_${this.code}.json`, JSON.stringify(rep, null, 2), 'application/json');
+        },
+        md(t) { return esc(t).replace(/^#{1,4}\s*(.+)$/gm, '<h4>$1</h4>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^\s*[-*•]\s+(.+)$/gm, '<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>').replace(/\n{2,}/g, '<br>').replace(/\n/g, ' '); },
+        async callGroqOrFallback(prompt, fallbackHtml) {
+          const key = (state.aiKeys?.groq || '').trim();
+          if (!key) return fallbackHtml;
+          const model = (state.modelOptions?.groq_model || 'llama-3.3-70b-versatile').trim();
+          const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model, max_tokens: 1800, temperature: 0.3, messages: [{ role: 'system', content: '你是台股量化研究員，用繁體中文條理清楚解讀回測數據，不捏造數字，提醒過度擬合與成本，使用 ## 小標與條列，600 字內。' }, { role: 'user', content: prompt }] })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error((j.error && j.error.message) || 'HTTP ' + r.status);
+          return this.md((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '');
+        },
+        async aiRank() {
+          const box = $q('qlAiRankBox'); if (!box || !this.D) return;
+          box.innerHTML = '<div class="ql-card" style="margin-bottom:12px;"><h3>🤖 量化排行 AI 解讀</h3><div class="ql-ai"><span class="ql-spin"></span>分析中…</div></div>';
+          const valid = this.results.filter(r => r.ev.m && r.ev.t.n >= 3).sort((a, b) => (b.ev.m.sharpe || -9) - (a.ev.m.sharpe || -9));
+          const top3 = valid.slice(0, 3);
+          const bh = this.bh.ev.m || {};
+          const fallback = `<h4>本地量化數據解讀（${esc(this.code)} ${esc(this.name)}）</h4><ul>` +
+            `<li><b>基準表現</b>：買進持有年化 ${pct(bh.annRet)}、夏普 ${num(bh.sharpe)}、最大回撤 ${pct(bh.mdd)}。</li>` +
+            top3.map((r, i) => `<li><b>第 ${i + 1} 名 · ${esc(r.s.name)}（${QCORE.CATS[r.s.cat][0]}）</b>：夏普 ${num(r.ev.m.sharpe)}、年化 ${pct(r.ev.m.annRet)}、勝率 ${pctU(r.ev.t.win, 0)}、樣本外夏普 ${num(r.ev.oos?.sharpe)}、最新訊號 <b>${r.res.lastSignal}</b>。</li>`).join('') +
+            `<li><b>建議下一步</b>：點選前 3 名策略至「參數最佳化」與「多股批次回測」驗證穩健性，並可於詳情頁連結至 v01 多 Agent 系統。（於「AI 六模型中心」填入 Groq API Key 後此處將自動切換為 LLM 深度解讀）</li></ul>`;
+          try {
+            const summary = valid.slice(0, 12).map(r => ({ 策略: r.s.name, 類別: QCORE.CATS[r.s.cat][0], 年化: +(r.ev.m.annRet || 0).toFixed(3), 夏普: +(r.ev.m.sharpe || 0).toFixed(2), 回撤: +(r.ev.m.mdd || 0).toFixed(3), 交易數: r.ev.t.n, 樣本外夏普: r.ev.oos ? +(r.ev.oos.sharpe || 0).toFixed(2) : null }));
+            const html = await this.callGroqOrFallback(`標的 ${this.code} ${this.name}，買進持有年化 ${(bh.annRet * 100).toFixed(1)}%、夏普 ${num(bh.sharpe)}。前12名策略：${JSON.stringify(summary)}。請解讀適合哪類策略、點名值得研究的前3名、提醒過度擬合風險。`, fallback);
+            box.querySelector('.ql-ai').innerHTML = html;
+          } catch (e) { box.querySelector('.ql-ai').innerHTML = fallback + `<div class="ql-hint">（Groq 呼叫提示：${esc(e.message)}）</div>`; }
+        },
+        async aiDetail() {
+          const box = $q('qlAiDetailBox'); if (!box || !this.D) return;
+          box.style.display = 'block';
+          box.innerHTML = '<h3>🤖 AI 策略深度診斷</h3><div class="ql-ai"><span class="ql-spin"></span>分析中…</div>';
+          const r = this.results.find(x => x.s.id === this.sel), m = r.ev.m || {}, t = r.ev.t || {}, bh = this.bh.ev.m || {};
+          const fallback = `<h4>本地量化策略診斷：${esc(r.s.name)}（${esc(this.code)}）</h4><ul>` +
+            `<li><b>報酬與效率</b>：年化 ${pct(m.annRet)}（持有 ${pct(bh.annRet)}），夏普 ${num(m.sharpe)}，獲利因子 ${num(t.pf)}，勝率 ${pctU(t.win, 0)}（${t.n} 筆交易）。</li>` +
+            `<li><b>風險與回撤</b>：最大回撤 ${pct(m.mdd)}，最長水下 ${m.longestUW} 個交易日，單日 VaR(95%) ${pct(m.var95, 2)}。</li>` +
+            `<li><b>樣本外檢核</b>：樣本內夏普 ${num(r.ev.is?.sharpe)} → 樣本外夏普 ${num(r.ev.oos?.sharpe)}。最新訊號狀態：<b>${r.res.lastSignal}</b>。</li></ul>`;
+          try {
+            const html = await this.callGroqOrFallback(`標的 ${this.code}，策略 ${r.s.name}（${r.s.desc}），參數 ${JSON.stringify(r.res.params)}，年化 ${pct(m.annRet)}，夏普 ${num(m.sharpe)}，回撤 ${pct(m.mdd)}，勝率 ${pctU(t.win, 0)}，交易 ${t.n} 筆，樣本外夏普 ${num(r.ev.oos?.sharpe)}。請從獲利來源、風險、樣本外衰退與實務倉位建議進行診斷。`, fallback);
+            box.querySelector('.ql-ai').innerHTML = html;
+          } catch (e) { box.querySelector('.ql-ai').innerHTML = fallback + `<div class="ql-hint">（Groq 呼叫提示：${esc(e.message)}）</div>`; }
+        },
+        init() {
+          this.populateCfgInputs();
+          $q('btnQlLoad')?.addEventListener('click', () => this.load());
+          $q('qlCodeInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.load(); });
+          $q('qlCsvInput')?.addEventListener('change', e => { if (e.target.files?.[0]) this.loadCSV(e.target.files[0]); e.target.value = ''; });
+          $q('btnQlToggleCfg')?.addEventListener('click', () => this.toggleCfg());
+          $q('btnQlSaveCfg')?.addEventListener('click', () => this.saveCfg());
+          $q('btnQlResetCfg')?.addEventListener('click', () => this.resetCfg());
+          $q('btnQlExportJson')?.addEventListener('click', () => this.exportAll());
+          document.querySelectorAll('#qlTabs .ql-tab').forEach(b => {
+            b.addEventListener('click', () => this.tab(b.dataset.qlV));
+          });
+          let rz;
+          window.addEventListener('resize', () => {
+            clearTimeout(rz);
+            rz = setTimeout(() => { if (this.D) { this.drawRank(); this.drawDetail(); this.drawRisk(); } }, 200);
+          });
+          this.renderLib();
+          this.renderBatch();
+        }
+      };
+      window.QLAB = app;
+      return app;
+    })();
+
+    // =========================================================================
     // 12. BOOTSTRAP
     // =========================================================================
     async function initApp() {
@@ -8025,6 +10148,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       populateSettingsInputs();
       bindEvents();
       bindReviewAndDcaEvents();
+      QLAB.init();
       setTradingMode('SIM');
       renderTradingViewChart();
       renderAllViews();

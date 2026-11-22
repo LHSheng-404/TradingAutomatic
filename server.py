@@ -715,6 +715,143 @@ async def get_finmind_dividend(
     return {"source": "finmind_dividend_live", **payload}
 
 
+@app.get("/api/v1/market/quant-history/{stock_id}")
+async def get_quant_history(
+    stock_id: str,
+    years: int = 5,
+    source: str = "auto",
+    token: str = "",
+):
+    """Fetch full multi-year real daily OHLCV (+ FinMind ex-dividend diffs) for Quant Strategy Lab."""
+    sid = stock_id.strip().upper()
+    yrs = max(1, min(15, int(years or 5)))
+    src_mode = (source or "auto").strip().lower()
+    cache_key = f"qhist:{sid}:{yrs}:{src_mode}"
+    cached = cache_get(cache_key, 600)
+    if cached:
+        return {"cached": True, **cached}
+
+    start_dt = (datetime.now(TW_TZ) - timedelta(days=yrs * 366 + 14)).strftime("%Y-%m-%d")
+    use_token = token.strip() or (next(_token_cycle) if _token_cycle else "")
+    errs: list[str] = []
+
+    # 1) Try FinMind TaiwanStockPrice (+ TaiwanStockDividendResult for real ex-dividend adjustment)
+    if src_mode != "yahoo":
+        try:
+            params = {"dataset": "TaiwanStockPrice", "data_id": sid, "start_date": start_dt}
+            if use_token:
+                params["token"] = use_token
+            url = "https://api.finmindtrade.com/api/v4/data?" + urllib.parse.urlencode(params)
+            st, data = await http_json(url, timeout=18.0)
+            raw_rows = (data.get("data") or []) if (st == 200 and isinstance(data, dict) and data.get("status") == 200) else []
+            rows = [
+                {
+                    "d": str(r.get("date")),
+                    "o": round(float(r.get("open") or r.get("close")), 2),
+                    "h": round(float(r.get("max") or r.get("close")), 2),
+                    "l": round(float(r.get("min") or r.get("close")), 2),
+                    "c": round(float(r.get("close")), 2),
+                    "v": int(r.get("Trading_Volume") or 0),
+                }
+                for r in raw_rows
+                if float(r.get("close") or 0) > 0 and r.get("date")
+            ]
+            if len(rows) > 30:
+                divs: dict[str, float] = {}
+                if sid != "TAIEX":
+                    try:
+                        d_params = {"dataset": "TaiwanStockDividendResult", "data_id": sid, "start_date": start_dt}
+                        if use_token:
+                            d_params["token"] = use_token
+                        d_url = "https://api.finmindtrade.com/api/v4/data?" + urllib.parse.urlencode(d_params)
+                        dst, ddata = await http_json(d_url, timeout=14.0)
+                        if dst == 200 and isinstance(ddata, dict) and ddata.get("status") == 200:
+                            for x in ddata.get("data") or []:
+                                dt_str = str(x.get("date") or "").strip()
+                                diff = float(x.get("before_price") or 0) - float(x.get("after_price") or 0)
+                                if dt_str and diff > 0:
+                                    divs[dt_str] = round(divs.get(dt_str, 0.0) + diff, 4)
+                    except Exception:
+                        pass
+                payload = {
+                    "stock_id": sid,
+                    "name": "",
+                    "src": "FinMind TaiwanStockPrice（未還原權息）",
+                    "adjusted": False,
+                    "rows": rows,
+                    "divs": divs,
+                }
+                cache_set(cache_key, payload)
+                return payload
+            errs.append(f"FinMind: HTTP {st} / {len(rows)} 筆")
+        except Exception as exc:
+            errs.append(f"FinMind: {exc}")
+
+    # 2) Fallback / Explicit Yahoo Finance (adjusted close for TWSE .TW / TPEx .TWO / ^TWII)
+    if src_mode != "finmind":
+        rng = "1y" if yrs <= 1 else ("2y" if yrs <= 2 else ("5y" if yrs <= 5 else "10y"))
+        yh_candidates = ["^TWII"] if sid == "TAIEX" else [f"{sid}.TW", f"{sid}.TWO"]
+        for sym in yh_candidates:
+            try:
+                encoded = urllib.parse.quote(sym, safe="^.-=")
+                yurl = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=1d&range={rng}"
+                yst, ydata = await http_json(yurl, timeout=16.0)
+                if yst != 200 or not isinstance(ydata, dict):
+                    continue
+                res_list = (ydata.get("chart") or {}).get("result") or []
+                if not res_list:
+                    continue
+                res = res_list[0]
+                meta = res.get("meta") or {}
+                ts_list = res.get("timestamp") or []
+                q = ((res.get("indicators") or {}).get("quote") or [{}])[0]
+                adj_list = ((res.get("indicators") or {}).get("adjclose") or [{}])[0].get("adjclose") or []
+                opens = q.get("open") or []
+                highs = q.get("high") or []
+                lows = q.get("low") or []
+                closes = q.get("close") or []
+                vols = q.get("volume") or []
+                rows = []
+                for idx, ts in enumerate(ts_list):
+                    c = closes[idx] if idx < len(closes) else None
+                    if c is None or float(c) <= 0:
+                        continue
+                    c_val = float(c)
+                    adj_c = adj_list[idx] if idx < len(adj_list) else None
+                    k = (float(adj_c) / c_val) if (adj_c is not None and float(adj_c) > 0) else 1.0
+                    dt_str = datetime.fromtimestamp(ts, TW_TZ).strftime("%Y-%m-%d")
+                    o_val = float(opens[idx] if idx < len(opens) and opens[idx] else c_val) * k
+                    h_val = float(highs[idx] if idx < len(highs) and highs[idx] else c_val) * k
+                    l_val = float(lows[idx] if idx < len(lows) and lows[idx] else c_val) * k
+                    rows.append({
+                        "d": dt_str,
+                        "o": round(o_val, 4),
+                        "h": round(max(h_val, o_val, c_val * k), 4),
+                        "l": round(min(l_val, o_val, c_val * k), 4),
+                        "c": round(c_val * k, 4),
+                        "v": int(vols[idx] or 0) if idx < len(vols) else 0,
+                    })
+                if len(rows) > 30:
+                    payload = {
+                        "stock_id": sid,
+                        "name": str(meta.get("longName") or meta.get("shortName") or ""),
+                        "src": f"Yahoo {sym}（還原權息）",
+                        "adjusted": True,
+                        "rows": rows,
+                        "divs": {},
+                    }
+                    cache_set(cache_key, payload)
+                    return payload
+            except Exception as exc:
+                errs.append(f"Yahoo {sym}: {exc}")
+
+    raise HTTPException(
+        status_code=502,
+        detail=f"無法取得 {sid} 近 {yrs} 年真實日線資料（{'; '.join(errs)}）",
+    )
+
+
+
 # ---------------------------------------------------------------------------
 # 2. Multi-Model AI Proxy (Groq, Ollama Local, Grok, Gemini, Claude, ChatGPT)
 #    + Real-Time Price-Volume Multi-Agent Orchestrator
@@ -1211,6 +1348,7 @@ class MultiAgentRequest(BaseModel):
     api_keys: dict[str, str] = Field(default_factory=dict)
     model_options: dict[str, str] = Field(default_factory=dict)
     routing_policy: str = "AUTO"  # AUTO | SPEED_FIRST | LOCAL_FIRST | DEEP_REASONING
+    quant_lab_signal: Optional[dict[str, Any]] = None
 
 
 def _calc_ema_list(vals: list[float], period: int) -> list[float]:
@@ -1303,11 +1441,12 @@ async def _fetch_taiex_benchmark_return() -> Optional[float]:
     return None
 
 
-def _evaluate_v68_indicators(
+def _evaluate_v01_indicators(
     candles: list[dict[str, Any]],
     switches: dict[str, bool],
     inst_info: Optional[dict[str, Any]] = None,
     taiex_ret: Optional[float] = None,
+    quant_lab_signal: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     closes = [float(c["close"]) for c in candles]
     highs = [float(c["high"]) for c in candles]
@@ -1398,7 +1537,7 @@ def _evaluate_v68_indicators(
     else:
         pv_regime = "價量盤整"
 
-    # Evaluate enabled v68 technical + chip + RS switches (10 switches total)
+    # Evaluate enabled v01 technical + chip + RS switches (10 switches total)
     votes = []
     score = 0
     enabled_cnt = 0
@@ -1480,6 +1619,24 @@ def _evaluate_v68_indicators(
         )
     else:
         _add_vote("rs", "相對大盤 RS 強弱", "大盤基準待同步", 0, "暫無加權指數基準")
+
+    # Optional bridge vote from linked Quant Strategy Lab strategy
+    if isinstance(quant_lab_signal, dict) and quant_lab_signal.get("name"):
+        ql_sig = str(quant_lab_signal.get("signal") or "FLAT").upper()
+        ql_pts = 16 if ql_sig == "BUY" else (-16 if ql_sig == "SELL" else (6 if ql_sig == "HOLD" else 0))
+        ql_sharpe = quant_lab_signal.get("sharpe")
+        ql_win = quant_lab_signal.get("win_rate")
+        ql_desc = f"{ql_sig}" + (f" · 夏普 {ql_sharpe}" if ql_sharpe is not None else "") + (f" · 勝率 {ql_win}%" if ql_win is not None else "")
+        enabled_cnt += 1
+        score += ql_pts
+        votes.append({
+            "key": "quant_lab",
+            "label": f"量化實驗室：{quant_lab_signal.get('name')}",
+            "value": ql_desc,
+            "points": ql_pts,
+            "signal": "BULL" if ql_pts > 0 else ("BEAR" if ql_pts < 0 else "NEUTRAL"),
+            "note": f"已連結量化策略最新日線訊號（{quant_lab_signal.get('last_date') or '最新'}）",
+        })
 
     norm_score = max(-100, min(100, round(score * (8 / max(1, enabled_cnt))))) if enabled_cnt > 0 else 0
     tech_signal = "BUY" if norm_score >= 25 else ("SELL" if norm_score <= -25 else "HOLD")
@@ -1632,11 +1789,12 @@ async def orchestrate_multi_agent(req: MultiAgentRequest):
         }
         live_source = f"FinMind 真實偵測 ({sid})"
 
-    # Step 2: Parallel fetch real v68 chip (FinMind institutional) + TAIEX RS benchmark + evaluate switches
+    # Step 2: Parallel fetch real v01 chip (FinMind institutional) + TAIEX RS benchmark + evaluate switches
     inst_task = _fetch_institutional_summary(sid) if req.tech_switches.get("inst", False) else asyncio.sleep(0, result=None)
     rs_task = _fetch_taiex_benchmark_return() if req.tech_switches.get("rs", False) else asyncio.sleep(0, result=None)
     inst_info, taiex_ret = await asyncio.gather(inst_task, rs_task)
-    tech = _evaluate_v68_indicators(live_data["candles"], req.tech_switches, inst_info=inst_info, taiex_ret=taiex_ret)
+    ql_sig = req.quant_lab_signal if (isinstance(req.quant_lab_signal, dict) and str(req.quant_lab_signal.get("symbol") or sid).upper() == sid) else None
+    tech = _evaluate_v01_indicators(live_data["candles"], req.tech_switches, inst_info=inst_info, taiex_ret=taiex_ret, quant_lab_signal=ql_sig)
 
     # Step 3: Risk Gatekeeper Agent (slippage + kill switch + extremes)
     slippage_pct = 0.0

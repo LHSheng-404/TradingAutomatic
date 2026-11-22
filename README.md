@@ -1,4 +1,4 @@
-# SYNAPSE TW · 全自動台股交易系統（TradingAutomatic）
+# SHLTW TW · 全自動台股交易系統（TradingAutomatic）
 
 ![Release](https://img.shields.io/github/v/release/LHSheng-404/TradingAutomatic?color=2563eb&label=Release)
 ![License](https://img.shields.io/badge/License-MIT-0d9488)
@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)
 ![RWD](https://img.shields.io/badge/UI-RWD%20Zero--Overflow-0f172a)
 
-**SYNAPSE TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT，附各模型 Token 即時測試）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關（策略版 v01）與 30 支 Pine 量化策略實驗室**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
+**SHLTW TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT，附各模型 Token 即時測試）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關（策略版 v01）與 30 支 Pine 量化策略實驗室**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
 
 ---
 
@@ -49,7 +49,7 @@
 ### 1. 總覽指揮台：雙向資料交流交握網路 × 選單彈窗架構
 > 60fps 呈現 Yahoo Finance、FinMind v4、TradingView、台股訊號引擎、AI 六模型 & 多 Agent、LINE Bot、Telegram 與永豐金 Shioaji 之間的即時 `SYN-ACK` 雙向交握封包；進階模組統一收合於頂部「**功能選單 ▾**」彈窗，保持主畫面簡潔。
 
-![SYNAPSE TW 總覽指揮台](docs/screenshots/desk_overview.png)
+![SHLTW TW 總覽指揮台](docs/screenshots/desk_overview.png)
 
 ### 2. 下單實時偵測最新股價 ＋ 價量多 Agent 自動選模預檢
 > 送單前自動繞過快取即時抓取最新真實股價、計算即時滑價，同步執行價量動能 Agent、10 大技術・籌碼・RS 開關投票與風控守門員，並依盤中量比／振幅／背離自動切換最適 AI 模型（若遇超買賣、滑價超標或方向衝突，系統會彈出警示確認機制）。
@@ -104,9 +104,9 @@
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 🍎 Apple iOS（iPhone / iPad）完整支援** | 提供三種 iOS 執行方式：① **Safari 全螢幕 PWA**（直接開啟 HTTPS 線上網址 `https://lhsheng-404.github.io/TradingAutomatic/` →「分享 ↑ → 加入主畫面」，免越獄、永久免重簽、支援多尺寸 Apple Touch Icon 與動態島安全區）；② **原生 Swift iOS 獨立 App（`SYNAPSE-TW-v3.5.0-ios-unsigned.ipa` 與 `mobile/ios/` Xcode 專案）**，內建純 Swift 本機伺服器與安全代理，免開電腦即可於 iPhone 獨立看盤並呼叫含 Claude 在內的六大 AI；③ **同 Wi-Fi 區網直連 Mac / Windows 後端**。 |
+| **1. 🍎 Apple iOS（iPhone / iPad）完整支援** | 提供三種 iOS 執行方式：① **Safari 全螢幕 PWA**（直接開啟 HTTPS 線上網址 `https://lhsheng-404.github.io/TradingAutomatic/` →「分享 ↑ → 加入主畫面」，免越獄、永久免重簽、支援多尺寸 Apple Touch Icon 與動態島安全區）；② **原生 Swift iOS 獨立 App（`SHLTW-TW-v3.5.0-ios-unsigned.ipa` 與 `mobile/ios/` Xcode 專案）**，內建純 Swift 本機伺服器與安全代理，免開電腦即可於 iPhone 獨立看盤並呼叫含 Claude 在內的六大 AI；③ **同 Wi-Fi 區網直連 Mac / Windows 後端**。 |
 | **2. AI Token 自動偵測可用模型 ＋ 供選分析模型** | 貼上 API Token 或匯入 `.env`／`JSON` 金鑰檔後，系統自動呼叫各家輕量 `/models` 端點（零推論費），自動過濾並更新 **Gemini、ChatGPT、Claude、Grok、Groq、Ollama** 六大下拉清單；使用者可自由挑選具體模型版本並勾選參與分析的模型（支援一鍵「僅選已驗證可用」），結合自訂分析焦點多檔即時整合比較。 |
-| **3. 🤖 Android 獨立執行（APK / PWA / Termux）** | 提供 **Android 獨立 APK (`SYNAPSE-TW-v3.5.0-android.apk`)**（內建本機 HTTP 資源與白名單安全代理）、**Chrome 一鍵安裝 PWA**，以及 **Android Termux 完整本機後端腳本 (`mobile/termux-start.sh`)**。 |
+| **3. 🤖 Android 獨立執行（APK / PWA / Termux）** | 提供 **Android 獨立 APK (`SHLTW-TW-v3.5.0-android.apk`)**（內建本機 HTTP 資源與白名單安全代理）、**Chrome 一鍵安裝 PWA**，以及 **Android Termux 完整本機後端腳本 (`mobile/termux-start.sh`)**。 |
 | **4. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
 | **5. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
 | **6. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
@@ -125,28 +125,28 @@
 - **🍎 Apple iPhone / iPad（方案 A：Safari 一鍵加入主畫面 · 推薦）**：
   - 使用 iPhone / iPad **Safari** 開啟 **[線上 HTTPS 網頁 App](https://lhsheng-404.github.io/TradingAutomatic/)** → 點底部「**分享 ↑**」→「**加入主畫面**」→「**新增**」，即成免越獄、永久有效的全螢幕 iOS App。
 - **🍎 Apple iPhone / iPad（方案 B：原生 Swift iOS 獨立 App `.ipa` / Xcode）**：
-  - 下載 `SYNAPSE-TW-v3.5.0-ios-unsigned.ipa`，透過 **AltStore / SideStore / Sideloadly / TrollStore** 安裝至實機；或於 Mac 使用 Xcode 開啟 `mobile/ios/` 一鍵建置至 iPhone / iPad（內建 `LocalAssetServer.swift`，免開電腦即可直連即時報價與包含 Claude 的六大 AI）。
+  - 下載 `SHLTW-TW-v3.5.0-ios-unsigned.ipa`，透過 **AltStore / SideStore / Sideloadly / TrollStore** 安裝至實機；或於 Mac 使用 Xcode 開啟 `mobile/ios/` 一鍵建置至 iPhone / iPad（內建 `LocalAssetServer.swift`，免開電腦即可直連即時報價與包含 Claude 的六大 AI）。
 - **🤖 Android 手機（獨立安裝執行檔 APK）**：
-  - 下載 `SYNAPSE-TW-v3.5.0-android.apk` 直接於 Android 手機安裝開啟（內建本機資源與安全代理，無需電腦即可即時看盤、自動偵測 AI 模型與執行深度分析；亦可綁定電腦區網或雲端後端）。
+  - 下載 `SHLTW-TW-v3.5.0-android.apk` 直接於 Android 手機安裝開啟（內建本機資源與安全代理，無需電腦即可即時看盤、自動偵測 AI 模型與執行深度分析；亦可綁定電腦區網或雲端後端）。
 - **⚡ Android Termux（零電腦於手機本機執行完整 Python 後端）**：
   ```bash
   git clone https://github.com/LHSheng-404/TradingAutomatic.git && cd TradingAutomatic
   chmod +x mobile/termux-start.sh && ./mobile/termux-start.sh
   ```
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.5.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器並顯示同 Wi-Fi 手機區網連線網址。
+  - 下載 `SHLTW-TW-v3.5.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器並顯示同 Wi-Fi 手機區網連線網址。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.5.0-macos-arm64
-  ./SYNAPSE-TW-v3.5.0-macos-arm64
+  chmod +x SHLTW-TW-v3.5.0-macos-arm64
+  ./SHLTW-TW-v3.5.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.5.0-linux-x64
-  ./SYNAPSE-TW-v3.5.0-linux-x64
+  chmod +x SHLTW-TW-v3.5.0-linux-x64
+  ./SHLTW-TW-v3.5.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.5.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SHLTW-TW-v3.5.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`，同時於終端機顯示同 Wi-Fi 手機區網位址 `http://<區網IP>:8000`（如欲僅限本機存取可加 `--local-only`，或自訂 `--port 8080 --no-browser`）。
 
@@ -181,8 +181,8 @@ python3 package.py --version v3.3.1
 ```
 
 執行完成後會在 `dist/` 目錄自動產出：
-1. `SYNAPSE-TW-v3.3.1-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
-2. `SYNAPSE-TW-v3.3.1-portable.zip` 與 `.tar.gz`（跨平台可攜包）
+1. `SHLTW-TW-v3.3.1-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
+2. `SHLTW-TW-v3.3.1-portable.zip` 與 `.tar.gz`（跨平台可攜包）
 3. `SHA256SUMS.txt`（完整性校驗檔）
 
 > 專案同時包含 GitHub Actions 自動發布管線 [`.github/workflows/release.yml`](.github/workflows/release.yml)，每次推送 `v*` 標籤時會自動於雲端同步編譯 **Windows `.exe`、macOS、Linux** 三平台直出執行檔並上傳至 Release。
@@ -200,8 +200,8 @@ python3 package.py --version v3.3.1
 ```bash
 cp .env.example .env
 # 編輯 .env 填入您的 API 金鑰
-docker build -t synapse-tw .
-docker run -d -p 8000:8000 --env-file .env --name synapse-tw synapse-tw
+docker build -t SHLTW-tw .
+docker run -d -p 8000:8000 --env-file .env --name SHLTW-tw SHLTW-tw
 ```
 
 #### C. 純靜態前端部署（Cloudflare Pages / Vercel / GitHub Pages）
@@ -211,16 +211,16 @@ docker run -d -p 8000:8000 --env-file .env --name synapse-tw synapse-tw
 
 ## 詳細使用指南與環境設定
 
-複製 `.env.example` 為 `.env`（切勿將 `.env`、`.synapse_secret.key` 或 `.pfx` 憑證上傳至 Git）：
+複製 `.env.example` 為 `.env`（切勿將 `.env`、`.SHLTW_secret.key` 或 `.pfx` 憑證上傳至 Git）：
 
 ```env
 # 預設模擬盤 SIM；完成實盤風控測試與憑證驗證後方可改為 LIVE
 TRADING_MODE=SIM
 CHECK_TV_IP=true
-TV_WEBHOOK_SECRET=SYNAPSE_TV_SECRET_2026
+TV_WEBHOOK_SECRET=SHLTW_TV_SECRET_2026
 
-# 伺服器加密主金鑰（選填；未填時自動於本機生成 0600 權限 .synapse_secret.key 加密儲存 Bot Token）
-SYNAPSE_MASTER_KEY=
+# 伺服器加密主金鑰（選填；未填時自動於本機生成 0600 權限 .SHLTW_secret.key 加密儲存 Bot Token）
+SHLTW_MASTER_KEY=
 
 # FinMind API v4 Token（選填，多組請以逗號分隔輪替）
 FINMIND_TOKENS=

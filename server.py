@@ -404,7 +404,7 @@ async def get_mobile_access_info(request: Request):
     primary_url = lan_urls[0] if lan_urls else f"{scheme}://{host_hdr or f'127.0.0.1:{port}'}"
     return {
         "ok": True,
-        "version": "v3.5.0",
+        "version": "v3.5.1",
         "port": port,
         "lan_ips": lan_ips,
         "lan_urls": lan_urls,
@@ -515,6 +515,8 @@ async def get_yahoo_market_data(
         raise HTTPException(status_code=502, detail="Yahoo 回傳無有效價格")
 
     prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
+    if interval in ("1d", "1wk", "1mo") and len(candles) >= 2:
+        prev_close = candles[-2]["close"]
     market_ts = meta.get("regularMarketTime")
     last_date = (
         datetime.fromtimestamp(market_ts, TW_TZ).strftime("%Y-%m-%d %H:%M")
@@ -524,6 +526,8 @@ async def get_yahoo_market_data(
 
     payload = {
         "symbol": yahoo_symbol,
+        "interval": interval,
+        "range": range_str,
         "currency": meta.get("currency", "TWD"),
         "price": round(float(latest_price), 2),
         "prev_close": round(float(prev_close), 2) if prev_close else None,
@@ -550,23 +554,68 @@ async def get_yahoo_market_data(
         ),
         "volume": int(meta.get("regularMarketVolume") or 0),
         "last_date": last_date,
-        "candles": candles[-40:],
+        "candles": candles[-75:],
     }
     cache_set(cache_key, payload)
     return {"source": "yahoo_live", **payload}
+
+
+def _aggregate_finmind_weekly(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Aggregate real daily FinMind rows into genuine ISO weekly OHLCV candles."""
+    buckets: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    order: list[tuple[int, int]] = []
+    for r in rows:
+        d_str = str(r.get("date") or "")[:10]
+        try:
+            dt = datetime.strptime(d_str, "%Y-%m-%d")
+            key = (dt.isocalendar().year, dt.isocalendar().week)
+        except Exception:
+            continue
+        if key not in buckets:
+            buckets[key] = []
+            order.append(key)
+        buckets[key].append(r)
+
+    weekly: list[dict[str, Any]] = []
+    for key in order:
+        grp = buckets[key]
+        first_r = grp[0]
+        last_r = grp[-1]
+        o_val = round(float(first_r.get("open") or first_r.get("close")), 2)
+        c_val = round(float(last_r.get("close")), 2)
+        h_val = round(max(float(x.get("max") or x.get("close")) for x in grp), 2)
+        l_val = round(min(float(x.get("min") or x.get("close")) for x in grp), 2)
+        v_val = sum(int(x.get("Trading_Volume") or x.get("volume") or 0) for x in grp)
+        d_end = str(last_r.get("date") or "")[:10]
+        weekly.append(
+            {
+                "label": f"{d_end[2:]} 週",
+                "date": d_end,
+                "open": o_val,
+                "high": h_val,
+                "low": l_val,
+                "close": c_val,
+                "volume": v_val,
+            }
+        )
+    return weekly
 
 
 @app.get("/api/v1/market/finmind/{stock_id}")
 async def get_finmind_market_data(
     stock_id: str,
     dataset: str = "TaiwanStockPrice",
-    days: int = 45,
+    days: int = 120,
+    interval: str = "D",
     token: str = "",
 ):
-    start_date = (datetime.now(TW_TZ) - timedelta(days=max(7, min(days, 180)))).strftime(
+    iv = (interval or "D").strip().upper()
+    is_weekly = iv in ("W", "1WK", "WEEK")
+    effective_days = max(days, 380) if is_weekly else max(7, min(days, 540))
+    start_date = (datetime.now(TW_TZ) - timedelta(days=min(effective_days, 540))).strftime(
         "%Y-%m-%d"
     )
-    cache_key = f"fm:{dataset}:{stock_id}:{start_date}"
+    cache_key = f"fm:{dataset}:{stock_id}:{start_date}:{iv}"
     cached = cache_get(cache_key, CACHE_TTL_MARKET)
     if cached:
         return {"source": "finmind_cache", **cached}
@@ -609,21 +658,29 @@ async def get_finmind_market_data(
     if not rows:
         raise HTTPException(status_code=404, detail=f"FinMind 查無 {stock_id} 真實資料")
 
-    recent = rows[-40:]
-    latest = recent[-1]
-    prev = recent[-2] if len(recent) > 1 else latest
-    candles = [
-        {
-            "label": str(r.get("date"))[5:],
-            "date": str(r.get("date")),
-            "open": round(float(r.get("open") or r.get("close")), 2),
-            "high": round(float(r.get("max") or r.get("close")), 2),
-            "low": round(float(r.get("min") or r.get("close")), 2),
-            "close": round(float(r.get("close")), 2),
-            "volume": int(r.get("Trading_Volume") or r.get("volume") or 0),
-        }
-        for r in recent
-    ]
+    latest = rows[-1]
+    prev = rows[-2] if len(rows) > 1 else latest
+
+    if is_weekly:
+        candles = _aggregate_finmind_weekly(rows)[-60:]
+        resolved_iv = "W"
+    else:
+        limit_map = {"5": 15, "15": 24, "60": 36, "D": 75}
+        lim = limit_map.get(iv, 60)
+        recent = rows[-lim:]
+        candles = [
+            {
+                "label": str(r.get("date"))[5:],
+                "date": str(r.get("date")),
+                "open": round(float(r.get("open") or r.get("close")), 2),
+                "high": round(float(r.get("max") or r.get("close")), 2),
+                "low": round(float(r.get("min") or r.get("close")), 2),
+                "close": round(float(r.get("close")), 2),
+                "volume": int(r.get("Trading_Volume") or r.get("volume") or 0),
+            }
+            for r in recent
+        ]
+        resolved_iv = "D"
 
     last_date = str(latest.get("date"))
     if dataset == "TaiwanFuturesDaily" and latest.get("contract_date"):
@@ -632,6 +689,7 @@ async def get_finmind_market_data(
     payload = {
         "symbol": stock_id,
         "dataset": dataset,
+        "interval": resolved_iv,
         "price": round(float(latest["close"]), 2),
         "prev_close": round(float(prev["close"]), 2),
         "open": round(float(latest.get("open") or prev["close"]), 2),

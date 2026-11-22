@@ -4946,10 +4946,114 @@
       }
     }
 
-    async function fetchFinmindDirect(meta) {
+    function getChartTimeframeSpec(tvInterval = state.tvInterval) {
+      const iv = String(tvInterval || '15').toUpperCase();
+      const map = {
+        '5':  { tv: '5',  yahooInterval: '5m',  yahooRange: '5d',  finmindDays: 35,  finmindLimit: 15, label: '5 分 K',  isIntraday: true },
+        '15': { tv: '15', yahooInterval: '15m', yahooRange: '5d',  finmindDays: 45,  finmindLimit: 24, label: '15 分 K', isIntraday: true },
+        '60': { tv: '60', yahooInterval: '60m', yahooRange: '1mo', finmindDays: 65,  finmindLimit: 36, label: '60 分 K', isIntraday: true },
+        'D':  { tv: 'D',  yahooInterval: '1d',  yahooRange: '3mo', finmindDays: 120, finmindLimit: 75, label: '日線 D',  isIntraday: false },
+        'W':  { tv: 'W',  yahooInterval: '1wk', yahooRange: '2y',  finmindDays: 380, finmindLimit: 60, label: '週線 W',  isIntraday: false }
+      };
+      return map[iv] || map['15'];
+    }
+
+    function getIsoWeekKey(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00Z');
+      if (Number.isNaN(d.getTime())) return dateStr;
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+
+    function aggregateRowsToWeeklyClient(rows) {
+      const buckets = new Map();
+      rows.forEach(r => {
+        const dStr = String(r.date || '').slice(0, 10);
+        if (!dStr) return;
+        const wk = getIsoWeekKey(dStr);
+        if (!buckets.has(wk)) buckets.set(wk, []);
+        buckets.get(wk).push(r);
+      });
+      const out = [];
+      buckets.forEach(grp => {
+        const first = grp[0];
+        const last = grp[grp.length - 1];
+        const dEnd = String(last.date || '').slice(0, 10);
+        out.push({
+          label: `${dEnd.slice(2)} 週`,
+          date: dEnd,
+          open: Number(first.open || first.close),
+          high: Math.max(...grp.map(x => Number(x.max || x.close))),
+          low: Math.min(...grp.map(x => Number(x.min || x.close))),
+          close: Number(last.close),
+          volume: grp.reduce((s, x) => s + Number(x.Trading_Volume || x.volume || 0), 0)
+        });
+      });
+      return out;
+    }
+
+    async function fetchYahooViaMobileProxy(meta, spec) {
+      const t0 = performance.now();
+      const encoded = encodeURIComponent(meta.yahooSymbol);
+      const yhUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?interval=${encodeURIComponent(spec.yahooInterval)}&range=${encodeURIComponent(spec.yahooRange)}`;
+      const resp = await androidProxyFetch(yhUrl);
+      if (!resp.ok) throw new Error(`Yahoo HTTP ${resp.status}`);
+      const json = await resp.json();
+      const res = json?.chart?.result?.[0];
+      if (!res) throw new Error(`Yahoo 查無標的 ${meta.yahooSymbol}`);
+      const q = res.indicators?.quote?.[0] || {};
+      const ts = res.timestamp || [];
+      const candles = [];
+      for (let i = 0; i < ts.length; i++) {
+        const c = q.close?.[i];
+        if (c === null || c === undefined) continue;
+        const dt = new Date(ts[i] * 1000);
+        const pad = n => String(n).padStart(2, '0');
+        const label = spec.isIntraday
+          ? `${pad(dt.getMonth() + 1)}/${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`
+          : `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+        candles.push({
+          label,
+          open: Number(Number(q.open?.[i] || c).toFixed(2)),
+          high: Number(Number(q.high?.[i] || c).toFixed(2)),
+          low: Number(Number(q.low?.[i] || c).toFixed(2)),
+          close: Number(Number(c).toFixed(2)),
+          volume: Math.round(Number(q.volume?.[i] || 0))
+        });
+      }
+      if (!candles.length) throw new Error('Yahoo 無有效 K 線資料');
+      const price = Number(Number(res.meta?.regularMarketPrice || candles[candles.length - 1].close).toFixed(2));
+      const prevClose = (!spec.isIntraday && candles.length >= 2)
+        ? candles[candles.length - 2].close
+        : Number(res.meta?.chartPreviousClose || res.meta?.previousClose || candles[0].open);
+      return {
+        price,
+        prevClose,
+        open: Number(res.meta?.regularMarketOpen || candles[candles.length - 1].open),
+        high: Number(res.meta?.regularMarketDayHigh || Math.max(...candles.slice(-24).map(x => x.high))),
+        low: Number(res.meta?.regularMarketDayLow || Math.min(...candles.slice(-24).map(x => x.low))),
+        volume: Math.round(Number(res.meta?.regularMarketVolume || 0)),
+        lastDate: candles[candles.length - 1].label,
+        source: `Yahoo Finance (${meta.yahooSymbol} · ${spec.label})`,
+        sourceType: 'yahoo',
+        interval: spec.tv,
+        intervalLabel: spec.label,
+        latencyMs: Math.max(1, Math.round(performance.now() - t0)),
+        candles: candles.slice(-75)
+      };
+    }
+
+    async function fetchFinmindDirect(meta, tvInterval = state.tvInterval) {
+      const spec = getChartTimeframeSpec(tvInterval);
       const t0 = performance.now();
       const d = new Date();
-      d.setDate(d.getDate() - (meta.dataset === 'TaiwanFuturesDaily' ? 21 : 45));
+      const lookback = spec.tv === 'W'
+        ? 380
+        : (meta.dataset === 'TaiwanFuturesDaily' ? Math.max(spec.finmindDays, 30) : spec.finmindDays);
+      d.setDate(d.getDate() - lookback);
       const startDate = d.toISOString().slice(0, 10);
       let url = `https://api.finmindtrade.com/api/v4/data?dataset=${encodeURIComponent(meta.dataset)}&data_id=${encodeURIComponent(meta.finmindId)}&start_date=${encodeURIComponent(startDate)}`;
       if (state.finmindToken && state.finmindToken.trim()) {
@@ -4974,10 +5078,28 @@
 
       if (rows.length === 0) throw new Error(`FinMind 查無 ${meta.symbol} 成交資料`);
 
-      const recent = rows.slice(-30);
-      const latest = recent[recent.length - 1];
-      const prev = recent.length > 1 ? recent[recent.length - 2] : latest;
+      const latest = rows[rows.length - 1];
+      const prev = rows.length > 1 ? rows[rows.length - 2] : latest;
       const latency = Math.max(1, Math.round(performance.now() - t0));
+
+      let candles;
+      let ivDisplay = spec.label;
+      if (spec.tv === 'W') {
+        candles = aggregateRowsToWeeklyClient(rows).slice(-60);
+        ivDisplay = '週線 W';
+      } else {
+        const recent = rows.slice(-spec.finmindLimit);
+        candles = recent.map(r => ({
+          label: String(r.date).slice(5),
+          date: String(r.date),
+          open: Number(r.open || r.close),
+          high: Number(r.max || r.close),
+          low: Number(r.min || r.close),
+          close: Number(r.close),
+          volume: Number(r.Trading_Volume || r.volume || 0)
+        }));
+        ivDisplay = spec.isIntraday ? `日線近 ${recent.length} 日（FinMind 無免費分K）` : '日線 D';
+      }
 
       return {
         price: Number(latest.close),
@@ -4989,31 +5111,31 @@
         lastDate: meta.dataset === 'TaiwanFuturesDaily' && latest.contract_date
           ? `${latest.date} (${latest.contract_date})`
           : String(latest.date),
-        source: `FinMind ${meta.dataset} (直連真實數據)`,
+        source: `FinMind ${meta.dataset} (直連真實數據 · ${ivDisplay})`,
+        sourceType: 'finmind',
+        interval: spec.tv,
+        intervalLabel: ivDisplay,
         latencyMs: latency,
-        candles: recent.map(r => ({
-          label: String(r.date).slice(5),
-          open: Number(r.open || r.close),
-          high: Number(r.max || r.close),
-          low: Number(r.min || r.close),
-          close: Number(r.close),
-          volume: Number(r.Trading_Volume || r.volume || 0)
-        }))
+        candles
       };
     }
 
-    async function fetchMarketData(symbol, preferred = 'auto') {
+    async function fetchMarketData(symbol, preferred = 'auto', intervalOverride = null) {
       const meta = getStockMeta(symbol);
       const apiBase = getApiBase();
+      const useInterval = intervalOverride || state.tvInterval || '15';
+      const spec = getChartTimeframeSpec(useInterval);
       const t0 = performance.now();
 
       try {
         let result = null;
 
-        // Priority 1: Cloud Backend Yahoo Finance (real-time intraday, zero CORS)
+        // Priority 1: Cloud/Local Backend Yahoo Finance (true 5m/15m/60m/1d/1wk, zero CORS)
         if ((preferred === 'yahoo' || preferred === 'auto') && apiBase) {
           try {
-            const resp = await fetch(`${apiBase}/api/v1/market/yahoo/${encodeURIComponent(meta.yahooSymbol)}?interval=15m&range_str=5d`);
+            const resp = await fetch(
+              `${apiBase}/api/v1/market/yahoo/${encodeURIComponent(meta.yahooSymbol)}?interval=${encodeURIComponent(spec.yahooInterval)}&range_str=${encodeURIComponent(spec.yahooRange)}`
+            );
             if (resp.ok) {
               const j = await resp.json();
               if (j && j.price) {
@@ -5026,12 +5148,15 @@
                   low: j.low,
                   volume: j.volume,
                   lastDate: j.last_date,
-                  source: `Yahoo Finance (${meta.yahooSymbol})`,
+                  source: `Yahoo Finance (${meta.yahooSymbol} · ${spec.label})`,
+                  sourceType: 'yahoo',
+                  interval: spec.tv,
+                  intervalLabel: spec.label,
                   latencyMs: lat,
                   candles: j.candles || []
                 };
                 state.handshake.nodeStats.YAHOO.status = '連線正常';
-                triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, lat, `${meta.symbol} ${meta.name} 現價 ${j.price}`);
+                triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, lat, `${meta.symbol} ${meta.name} ${spec.label} @ ${j.price}`);
               }
             }
           } catch (e) {
@@ -5039,15 +5164,31 @@
           }
         }
 
-        // Priority 2: Cloud Backend FinMind proxy
+        // Priority 1.5: Native iOS IPA / Android APK built-in Yahoo CORS bridge (true 5m/15m/60m/1d/1wk standalone!)
+        if (!result && (preferred === 'yahoo' || preferred === 'auto') && !apiBase && isAndroidApkHost()) {
+          try {
+            result = await fetchYahooViaMobileProxy(meta, spec);
+            state.handshake.nodeStats.YAHOO.status = 'App 直連正常';
+            triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, result.latencyMs, `${meta.symbol} ${spec.label} @ ${result.price}`);
+          } catch (e) {
+            if (preferred === 'yahoo') throw e;
+          }
+        }
+
+        // Priority 2: Cloud Backend FinMind proxy (supports D & aggregated W)
         if (!result && preferred !== 'yahoo' && apiBase) {
           try {
             const tok = state.finmindToken ? `&token=${encodeURIComponent(state.finmindToken)}` : '';
-            const resp = await fetch(`${apiBase}/api/v1/market/finmind/${encodeURIComponent(meta.finmindId)}?dataset=${encodeURIComponent(meta.dataset)}${tok}`);
+            const resp = await fetch(
+              `${apiBase}/api/v1/market/finmind/${encodeURIComponent(meta.finmindId)}?dataset=${encodeURIComponent(meta.dataset)}&days=${spec.finmindDays}&interval=${encodeURIComponent(spec.tv)}${tok}`
+            );
             if (resp.ok) {
               const j = await resp.json();
               if (j && j.price) {
                 const lat = Math.max(1, Math.round(performance.now() - t0));
+                const fmLbl = spec.tv === 'W'
+                  ? '週線 W'
+                  : (spec.isIntraday ? `日線近 ${(j.candles || []).length} 日（FinMind 無免費分K）` : '日線 D');
                 result = {
                   price: j.price,
                   prevClose: j.prev_close || j.open,
@@ -5056,32 +5197,35 @@
                   low: j.low,
                   volume: j.volume,
                   lastDate: j.last_date,
-                  source: `FinMind ${meta.dataset} (雲端代理)`,
+                  source: `FinMind ${meta.dataset} (雲端代理 · ${fmLbl})`,
+                  sourceType: 'finmind',
+                  interval: spec.tv,
+                  intervalLabel: fmLbl,
                   latencyMs: lat,
                   candles: j.candles || []
                 };
                 state.handshake.nodeStats.FINMIND.status = '連線正常';
-                triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, lat, `${meta.symbol} ${meta.name} 收盤 ${j.price}`);
+                triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, lat, `${meta.symbol} ${fmLbl} 收盤 ${j.price}`);
               }
             }
           } catch (e) {}
         }
 
-        // Priority 3: Direct browser FinMind v4 (supports CORS ACAO=*)
+        // Priority 3: Direct browser FinMind v4 (supports CORS ACAO=*, D + aggregated W)
         if (!result && preferred !== 'yahoo') {
-          result = await fetchFinmindDirect(meta);
+          result = await fetchFinmindDirect(meta, useInterval);
           state.handshake.nodeStats.FINMIND.status = '直連正常';
-          triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, result.latencyMs, `${meta.symbol} ${meta.name} 真實價 ${result.price}`);
+          triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, result.latencyMs, `${meta.symbol} ${result.intervalLabel} 真實價 ${result.price}`);
         }
 
         if (!result && preferred === 'yahoo' && !apiBase) {
-          throw new Error('純靜態模式瀏覽器會阻擋 Yahoo CORS，請部署雲端後端或改點「抓 FinMind」');
+          throw new Error('純靜態模式瀏覽器會阻擋 Yahoo CORS，請連線後端／使用手機獨立 App，或改點「抓 FinMind」');
         }
 
         if (!result) throw new Error('未能取得真實報價');
 
         state.quotes[symbol] = result;
-        setRibbonEvent(`同步真實行情成功：${meta.symbol} ${meta.name} @ ${result.price}（${result.source}）`);
+        setRibbonEvent(`同步真實行情成功：${meta.symbol} ${meta.name} [${result.intervalLabel || spec.label}] @ ${result.price}`);
         renderAllViews();
         return true;
       } catch (err) {
@@ -5248,9 +5392,18 @@
     function renderRawPriceChart() {
       const canvas = document.getElementById('rawPriceChart');
       if (!canvas) return;
+      const mount = document.getElementById('rawChartMount');
       const meta = getStockMeta(state.activeSymbol);
       const q = getQuote(state.activeSymbol);
       const candles = q?.candles || [];
+      const spec = getChartTimeframeSpec(q?.interval || state.tvInterval);
+      const ivText = q?.intervalLabel || spec.label;
+      const isDark = state.tvTheme === 'dark';
+
+      if (mount) {
+        mount.style.background = isDark ? '#0f172a' : '#ffffff';
+        mount.style.borderRadius = '10px';
+      }
 
       if (rawChartInstance) {
         rawChartInstance.destroy();
@@ -5260,44 +5413,112 @@
       const labels = candles.map(c => c.label);
       const closes = candles.map(c => c.close);
       const vwap = candles.length ? calcVwapSeries(candles) : [];
+      const datasets = [
+        {
+          label: `${meta.symbol} ${meta.name} [${ivText}] 真實成交價`,
+          data: closes,
+          borderColor: isDark ? '#38bdf8' : '#2563eb',
+          backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+          borderWidth: 2.2,
+          fill: true,
+          tension: 0.2,
+          pointRadius: candles.length > 45 ? 1.5 : 2.5
+        },
+        {
+          label: 'VWAP 加權均價',
+          data: vwap,
+          borderColor: '#0d9488',
+          borderDash: [5, 4],
+          borderWidth: 1.7,
+          fill: false,
+          tension: 0.25,
+          pointRadius: 0
+        }
+      ];
+
+      if (closes.length >= 5) {
+        if (state.tvStudy === 'ema_rsi') {
+          datasets.push({
+            label: 'EMA 5',
+            data: calcEmaArr(closes, 5).map(v => Number(v.toFixed(2))),
+            borderColor: '#f59e0b',
+            borderWidth: 1.4,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          });
+          datasets.push({
+            label: 'EMA 12',
+            data: calcEmaArr(closes, 12).map(v => Number(v.toFixed(2))),
+            borderColor: '#ec4899',
+            borderWidth: 1.4,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          });
+        } else if (state.tvStudy === 'macd_bb' && closes.length >= 10) {
+          const win = Math.min(20, closes.length);
+          const bbUp = [], bbLo = [];
+          for (let i = 0; i < closes.length; i++) {
+            const s = Math.max(0, i - win + 1);
+            const slice = closes.slice(s, i + 1);
+            const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
+            const std = Math.sqrt(slice.reduce((a, b) => a + (b - mean) ** 2, 0) / slice.length);
+            bbUp.push(Number((mean + 2 * std).toFixed(2)));
+            bbLo.push(Number((mean - 2 * std).toFixed(2)));
+          }
+          datasets.push({
+            label: '布林上軌 (+2σ)',
+            data: bbUp,
+            borderColor: 'rgba(239, 68, 68, 0.72)',
+            borderDash: [3, 3],
+            borderWidth: 1.3,
+            fill: false,
+            pointRadius: 0
+          });
+          datasets.push({
+            label: '布林下軌 (-2σ)',
+            data: bbLo,
+            borderColor: 'rgba(16, 185, 129, 0.72)',
+            borderDash: [3, 3],
+            borderWidth: 1.3,
+            fill: false,
+            pointRadius: 0
+          });
+        }
+      }
 
       rawChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
           labels: labels.length ? labels : ['等待同步真實資料'],
-          datasets: [
-            {
-              label: `${meta.symbol} ${meta.name} 真實成交價`,
-              data: closes,
-              borderColor: '#2563eb',
-              backgroundColor: 'rgba(37, 99, 235, 0.08)',
-              borderWidth: 2.2,
-              fill: true,
-              tension: 0.22,
-              pointRadius: 2.5
-            },
-            {
-              label: 'VWAP 加權均價',
-              data: vwap,
-              borderColor: '#0d9488',
-              borderDash: [5, 4],
-              borderWidth: 1.7,
-              fill: false,
-              tension: 0.25,
-              pointRadius: 0
-            }
-          ]
+          datasets
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 220 },
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { position: 'top', align: 'end', labels: { boxWidth: 12, font: { size: 11 } } }
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: {
+                boxWidth: 12,
+                font: { size: 11 },
+                color: isDark ? '#e2e8f0' : '#334155'
+              }
+            }
           },
           scales: {
-            x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10.5 } } },
-            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10.5 } } }
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 10, font: { size: 10.5 }, color: isDark ? '#94a3b8' : '#64748b' }
+            },
+            y: {
+              grid: { color: isDark ? 'rgba(148,163,184,0.14)' : '#f1f5f9' },
+              ticks: { font: { size: 10.5 }, color: isDark ? '#94a3b8' : '#64748b' }
+            }
           }
         }
       });
@@ -7680,8 +7901,8 @@
       renderTradingViewChart();
       renderAllViews();
       const q = getQuote(symbol);
-      if (!q || q.price === null) {
-        fetchMarketData(symbol, 'auto');
+      if (!q || q.price === null || q.interval !== state.tvInterval) {
+        fetchMarketData(symbol, q?.sourceType || 'auto', state.tvInterval);
       }
     }
 
@@ -8430,15 +8651,43 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.getElementById('btnChartTv').className = 'btn btn-sm';
         document.getElementById('tvWidgetMount').style.display = 'none';
         document.getElementById('rawChartMount').style.display = 'block';
-        renderRawPriceChart();
+        const curQ = getQuote(state.activeSymbol);
+        if (!curQ || curQ.interval !== state.tvInterval) {
+          fetchMarketData(state.activeSymbol, curQ?.sourceType || 'auto', state.tvInterval);
+        } else {
+          renderRawPriceChart();
+        }
       });
-      document.getElementById('tvIntervalSelect').addEventListener('change', e => {
-        state.tvInterval = e.target.value;
+      document.getElementById('tvIntervalSelect').addEventListener('change', async e => {
+        const nextIv = e.target.value;
+        state.tvInterval = nextIv;
+        const spec = getChartTimeframeSpec(nextIv);
         renderTradingViewChart();
+        const curQ = getQuote(state.activeSymbol);
+        const pref = curQ?.sourceType === 'yahoo'
+          ? 'yahoo'
+          : (curQ?.sourceType === 'finmind' ? 'finmind' : 'auto');
+        const srcEl = document.getElementById('activeStockSource');
+        if (srcEl) srcEl.textContent = `切換至 ${spec.label}，正在刷新真實 K 線...`;
+        const ok = await fetchMarketData(state.activeSymbol, pref, nextIv);
+        if (state.chartMode === 'raw') renderRawPriceChart();
+        if (ok) {
+          const latestQ = getQuote(state.activeSymbol);
+          if (latestQ?.sourceType === 'finmind' && spec.isIntraday) {
+            showToast(
+              `已刷新至 ${latestQ.intervalLabel}`,
+              'FinMind 免費源提供日線／週線資料（已縮放近期明細）；若需真實 5/15/60 分 K 請改點「抓 Yahoo」（需後端或手機獨立 App）。',
+              'info'
+            );
+          } else {
+            showToast('K 線級距已刷新', `${getStockMeta(state.activeSymbol).symbol} 已切換至 ${latestQ?.intervalLabel || spec.label}（共 ${(latestQ?.candles || []).length} 根真實 K 棒）。`, 'success');
+          }
+        }
       });
       document.getElementById('tvStudySelect').addEventListener('change', e => {
         state.tvStudy = e.target.value;
         renderTradingViewChart();
+        if (state.chartMode === 'raw') renderRawPriceChart();
       });
       document.getElementById('btnTvDrawTools').addEventListener('click', () => {
         state.tvDrawTools = !state.tvDrawTools;
@@ -8449,6 +8698,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         state.tvTheme = state.tvTheme === 'light' ? 'dark' : 'light';
         document.getElementById('btnTvTheme').textContent = `主題: ${state.tvTheme === 'light' ? '亮' : '暗'}`;
         renderTradingViewChart();
+        if (state.chartMode === 'raw') renderRawPriceChart();
       });
 
       // TradingView Account Modal

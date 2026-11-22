@@ -857,30 +857,221 @@ async def get_quant_history(
 #    + Real-Time Price-Volume Multi-Agent Orchestrator
 # ---------------------------------------------------------------------------
 class AIAnalyzeRequest(BaseModel):
-    symbol: str
-    stock_name: str
-    market_snapshot: dict[str, Any]
+    symbol: str = ""
+    stock_name: str = ""
+    market_snapshot: dict[str, Any] = Field(default_factory=dict)
     models: list[str] = Field(
         default_factory=lambda: ["groq", "ollama", "grok", "gemini", "claude", "chatgpt"]
     )
     api_keys: dict[str, str] = Field(default_factory=dict)
     model_options: dict[str, str] = Field(default_factory=dict)
     custom_prompt: str = ""
+    focus_mode: str = "AUTO"  # AUTO | ACTIVE | WATCHLIST | CUSTOM_ONLY
+    target_symbols: list[str] = Field(default_factory=list)
+    multi_snapshots: list[dict[str, Any]] = Field(default_factory=list)
 
 
-def _build_grounded_prompt(req: AIAnalyzeRequest, role_hint: str) -> str:
-    snap = req.market_snapshot
+_TW_SYM_RE = re.compile(r"(?<![0-9A-Za-z])(00\d{2,4}[A-Z]?|[1-9]\d{3})(?![0-9A-Za-z])")
+_ACTIVE_HINT_RE = re.compile(r"(目前標的|這檔|本檔|此檔|現價|目前價位|這支|這隻)")
+
+
+def _extract_tw_symbols_from_prompt(text: str, limit: int = 8) -> list[str]:
+    """Extract unique Taiwan stock/ETF codes from user custom focus prompt while skipping calendar years."""
+    if not text:
+        return []
+    found: list[str] = []
+    for m in _TW_SYM_RE.finditer(text.upper()):
+        sym = m.group(1)
+        end_idx = m.end()
+        tail = text[end_idx : end_idx + 2]
+        # Skip obvious calendar years like 2026年, 2026-11, 2026/05
+        if sym.isdigit() and 2015 <= int(sym) <= 2035 and tail[:1] in ("年", "-", "/"):
+            continue
+        if sym not in found:
+            found.append(sym)
+            if len(found) >= limit:
+                break
+    return found
+
+
+async def _fetch_live_snapshot_for_ai(sid: str) -> Optional[dict[str, Any]]:
+    """Fetch 100% real quote, Chinese name, and basic technicals for a Taiwan stock/ETF/TAIEX."""
+    code = sid.strip().upper()
+    if not code:
+        return None
+
+    # Fetch real Chinese stock name from FinMind TaiwanStockInfo
+    async def _get_name() -> str:
+        if code in ("TAIEX", "^TWII"):
+            return "台灣加權指數"
+        try:
+            info = await get_tw_stock_info(code)
+            return str(info.get("stock_name") or "")
+        except Exception:
+            return ""
+
+    async def _get_quote() -> Optional[dict[str, Any]]:
+        yh_list = ["^TWII"] if code in ("TAIEX", "^TWII") else [f"{code}.TW", f"{code}.TWO"]
+        for yh_sym in yh_list:
+            try:
+                y = await get_yahoo_market_data(yh_sym, interval="1d", range_str="3mo")
+                if y and y.get("price") is not None:
+                    mkt = "大盤" if yh_sym == "^TWII" else ("上市" if yh_sym.endswith(".TW") else "上櫃")
+                    return {
+                        "price": y["price"],
+                        "prev_close": y.get("prev_close"),
+                        "open": y.get("open"),
+                        "high": y.get("high"),
+                        "low": y.get("low"),
+                        "volume": y.get("volume", 0),
+                        "last_date": y.get("last_date", ""),
+                        "source": f"Yahoo ({yh_sym}·{mkt})",
+                        "candles": y.get("candles") or [],
+                    }
+            except Exception:
+                continue
+        if code not in ("TAIEX", "^TWII"):
+            try:
+                fm = await get_finmind_market_data(code, dataset="TaiwanStockPrice", days=60)
+                if fm and fm.get("price") is not None:
+                    return {
+                        "price": fm["price"],
+                        "prev_close": fm.get("prev_close"),
+                        "open": fm.get("open"),
+                        "high": fm.get("high"),
+                        "low": fm.get("low"),
+                        "volume": fm.get("volume", 0),
+                        "last_date": fm.get("last_date", ""),
+                        "source": f"FinMind ({code})",
+                        "candles": fm.get("candles") or [],
+                    }
+            except Exception:
+                pass
+        return None
+
+    stock_name, q = await asyncio.gather(_get_name(), _get_quote())
+    if not q or q.get("price") is None:
+        return None
+
+    price = float(q["price"])
+    candles = q.get("candles") or []
+    closes = [float(c["close"]) for c in candles if c.get("close") is not None]
+    if not closes:
+        closes = [price]
+    # Use previous trading day's close (closes[-2]) for accurate 1-day daily change %
+    prev_c = float(closes[-2]) if len(closes) >= 2 else float(q.get("open") or price)
+    change_pct = round(((price - prev_c) / prev_c) * 100.0, 2) if prev_c > 0 else 0.0
+
+    # Lightweight technical indicators from real daily candles
+    def _ema(vals: list[float], p: int) -> float:
+        k = 2.0 / (p + 1)
+        v = vals[0]
+        for x in vals[1:]:
+            v = x * k + v * (1.0 - k)
+        return round(v, 2)
+
+    ema5 = _ema(closes, 5)
+    ema12 = _ema(closes, 12)
+    n = len(closes)
+    rsi_len = min(14, max(1, n - 1))
+    gains = sum(max(0.0, closes[i] - closes[i - 1]) for i in range(n - rsi_len, n))
+    losses = sum(max(0.0, closes[i - 1] - closes[i]) for i in range(n - rsi_len, n))
+    rsi = 100.0 if losses == 0 else round(100.0 - 100.0 / (1.0 + (gains / rsi_len) / (losses / rsi_len)), 1)
+
+    vols = [float(c.get("volume") or 0) for c in candles]
+    nz_vols = [v for v in vols if v > 0]
+    if len(nz_vols) >= 2:
+        avg5 = sum(nz_vols[-6:-1]) / max(1, len(nz_vols[-6:-1]))
+        vol_ratio = round(nz_vols[-1] / avg5, 2) if avg5 > 0 else 1.0
+    else:
+        vol_ratio = 1.0
+
+    cum_pv = sum(((float(c.get("high") or c["close"]) + float(c.get("low") or c["close"]) + float(c["close"])) / 3.0) * max(1.0, float(c.get("volume") or 1.0)) for c in candles[-20:])
+    cum_v = sum(max(1.0, float(c.get("volume") or 1.0)) for c in candles[-20:])
+    vwap = cum_pv / cum_v if cum_v > 0 else price
+    vwap_diff = round(((price - vwap) / vwap) * 100.0, 2) if vwap > 0 else 0.0
+
+    return {
+        "symbol": "TAIEX" if code == "^TWII" else code,
+        "stock_name": stock_name or code,
+        "source": q["source"],
+        "last_date": q["last_date"],
+        "open": q["open"],
+        "high": q["high"],
+        "low": q["low"],
+        "price": price,
+        "volume": q["volume"],
+        "change_pct": change_pct,
+        "volume_ratio": vol_ratio,
+        "ema5": ema5,
+        "ema12": ema12,
+        "rsi": rsi,
+        "vwap_diff": vwap_diff,
+    }
+
+
+def _build_grounded_prompt(
+    req: AIAnalyzeRequest,
+    role_hint: str,
+    resolved_mode: str = "SINGLE",
+    resolved_targets: Optional[list[dict[str, Any]]] = None,
+) -> str:
+    targets = resolved_targets or []
+    focus = (req.custom_prompt or "").strip()
+
+    if resolved_mode == "MULTI_TARGETS" and len(targets) >= 2:
+        lines = []
+        for idx, s in enumerate(targets, 1):
+            lines.append(
+                f"{idx}. {s.get('symbol')} {s.get('stock_name', '')}｜來源：{s.get('source', '--')}（{s.get('last_date', '--')}）"
+                f"｜開 {s.get('open')} 高 {s.get('high')} 低 {s.get('low')} 現價 {s.get('price')}（{s.get('change_pct')}%）"
+                f"｜量 {s.get('volume')}（量比 {s.get('volume_ratio', '--')}x）"
+                f"｜EMA5={s.get('ema5')} EMA12={s.get('ema12')} RSI14={s.get('rsi')} VWAP乖離={s.get('vwap_diff')}%"
+            )
+        table_txt = "\n".join(lines)
+        return (
+            f"你是一位嚴謹的台灣股市量化分析師（角色專長：{role_hint}）。\n"
+            f"使用者自訂分析焦點（首要任務）：{focus or '請整合比較下列台股標的之強弱、技術位階與操作優先順序'}\n\n"
+            f"以下為系統即時抓取之「指定分析標的」真實市場數據（共 {len(targets)} 檔，請嚴格針對這 {len(targets)} 檔進行整合比較，切勿分析未列出的其他股票，亦嚴禁捏造未提供的價格或財報數據）：\n"
+            f"{table_txt}\n\n"
+            f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
+            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"220字內整合比較研判（須涵蓋每檔強弱排序與核心差異）","key_levels":"各標的關鍵支撐壓力或首選順序","risk_note":"60字內共同風險與倉位提醒"}}'
+        )
+
+    if resolved_mode == "CUSTOM_FOCUS":
+        ref_line = ""
+        if targets:
+            s = targets[0]
+            ref_line = (
+                f"\n即時大盤基準參考：{s.get('symbol')} {s.get('stock_name', '')} 現價 {s.get('price')}（{s.get('change_pct')}%，"
+                f"RSI14={s.get('rsi')}，日期 {s.get('last_date', '--')}）。\n"
+            )
+        return (
+            f"你是一位嚴謹的台灣股市量化研究與交易策略師（角色專長：{role_hint}）。\n"
+            f"請完全以使用者的「自訂分析焦點」為核心進行整合解析，切勿自行離題去評論未提及的個股；若缺乏即時個股報價則嚴禁捏造價格數據。\n"
+            f"使用者自訂分析焦點：{focus}\n"
+            f"{ref_line}\n"
+            f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
+            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"200字內針對自訂焦點之深度整合分析","key_levels":"關鍵觀察指標、位階或篩選條件","risk_note":"60字內風控與執行紀律提醒"}}'
+        )
+
+    # Single target mode (either extracted single custom stock OR active stock)
+    s = targets[0] if targets else {
+        "symbol": req.symbol,
+        "stock_name": req.stock_name,
+        **(req.market_snapshot or {}),
+    }
     return (
         f"你是一位嚴謹的台灣股市量化分析師（角色專長：{role_hint}）。\n"
         f"以下為剛抓取之真實市場數據，嚴禁猜測或捏造任何未提供的價格與財報數據：\n"
-        f"- 標的：{req.symbol} {req.stock_name}\n"
-        f"- 數據來源：{snap.get('source', '未知')}（日期：{snap.get('last_date', '--')}）\n"
-        f"- 開盤：{snap.get('open')} ｜ 最高：{snap.get('high')} ｜ 最低：{snap.get('low')} ｜ 現價/收盤：{snap.get('price')}\n"
-        f"- 漲跌幅：{snap.get('change_pct')}% ｜ 成交量：{snap.get('volume')} ｜ 量比：{snap.get('volume_ratio', '--')}x\n"
-        f"- 技術指標：EMA5={snap.get('ema5')}, EMA12={snap.get('ema12')}, MACD_OSC={snap.get('macd_osc', '--')}, K/D={snap.get('kd', '--')}, RSI(14)={snap.get('rsi')}, VWAP乖離={snap.get('vwap_diff')}%\n"
-        f"{('額外指令：' + req.custom_prompt) if req.custom_prompt else ''}\n\n"
+        f"- 標的：{s.get('symbol')} {s.get('stock_name', '')}\n"
+        f"- 數據來源：{s.get('source', '未知')}（日期：{s.get('last_date', '--')}）\n"
+        f"- 開盤：{s.get('open')} ｜ 最高：{s.get('high')} ｜ 最低：{s.get('low')} ｜ 現價/收盤：{s.get('price')}\n"
+        f"- 漲跌幅：{s.get('change_pct')}% ｜ 成交量：{s.get('volume')} ｜ 量比：{s.get('volume_ratio', '--')}x\n"
+        f"- 技術指標：EMA5={s.get('ema5')}, EMA12={s.get('ema12')}, MACD_OSC={s.get('macd_osc', '--')}, K/D={s.get('kd', '--')}, RSI(14)={s.get('rsi')}, VWAP乖離={s.get('vwap_diff')}%\n"
+        f"{('使用者自訂分析焦點（請優先回答）：' + focus) if focus else ''}\n\n"
         f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
-        f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"80字內核心研判","key_levels":"支撐與壓力價位","risk_note":"40字內風控提醒"}}'
+        f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"120字內核心研判","key_levels":"支撐與壓力價位","risk_note":"50字內風控提醒"}}'
     )
 
 
@@ -909,13 +1100,18 @@ def _extract_ai_json(text: str) -> dict[str, Any]:
     return {
         "verdict": "NEUTRAL",
         "confidence": 55,
-        "summary": cleaned[:180],
+        "summary": cleaned[:240],
         "key_levels": "請參考即時 K 線支撐壓力",
         "risk_note": "模型回覆非標準 JSON，已顯示原始摘要",
     }
 
 
-async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any]:
+async def _call_single_ai(
+    model_id: str,
+    req: AIAnalyzeRequest,
+    resolved_mode: str = "SINGLE",
+    resolved_targets: Optional[list[dict[str, Any]]] = None,
+) -> dict[str, Any]:
     t0 = time.perf_counter()
     roles = {
         "groq": "Groq 極速推理 — 毫秒級盤中爆量突圍、高波動短線訊號研判",
@@ -925,7 +1121,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
         "claude": "Claude (Anthropic) — 嚴格風控稽核、支撐壓力與停損紀律",
         "chatgpt": "ChatGPT (OpenAI) — 結構化多空交易劇本與倉位配置",
     }
-    prompt = _build_grounded_prompt(req, roles.get(model_id, "量化分析"))
+    prompt = _build_grounded_prompt(req, roles.get(model_id, "量化分析"), resolved_mode=resolved_mode, resolved_targets=resolved_targets)
     opts = req.model_options or {}
 
     try:
@@ -943,7 +1139,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=18.0,
+                timeout=26.0,
             )
             if status != 200:
                 return {"model": "groq", "connected": False, "error": f"Groq HTTP {status}"}
@@ -955,7 +1151,6 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             if not base_url:
                 return {"model": "ollama", "connected": False, "error": "尚未設定地端 Ollama 網址"}
             ollama_model = (opts.get("ollama_model") or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")).strip()
-            # Support native Ollama /api/chat first, then OpenAI-compatible /v1/chat/completions (LM Studio / vLLM)
             status, body = await http_json(
                 f"{base_url}/api/chat",
                 method="POST",
@@ -965,7 +1160,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                     "options": {"temperature": 0.2},
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=30.0,
+                timeout=35.0,
             )
             if status == 200 and isinstance(body, dict) and body.get("message", {}).get("content"):
                 text = body["message"]["content"]
@@ -978,7 +1173,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                         "temperature": 0.2,
                         "messages": [{"role": "user", "content": prompt}],
                     },
-                    timeout=30.0,
+                    timeout=35.0,
                 )
                 if st2 != 200 or not isinstance(body2, dict):
                     return {"model": "ollama", "connected": False, "error": f"Ollama/地端連線失敗 (HTTP {status}/{st2})"}
@@ -999,7 +1194,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=20.0,
+                timeout=26.0,
             )
             if status != 200:
                 return {"model": "grok", "connected": False, "error": f"xAI HTTP {status}"}
@@ -1009,20 +1204,30 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             key = req.api_keys.get("gemini") or os.getenv("GEMINI_API_KEY", "")
             if not key:
                 return {"model": "gemini", "connected": False, "error": "尚未設定 Google Gemini API Key"}
-            used_name = opts.get("gemini_model") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{used_name}:generateContent?key={urllib.parse.quote(key)}"
-            status, body = await http_json(
-                url,
-                method="POST",
-                json_body={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.2},
-                },
-                timeout=20.0,
-            )
-            if status != 200:
+            primary_gem = opts.get("gemini_model") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+            gem_candidates = [primary_gem] + ([m for m in ("gemini-2.0-flash",) if m != primary_gem])
+            used_name = primary_gem
+            status, body = 0, {}
+            for gm in gem_candidates:
+                used_name = gm
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gm}:generateContent?key={urllib.parse.quote(key)}"
+                status, body = await http_json(
+                    url,
+                    method="POST",
+                    json_body={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.2},
+                    },
+                    timeout=26.0,
+                )
+                if status == 200 and isinstance(body, dict) and (body.get("candidates") or []):
+                    break
+            if status != 200 or not isinstance(body, dict) or not (body.get("candidates") or []):
                 return {"model": "gemini", "connected": False, "error": f"Gemini HTTP {status}"}
-            text = body["candidates"][0]["content"]["parts"][0]["text"]
+            parts = ((body["candidates"][0].get("content") or {}).get("parts") or [])
+            # Prefer non-thought text parts (Gemini 2.5 thinking models may emit thought parts first)
+            non_thought = [str(p.get("text") or "") for p in parts if p.get("text") and not p.get("thought")]
+            text = "\n".join(non_thought).strip() or "\n".join(str(p.get("text") or "") for p in parts if p.get("text")).strip()
 
         elif model_id == "claude":
             key = req.api_keys.get("claude") or os.getenv("ANTHROPIC_API_KEY", "")
@@ -1038,11 +1243,11 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                 },
                 json_body={
                     "model": used_name,
-                    "max_tokens": 512,
+                    "max_tokens": 900,
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=20.0,
+                timeout=26.0,
             )
             if status != 200:
                 return {"model": "claude", "connected": False, "error": f"Claude HTTP {status}"}
@@ -1062,7 +1267,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
                     "temperature": 0.2,
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=20.0,
+                timeout=26.0,
             )
             if status != 200:
                 return {"model": "chatgpt", "connected": False, "error": f"OpenAI HTTP {status}"}
@@ -1088,7 +1293,7 @@ async def _call_single_ai(model_id: str, req: AIAnalyzeRequest) -> dict[str, Any
             "model": model_id,
             "connected": False,
             "latency_ms": round((time.perf_counter() - t0) * 1000),
-            "error": str(exc)[:140],
+            "error": redact_secrets(str(exc), list((req.api_keys or {}).values()))[:140],
         }
 
 
@@ -1307,15 +1512,124 @@ async def test_all_ai_endpoints(req: AITestAllRequest):
 
 @app.post("/api/v1/ai/analyze")
 async def analyze_multi_ai(req: AIAnalyzeRequest):
-    if req.market_snapshot.get("price") is None:
-        raise HTTPException(
-            status_code=400,
-            detail="缺少真實報價，嚴禁在無真實數據時進行 AI 猜測分析",
+    mode_in = (req.focus_mode or "AUTO").strip().upper()
+    focus = (req.custom_prompt or "").strip()
+    extracted_from_prompt = _extract_tw_symbols_from_prompt(focus, limit=8)
+
+    # Deduplicate explicit target_symbols + prompt-extracted symbols
+    explicit_targets: list[str] = []
+    for raw_s in (req.target_symbols or []):
+        s = str(raw_s).strip().upper()
+        if s and s not in explicit_targets:
+            explicit_targets.append(s)
+    for s in extracted_from_prompt:
+        if s not in explicit_targets:
+            explicit_targets.append(s)
+    explicit_targets = explicit_targets[:8]
+
+    # Map any pre-supplied snapshots by symbol
+    pre_map: dict[str, dict[str, Any]] = {}
+    for snap in (req.multi_snapshots or []):
+        if isinstance(snap, dict) and snap.get("symbol") and snap.get("price") is not None:
+            pre_map[str(snap["symbol"]).strip().upper()] = snap
+    if req.symbol and isinstance(req.market_snapshot, dict) and req.market_snapshot.get("price") is not None:
+        pre_map.setdefault(
+            req.symbol.strip().upper(),
+            {"symbol": req.symbol.strip().upper(), "stock_name": req.stock_name or req.symbol, **req.market_snapshot},
         )
-    results = await asyncio.gather(*(_call_single_ai(m, req) for m in req.models))
+
+    resolved_mode = "SINGLE"
+    resolved_targets: list[dict[str, Any]] = []
+
+    async def _resolve_symbols(syms: list[str]) -> list[dict[str, Any]]:
+        use_uniform_daily = len(syms) >= 2
+        tasks = []
+        for s in syms:
+            if not use_uniform_daily and s in pre_map:
+                tasks.append(asyncio.sleep(0, result=pre_map[s]))
+            else:
+                tasks.append(_fetch_live_snapshot_for_ai(s))
+        fetched = await asyncio.gather(*tasks)
+        out = []
+        for s, x in zip(syms, fetched):
+            if isinstance(x, dict) and x.get("price") is not None:
+                out.append(x)
+            elif s in pre_map:
+                out.append(pre_map[s])
+        return out
+
+    if mode_in == "ACTIVE":
+        active_sid = req.symbol.strip().upper()
+        if not active_sid:
+            raise HTTPException(status_code=400, detail="請指定分析標的代號")
+        resolved_targets = await _resolve_symbols([active_sid])
+        if not resolved_targets:
+            raise HTTPException(status_code=400, detail=f"無法取得 {active_sid} 真實報價，嚴禁無數據猜測")
+        resolved_mode = "SINGLE"
+    elif mode_in == "WATCHLIST":
+        wl_syms = explicit_targets or list(pre_map.keys())
+        if not wl_syms:
+            raise HTTPException(status_code=400, detail="自選股清單尚無有效標的")
+        resolved_targets = await _resolve_symbols(wl_syms[:8])
+        if not resolved_targets:
+            raise HTTPException(status_code=400, detail="無法取得自選股真實報價")
+        resolved_mode = "MULTI_TARGETS" if len(resolved_targets) >= 2 else "SINGLE"
+    elif mode_in == "CUSTOM_ONLY":
+        if not focus and not explicit_targets:
+            raise HTTPException(status_code=400, detail="請輸入自訂分析焦點內容")
+        if explicit_targets:
+            resolved_targets = await _resolve_symbols(explicit_targets)
+            resolved_mode = "MULTI_TARGETS" if len(resolved_targets) >= 2 else ("SINGLE" if len(resolved_targets) == 1 else "CUSTOM_FOCUS")
+        else:
+            taiex = await _fetch_live_snapshot_for_ai("TAIEX")
+            resolved_targets = [taiex] if taiex else []
+            resolved_mode = "CUSTOM_FOCUS"
+    else:
+        # AUTO mode:
+        # 1) If prompt mentions specific stock codes (e.g. 6213, 2368, 3037, 3189) -> fetch ONLY those real quotes!
+        if explicit_targets:
+            resolved_targets = await _resolve_symbols(explicit_targets)
+            if not resolved_targets:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"查無焦點標的 {', '.join(explicit_targets)} 之真實報價，請確認台股代號是否正確",
+                )
+            resolved_mode = "MULTI_TARGETS" if len(resolved_targets) >= 2 else "SINGLE"
+        # 2) If custom_prompt has no stock codes AND does NOT ask about "目前標的/這檔" -> Custom Focus mode (don't lock onto 2330!)
+        elif focus and not _ACTIVE_HINT_RE.search(focus):
+            taiex = await _fetch_live_snapshot_for_ai("TAIEX")
+            resolved_targets = [taiex] if taiex else []
+            resolved_mode = "CUSTOM_FOCUS"
+        # 3) Empty prompt or prompt explicitly referencing current stock -> analyze active symbol
+        else:
+            active_sid = req.symbol.strip().upper()
+            if not active_sid:
+                raise HTTPException(status_code=400, detail="缺少分析標的或自訂分析焦點")
+            resolved_targets = await _resolve_symbols([active_sid])
+            if not resolved_targets:
+                raise HTTPException(status_code=400, detail="缺少真實報價，嚴禁在無真實數據時進行 AI 猜測分析")
+            resolved_mode = "SINGLE"
+
+    results = await asyncio.gather(
+        *(
+            _call_single_ai(m, req, resolved_mode=resolved_mode, resolved_targets=resolved_targets)
+            for m in req.models
+        )
+    )
+    primary_sym = resolved_targets[0]["symbol"] if len(resolved_targets) == 1 else (
+        "MULTI" if resolved_mode == "MULTI_TARGETS" else "CUSTOM"
+    )
+    primary_name = resolved_targets[0]["stock_name"] if len(resolved_targets) == 1 else (
+        "、".join(f"{t['symbol']} {t.get('stock_name', '')}".strip() for t in resolved_targets[:4]) + ("…" if len(resolved_targets) > 4 else "")
+        if resolved_mode == "MULTI_TARGETS"
+        else "自訂焦點整合解析"
+    )
     return {
-        "symbol": req.symbol,
-        "stock_name": req.stock_name,
+        "symbol": primary_sym,
+        "stock_name": primary_name,
+        "analyzed_mode": resolved_mode,
+        "analyzed_targets": resolved_targets,
+        "focus_prompt": focus,
         "timestamp": tw_now_str(),
         "results": results,
     }

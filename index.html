@@ -3012,9 +3012,20 @@
             <div class="card-body">
               <div class="grid-2" style="margin-bottom:14px;">
                 <div style="display:flex;flex-direction:column;gap:10px;">
-                  <div>
-                    <label class="field-label" for="aiStudioPrompt">自訂分析焦點（選填）</label>
-                    <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：請評估目前價位是否適合分批佈局？請給出具體停損價位與風報比評估..."></textarea>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <label class="field-label" for="aiStudioPrompt" style="margin-bottom:0;">自訂分析焦點（支援輸入多檔代號或策略主題，不再鎖定 2330）</label>
+                      <select id="aiFocusModeSelect" class="select" style="width:auto;min-width:210px;padding:4px 8px;font-size:11.5px;font-weight:700;">
+                        <option value="AUTO" selected>自動偵測焦點標的（推薦）</option>
+                        <option value="WATCHLIST">全自選股組合整合比較</option>
+                        <option value="CUSTOM_ONLY">純自訂焦點（不綁定預設個股）</option>
+                        <option value="ACTIVE">僅分析目前主畫面標的</option>
+                      </select>
+                    </div>
+                    <textarea id="aiStudioPrompt" rows="3" class="textarea" placeholder="例如：分析 6213、2368、3037、3189 的強弱比較與進場順序；或輸入「比較高股息與市值型配置策略」；留空則解析目前主畫面標的..."></textarea>
+                    <div id="aiFocusDetectedHint" style="font-size:11px;color:var(--ink-3);background:var(--bg-subtle);border:1px solid var(--border);border-radius:8px;padding:5px 9px;line-height:1.45;">
+                      💡 在上方輸入台股代號（如 <span class="mono">6213、2368、3037、3189</span>）將自動即時抓取這批股票的真實報價整合解析；留空則解析目前主畫面標的。
+                    </div>
                   </div>
                   <!-- Groq & Ollama Local Model Dedicated Card -->
                   <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
@@ -3124,7 +3135,7 @@
                     </div>
                     <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
                       • 測試僅呼叫各家輕量級模型清單端點（<strong>不消耗推論 Token 費用</strong>），並對錯誤訊息嚴格脫敏。<br />
-                      • 多 Agent 自動切換原則：高波動/放量優先 <strong>Groq / Ollama</strong>；價量背離風控優先 <strong>Claude / Gemini / Ollama</strong>；多頭突圍優先 <strong>Grok / Groq</strong>。
+                      • 執行深度解析會<strong>直接讀取目前輸入欄金鑰與自訂分析焦點</strong>，支援多檔台股即時抓價比較。
                     </div>
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border);">
@@ -3136,6 +3147,7 @@
                   </div>
                 </div>
               </div>
+              <div id="aiStudioContextBar" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--ink-2);line-height:1.55;"></div>
               <div id="aiStudioResults" class="grid-ai-3"></div>
             </div>
           </article>
@@ -3560,6 +3572,7 @@
       watchlist: [],
       quotes: {}, // symbol -> { price, prevClose, open, high, low, volume, lastDate, source, candles, error }
       aiResults: {}, // symbol -> { timestamp, models: [...] }
+      lastAiStudioResult: null, // { analyzed_mode, analyzed_targets, focus_prompt, timestamp, models: [...] }
 
       handshake: {
         selectedNodeId: 'CORE',
@@ -4924,40 +4937,185 @@
       };
     }
 
-    async function runMultiAiAnalysis(customPrompt = '') {
-      const meta = getStockMeta(state.activeSymbol);
-      const q = getQuote(state.activeSymbol);
-      if (!q || q.price === null) {
-        showToast('缺少真實報價', `請先同步 ${meta.symbol} ${meta.name} 的 Yahoo / FinMind 真實數據，嚴禁無數據猜測。`, 'warn');
-        return;
+    function extractTwSymbolsFromPrompt(text, limit = 8) {
+      if (!text) return [];
+      const upper = String(text).toUpperCase();
+      const re = /(?:^|[^0-9A-Z])(00\d{2,4}[A-Z]?|[1-9]\d{3})(?=$|[^0-9A-Z])/g;
+      const out = [];
+      let m;
+      while ((m = re.exec(upper)) !== null) {
+        const sym = m[1];
+        const nextChar = text[m.index + m[0].length] || '';
+        if (/^\d{4}$/.test(sym) && Number(sym) >= 2015 && Number(sym) <= 2035 && ['年', '-', '/'].includes(nextChar)) {
+          continue;
+        }
+        if (!out.includes(sym)) {
+          out.push(sym);
+          if (out.length >= limit) break;
+        }
+      }
+      return out;
+    }
+
+    function updateAiFocusHint() {
+      const hint = document.getElementById('aiFocusDetectedHint');
+      if (!hint) return;
+      const mode = document.getElementById('aiFocusModeSelect')?.value || 'AUTO';
+      const prompt = (document.getElementById('aiStudioPrompt')?.value || '').trim();
+      const syms = extractTwSymbolsFromPrompt(prompt, 8);
+      const activeMeta = getStockMeta(state.activeSymbol);
+      const activeHintRe = /(目前標的|這檔|本檔|此檔|現價|目前價位|這支|這隻)/;
+
+      if (mode === 'ACTIVE') {
+        hint.innerHTML = `📌 鎖定主畫面標的：<strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>${prompt ? ' ＋ 結合自訂分析焦點' : ''}`;
+      } else if (mode === 'WATCHLIST') {
+        const wl = state.watchlist.slice(0, 8).map(w => w.symbol).join(' · ');
+        hint.innerHTML = `📋 將整合分析全自選股組合（<span class="mono">${escapeHtml(wl)}</span>）${prompt ? ' ＋ 結合自訂分析焦點' : ''}`;
+      } else if (mode === 'CUSTOM_ONLY') {
+        if (syms.length) {
+          hint.innerHTML = `🎯 純自訂焦點（偵測到 <strong class="mono">${syms.join(' · ')}</strong>）：即時抓取這 ${syms.length} 檔真實報價進行整合比較，<strong>不帶入 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+        } else {
+          hint.innerHTML = `🎯 純自訂焦點模式：完全依您輸入的分析焦點進行六模型整合解析（不綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+        }
+      } else {
+        // AUTO mode
+        if (syms.length >= 2) {
+          hint.innerHTML = `🎯 自動偵測多檔焦點標的：<strong class="mono" style="color:var(--accent);">${syms.join(' · ')}</strong>（共 ${syms.length} 檔）→ 執行時將即時抓取這批股票的真實報價進行整合比較，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+        } else if (syms.length === 1) {
+          hint.innerHTML = `🎯 自動偵測指定標的：<strong class="mono" style="color:var(--accent);">${syms[0]}</strong> → 執行時將即時抓取 <span class="mono">${syms[0]}</span> 真實報價進行深度解析，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+        } else if (prompt && !activeHintRe.test(prompt)) {
+          hint.innerHTML = `🎯 自動進入「自訂焦點整合模式」：直接依您的提問進行六模型整合分析（附即時大盤基準，不強制綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+        } else {
+          hint.innerHTML = `💡 目前焦點留空（或指向本檔）→ 預設解析主畫面標的 <strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>；直接輸入代號如 <span class="mono">6213、2368、3037、3189</span> 即可即時整合多檔分析。`;
+        }
+      }
+    }
+
+    function buildMultiTargetFallbackDigest(modelDef, targets, customPrompt) {
+      if (!targets || targets.length === 0) {
+        return {
+          model: modelDef.id,
+          connected: false,
+          latency_ms: 4,
+          verdict: 'NEUTRAL',
+          confidence: 55,
+          summary: `自訂分析焦點「${(customPrompt || '').slice(0, 60)}」需設定 ${modelDef.label} API Key 或連線本機 Ollama 方可產出完整 LLM 深度研判。`,
+          key_levels: '請於上方填入 API Key 或啟動地端模型',
+          risk_note: '未設定外部模型時不進行無依據猜測。',
+          modeLabel: '本地量化摘要（尚未設定 API Key）'
+        };
+      }
+      if (targets.length === 1) {
+        const t = targets[0];
+        const chg = Number(t.change_pct || 0);
+        const rsiVal = Number(t.rsi ?? 50);
+        const verdict = (chg > 0 && t.ema5 >= t.ema12) ? 'BULL' : ((chg < 0 && t.ema5 < t.ema12) ? 'BEAR' : 'NEUTRAL');
+        return {
+          model: modelDef.id,
+          connected: false,
+          latency_ms: 4,
+          verdict,
+          confidence: verdict === 'NEUTRAL' ? 54 : 66,
+          summary: `${t.symbol} ${t.stock_name || ''} 現價 ${t.price}（${chg >= 0 ? '+' : ''}${chg}%），EMA5=${t.ema5} / EMA12=${t.ema12}、RSI14=${rsiVal}、VWAP乖離 ${t.vwap_diff >= 0 ? '+' : ''}${t.vwap_diff}%。`,
+          key_levels: `支撐 ${fmtNum(t.low || t.price, 2)} ｜ 壓力 ${fmtNum(t.high || t.price, 2)}`,
+          risk_note: `資料日期 ${t.last_date || '--'}；設定 ${modelDef.label} 金鑰可啟用深度自然語言研判。`,
+          modeLabel: '本地量化摘要'
+        };
+      }
+      const sorted = targets.slice().sort((a, b) => Number(b.change_pct || 0) - Number(a.change_pct || 0));
+      const best = sorted[0], worst = sorted[sorted.length - 1];
+      const avgChg = sorted.reduce((s, x) => s + Number(x.change_pct || 0), 0) / sorted.length;
+      const verdict = avgChg >= 0.8 ? 'BULL' : (avgChg <= -0.8 ? 'BEAR' : 'NEUTRAL');
+      const brief = sorted.map(x => `${x.symbol}${x.stock_name ? ' ' + x.stock_name : ''}(${x.price}/${Number(x.change_pct || 0) >= 0 ? '+' : ''}${x.change_pct}%)`).join('、');
+      return {
+        model: modelDef.id,
+        connected: false,
+        latency_ms: 5,
+        verdict,
+        confidence: Math.min(78, Math.max(52, 58 + Math.round(Math.abs(avgChg) * 3))),
+        summary: `依真實報價整合 ${targets.length} 檔焦點標的：${brief}。短線相對最強為 ${best.symbol} ${best.stock_name || ''}（${best.change_pct >= 0 ? '+' : ''}${best.change_pct}%、RSI ${best.rsi ?? '--'}），相對最弱為 ${worst.symbol} ${worst.stock_name || ''}（${worst.change_pct >= 0 ? '+' : ''}${worst.change_pct}%）。`,
+        key_levels: `強弱排序：${sorted.map(x => x.symbol).join(' > ')}`,
+        risk_note: `族群平均漲跌 ${avgChg >= 0 ? '+' : ''}${avgChg.toFixed(2)}%，設定 ${modelDef.label} API 金鑰可產出完整整合策略。`,
+        modeLabel: '本地量化多股摘要'
+      };
+    }
+
+    async function runMultiAiAnalysis(customPrompt = '', opts = {}) {
+      const forceActive = Boolean(opts.forceActive);
+      const focusMode = forceActive ? 'ACTIVE' : (document.getElementById('aiFocusModeSelect')?.value || 'AUTO');
+      const promptClean = String(customPrompt || '').trim();
+      const activeHintRe = /(目前標的|這檔|本檔|此檔|現價|目前價位|這支|這隻)/;
+
+      // Always read latest keys & model selections directly from UI inputs so unsaved tested keys work immediately!
+      const liveCreds = readAiKeysFromInputs();
+      const effectiveKeys = { ...state.aiKeys, ...liveCreds.apiKeys };
+      const effectiveOpts = { ...state.modelOptions, ...liveCreds.modelOptions };
+
+      const extractedSyms = forceActive ? [] : extractTwSymbolsFromPrompt(promptClean, 8);
+      let targetSymbols = [];
+      if (focusMode === 'WATCHLIST') {
+        targetSymbols = state.watchlist.map(w => w.symbol).filter(Boolean).slice(0, 8);
+      } else if (focusMode === 'ACTIVE') {
+        targetSymbols = [state.activeSymbol];
+      } else if (extractedSyms.length > 0) {
+        targetSymbols = extractedSyms;
+      } else if (focusMode === 'AUTO' && (!promptClean || activeHintRe.test(promptClean))) {
+        targetSymbols = [state.activeSymbol];
       }
 
-      const sig = evaluateStockSignal(state.activeSymbol);
-      const snapshot = {
-        source: q.source,
-        last_date: q.lastDate,
-        open: q.open,
-        high: q.high,
-        low: q.low,
-        price: q.price,
-        volume: q.volume,
-        change_pct: sig.changePct,
-        ema5: sig.ema5,
-        ema12: sig.ema12,
-        rsi: sig.rsi,
-        vwap_diff: sig.vwapDiff
+      // Build any already-cached real snapshots for requested symbols
+      const buildCachedSnap = sym => {
+        const m = getStockMeta(sym);
+        const qq = getQuote(sym);
+        if (!qq || qq.price === null) return null;
+        const sg = evaluateStockSignal(sym);
+        return {
+          symbol: m.symbol,
+          stock_name: m.name,
+          source: qq.source,
+          last_date: qq.lastDate,
+          open: qq.open,
+          high: qq.high,
+          low: qq.low,
+          price: qq.price,
+          volume: qq.volume,
+          change_pct: sg.changePct,
+          ema5: sg.ema5,
+          ema12: sg.ema12,
+          rsi: sg.rsi,
+          vwap_diff: sg.vwapDiff
+        };
       };
+
+      const activeMeta = getStockMeta(state.activeSymbol);
+      const activeSnap = buildCachedSnap(state.activeSymbol);
+      const preSnaps = targetSymbols.map(buildCachedSnap).filter(Boolean);
+
+      if (focusMode === 'ACTIVE' && !activeSnap) {
+        showToast('缺少真實報價', `請先同步 ${activeMeta.symbol} ${activeMeta.name} 的 Yahoo / FinMind 真實數據，嚴禁無數據猜測。`, 'warn');
+        return;
+      }
+      if (focusMode === 'CUSTOM_ONLY' && !promptClean && targetSymbols.length === 0) {
+        showToast('請輸入自訂分析焦點', '純自訂焦點模式請在上方輸入您想分析的股票代號或問題。', 'warn');
+        return;
+      }
 
       const btnQuick = document.getElementById('btnRunAiQuick');
       const btnStudio = document.getElementById('btnRunAiStudio');
       if (btnQuick) btnQuick.disabled = true;
       if (btnStudio) btnStudio.disabled = true;
 
-      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送 ${meta.symbol} ${meta.name} 真實數據至六模型 (含 Groq / Ollama)`);
-      showToast('AI 六模型平行解析中', `正在為 ${meta.symbol} ${meta.name}（現價 ${q.price}）執行 Groq / Ollama / Grok / Gemini / Claude / ChatGPT 研判...`, 'info');
+      const labelDesc = targetSymbols.length >= 2
+        ? `多股焦點（${targetSymbols.join('、')}）`
+        : (targetSymbols.length === 1 ? `${targetSymbols[0]} ${getStockMeta(targetSymbols[0]).name || ''}`.trim() : '自訂分析焦點');
+
+      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送「${labelDesc}」真實數據至六模型`);
+      showToast('AI 六模型平行解析中', `正在針對「${labelDesc}」抓取真實報價並執行六模型深度整合解析...`, 'info');
 
       const apiBase = getApiBase();
       let finalResults = [];
+      let analyzedMode = targetSymbols.length >= 2 ? 'MULTI_TARGETS' : (targetSymbols.length === 1 ? 'SINGLE' : 'CUSTOM_FOCUS');
+      let analyzedTargets = preSnaps.slice();
 
       if (apiBase) {
         try {
@@ -4965,66 +5123,104 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              symbol: meta.symbol,
-              stock_name: meta.name,
-              market_snapshot: snapshot,
+              symbol: targetSymbols.length === 1 ? targetSymbols[0] : (focusMode === 'ACTIVE' ? activeMeta.symbol : ''),
+              stock_name: targetSymbols.length === 1 ? (getStockMeta(targetSymbols[0]).name || '') : (focusMode === 'ACTIVE' ? activeMeta.name : ''),
+              market_snapshot: (targetSymbols.length === 1 && preSnaps[0]) ? preSnaps[0] : (focusMode === 'ACTIVE' && activeSnap ? activeSnap : {}),
               models: AI_MODELS.map(m => m.id),
-              api_keys: state.aiKeys,
-              model_options: state.modelOptions,
-              custom_prompt: customPrompt
+              api_keys: effectiveKeys,
+              model_options: effectiveOpts,
+              custom_prompt: promptClean,
+              focus_mode: focusMode,
+              target_symbols: targetSymbols,
+              multi_snapshots: preSnaps
             })
           });
           if (resp.ok) {
             const data = await resp.json();
+            analyzedMode = data.analyzed_mode || analyzedMode;
+            analyzedTargets = Array.isArray(data.analyzed_targets) ? data.analyzed_targets : analyzedTargets;
             finalResults = (data.results || []).map(r => {
               const def = AI_MODELS.find(m => m.id === r.model);
               if (r.connected) {
                 return {
                   ...r,
                   modeLabel: r.model === 'ollama'
-                    ? `地端 Ollama (${r.model_name || state.modelOptions.ollama_model})`
+                    ? `地端 Ollama (${r.model_name || effectiveOpts.ollama_model})`
                     : `雲端 API (${r.model_name || r.model})`
                 };
               }
               return {
-                ...buildDeterministicFallbackDigest(def, sig, q),
+                ...buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean),
                 modeLabel: `本地量化摘要（${r.error || '未設定'}）`
               };
             });
+          } else {
+            const errJson = await resp.json().catch(() => ({}));
+            if (errJson.detail) showToast('分析前置檢查提示', String(errJson.detail), 'warn');
           }
         } catch (e) {}
       }
 
+      // Direct browser fallback when running static without FastAPI backend
       if (finalResults.length === 0) {
+        if (targetSymbols.length > 0 && analyzedTargets.length < targetSymbols.length) {
+          for (const sym of targetSymbols) {
+            if (!analyzedTargets.some(x => x.symbol === sym)) {
+              await fetchMarketData(sym, 'auto');
+              const sn = buildCachedSnap(sym);
+              if (sn) analyzedTargets.push(sn);
+            }
+          }
+        }
+        const multiTxt = analyzedTargets.map((s, idx) =>
+          `${idx + 1}. ${s.symbol} ${s.stock_name || ''} 現價=${s.price}(${s.change_pct}%) EMA5=${s.ema5} EMA12=${s.ema12} RSI14=${s.rsi} VWAP乖離=${s.vwap_diff}%`
+        ).join('\n');
+
         finalResults = await Promise.all(AI_MODELS.map(async def => {
           const hasCred = def.id === 'ollama'
-            ? Boolean((state.modelOptions.ollama_url || '').trim())
-            : Boolean((state.aiKeys[def.id] || '').trim());
-          if (!hasCred) return buildDeterministicFallbackDigest(def, sig, q);
+            ? Boolean((effectiveOpts.ollama_url || '').trim())
+            : Boolean((effectiveKeys[def.id] || '').trim());
+          if (!hasCred) return buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean);
           try {
-            const prompt = `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${meta.symbol} ${meta.name}，來源=${q.source}，日期=${q.lastDate}，開=${q.open} 高=${q.high} 低=${q.low} 現價=${q.price} 漲跌=${sig.changePct}% 量=${q.volume} EMA5=${sig.ema5} EMA12=${sig.ema12} RSI14=${sig.rsi} VWAP乖離=${sig.vwapDiff}%。${customPrompt ? '額外提問：' + customPrompt : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"70字內研判","key_levels":"支撐與壓力","risk_note":"35字內風控"}`;
-            return await callSingleModelDirectBrowser(def, prompt);
+            const directPrompt = analyzedTargets.length >= 2
+              ? `你是嚴謹台股量化分析師(${def.label} - ${def.role})。自訂焦點：${promptClean || '比較下列標的強弱與操作順序'}。真實數據：\n${multiTxt}\n嚴禁分析未列出的股票或捏造價格。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"200字內整合比較研判","key_levels":"強弱排序或關鍵價位","risk_note":"50字內風控提醒"}`
+              : (analyzedTargets.length === 1
+                ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控"}`
+                : `你是嚴謹台股量化策略師(${def.label} - ${def.role})。請完全聚焦以下主題回答，勿離題討論未提及個股：${promptClean}。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"200字內整合分析","key_levels":"關鍵觀察指標或條件","risk_note":"50字內風控提醒"}`);
+            return await callSingleModelDirectBrowser(def, directPrompt);
           } catch (err) {
             return {
-              ...buildDeterministicFallbackDigest(def, sig, q),
+              ...buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean),
               modeLabel: `本地量化摘要（${err.message.slice(0, 34)}）`
             };
           }
         }));
       }
 
-      state.aiResults[state.activeSymbol] = {
+      const resultPack = {
         timestamp: nowTwDateTime(),
-        price: q.price,
-        source: q.source,
+        analyzed_mode: analyzedMode,
+        analyzed_targets: analyzedTargets,
+        focus_prompt: promptClean,
+        price: analyzedTargets[0]?.price ?? null,
+        source: analyzedTargets[0]?.source ?? '自訂焦點整合',
         models: finalResults
       };
 
+      // Always store Studio result independently so custom focus / multi-stock results stay visible in AI Studio
+      if (!forceActive) {
+        state.lastAiStudioResult = resultPack;
+      }
+      // Update main desk quick AI card only when the analysis actually targets the active desk symbol
+      if (forceActive || (analyzedTargets.length === 1 && analyzedTargets[0].symbol === state.activeSymbol)) {
+        state.aiResults[state.activeSymbol] = resultPack;
+      }
+
       const liveCount = finalResults.filter(x => x.connected).length;
       state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/6 API 連線` : '本地量化摘要';
-      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${meta.symbol} ${meta.name} 六模型解析完成`;
-      triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${meta.symbol} ${meta.name} 共識回傳完成`);
-      setRibbonEvent(`AI 六模型解析完成：${meta.symbol} ${meta.name}`);
+      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${labelDesc} 六模型解析完成`;
+      triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${labelDesc} 共識回傳完成`);
+      setRibbonEvent(`AI 六模型解析完成：${labelDesc}`);
 
       if (btnQuick) btnQuick.disabled = false;
       if (btnStudio) btnStudio.disabled = false;
@@ -5325,17 +5521,8 @@
       );
     }
 
-    function renderAiPanels() {
-      const meta = getStockMeta(state.activeSymbol);
-      const pack = state.aiResults[state.activeSymbol];
-      const quickGrid = document.getElementById('aiQuickGrid');
-      const studioGrid = document.getElementById('aiStudioResults');
-      const headline = document.getElementById('consensusHeadline');
-      const metaEl = document.getElementById('consensusMeta');
-
-      if (metaEl) metaEl.textContent = `標的：${meta.symbol} ${meta.name}${pack ? ' ｜ 解析時間：' + pack.timestamp : ''}`;
-
-      const cardsHtml = AI_MODELS.map(def => {
+    function buildAiCardsHtml(pack) {
+      return AI_MODELS.map(def => {
         const res = pack?.models?.find(m => m.model === def.id);
         const testRes = state.aiTestStatus?.[def.id];
         if (!res) {
@@ -5364,7 +5551,7 @@
                 </div>
                 ${badgeHtml}
               </div>
-              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊「一鍵六模型解析」或啟用多 Agent 自動選模。</p>
+              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊「執行六模型深度解析」或啟用多 Agent 自動選模。</p>
               <div class="ai-meta-line">${escapeHtml(statusLine)}</div>
             </div>
           `;
@@ -5383,7 +5570,7 @@
             </div>
             <p class="ai-summary-text">${escapeHtml(res.summary)}</p>
             <div class="ai-meta-line">
-              <div><strong>關鍵價位：</strong><span class="mono">${escapeHtml(res.key_levels)}</span></div>
+              <div><strong>關鍵價位 / 排序：</strong><span class="mono">${escapeHtml(res.key_levels)}</span></div>
               <div><strong>風控提醒：</strong>${escapeHtml(res.risk_note)}</div>
               <div style="margin-top:4px;font-size:10px;color:${res.connected ? '#0f766e' : '#b45309'};font-weight:700;">
                 ● ${escapeHtml(res.modeLabel || (res.connected ? 'LLM API 實測' : '本地量化摘要'))} (${res.latency_ms || 0}ms)
@@ -5392,22 +5579,63 @@
           </div>
         `;
       }).join('');
+    }
 
-      if (quickGrid) quickGrid.innerHTML = cardsHtml;
-      if (studioGrid) studioGrid.innerHTML = cardsHtml;
+    function renderAiPanels() {
+      const meta = getStockMeta(state.activeSymbol);
+      const quickPack = state.aiResults[state.activeSymbol];
+      const studioPack = state.lastAiStudioResult || quickPack;
+      const quickGrid = document.getElementById('aiQuickGrid');
+      const studioGrid = document.getElementById('aiStudioResults');
+      const ctxBar = document.getElementById('aiStudioContextBar');
+      const headline = document.getElementById('consensusHeadline');
+      const metaEl = document.getElementById('consensusMeta');
 
-      if (headline) {
-        if (!pack) {
-          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 六模型解析（點擊右側按鈕立即開始）`;
+      if (metaEl) metaEl.textContent = `標的：${meta.symbol} ${meta.name}${quickPack ? ' ｜ 解析時間：' + quickPack.timestamp : ''}`;
+
+      if (quickGrid) quickGrid.innerHTML = buildAiCardsHtml(quickPack);
+      if (studioGrid) studioGrid.innerHTML = buildAiCardsHtml(studioPack);
+
+      if (ctxBar) {
+        if (studioPack && (studioPack.analyzed_targets?.length || studioPack.focus_prompt)) {
+          const modeLabels = {
+            MULTI_TARGETS: '多檔焦點整合比較',
+            CUSTOM_FOCUS: '純自訂焦點整合解析',
+            SINGLE: '單一標的深度解析'
+          };
+          const modeTxt = modeLabels[studioPack.analyzed_mode] || '六模型深度解析';
+          const targets = studioPack.analyzed_targets || [];
+          const pills = targets.map(t => {
+            const chg = Number(t.change_pct || 0);
+            const cls = chg > 0 ? 'badge-up' : (chg < 0 ? 'badge-down' : 'badge-slate');
+            return `<span class="badge ${cls}" style="font-size:11px;padding:2px 8px;">${escapeHtml(t.symbol)} ${escapeHtml(t.stock_name || '')} <strong class="mono">${t.price}</strong> (${chg >= 0 ? '+' : ''}${chg}% · RSI ${t.rsi ?? '--'})</span>`;
+          }).join(' ');
+          ctxBar.style.display = 'block';
+          ctxBar.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${targets.length ? '6px' : '0'};">
+              <div><strong style="color:var(--ink-1);">本次整合解析範圍：</strong><span class="badge badge-blue" style="margin-right:6px;">${modeTxt}</span>${studioPack.focus_prompt ? `<span>焦點：「<strong>${escapeHtml(studioPack.focus_prompt)}</strong>」</span>` : ''}</div>
+              <span class="mono" style="font-size:11px;color:var(--ink-3);">解析時間：${escapeHtml(studioPack.timestamp || '--')}</span>
+            </div>
+            ${targets.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:11px;color:var(--ink-3);font-weight:700;">即時真實報價依據：</span>${pills}</div>` : ''}
+          `;
         } else {
-          const total = pack.models.length || 6;
-          const bulls = pack.models.filter(m => m.verdict === 'BULL').length;
-          const bears = pack.models.filter(m => m.verdict === 'BEAR').length;
-          const avgConf = Math.round(pack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / total);
-          const verdictText = bulls >= Math.ceil(total * 0.6) ? '偏多共識' : (bears >= Math.ceil(total * 0.6) ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
-          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${pack.price}）→ 六模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${total - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
+          ctxBar.style.display = 'none';
         }
       }
+
+      if (headline) {
+        if (!quickPack) {
+          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 六模型解析（點擊右側按鈕立即開始）`;
+        } else {
+          const total = quickPack.models.length || 6;
+          const bulls = quickPack.models.filter(m => m.verdict === 'BULL').length;
+          const bears = quickPack.models.filter(m => m.verdict === 'BEAR').length;
+          const avgConf = Math.round(quickPack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / total);
+          const verdictText = bulls >= Math.ceil(total * 0.6) ? '偏多共識' : (bears >= Math.ceil(total * 0.6) ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
+          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${quickPack.price}）→ 六模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${total - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
+        }
+      }
+      updateAiFocusHint();
     }
 
     // =========================================================================
@@ -7377,10 +7605,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       });
 
       // AI Analysis (6 Models + Groq + Ollama Local)
-      document.getElementById('btnRunAiQuick').addEventListener('click', () => runMultiAiAnalysis(''));
+      document.getElementById('btnRunAiQuick').addEventListener('click', () => runMultiAiAnalysis('', { forceActive: true }));
       document.getElementById('btnRunAiStudio').addEventListener('click', () => {
-        runMultiAiAnalysis(document.getElementById('aiStudioPrompt').value.trim());
+        runMultiAiAnalysis(document.getElementById('aiStudioPrompt').value.trim(), { forceActive: false });
       });
+      document.getElementById('aiStudioPrompt')?.addEventListener('input', updateAiFocusHint);
+      document.getElementById('aiFocusModeSelect')?.addEventListener('change', updateAiFocusHint);
       document.getElementById('btnOpenStrategyFromAi')?.addEventListener('click', () => openFeatureModal('strategy'));
       document.getElementById('btnFetchGroqModels')?.addEventListener('click', fetchGroqModelsUI);
       document.getElementById('btnDetectOllamaModels')?.addEventListener('click', detectOllamaModelsUI);

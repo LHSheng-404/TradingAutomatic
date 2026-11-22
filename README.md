@@ -66,8 +66,10 @@
 
 ![量化策略實驗室 30 支策略排行與風險指標](docs/screenshots/quant_lab_modal.png)
 
-### 5. AI 六模型深度解析 & Ollama 地端模型工作室（支援各模型 Token 即時測試）
-> 整合 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣；**每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，並提供「一鍵測試全部模型」**（僅呼叫輕量模型清單端點，不消耗推論 Token 費用且嚴格脫敏）。
+### 5. AI 六模型深度解析 & Ollama 地端模型工作室（支援自訂分析焦點多股整合 ＋ Token 即時測試）
+> 整合 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣。
+> - **彈性自訂分析焦點（不再鎖定 2330）**：在「自訂分析焦點」直接輸入多檔台股代號（如 `分析 6213、2368、3037、3189`）或策略主題，系統會自動偵測代號並即時平行抓取所有標的的**真實日線報價、中文股名、單日漲跌與 RSI** 進行整合比較，並提供「自動偵測焦點標的 / 全自選股組合 / 純自訂焦點 / 僅主畫面標的」四種模式。
+> - **Token 即時測試**：每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，執行深度解析時直接讀取最新輸入之金鑰與模型設定。
 
 ![AI 六模型與 Ollama 地端工作室](docs/screenshots/ai_six_models_modal.png)
 
@@ -96,12 +98,12 @@
 
 ---
 
-## 核心功能（v3.3.0）
+## 核心功能（v3.3.1）
 
 | 模組 | 說明 |
 | :--- | :--- |
 | **1. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
-| **2. 六模型 AI（Groq ＋ Ollama 地端 ＋ Token 即時測試）** | 整合 **Groq 極速雲端**、**Ollama / LM Studio 地端模型** 與 **Grok / Gemini / Claude / ChatGPT**；各模型皆附「測試」按鈕與「一鍵測試全部模型」，驗證是否有效且不消耗推論 Token 費用。 |
+| **2. 六模型 AI（彈性自訂焦點整合 ＋ Groq / Ollama ＋ Token 測試）** | 整合 **Groq 極速雲端**、**Ollama / LM Studio 地端模型** 與 **Grok / Gemini / Claude / ChatGPT**；支援透過「自訂分析焦點」自動偵測多檔台股（如 `6213、2368、3037、3189`）即時抓取真實報價整合比較或純主題研判，不再鎖定主畫面個股；各模型皆附即時 Token 測試按鈕。 |
 | **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
 | **4. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
 | **5. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
@@ -114,22 +116,22 @@
 ## 快速開始（支援直接執行與一鍵打包）
 
 ### 方式一：直接下載 GitHub Release 執行（最簡單、免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.3.0`：
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.3.1`：
 
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.3.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
+  - 下載 `SYNAPSE-TW-v3.3.1-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.3.0-macos-arm64
-  ./SYNAPSE-TW-v3.3.0-macos-arm64
+  chmod +x SYNAPSE-TW-v3.3.1-macos-arm64
+  ./SYNAPSE-TW-v3.3.1-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.3.0-linux-x64
-  ./SYNAPSE-TW-v3.3.0-linux-x64
+  chmod +x SYNAPSE-TW-v3.3.1-linux-x64
+  ./SYNAPSE-TW-v3.3.1-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.3.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SYNAPSE-TW-v3.3.1-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
 
@@ -160,12 +162,12 @@ cd TradingAutomatic
 
 ```bash
 pip install -r requirements.txt pyinstaller
-python3 package.py --version v3.3.0
+python3 package.py --version v3.3.1
 ```
 
 執行完成後會在 `dist/` 目錄自動產出：
-1. `SYNAPSE-TW-v3.3.0-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
-2. `SYNAPSE-TW-v3.3.0-portable.zip` 與 `.tar.gz`（跨平台可攜包）
+1. `SYNAPSE-TW-v3.3.1-<os>-<arch>`（免安裝單一可執行檔，已內嵌 `index.html`）
+2. `SYNAPSE-TW-v3.3.1-portable.zip` 與 `.tar.gz`（跨平台可攜包）
 3. `SHA256SUMS.txt`（完整性校驗檔）
 
 > 專案同時包含 GitHub Actions 自動發布管線 [`.github/workflows/release.yml`](.github/workflows/release.yml)，每次推送 `v*` 標籤時會自動於雲端同步編譯 **Windows `.exe`、macOS、Linux** 三平台直出執行檔並上傳至 Release。

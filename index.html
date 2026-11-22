@@ -2,7 +2,15 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SYNAPSE TW" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
   <title>SYNAPSE TW · 全自動台股交易系統（TradingView × Yahoo/FinMind × 多模型 AI × 模擬/實盤）</title>
   <meta name="description" content="全自動台股交易系統網頁版：雙向資料交流交握拓撲、TradingView 進階線圖與帳號串接、Yahoo/FinMind 真實台股行情、Grok/Gemini/Claude/ChatGPT 多模型 AI 解析、LINE Bot/Telegram 條列推播與模擬/真實下單切換。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1784,6 +1792,259 @@
       .ql-g2, .ql-g3, .ql-g4 { grid-template-columns: minmax(0, 1fr); }
       .ql-dsrc { margin-left: 0; text-align: left; max-width: 100%; }
     }
+
+    /* =====================================================================
+       AI Token -> Detect Models -> Select Analysis Models UI
+       ===================================================================== */
+    .ai-flow-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: linear-gradient(135deg, #eff6ff 0%, #f0fdfa 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 10px 13px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #1e3a8a;
+    }
+    .ai-flow-steps {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-weight: 700;
+    }
+    .ai-step-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 11.5px;
+      color: #1e40af;
+    }
+    .ai-picker-bar {
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ai-picker-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .ai-pick-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--bg-subtle);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-2);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.14s ease;
+    }
+    .ai-pick-chip input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+    .ai-pick-chip.on {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e3a8a;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+    }
+    .ai-pick-chip .ai-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #94a3b8;
+      flex-shrink: 0;
+    }
+    .ai-pick-chip .ai-dot.ready { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+    .ai-pick-chip .ai-pick-model {
+      font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-3);
+      max-width: 165px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ai-provider-box {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* =====================================================================
+       Mobile App Shell & Responsive PWA Enhancements
+       ===================================================================== */
+    .mobile-bottom-nav {
+      display: none;
+    }
+    .mobile-install-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #f8fafc;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mobile-qr-box {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+      }
+      .topbar {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      .topbar-inner {
+        padding: 8px 0;
+        gap: 8px;
+      }
+      .brand-sub {
+        display: none;
+      }
+      .brand-title {
+        font-size: 14px;
+      }
+      .clock-box {
+        display: none;
+      }
+      .top-controls {
+        width: 100%;
+        justify-content: space-between;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .ribbon-inner {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .ribbon-inner::-webkit-scrollbar { display: none; }
+      .input, .select, .textarea {
+        font-size: 16px !important; /* Prevents iOS Safari auto-zoom on focus */
+      }
+      .btn {
+        min-height: 36px;
+      }
+      .btn-sm {
+        min-height: 32px;
+      }
+      .grid-2, .form-grid-2, .grid-ai-3 {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      #featureStudioModal.modal-backdrop {
+        padding: 0 !important;
+        align-items: flex-start !important;
+      }
+      .modal-dialog-xl {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: calc(100dvh - 58px - env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(100dvh - 58px - env(safe-area-inset-bottom, 0px)) !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 10px 10px 0 !important;
+      }
+      .studio-modal-head {
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding-bottom: 8px !important;
+      }
+      .studio-pills {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+      }
+      .studio-pills::-webkit-scrollbar { display: none; }
+      .studio-modal-body {
+        padding: 10px 0 18px !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .studio-pill {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+      }
+      .mobile-bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        background: rgba(15, 23, 42, 0.96);
+        backdrop-filter: blur(14px);
+        border-top: 1px solid rgba(148, 163, 184, 0.25);
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.22);
+      }
+      .mobile-nav-btn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: #cbd5e1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 4px 2px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .mobile-nav-btn.active {
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.14);
+      }
+      .toast-stack {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+        left: 10px !important;
+        right: 10px !important;
+        max-width: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1858,6 +2119,13 @@
             <div>
               <div class="menu-item-title">手續費折數與帳號設定</div>
               <div class="menu-item-desc">預設 2.8 折（最低 6 折）· TradingView 帳號綁定</div>
+            </div>
+          </button>
+          <button type="button" class="menu-item" data-open-studio="mobile">
+            <span class="menu-item-icon" style="background:#eff6ff;color:#1d4ed8;"><i data-lucide="smartphone" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">手機版安裝與區網執行 (PWA / APK / Termux)</div>
+              <div class="menu-item-desc">iOS / Android 加入主畫面 · Android APK · 同 Wi-Fi 直連</div>
             </div>
           </button>
         </div>
@@ -2346,6 +2614,9 @@
           </button>
           <button type="button" class="studio-pill" data-studio-pane="settings">
             <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i>折數與設定
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="mobile">
+            <i data-lucide="smartphone" style="width:13px;height:13px;"></i>手機版 App
           </button>
         </div>
         <button type="button" class="btn btn-sm" data-close-modal="featureStudioModal">
@@ -3002,14 +3273,49 @@
           <article class="card">
             <div class="card-header">
               <div class="card-title-group">
-                <h2 class="card-title">六模型 AI 深度解析 &amp; Ollama 地端工作室</h2>
-                <p class="card-subtitle">同步支援 Groq 極速推理、地端 Ollama / LM Studio、Grok Bot、Gemini、Claude、ChatGPT，並供多 Agent 自動切換最適模型</p>
+                <h2 class="card-title">多模型 AI 深度解析 &amp; 自動偵測選模中心</h2>
+                <p class="card-subtitle">載入 API Token → 自動偵測並取得可用模型清單 → 勾選參與分析模型與指定版本（支援 Groq、Ollama、Grok、Gemini、Claude、ChatGPT）</p>
               </div>
               <button id="btnRunAiStudio" class="btn btn-primary">
-                <i data-lucide="sparkles" style="width:14px;height:14px;"></i>執行六模型深度解析
+                <i data-lucide="sparkles" style="width:14px;height:14px;"></i><span id="btnRunAiStudioLabel">執行 AI 深度解析（已選 6 模型）</span>
               </button>
             </div>
             <div class="card-body">
+              <!-- 3-Step Guided Flow + .env / JSON Token Import -->
+              <div class="ai-flow-banner">
+                <div class="ai-flow-steps">
+                  <span class="ai-step-pill">① 載入／貼上 AI Token</span>
+                  <span>→</span>
+                  <span class="ai-step-pill">② 自動偵測取得可用模型</span>
+                  <span>→</span>
+                  <span class="ai-step-pill">③ 選擇參與分析模型與版本</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <input id="aiEnvFileInput" type="file" accept=".env,.txt,.json,text/plain,application/json" style="display:none;" />
+                  <button id="btnImportAiEnvFile" type="button" class="btn btn-sm" title="從本機 .env 或 JSON 檔自動載入 API Token 並偵測可用模型">
+                    <i data-lucide="file-up" style="width:13px;height:13px;"></i>匯入 Token / .env
+                  </button>
+                  <button id="btnTestAllAiModels" type="button" class="btn btn-sm btn-teal" title="驗證全部已填 Token 並即時載入各家可用模型清單">
+                    <i data-lucide="radar" style="width:13px;height:13px;"></i>一鍵偵測全部可用模型
+                  </button>
+                </div>
+              </div>
+
+              <!-- Interactive Selectable Analysis Models Picker Bar -->
+              <div class="ai-picker-bar">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12.5px;color:var(--ink-1);">供選分析模型（勾選欲參與深度解析的模型）</strong>
+                    <span id="aiSelectedCountBadge" class="badge badge-blue">已選 6 / 6 模型</span>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button id="btnSelectReadyAiModels" type="button" class="btn btn-sm btn-teal" title="僅勾選已通過 Token 驗證並偵測到可用模型的引擎">僅選已驗證可用</button>
+                    <button id="btnSelectAllAiModels" type="button" class="btn btn-sm">全選 (6)</button>
+                  </div>
+                </div>
+                <div id="aiSelectedModelsBar" class="ai-picker-chips"></div>
+              </div>
+
               <div class="grid-2" style="margin-bottom:14px;">
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div style="display:flex;flex-direction:column;gap:6px;">
@@ -3030,48 +3336,40 @@
                   <!-- Groq & Ollama Local Model Dedicated Card -->
                   <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                      <strong style="font-size:12.5px;color:#0f766e;">Groq 極速雲端 ＋ Ollama 地端模型連線設定</strong>
+                      <strong style="font-size:12.5px;color:#0f766e;">Groq 極速雲端 ＋ Ollama 地端模型（載入即偵測模型）</strong>
                       <span id="ollamaStatusBadge" class="badge badge-slate">地端待偵測</span>
                     </div>
                     <div class="form-grid-2">
-                      <div>
+                      <div class="ai-provider-box">
                         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                          <label class="field-label" for="keyGroq" style="margin-bottom:0;">Groq API Key（極速推理）</label>
+                          <label class="field-label" for="keyGroq" style="margin-bottom:0;">Groq API Token</label>
                           <span id="aiTestStatus-groq" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
                         </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
-                          <input id="keyGroq" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="gsk_..." />
-                          <button type="button" class="btn btn-sm" data-test-ai="groq" title="測試 Groq API Token 是否有效">測試</button>
+                        <div style="display:flex;gap:5px;">
+                          <input id="keyGroq" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="gsk_..." data-ai-token="groq" />
+                          <button type="button" class="btn btn-sm" data-test-ai="groq" title="驗證 Groq Token 並偵測可用模型">偵測</button>
                         </div>
-                      </div>
-                      <div>
-                        <label class="field-label" for="groqModelSelect">Groq 模型（支援線上載入）</label>
-                        <div style="display:flex;gap:6px;">
-                          <select id="groqModelSelect" class="select mono" style="flex:1;min-width:0;">
+                        <div style="display:flex;gap:5px;align-items:center;">
+                          <select id="groqModelSelect" class="select mono" style="flex:1;min-width:0;font-size:11.5px;" data-ai-model-select="groq">
                             <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
                             <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
                             <option value="qwen-qwq-32b">qwen-qwq-32b</option>
                             <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
                           </select>
-                          <button id="btnFetchGroqModels" type="button" class="btn btn-sm" title="從 Groq API 載入可用模型">載入</button>
+                          <button id="btnFetchGroqModels" type="button" class="btn btn-sm" title="重新取得 Groq 可用模型">↻</button>
                         </div>
                       </div>
-                    </div>
-                    <div class="form-grid-2">
-                      <div>
+                      <div class="ai-provider-box">
                         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
                           <label class="field-label" for="ollamaUrlInput" style="margin-bottom:0;">Ollama / 地端網址</label>
                           <span id="aiTestStatus-ollama" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
                         </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
+                        <div style="display:flex;gap:5px;">
                           <input id="ollamaUrlInput" type="url" class="input mono" style="flex:1;min-width:0;" value="http://127.0.0.1:11434" placeholder="http://127.0.0.1:11434" />
-                          <button type="button" class="btn btn-sm" data-test-ai="ollama" title="測試地端 Ollama 連線與模型是否就緒">測試</button>
+                          <button type="button" class="btn btn-sm" data-test-ai="ollama" title="偵測地端 Ollama 連線與模型">偵測</button>
                         </div>
-                      </div>
-                      <div>
-                        <label class="field-label" for="ollamaModelInput">地端模型名稱（如 qwen2.5:14b / llama3.1）</label>
-                        <div style="display:flex;gap:6px;">
-                          <input id="ollamaModelInput" list="ollamaModelDatalist" type="text" class="input mono" value="qwen2.5:14b" placeholder="qwen2.5:14b" style="flex:1;min-width:0;" />
+                        <div style="display:flex;gap:5px;align-items:center;">
+                          <input id="ollamaModelInput" list="ollamaModelDatalist" type="text" class="input mono" value="qwen2.5:14b" placeholder="qwen2.5:14b" style="flex:1;min-width:0;font-size:11.5px;" />
                           <datalist id="ollamaModelDatalist">
                             <option value="qwen2.5:14b"></option>
                             <option value="qwen2.5:7b"></option>
@@ -3079,7 +3377,7 @@
                             <option value="llama3.1:8b"></option>
                             <option value="gemma3:12b"></option>
                           </datalist>
-                          <button id="btnDetectOllamaModels" type="button" class="btn btn-sm btn-teal" title="自動掃描本機 Ollama 已安裝模型">偵測模型</button>
+                          <button id="btnDetectOllamaModels" type="button" class="btn btn-sm btn-teal" title="自動掃描本機 Ollama 已安裝模型">↻</button>
                         </div>
                       </div>
                     </div>
@@ -3088,61 +3386,84 @@
 
                 <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
                   <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-                      <span style="font-size:12px;font-weight:800;color:var(--ink-1);">雲端旗艦四模型 API 金鑰設定（輸入後可即時測試）</span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                      <span style="font-size:12px;font-weight:800;color:var(--ink-1);">雲端旗艦四模型（填入 Token 自動偵測並切換模型）</span>
                     </div>
                     <div class="form-grid-2" style="margin-bottom:8px;">
-                      <div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                          <label class="field-label" for="keyGrok" style="margin-bottom:0;">Grok Bot (xAI)</label>
-                          <span id="aiTestStatus-grok" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
-                        </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
-                          <input id="keyGrok" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="xai-..." />
-                          <button type="button" class="btn btn-sm" data-test-ai="grok" title="測試 Grok (xAI) API Token">測試</button>
-                        </div>
-                      </div>
-                      <div>
+                      <div class="ai-provider-box">
                         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
                           <label class="field-label" for="keyGemini" style="margin-bottom:0;">Gemini (Google)</label>
                           <span id="aiTestStatus-gemini" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
                         </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
-                          <input id="keyGemini" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="AIza..." />
-                          <button type="button" class="btn btn-sm" data-test-ai="gemini" title="測試 Google Gemini API Token">測試</button>
+                        <div style="display:flex;gap:5px;">
+                          <input id="keyGemini" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="AIza..." data-ai-token="gemini" />
+                          <button type="button" class="btn btn-sm" data-test-ai="gemini" title="驗證 Gemini Token 並載入可用模型">偵測</button>
                         </div>
+                        <select id="geminiModelSelect" class="select mono" style="font-size:11.5px;" data-ai-model-select="gemini">
+                          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                          <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                        </select>
                       </div>
-                      <div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                          <label class="field-label" for="keyClaude" style="margin-bottom:0;">Claude (Anthropic)</label>
-                          <span id="aiTestStatus-claude" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
-                        </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
-                          <input id="keyClaude" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-ant-..." />
-                          <button type="button" class="btn btn-sm" data-test-ai="claude" title="測試 Anthropic Claude API Token">測試</button>
-                        </div>
-                      </div>
-                      <div>
+
+                      <div class="ai-provider-box">
                         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
                           <label class="field-label" for="keyChatgpt" style="margin-bottom:0;">ChatGPT (OpenAI)</label>
                           <span id="aiTestStatus-chatgpt" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
                         </div>
-                        <div style="display:flex;gap:6px;margin-top:4px;">
-                          <input id="keyChatgpt" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-..." />
-                          <button type="button" class="btn btn-sm" data-test-ai="chatgpt" title="測試 OpenAI ChatGPT API Token">測試</button>
+                        <div style="display:flex;gap:5px;">
+                          <input id="keyChatgpt" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-..." data-ai-token="chatgpt" />
+                          <button type="button" class="btn btn-sm" data-test-ai="chatgpt" title="驗證 OpenAI Token 並載入可用模型">偵測</button>
                         </div>
+                        <select id="chatgptModelSelect" class="select mono" style="font-size:11.5px;" data-ai-model-select="chatgpt">
+                          <option value="gpt-4o-mini">gpt-4o-mini</option>
+                          <option value="gpt-4o">gpt-4o</option>
+                          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                          <option value="o4-mini">o4-mini</option>
+                        </select>
+                      </div>
+
+                      <div class="ai-provider-box">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyClaude" style="margin-bottom:0;">Claude (Anthropic)</label>
+                          <span id="aiTestStatus-claude" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:5px;">
+                          <input id="keyClaude" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="sk-ant-..." data-ai-token="claude" />
+                          <button type="button" class="btn btn-sm" data-test-ai="claude" title="驗證 Claude Token 並載入可用模型">偵測</button>
+                        </div>
+                        <select id="claudeModelSelect" class="select mono" style="font-size:11.5px;" data-ai-model-select="claude">
+                          <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514</option>
+                          <option value="claude-3-7-sonnet-20250219">claude-3-7-sonnet-20250219</option>
+                          <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
+                        </select>
+                      </div>
+
+                      <div class="ai-provider-box">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                          <label class="field-label" for="keyGrok" style="margin-bottom:0;">Grok Bot (xAI)</label>
+                          <span id="aiTestStatus-grok" class="badge badge-slate" style="font-size:10px;padding:1px 6px;">未測試</span>
+                        </div>
+                        <div style="display:flex;gap:5px;">
+                          <input id="keyGrok" type="password" class="input mono" style="flex:1;min-width:0;" placeholder="xai-..." data-ai-token="grok" />
+                          <button type="button" class="btn btn-sm" data-test-ai="grok" title="驗證 xAI Grok Token 並載入可用模型">偵測</button>
+                        </div>
+                        <select id="grokModelSelect" class="select mono" style="font-size:11.5px;" data-ai-model-select="grok">
+                          <option value="grok-3-mini">grok-3-mini</option>
+                          <option value="grok-3">grok-3</option>
+                          <option value="grok-2-1212">grok-2-1212</option>
+                        </select>
                       </div>
                     </div>
                     <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
-                      • 測試僅呼叫各家輕量級模型清單端點（<strong>不消耗推論 Token 費用</strong>），並對錯誤訊息嚴格脫敏。<br />
-                      • 執行深度解析會<strong>直接讀取目前輸入欄金鑰與自訂分析焦點</strong>，支援多檔台股即時抓價比較。
+                      • 貼上或匯入 Token 後將<strong>自動呼叫輕量模型清單端點（零推論費）</strong>，並即時更新各家下拉選單。<br />
+                      • 切換任意可用模型或勾選上方「供選分析模型」，即可立刻以選定模型進行深度整合解析。
                     </div>
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border);">
-                    <span style="font-size:11px;color:var(--ink-3);">金鑰僅存於本機或 .env</span>
+                    <span style="font-size:11px;color:var(--ink-3);">金鑰與選模僅存於本機瀏覽器或 .env</span>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                      <button id="btnTestAllAiModels" type="button" class="btn btn-sm btn-teal">一鍵測試全部模型</button>
-                      <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存六模型 &amp; Ollama 設定</button>
+                      <button id="btnSaveAiKeys" type="button" class="btn btn-sm btn-dark">儲存 Token 與模型選擇</button>
                     </div>
                   </div>
                 </div>
@@ -3368,9 +3689,123 @@
           </div>
         </div>
 
+        <!-- ========== PANE 7: MOBILE APP (PWA / ANDROID APK / LAN / TERMUX) ========== -->
+        <div id="studio-mobile" class="studio-pane">
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">手機版一鍵安裝與獨立執行 (iOS / Android)</h2>
+                  <p class="card-subtitle">支援 PWA 主畫面全螢幕 App、Android 獨立安裝檔 APK，以及手機 Termux 完整後端</p>
+                </div>
+                <span id="mobileEnvBadge" class="badge badge-blue">PWA Ready</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div class="mobile-install-card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:14px;">📱 方案一：安裝為手機桌面 App（PWA · 免商店）</strong>
+                    <span class="badge" style="background:rgba(56,189,248,0.2);color:#e0f2fe;border:1px solid rgba(56,189,248,0.4);">iOS + Android</span>
+                  </div>
+                  <p style="margin:0;font-size:12px;color:#cbd5e1;line-height:1.55;">
+                    支援全螢幕開啟、手機底部專屬導覽列、安全區適配與離線外殼快取。Android Chrome 可直接一鍵安裝；iPhone Safari 請點底部「分享 ↑ → 加入主畫面」。
+                  </p>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button id="btnInstallPwa" type="button" class="btn btn-primary" style="background:#38bdf8;color:#0f172a;border-color:#38bdf8;font-weight:800;">
+                      <i data-lucide="download" style="width:14px;height:14px;"></i>安裝至手機主畫面 (PWA)
+                    </button>
+                    <a href="https://github.com/LHSheng-404/TradingAutomatic/releases/latest" target="_blank" rel="noopener" class="btn" style="background:rgba(255,255,255,0.12);color:#ffffff;border-color:rgba(255,255,255,0.28);text-decoration:none;">
+                      <i data-lucide="smartphone" style="width:14px;height:14px;"></i>下載 Android APK 執行檔
+                    </a>
+                  </div>
+                  <div id="pwaInstallStatusText" style="font-size:11.5px;color:#93c5fd;">偵測手機安裝狀態中...</div>
+                </div>
+
+                <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+                  <strong style="font-size:12.5px;color:var(--ink-1);">🤖 方案二：Android 獨立 APK（免電腦即可抓即時報價＋呼叫六模型 AI）</strong>
+                  <div style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+                    • 前往 GitHub Releases 下載 <span class="mono">SYNAPSE-TW-v3.4.0-android.apk</span> 並直接於 Android 手機安裝。<br />
+                    • APK 內建本機 HTTP 資源與安全白名單代理橋接，即使未連電腦後端，手機獨立執行也能即時抓取 Yahoo / FinMind 真實台股報價，並直接偵測與呼叫 Gemini、OpenAI、Claude、Grok、Groq！
+                  </div>
+                </div>
+
+                <div style="padding:12px;border-radius:12px;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12.5px;color:#166534;">⚡ 方案三：Android Termux 零電腦完整本機後端</strong>
+                    <button id="btnCopyTermuxCmd" type="button" class="btn btn-sm">複製一鍵指令</button>
+                  </div>
+                  <code id="termuxCmdCode" class="mono" style="display:block;padding:8px 10px;border-radius:8px;background:#0f172a;color:#34d399;font-size:11px;overflow-x:auto;white-space:nowrap;">git clone https://github.com/LHSheng-404/TradingAutomatic.git &amp;&amp; cd TradingAutomatic &amp;&amp; chmod +x mobile/termux-start.sh &amp;&amp; ./mobile/termux-start.sh</code>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">電腦 ↔ 手機區網即時連線中心</h2>
+                  <p class="card-subtitle">電腦啟動 launcher.py（預設開啟區網）後，同 Wi-Fi 手機開啟以下網址即可共享完整後端與 Ollama</p>
+                </div>
+                <button id="btnRefreshMobileInfo" type="button" class="btn btn-sm">重新偵測</button>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
+                  <div class="mobile-qr-box">
+                    <div id="mobileLanQrBox" style="width:136px;height:136px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-3);">載入連線位址...</div>
+                    <span style="font-size:10.5px;color:var(--ink-3);font-weight:700;">手機連線條碼 / 快速連結</span>
+                  </div>
+                  <div style="flex:1;min-width:190px;display:flex;flex-direction:column;gap:8px;">
+                    <div style="font-size:12px;color:var(--ink-2);font-weight:700;">偵測到的同 Wi-Fi 手機連線網址：</div>
+                    <div style="display:flex;gap:6px;">
+                      <input id="mobileLanUrlOutput" type="text" readonly class="input mono" style="flex:1;min-width:0;font-size:12px;" value="偵測中..." />
+                      <button id="btnCopyMobileLanUrl" type="button" class="btn btn-sm btn-primary">複製</button>
+                    </div>
+                    <div id="mobileLanMetaNote" style="font-size:11.5px;color:var(--ink-3);line-height:1.5;">
+                      電腦端執行 <span class="mono">python launcher.py --lan</span> 後，手機與電腦連上相同 Wi-Fi 即可直接操作。
+                    </div>
+                  </div>
+                </div>
+
+                <div style="padding:12px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;display:flex;flex-direction:column;gap:8px;">
+                  <strong style="font-size:12.5px;color:#92400e;">🔗 在手機 App 內綁定遠端／電腦後端網址（選用）</strong>
+                  <p style="margin:0;font-size:11.5px;color:#78350f;line-height:1.5;">
+                    若您從 GitHub Pages PWA 或 Android APK 開啟，可填入您電腦區網網址（例如 <span class="mono">http://192.168.1.50:8000</span>）或雲端 Render 網址，立即啟用 Shioaji 實盤、Telegram 推播與本機 Ollama。
+                  </p>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <input id="mobileBackendUrlQuick" type="url" class="input mono" style="flex:1;min-width:180px;" placeholder="http://192.168.x.x:8000 或 https://..." />
+                    <button id="btnSaveMobileBackendQuick" type="button" class="btn btn-sm btn-dark">儲存並連線測試</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
+
+  <!-- Mobile Native-Style Bottom Navigation Bar (Visible <= 768px) -->
+  <nav class="mobile-bottom-nav" aria-label="手機版快捷導覽">
+    <button type="button" class="mobile-nav-btn active" data-mobile-nav="market">
+      <i data-lucide="candlestick-chart" style="width:18px;height:18px;"></i>
+      <span>行情</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" data-mobile-nav="order">
+      <i data-lucide="zap" style="width:18px;height:18px;"></i>
+      <span>下單</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" data-mobile-nav="ai">
+      <i data-lucide="cpu" style="width:18px;height:18px;"></i>
+      <span>AI 選模</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" data-mobile-nav="strategy">
+      <i data-lucide="bot" style="width:18px;height:18px;"></i>
+      <span>量化策略</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" data-mobile-nav="mobile">
+      <i data-lucide="smartphone" style="width:18px;height:18px;"></i>
+      <span>手機安裝</span>
+    </button>
+  </nav>
 
   <!-- ==================== MODAL 1: LIVE TRADING SAFETY GATE ==================== -->
   <div id="liveSafetyModal" class="modal-backdrop">
@@ -3509,8 +3944,21 @@
       modelOptions: {
         groq_model: 'llama-3.3-70b-versatile',
         ollama_url: 'http://127.0.0.1:11434',
-        ollama_model: 'qwen2.5:14b'
+        ollama_model: 'qwen2.5:14b',
+        grok_model: 'grok-3-mini',
+        gemini_model: 'gemini-2.5-flash',
+        claude_model: 'claude-sonnet-4-20250514',
+        chatgpt_model: 'gpt-4o-mini'
       },
+      detectedModels: {
+        groq: ['llama-3.3-70b-versatile', 'deepseek-r1-distill-llama-70b', 'qwen-qwq-32b', 'llama-3.1-8b-instant'],
+        ollama: ['qwen2.5:14b', 'qwen2.5:7b', 'deepseek-r1:14b', 'llama3.1:8b', 'gemma3:12b'],
+        grok: ['grok-3-mini', 'grok-3', 'grok-2-1212'],
+        gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+        claude: ['claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219', 'claude-3-5-haiku-20241022'],
+        chatgpt: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'o4-mini']
+      },
+      selectedAiModels: ['groq', 'ollama', 'grok', 'gemini', 'claude', 'chatgpt'],
       aiTestStatus: {},
 
       techSwitches: {
@@ -3614,6 +4062,16 @@
           if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
           if (saved.aiKeys) Object.assign(state.aiKeys, saved.aiKeys);
           if (saved.modelOptions) Object.assign(state.modelOptions, saved.modelOptions);
+          if (saved.detectedModels && typeof saved.detectedModels === 'object') {
+            Object.keys(state.detectedModels).forEach(k => {
+              if (Array.isArray(saved.detectedModels[k]) && saved.detectedModels[k].length > 0) {
+                state.detectedModels[k] = saved.detectedModels[k];
+              }
+            });
+          }
+          if (Array.isArray(saved.selectedAiModels) && saved.selectedAiModels.length > 0) {
+            state.selectedAiModels = saved.selectedAiModels;
+          }
           if (saved.techSwitches) Object.assign(state.techSwitches, saved.techSwitches);
           if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
           if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
@@ -3656,6 +4114,8 @@
           tvAccount: state.tvAccount,
           aiKeys: state.aiKeys,
           modelOptions: state.modelOptions,
+          detectedModels: state.detectedModels,
+          selectedAiModels: state.selectedAiModels,
           techSwitches: state.techSwitches,
           agentConfig: state.agentConfig,
           agentLogs: state.agentLogs.slice(0, 40),
@@ -4864,70 +5324,108 @@
       return { verdict: 'NEUTRAL', confidence: 55, summary: cleaned.slice(0, 140), key_levels: '--', risk_note: '非標準 JSON 回覆' };
     }
 
-    async function callSingleModelDirectBrowser(def, prompt) {
+    function isAndroidApkHost() {
+      return Boolean(window.__SYNAPSE_ANDROID_PROXY__) ||
+        (window.location.hostname === '127.0.0.1' && window.location.port === '18432');
+    }
+
+    async function androidProxyFetch(url, options = {}) {
+      if (isAndroidApkHost()) {
+        const proxyUrl = `/_android_proxy?url=${encodeURIComponent(url)}`;
+        return fetch(proxyUrl, options);
+      }
+      return fetch(url, options);
+    }
+
+    async function callSingleModelDirectBrowser(def, prompt, effectiveKeys = state.aiKeys, effectiveOpts = state.modelOptions) {
       const t0 = performance.now();
       let text = '';
+      let usedModel = def.id;
       if (def.id === 'groq') {
-        const key = (state.aiKeys.groq || '').trim();
+        const key = (effectiveKeys.groq || '').trim();
         if (!key) throw new Error('尚未填寫 Groq Key');
-        const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        usedModel = (effectiveOpts.groq_model || 'llama-3.3-70b-versatile').trim();
+        const r = await androidProxyFetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-          body: JSON.stringify({ model: state.modelOptions.groq_model || 'llama-3.3-70b-versatile', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model: usedModel, temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
         });
         if (!r.ok) throw new Error(`Groq HTTP ${r.status}`);
         const j = await r.json();
         text = j.choices?.[0]?.message?.content || '';
       } else if (def.id === 'ollama') {
-        const base = (state.modelOptions.ollama_url || '').trim().replace(/\/+$/, '');
+        const base = (effectiveOpts.ollama_url || '').trim().replace(/\/+$/, '');
         if (!base) throw new Error('尚未設定 Ollama 網址');
-        const model = (state.modelOptions.ollama_model || 'qwen2.5:14b').trim();
+        usedModel = (effectiveOpts.ollama_model || 'qwen2.5:14b').trim();
         const r = await fetch(`${base}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, stream: false, options: { temperature: 0.2 }, messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model: usedModel, stream: false, options: { temperature: 0.2 }, messages: [{ role: 'user', content: prompt }] })
         });
         if (!r.ok) throw new Error(`Ollama HTTP ${r.status}`);
         const j = await r.json();
         text = j.message?.content || '';
       } else if (def.id === 'gemini') {
-        const key = (state.aiKeys.gemini || '').trim();
+        const key = (effectiveKeys.gemini || '').trim();
         if (!key) throw new Error('尚未填寫 Gemini Key');
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+        usedModel = (effectiveOpts.gemini_model || 'gemini-2.5-flash').trim().replace(/^models\//, '');
+        const r = await androidProxyFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(usedModel)}:generateContent?key=${encodeURIComponent(key)}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2 } })
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(`Gemini HTTP ${r.status}`);
         const j = await r.json();
-        text = j.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const parts = j.candidates?.[0]?.content?.parts || [];
+        const nonThought = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n').trim();
+        text = nonThought || parts.map(p => p.text || '').join('\n').trim();
       } else if (def.id === 'chatgpt') {
-        const key = (state.aiKeys.chatgpt || '').trim();
+        const key = (effectiveKeys.chatgpt || '').trim();
         if (!key) throw new Error('尚未填寫 OpenAI Key');
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        usedModel = (effectiveOpts.chatgpt_model || 'gpt-4o-mini').trim();
+        const payload = { model: usedModel, messages: [{ role: 'user', content: prompt }] };
+        if (!/^(o1|o3|o4)/i.test(usedModel)) payload.temperature = 0.2;
+        const r = await androidProxyFetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-          body: JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify(payload)
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(`OpenAI HTTP ${r.status}`);
         const j = await r.json();
         text = j.choices?.[0]?.message?.content || '';
       } else if (def.id === 'grok') {
-        const key = (state.aiKeys.grok || '').trim();
+        const key = (effectiveKeys.grok || '').trim();
         if (!key) throw new Error('尚未填寫 xAI Key');
-        const r = await fetch('https://api.x.ai/v1/chat/completions', {
+        usedModel = (effectiveOpts.grok_model || 'grok-3-mini').trim();
+        const r = await androidProxyFetch('https://api.x.ai/v1/chat/completions', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-          body: JSON.stringify({ model: 'grok-3-mini', temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model: usedModel, temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(`xAI HTTP ${r.status}`);
         const j = await r.json();
         text = j.choices?.[0]?.message?.content || '';
+      } else if (def.id === 'claude') {
+        const key = (effectiveKeys.claude || '').trim();
+        if (!key) throw new Error('尚未填寫 Claude Key');
+        if (!isAndroidApkHost()) {
+          throw new Error('Claude 瀏覽器直連需透過後端代理或 Android APK 執行');
+        }
+        usedModel = (effectiveOpts.claude_model || 'claude-sonnet-4-20250514').trim();
+        const r = await androidProxyFetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: usedModel, max_tokens: 900, temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!r.ok) throw new Error(`Claude HTTP ${r.status}`);
+        const j = await r.json();
+        text = j.content?.[0]?.text || '';
       } else {
-        throw new Error('Claude 瀏覽器直連需透過雲端後端代理避免 CORS');
+        throw new Error('不支援的模型引擎');
       }
       const parsed = parseLooseAiJson(text);
       return {
         model: def.id,
+        model_name: usedModel,
         connected: true,
-        modeLabel: def.id === 'ollama' ? `地端 Ollama (${state.modelOptions.ollama_model})` : '瀏覽器直連 LLM API',
+        modeLabel: def.id === 'ollama' ? `地端 Ollama (${usedModel})` : `直連 API (${usedModel})`,
         latency_ms: Math.round(performance.now() - t0),
         verdict: String(parsed.verdict || 'NEUTRAL').toUpperCase(),
         confidence: Number(parsed.confidence || 65),
@@ -4975,7 +5473,7 @@
         if (syms.length) {
           hint.innerHTML = `🎯 純自訂焦點（偵測到 <strong class="mono">${syms.join(' · ')}</strong>）：即時抓取這 ${syms.length} 檔真實報價進行整合比較，<strong>不帶入 ${escapeHtml(activeMeta.symbol)}</strong>。`;
         } else {
-          hint.innerHTML = `🎯 純自訂焦點模式：完全依您輸入的分析焦點進行六模型整合解析（不綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+          hint.innerHTML = `🎯 純自訂焦點模式：完全依您輸入的分析焦點進行選定 AI 模型整合解析（不綁定 ${escapeHtml(activeMeta.symbol)}）。`;
         }
       } else {
         // AUTO mode
@@ -4984,7 +5482,7 @@
         } else if (syms.length === 1) {
           hint.innerHTML = `🎯 自動偵測指定標的：<strong class="mono" style="color:var(--accent);">${syms[0]}</strong> → 執行時將即時抓取 <span class="mono">${syms[0]}</span> 真實報價進行深度解析，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
         } else if (prompt && !activeHintRe.test(prompt)) {
-          hint.innerHTML = `🎯 自動進入「自訂焦點整合模式」：直接依您的提問進行六模型整合分析（附即時大盤基準，不強制綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+          hint.innerHTML = `🎯 自動進入「自訂焦點整合模式」：直接依您的提問進行選定 AI 模型整合分析（附即時大盤基準，不強制綁定 ${escapeHtml(activeMeta.symbol)}）。`;
         } else {
           hint.innerHTML = `💡 目前焦點留空（或指向本檔）→ 預設解析主畫面標的 <strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>；直接輸入代號如 <span class="mono">6213、2368、3037、3189</span> 即可即時整合多檔分析。`;
         }
@@ -5040,6 +5538,13 @@
       };
     }
 
+    function getSelectedAiProviderIds() {
+      const valid = AI_MODELS.map(m => m.id);
+      const chosen = (Array.isArray(state.selectedAiModels) ? state.selectedAiModels : valid)
+        .filter(id => valid.includes(id));
+      return chosen.length > 0 ? chosen : valid;
+    }
+
     async function runMultiAiAnalysis(customPrompt = '', opts = {}) {
       const forceActive = Boolean(opts.forceActive);
       const focusMode = forceActive ? 'ACTIVE' : (document.getElementById('aiFocusModeSelect')?.value || 'AUTO');
@@ -5050,6 +5555,8 @@
       const liveCreds = readAiKeysFromInputs();
       const effectiveKeys = { ...state.aiKeys, ...liveCreds.apiKeys };
       const effectiveOpts = { ...state.modelOptions, ...liveCreds.modelOptions };
+      const selectedModelIds = getSelectedAiProviderIds();
+      const selectedDefs = AI_MODELS.filter(m => selectedModelIds.includes(m.id));
 
       const extractedSyms = forceActive ? [] : extractTwSymbolsFromPrompt(promptClean, 8);
       let targetSymbols = [];
@@ -5109,8 +5616,8 @@
         ? `多股焦點（${targetSymbols.join('、')}）`
         : (targetSymbols.length === 1 ? `${targetSymbols[0]} ${getStockMeta(targetSymbols[0]).name || ''}`.trim() : '自訂分析焦點');
 
-      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送「${labelDesc}」真實數據至六模型`);
-      showToast('AI 六模型平行解析中', `正在針對「${labelDesc}」抓取真實報價並執行六模型深度整合解析...`, 'info');
+      triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, null, `派送「${labelDesc}」真實數據至 ${selectedDefs.length} 個選定模型`);
+      showToast(`AI 解析中（已選 ${selectedDefs.length} 模型）`, `正在針對「${labelDesc}」抓取真實報價並執行選定模型深度整合解析...`, 'info');
 
       const apiBase = getApiBase();
       let finalResults = [];
@@ -5126,7 +5633,7 @@
               symbol: targetSymbols.length === 1 ? targetSymbols[0] : (focusMode === 'ACTIVE' ? activeMeta.symbol : ''),
               stock_name: targetSymbols.length === 1 ? (getStockMeta(targetSymbols[0]).name || '') : (focusMode === 'ACTIVE' ? activeMeta.name : ''),
               market_snapshot: (targetSymbols.length === 1 && preSnaps[0]) ? preSnaps[0] : (focusMode === 'ACTIVE' && activeSnap ? activeSnap : {}),
-              models: AI_MODELS.map(m => m.id),
+              models: selectedModelIds,
               api_keys: effectiveKeys,
               model_options: effectiveOpts,
               custom_prompt: promptClean,
@@ -5161,7 +5668,7 @@
         } catch (e) {}
       }
 
-      // Direct browser fallback when running static without FastAPI backend
+      // Direct browser / Android APK fallback when running static without FastAPI backend
       if (finalResults.length === 0) {
         if (targetSymbols.length > 0 && analyzedTargets.length < targetSymbols.length) {
           for (const sym of targetSymbols) {
@@ -5176,7 +5683,7 @@
           `${idx + 1}. ${s.symbol} ${s.stock_name || ''} 現價=${s.price}(${s.change_pct}%) EMA5=${s.ema5} EMA12=${s.ema12} RSI14=${s.rsi} VWAP乖離=${s.vwap_diff}%`
         ).join('\n');
 
-        finalResults = await Promise.all(AI_MODELS.map(async def => {
+        finalResults = await Promise.all(selectedDefs.map(async def => {
           const hasCred = def.id === 'ollama'
             ? Boolean((effectiveOpts.ollama_url || '').trim())
             : Boolean((effectiveKeys[def.id] || '').trim());
@@ -5187,7 +5694,7 @@
               : (analyzedTargets.length === 1
                 ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控"}`
                 : `你是嚴謹台股量化策略師(${def.label} - ${def.role})。請完全聚焦以下主題回答，勿離題討論未提及個股：${promptClean}。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"200字內整合分析","key_levels":"關鍵觀察指標或條件","risk_note":"50字內風控提醒"}`);
-            return await callSingleModelDirectBrowser(def, directPrompt);
+            return await callSingleModelDirectBrowser(def, directPrompt, effectiveKeys, effectiveOpts);
           } catch (err) {
             return {
               ...buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean),
@@ -5202,6 +5709,7 @@
         analyzed_mode: analyzedMode,
         analyzed_targets: analyzedTargets,
         focus_prompt: promptClean,
+        selected_models: selectedModelIds.slice(),
         price: analyzedTargets[0]?.price ?? null,
         source: analyzedTargets[0]?.source ?? '自訂焦點整合',
         models: finalResults
@@ -5217,10 +5725,10 @@
       }
 
       const liveCount = finalResults.filter(x => x.connected).length;
-      state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/6 API 連線` : '本地量化摘要';
-      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${labelDesc} 六模型解析完成`;
+      state.handshake.nodeStats.AI_CLUSTER.status = liveCount > 0 ? `${liveCount}/${selectedDefs.length} API 連線` : '本地量化摘要';
+      state.handshake.nodeStats.AI_CLUSTER.lastMsg = `${labelDesc}（${selectedDefs.length} 模型）解析完成`;
       triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${labelDesc} 共識回傳完成`);
-      setRibbonEvent(`AI 六模型解析完成：${labelDesc}`);
+      setRibbonEvent(`AI 深度解析完成：${labelDesc}（${selectedDefs.length} 模型）`);
 
       if (btnQuick) btnQuick.disabled = false;
       if (btnStudio) btnStudio.disabled = false;
@@ -5307,6 +5815,158 @@
       }
     }
 
+    const AI_SELECT_ID_MAP = {
+      groq: 'groqModelSelect',
+      grok: 'grokModelSelect',
+      gemini: 'geminiModelSelect',
+      claude: 'claudeModelSelect',
+      chatgpt: 'chatgptModelSelect'
+    };
+
+    const AI_OPTION_KEY_MAP = {
+      groq: 'groq_model',
+      ollama: 'ollama_model',
+      grok: 'grok_model',
+      gemini: 'gemini_model',
+      claude: 'claude_model',
+      chatgpt: 'chatgpt_model'
+    };
+
+    function filterAndSortClientModels(mid, rawList) {
+      const seen = new Set();
+      const cleaned = [];
+      (rawList || []).forEach(raw => {
+        let m = String(raw || '').trim();
+        if (mid === 'gemini' && m.startsWith('models/')) m = m.slice(7);
+        if (!m || seen.has(m)) return;
+        const low = m.toLowerCase();
+        if (mid === 'groq' && /(whisper|tts|playai|prompt-guard|llama-guard|safeguard)/.test(low)) return;
+        if (mid === 'gemini' && (!/(gemini|gemma)/.test(low) || /(embedding|imagen|veo|aqa|tts|audio|robotics|computer-use)/.test(low))) return;
+        if (mid === 'chatgpt' && (!/^(gpt-|o1|o3|o4|chatgpt-)/.test(low) || /(realtime|audio|transcribe|tts|image|instruct|embed|search-preview|diarize|codex-mini)/.test(low))) return;
+        if (mid === 'grok' && /(image|embed|tts|whisper)/.test(low)) return;
+        if (mid === 'claude' && !low.startsWith('claude')) return;
+        seen.add(m);
+        cleaned.push(m);
+      });
+      if (mid === 'ollama') return cleaned;
+      const prefsMap = {
+        gemini: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+        chatgpt: ['gpt-4.1', 'gpt-4o', 'o4-mini', 'o3-mini', 'o3', 'gpt-4o-mini', 'gpt-4.1-mini'],
+        claude: ['claude-sonnet-4', 'claude-opus-4', 'claude-3-7-sonnet', 'claude-3-5-sonnet', 'claude-3-5-haiku'],
+        grok: ['grok-4', 'grok-3-mini', 'grok-3', 'grok-2'],
+        groq: ['llama-3.3-70b', 'deepseek-r1', 'qwen', 'llama-3.1-8b']
+      };
+      const prefs = prefsMap[mid] || [];
+      const rank = name => {
+        const low = name.toLowerCase();
+        for (let i = 0; i < prefs.length; i++) {
+          if (low === prefs[i]) return [0, i, low];
+          if (low.startsWith(prefs[i])) return [1, i, low];
+        }
+        return [2, 99, low];
+      };
+      return cleaned.sort((a, b) => {
+        const ra = rank(a), rb = rank(b);
+        return ra[0] - rb[0] || ra[1] - rb[1] || ra[2].localeCompare(rb[2]);
+      });
+    }
+
+    function populateProviderModelSelect(providerId, models, preferredModel = '') {
+      const optKey = AI_OPTION_KEY_MAP[providerId];
+      const list = Array.isArray(models) && models.length > 0
+        ? Array.from(new Set(models.filter(Boolean)))
+        : (state.detectedModels[providerId] || []);
+      if (list.length > 0) state.detectedModels[providerId] = list;
+
+      if (providerId === 'ollama') {
+        const dl = document.getElementById('ollamaModelDatalist');
+        const inp = document.getElementById('ollamaModelInput');
+        if (dl && list.length > 0) {
+          dl.innerHTML = list.map(m => `<option value="${escapeHtml(m)}"></option>`).join('');
+        }
+        if (inp) {
+          const cur = (preferredModel || inp.value || state.modelOptions.ollama_model || '').trim();
+          if (list.length > 0 && (!cur || !list.some(m => m === cur || m.startsWith(cur + ':')))) {
+            inp.value = list[0];
+          } else if (cur) {
+            inp.value = cur;
+          }
+          state.modelOptions.ollama_model = inp.value.trim() || list[0] || 'qwen2.5:14b';
+        }
+        renderAiModelPickerBar();
+        return;
+      }
+
+      const selId = AI_SELECT_ID_MAP[providerId];
+      const sel = selId ? document.getElementById(selId) : null;
+      if (!sel || list.length === 0) {
+        renderAiModelPickerBar();
+        return;
+      }
+      const prev = (preferredModel || sel.value || state.modelOptions[optKey] || '').trim();
+      const opts = list.slice();
+      if (prev && !opts.includes(prev) && !preferredModel) {
+        // Keep previously chosen model only if user explicitly had it and list wasn't freshly replaced
+      }
+      sel.innerHTML = opts.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+      if (prev && opts.includes(prev)) {
+        sel.value = prev;
+      } else {
+        sel.value = opts[0];
+      }
+      if (optKey) state.modelOptions[optKey] = sel.value;
+      renderAiModelPickerBar();
+    }
+
+    function renderAiModelPickerBar() {
+      const bar = document.getElementById('aiSelectedModelsBar');
+      const cntBadge = document.getElementById('aiSelectedCountBadge');
+      const runLbl = document.getElementById('btnRunAiStudioLabel');
+      const selected = getSelectedAiProviderIds();
+      const liveOpts = readAiKeysFromInputs().modelOptions;
+
+      if (cntBadge) cntBadge.textContent = `已選 ${selected.length} / ${AI_MODELS.length} 模型`;
+      if (runLbl) runLbl.textContent = selected.length === AI_MODELS.length
+        ? '執行六模型深度解析'
+        : `執行 AI 深度解析（已選 ${selected.length} 模型）`;
+
+      if (!bar) return;
+      bar.innerHTML = AI_MODELS.map(def => {
+        const isChecked = selected.includes(def.id);
+        const testRes = state.aiTestStatus?.[def.id];
+        const optKey = AI_OPTION_KEY_MAP[def.id];
+        const chosenModel = liveOpts[optKey] || state.modelOptions[optKey] || def.id;
+        const isReady = Boolean(testRes?.ok);
+        const detectedCnt = Array.isArray(state.detectedModels[def.id]) ? state.detectedModels[def.id].length : 0;
+        const countTag = isReady && detectedCnt > 0 ? ` (${detectedCnt})` : '';
+        return `
+          <label class="ai-pick-chip ${isChecked ? 'on' : ''}" title="${escapeHtml(def.label)} · 目前選定：${escapeHtml(chosenModel)}">
+            <input type="checkbox" data-pick-ai-model="${def.id}" ${isChecked ? 'checked' : ''} />
+            <span class="ai-dot ${isReady ? 'ready' : ''}"></span>
+            <span>${escapeHtml(def.label.split(' ')[0])}${countTag}</span>
+            <span class="ai-pick-model mono">${escapeHtml(chosenModel)}</span>
+          </label>
+        `;
+      }).join('');
+
+      bar.querySelectorAll('[data-pick-ai-model]').forEach(chk => {
+        chk.addEventListener('change', () => {
+          const mid = chk.dataset.pickAiModel;
+          const next = new Set(getSelectedAiProviderIds());
+          if (chk.checked) next.add(mid);
+          else next.delete(mid);
+          if (next.size === 0) {
+            chk.checked = true;
+            showToast('至少保留一個模型', '分析至少需要勾選一個 AI 模型引擎。', 'warn');
+            return;
+          }
+          state.selectedAiModels = AI_MODELS.map(m => m.id).filter(id => next.has(id));
+          persistState();
+          renderAiModelPickerBar();
+        });
+      });
+    }
+
     function readAiKeysFromInputs() {
       return {
         apiKeys: {
@@ -5319,7 +5979,11 @@
         modelOptions: {
           groq_model: document.getElementById('groqModelSelect')?.value || state.modelOptions.groq_model || 'llama-3.3-70b-versatile',
           ollama_url: (document.getElementById('ollamaUrlInput')?.value ?? state.modelOptions.ollama_url ?? 'http://127.0.0.1:11434').trim().replace(/\/+$/, ''),
-          ollama_model: (document.getElementById('ollamaModelInput')?.value ?? state.modelOptions.ollama_model ?? 'qwen2.5:14b').trim()
+          ollama_model: (document.getElementById('ollamaModelInput')?.value ?? state.modelOptions.ollama_model ?? 'qwen2.5:14b').trim(),
+          grok_model: document.getElementById('grokModelSelect')?.value || state.modelOptions.grok_model || 'grok-3-mini',
+          gemini_model: document.getElementById('geminiModelSelect')?.value || state.modelOptions.gemini_model || 'gemini-2.5-flash',
+          claude_model: document.getElementById('claudeModelSelect')?.value || state.modelOptions.claude_model || 'claude-sonnet-4-20250514',
+          chatgpt_model: document.getElementById('chatgptModelSelect')?.value || state.modelOptions.chatgpt_model || 'gpt-4o-mini'
         }
       };
     }
@@ -5335,17 +5999,18 @@
       }
       if (res.testing) {
         el.className = 'badge badge-amber';
-        el.textContent = '測試中...';
-        el.title = '正在驗證 API Token 連線';
+        el.textContent = '偵測中...';
+        el.title = '正在驗證 Token 並取得可用模型清單';
         return;
       }
+      const mCnt = Array.isArray(res.models) ? res.models.length : (res.models_count || 0);
       if (res.ok && res.warning) {
         el.className = 'badge badge-amber';
-        el.textContent = `⚠ 在線・缺模型 (${res.latency_ms || 0}ms)`;
+        el.textContent = `⚠ ${mCnt} 模型 (${res.latency_ms || 0}ms)`;
         el.title = res.message || '';
       } else if (res.ok) {
         el.className = 'badge badge-down';
-        el.textContent = `✓ 成功 (${res.latency_ms || 0}ms)`;
+        el.textContent = mCnt > 0 ? `✓ ${mCnt} 模型 (${res.latency_ms || 0}ms)` : `✓ 成功 (${res.latency_ms || 0}ms)`;
         el.title = res.message || 'API Token 驗證成功';
       } else {
         el.className = 'badge badge-up';
@@ -5358,10 +6023,10 @@
         if (oBadge) {
           if (res.ok && !res.warning) {
             oBadge.className = 'badge badge-down';
-            oBadge.textContent = `已連線 · ${res.models_count || 0} 模型`;
+            oBadge.textContent = `已連線 · ${mCnt} 模型`;
           } else if (res.ok && res.warning) {
             oBadge.className = 'badge badge-amber';
-            oBadge.textContent = `在線 · 缺指定模型`;
+            oBadge.textContent = `在線 · ${mCnt} 模型`;
           } else {
             oBadge.className = 'badge badge-slate';
             oBadge.textContent = '地端離線';
@@ -5374,60 +6039,99 @@
       const t0 = performance.now();
       try {
         if (modelId === 'groq') {
-          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Groq API Key' };
-          const r = await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 Groq API Key' };
+          const r = await androidProxyFetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
           const lat = Math.round(performance.now() - t0);
-          return r.ok
-            ? { ok: true, model: modelId, latency_ms: lat, message: 'Groq API Token 驗證成功' }
-            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          const j = await r.json();
+          const models = filterAndSortClientModels('groq', (j.data || []).map(m => m.id));
+          return { ok: true, model: modelId, latency_ms: lat, models, models_count: models.length, recommended_model: models[0] || '', message: `Groq 驗證成功（偵測到 ${models.length} 個可用模型）` };
         }
         if (modelId === 'ollama') {
           const base = (opts.ollama_url || '').replace(/\/+$/, '');
-          if (!base) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Ollama 網址' };
+          if (!base) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 Ollama 網址' };
           const r = await fetch(`${base}/api/tags`);
           const lat = Math.round(performance.now() - t0);
-          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, message: `Ollama 連線失敗 (HTTP ${r.status})` };
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Ollama 連線失敗 (HTTP ${r.status})` };
           const j = await r.json();
-          const models = (j.models || []).map(m => m.name);
+          const models = (j.models || []).map(m => m.name).filter(Boolean);
           const matched = !opts.ollama_model || models.some(m => m === opts.ollama_model || m.startsWith(opts.ollama_model + ':'));
           return {
-            ok: true, warning: !matched, model: modelId, latency_ms: lat, models_count: models.length,
-            message: matched ? `Ollama 連線成功（共 ${models.length} 模型）` : `Ollama 在線，但尚未下載 ${opts.ollama_model}`
+            ok: true, warning: !matched, model: modelId, latency_ms: lat, models, models_count: models.length,
+            recommended_model: models[0] || '',
+            message: matched ? `Ollama 連線成功（共 ${models.length} 模型）` : `Ollama 在線（共 ${models.length} 模型），已更新下拉供選`
           };
         }
         if (modelId === 'gemini') {
-          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 Gemini API Key' };
-          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=5`);
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 Gemini API Key' };
+          const r = await androidProxyFetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`);
           const lat = Math.round(performance.now() - t0);
-          return r.ok
-            ? { ok: true, model: modelId, latency_ms: lat, message: 'Google Gemini API Token 驗證成功' }
-            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          const j = await r.json();
+          const raw = (j.models || [])
+            .filter(m => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
+            .map(m => m.name);
+          const models = filterAndSortClientModels('gemini', raw);
+          return { ok: true, model: modelId, latency_ms: lat, models, models_count: models.length, recommended_model: models[0] || '', message: `Google Gemini 驗證成功（偵測到 ${models.length} 個可用模型）` };
         }
         if (modelId === 'chatgpt') {
-          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 OpenAI API Key' };
-          const r = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 OpenAI API Key' };
+          const r = await androidProxyFetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
           const lat = Math.round(performance.now() - t0);
-          return r.ok
-            ? { ok: true, model: modelId, latency_ms: lat, message: 'OpenAI ChatGPT API Token 驗證成功' }
-            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          const j = await r.json();
+          const models = filterAndSortClientModels('chatgpt', (j.data || []).map(m => m.id));
+          return { ok: true, model: modelId, latency_ms: lat, models, models_count: models.length, recommended_model: models[0] || '', message: `OpenAI ChatGPT 驗證成功（偵測到 ${models.length} 個可用模型）` };
         }
         if (modelId === 'grok') {
-          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, message: '尚未輸入 xAI Grok API Key' };
-          const r = await fetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 xAI Grok API Key' };
+          const r = await androidProxyFetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
           const lat = Math.round(performance.now() - t0);
-          return r.ok
-            ? { ok: true, model: modelId, latency_ms: lat, message: 'xAI Grok API Token 驗證成功' }
-            : { ok: false, model: modelId, latency_ms: lat, message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          const j = await r.json();
+          const models = filterAndSortClientModels('grok', (j.data || []).map(m => m.id));
+          return { ok: true, model: modelId, latency_ms: lat, models, models_count: models.length, recommended_model: models[0] || '', message: `xAI Grok 驗證成功（偵測到 ${models.length} 個可用模型）` };
         }
-        return { ok: false, model: modelId, latency_ms: 0, message: 'Claude 瀏覽器直連受 CORS 限制，請透過後端 server.py 代理測試' };
+        if (modelId === 'claude') {
+          if (!apiKey) return { ok: false, model: modelId, latency_ms: 0, models: [], message: '尚未輸入 Anthropic Claude API Key' };
+          if (!isAndroidApkHost()) {
+            return { ok: false, model: modelId, latency_ms: 0, models: [], message: 'Claude 瀏覽器直連受 CORS 限制，請透過後端 server.py 或 Android APK 偵測' };
+          }
+          const r = await androidProxyFetch('https://api.anthropic.com/v1/models?limit=100', {
+            headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }
+          });
+          const lat = Math.round(performance.now() - t0);
+          if (!r.ok) return { ok: false, model: modelId, latency_ms: lat, models: [], message: `Token 無效或權限不足 (HTTP ${r.status})` };
+          const j = await r.json();
+          const models = filterAndSortClientModels('claude', (j.data || []).map(m => m.id));
+          return { ok: true, model: modelId, latency_ms: lat, models, models_count: models.length, recommended_model: models[0] || '', message: `Anthropic Claude 驗證成功（偵測到 ${models.length} 個可用模型）` };
+        }
+        return { ok: false, model: modelId, latency_ms: 0, models: [], message: '不支援的模型引擎' };
       } catch (err) {
-        return { ok: false, model: modelId, latency_ms: Math.round(performance.now() - t0), message: `連線受限：${String(err.message || '').slice(0, 60)}` };
+        return { ok: false, model: modelId, latency_ms: Math.round(performance.now() - t0), models: [], message: `連線受限：${String(err.message || '').slice(0, 60)}` };
       }
+    }
+
+    function applyDiscoveryResult(modelId, res) {
+      state.aiTestStatus[modelId] = res;
+      if (res && res.ok && Array.isArray(res.models) && res.models.length > 0) {
+        populateProviderModelSelect(modelId, res.models, state.modelOptions[AI_OPTION_KEY_MAP[modelId]]);
+        // Ensure newly verified model provider is checked for analysis
+        if (!state.selectedAiModels.includes(modelId)) {
+          state.selectedAiModels = AI_MODELS.map(m => m.id).filter(id => state.selectedAiModels.includes(id) || id === modelId);
+        }
+        persistState();
+      }
+      renderAiTestBadge(modelId, res);
     }
 
     async function testSingleAiModel(modelId, silent = false) {
       const def = AI_MODELS.find(m => m.id === modelId);
       const { apiKeys, modelOptions } = readAiKeysFromInputs();
+      // Sync typed token into state right away so user never loses it
+      if (modelId !== 'ollama' && apiKeys[modelId]) {
+        state.aiKeys[modelId] = apiKeys[modelId];
+      }
       const btn = document.querySelector(`[data-test-ai="${modelId}"]`);
       if (btn) btn.disabled = true;
       renderAiTestBadge(modelId, { testing: true });
@@ -5436,7 +6140,7 @@
       const apiBase = getApiBase();
       if (apiBase) {
         try {
-          const r = await fetch(`${apiBase}/api/v1/ai/test-connection`, {
+          const r = await fetch(`${apiBase}/api/v1/ai/models`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -5452,35 +6156,36 @@
         res = await testSingleAiDirectBrowser(modelId, apiKeys[modelId] || '', modelOptions);
       }
 
-      state.aiTestStatus[modelId] = res;
-      renderAiTestBadge(modelId, res);
+      applyDiscoveryResult(modelId, res);
+      renderAiModelPickerBar();
       renderAiPanels();
       if (btn) btn.disabled = false;
 
       if (res.ok) {
-        triggerHandshake('CORE', 'AI_CLUSTER', def?.color || '#4f46e5', 'PING', true, res.latency_ms || 30, `${def?.label || modelId} Token 測試通過`);
+        const mCnt = Array.isArray(res.models) ? res.models.length : (res.models_count || 0);
+        triggerHandshake('CORE', 'AI_CLUSTER', def?.color || '#4f46e5', 'PING', true, res.latency_ms || 30, `${def?.label || modelId} 偵測到 ${mCnt} 個可用模型`);
       }
       if (!silent) {
         showToast(
-          res.ok ? `${def?.label || modelId} 測試成功` : `${def?.label || modelId} 測試失敗`,
-          res.message || (res.ok ? 'API Token 連線正常' : '請檢查 Token 或網路設定'),
+          res.ok ? `${def?.label || modelId} 模型偵測成功` : `${def?.label || modelId} 偵測失敗`,
+          res.message || (res.ok ? '已載入可用模型清單供選擇' : '請檢查 Token 或網路設定'),
           res.ok ? (res.warning ? 'warn' : 'success') : 'error'
         );
       }
       return res;
     }
 
-    async function testAllAiModels() {
+    async function testAllAiModels(silent = false) {
       const btn = document.getElementById('btnTestAllAiModels');
       const { apiKeys, modelOptions } = readAiKeysFromInputs();
       const targets = AI_MODELS.map(m => m.id).filter(id => {
-        if (id === 'ollama') return Boolean(modelOptions.ollama_url);
+        if (id === 'ollama') return Boolean(modelOptions.ollama_url) && (!silent || Boolean(state.backendHealth?.ai_env_configured?.ollama));
         return Boolean(apiKeys[id]) || Boolean(state.backendHealth?.ai_env_configured?.[id]);
       });
 
       if (targets.length === 0) {
-        showToast('尚無可測試的模型', '請先於上方輸入任一模型 API Token 或 Ollama 網址再點擊測試。', 'warn');
-        return;
+        if (!silent) showToast('尚無可偵測的 Token', '請先貼上任一 AI Token 或點擊「匯入 Token / .env」，系統將自動偵測可用模型。', 'warn');
+        return [];
       }
 
       if (btn) btn.disabled = true;
@@ -5490,7 +6195,7 @@
       const apiBase = getApiBase();
       if (apiBase) {
         try {
-          const r = await fetch(`${apiBase}/api/v1/ai/test-all`, {
+          const r = await fetch(`${apiBase}/api/v1/ai/discover-models`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ api_keys: apiKeys, model_options: modelOptions, models: targets })
@@ -5506,37 +6211,110 @@
         results = await Promise.all(targets.map(id => testSingleAiDirectBrowser(id, apiKeys[id] || '', modelOptions)));
       }
 
-      results.forEach(res => {
-        state.aiTestStatus[res.model] = res;
-        renderAiTestBadge(res.model, res);
-      });
+      results.forEach(res => applyDiscoveryResult(res.model, res));
+      renderAiModelPickerBar();
       renderAiPanels();
       if (btn) btn.disabled = false;
 
       const okCnt = results.filter(x => x.ok).length;
-      showToast(
-        `批量模型連線測試完成（${okCnt}/${results.length} 成功）`,
-        results.map(r => `${r.model.toUpperCase()}: ${r.ok ? '✓' : '✗'}`).join(' ｜ '),
-        okCnt === results.length ? 'success' : (okCnt > 0 ? 'warn' : 'error')
-      );
+      const totalModels = results.reduce((s, x) => s + (Array.isArray(x.models) ? x.models.length : 0), 0);
+      if (!silent) {
+        showToast(
+          `模型偵測完成（${okCnt}/${results.length} 引擎成功 · 共 ${totalModels} 模型）`,
+          results.map(r => `${r.model.toUpperCase()}: ${r.ok ? `✓${(r.models || []).length}` : '✗'}`).join(' ｜ '),
+          okCnt === results.length ? 'success' : (okCnt > 0 ? 'warn' : 'error')
+        );
+      }
+      return results;
     }
 
-    function buildAiCardsHtml(pack) {
-      return AI_MODELS.map(def => {
+    async function importAiTokensFromFile(file) {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const found = {};
+        const trimmed = text.trim();
+        if (trimmed.startsWith('{')) {
+          const obj = JSON.parse(trimmed);
+          const src = obj.apiKeys || obj.api_keys || obj;
+          if (src.groq || src.GROQ_API_KEY) found.groq = String(src.groq || src.GROQ_API_KEY).trim();
+          if (src.gemini || src.GEMINI_API_KEY || src.GOOGLE_API_KEY) found.gemini = String(src.gemini || src.GEMINI_API_KEY || src.GOOGLE_API_KEY).trim();
+          if (src.chatgpt || src.openai || src.OPENAI_API_KEY) found.chatgpt = String(src.chatgpt || src.openai || src.OPENAI_API_KEY).trim();
+          if (src.claude || src.anthropic || src.ANTHROPIC_API_KEY) found.claude = String(src.claude || src.anthropic || src.ANTHROPIC_API_KEY).trim();
+          if (src.grok || src.xai || src.XAI_API_KEY) found.grok = String(src.grok || src.xai || src.XAI_API_KEY).trim();
+          if (src.ollama_url || src.OLLAMA_BASE_URL) found.ollama_url = String(src.ollama_url || src.OLLAMA_BASE_URL).trim();
+        } else {
+          const keyMap = {
+            GROQ_API_KEY: 'groq',
+            GEMINI_API_KEY: 'gemini',
+            GOOGLE_API_KEY: 'gemini',
+            OPENAI_API_KEY: 'chatgpt',
+            ANTHROPIC_API_KEY: 'claude',
+            CLAUDE_API_KEY: 'claude',
+            XAI_API_KEY: 'grok',
+            GROK_API_KEY: 'grok',
+            OLLAMA_BASE_URL: 'ollama_url'
+          };
+          trimmed.split(/\r?\n/).forEach(line => {
+            const l = line.trim();
+            if (!l || l.startsWith('#') || !l.includes('=')) return;
+            const idx = l.indexOf('=');
+            const k = l.slice(0, idx).trim().replace(/^export\s+/, '');
+            const v = l.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+            if (keyMap[k] && v) found[keyMap[k]] = v;
+          });
+        }
+
+        const loadedNames = [];
+        const inputMap = { groq: 'keyGroq', gemini: 'keyGemini', chatgpt: 'keyChatgpt', claude: 'keyClaude', grok: 'keyGrok' };
+        Object.keys(inputMap).forEach(k => {
+          if (found[k]) {
+            state.aiKeys[k] = found[k];
+            const el = document.getElementById(inputMap[k]);
+            if (el) el.value = found[k];
+            loadedNames.push(k.toUpperCase());
+          }
+        });
+        if (found.ollama_url) {
+          state.modelOptions.ollama_url = found.ollama_url.replace(/\/+$/, '');
+          const el = document.getElementById('ollamaUrlInput');
+          if (el) el.value = state.modelOptions.ollama_url;
+          loadedNames.push('OLLAMA');
+        }
+        if (loadedNames.length === 0) {
+          showToast('檔案未偵測到 AI Token', '支援 .env（如 GEMINI_API_KEY=...、OPENAI_API_KEY=...、GROQ_API_KEY=...）或 JSON 格式。', 'warn');
+          return;
+        }
+        persistState();
+        showToast(`已載入 ${loadedNames.length} 組 AI Token`, `來源：${loadedNames.join('、')} → 正在自動偵測可用模型清單...`, 'info');
+        await testAllAiModels(false);
+      } catch (err) {
+        showToast('匯入 Token 失敗', `無法解析檔案：${err.message || '格式錯誤'}`, 'error');
+      }
+    }
+
+    function buildAiCardsHtml(pack, respectSelection = false) {
+      const selectedIds = getSelectedAiProviderIds();
+      const visibleDefs = respectSelection
+        ? AI_MODELS.filter(def => selectedIds.includes(def.id) || pack?.models?.some(m => m.model === def.id))
+        : AI_MODELS;
+      return visibleDefs.map(def => {
         const res = pack?.models?.find(m => m.model === def.id);
         const testRes = state.aiTestStatus?.[def.id];
+        const chosenModel = state.modelOptions[AI_OPTION_KEY_MAP[def.id]] || def.id;
         if (!res) {
           const isCfg = def.id === 'ollama'
             ? Boolean((state.modelOptions.ollama_url || '').trim())
             : (Boolean(state.aiKeys[def.id]) || Boolean(state.backendHealth?.ai_env_configured?.[def.id]));
           let statusLine = def.id === 'ollama'
-            ? `地端設定：${state.modelOptions.ollama_url || '未設定'} (${state.modelOptions.ollama_model || 'qwen2.5:14b'})`
-            : (isCfg ? 'API 狀態：已設定金鑰' : 'API 狀態：未設定金鑰（可切換本地量化摘要）');
+            ? `地端設定：${state.modelOptions.ollama_url || '未設定'} (${chosenModel})`
+            : (isCfg ? `選定模型：${chosenModel}（已設定金鑰）` : `選定模型：${chosenModel}（未設定金鑰，可切換本地量化摘要）`);
           let badgeHtml = '<span class="badge badge-slate">待命</span>';
           if (testRes && !testRes.testing) {
             if (testRes.ok) {
-              badgeHtml = `<span class="badge badge-down">✓ 已驗證 ${testRes.latency_ms || 0}ms</span>`;
-              statusLine = `✓ ${testRes.message || 'API Token 連線測試成功'}`;
+              const cnt = Array.isArray(testRes.models) ? testRes.models.length : (testRes.models_count || 0);
+              badgeHtml = `<span class="badge badge-down">✓ ${cnt} 模型 · ${testRes.latency_ms || 0}ms</span>`;
+              statusLine = `選定模型：${chosenModel} ｜ ${testRes.message || 'API Token 連線測試成功'}`;
             } else {
               badgeHtml = '<span class="badge badge-up">✗ 驗證失敗</span>';
               statusLine = `✗ ${testRes.message || 'API Token 無效'}`;
@@ -5551,7 +6329,7 @@
                 </div>
                 ${badgeHtml}
               </div>
-              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊「執行六模型深度解析」或啟用多 Agent 自動選模。</p>
+              <p class="ai-summary-text" style="color:var(--ink-3);">專長：${def.role}。點擊上方「執行 AI 深度解析」即可使用選定模型 <span class="mono">${escapeHtml(chosenModel)}</span>。</p>
               <div class="ai-meta-line">${escapeHtml(statusLine)}</div>
             </div>
           `;
@@ -5593,8 +6371,9 @@
 
       if (metaEl) metaEl.textContent = `標的：${meta.symbol} ${meta.name}${quickPack ? ' ｜ 解析時間：' + quickPack.timestamp : ''}`;
 
-      if (quickGrid) quickGrid.innerHTML = buildAiCardsHtml(quickPack);
-      if (studioGrid) studioGrid.innerHTML = buildAiCardsHtml(studioPack);
+      renderAiModelPickerBar();
+      if (quickGrid) quickGrid.innerHTML = buildAiCardsHtml(quickPack, false);
+      if (studioGrid) studioGrid.innerHTML = buildAiCardsHtml(studioPack, true);
 
       if (ctxBar) {
         if (studioPack && (studioPack.analyzed_targets?.length || studioPack.focus_prompt)) {
@@ -5603,7 +6382,7 @@
             CUSTOM_FOCUS: '純自訂焦點整合解析',
             SINGLE: '單一標的深度解析'
           };
-          const modeTxt = modeLabels[studioPack.analyzed_mode] || '六模型深度解析';
+          const modeTxt = modeLabels[studioPack.analyzed_mode] || '多模型深度解析';
           const targets = studioPack.analyzed_targets || [];
           const pills = targets.map(t => {
             const chg = Number(t.change_pct || 0);
@@ -5625,14 +6404,14 @@
 
       if (headline) {
         if (!quickPack) {
-          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} 六模型解析（點擊右側按鈕立即開始）`;
+          headline.textContent = `尚未執行 ${meta.symbol} ${meta.name} AI 模型解析（點擊右側按鈕立即開始）`;
         } else {
-          const total = quickPack.models.length || 6;
+          const total = quickPack.models.length || 1;
           const bulls = quickPack.models.filter(m => m.verdict === 'BULL').length;
           const bears = quickPack.models.filter(m => m.verdict === 'BEAR').length;
           const avgConf = Math.round(quickPack.models.reduce((s, m) => s + (Number(m.confidence) || 50), 0) / total);
           const verdictText = bulls >= Math.ceil(total * 0.6) ? '偏多共識' : (bears >= Math.ceil(total * 0.6) ? '偏空警戒' : (bulls > bears ? '溫和偏多' : (bears > bulls ? '溫和偏空' : '多空分歧觀望')));
-          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${quickPack.price}）→ 六模型結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${total - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
+          headline.textContent = `${meta.symbol} ${meta.name}（現價 ${quickPack.price}）→ AI 結論：${verdictText}（看多 ${bulls} / 看空 ${bears} / 觀望 ${total - bulls - bears} ｜ 平均信心 ${avgConf}%）`;
         }
       }
       updateAiFocusHint();
@@ -7208,10 +7987,88 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderPineScript();
       } else if (paneId === 'ai') {
         renderAiPanels();
+      } else if (paneId === 'mobile') {
+        refreshMobileCenterUI();
       }
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
+    }
+
+    let deferredPwaInstallPrompt = null;
+
+    function updatePwaInstallStatusUI() {
+      const badge = document.getElementById('mobileEnvBadge');
+      const statusEl = document.getElementById('pwaInstallStatusText');
+      const btn = document.getElementById('btnInstallPwa');
+      const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+      const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent || '');
+
+      if (isAndroidApkHost()) {
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = 'Android APK 獨立執行中'; }
+        if (statusEl) statusEl.textContent = '✓ 您正在使用 SYNAPSE TW Android 獨立執行檔（內建安全代理與離線介面）。';
+        if (btn) btn.style.display = 'none';
+      } else if (isStandalone) {
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = '已安裝為手機 App'; }
+        if (statusEl) statusEl.textContent = '✓ 目前已以全螢幕 App (PWA) 模式運行於您的手機主畫面。';
+        if (btn) btn.style.display = 'none';
+      } else if (deferredPwaInstallPrompt) {
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = '可一鍵安裝 App'; }
+        if (statusEl) statusEl.textContent = '✓ 瀏覽器已就緒！點擊上方「安裝至手機主畫面 (PWA)」即可直接建立桌面圖示。';
+        if (btn) btn.style.display = 'inline-flex';
+      } else if (isIos) {
+        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = 'iOS Safari PWA'; }
+        if (statusEl) statusEl.textContent = 'iPhone / iPad：請點擊 Safari 底部「分享 ↑」按鈕，選擇「加入主畫面」即可全螢幕 App 執行。';
+      } else {
+        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = 'PWA Ready'; }
+        if (statusEl) statusEl.textContent = '手機 Chrome / Edge 開啟本網址，點擊瀏覽器選單「安裝應用程式 / 加到主畫面」即可全螢幕執行。';
+      }
+    }
+
+    function renderMobileAccessGraphic(urlText) {
+      const box = document.getElementById('mobileLanQrBox');
+      if (!box) return;
+      // Clean visual connection card (zero external image leak, works 100% offline & LAN)
+      const safe = escapeHtml(urlText || window.location.href);
+      box.innerHTML = `
+        <div style="width:136px;height:136px;border-radius:10px;background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;">
+          <div style="font-size:26px;line-height:1;">📱</div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.04em;color:#38bdf8;">LAN / PWA</div>
+          <div class="mono" style="font-size:9.5px;color:#e2e8f0;word-break:break-all;line-height:1.3;">${safe.replace(/^https?:\/\//, '')}</div>
+        </div>
+      `;
+    }
+
+    async function refreshMobileCenterUI() {
+      updatePwaInstallStatusUI();
+      const out = document.getElementById('mobileLanUrlOutput');
+      const note = document.getElementById('mobileLanMetaNote');
+      const quickInp = document.getElementById('mobileBackendUrlQuick');
+      if (quickInp) quickInp.value = state.backendUrl || '';
+
+      const apiBase = getApiBase();
+      let displayUrl = window.location.href.split('#')[0];
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/mobile/info`);
+          if (r.ok) {
+            const info = await r.json();
+            if (info.primary_mobile_url) {
+              displayUrl = info.primary_mobile_url;
+              if (note) {
+                const ips = Array.isArray(info.lan_urls) && info.lan_urls.length > 0
+                  ? `已偵測區網位址：${info.lan_urls.join(' ｜ ')}（請確保手機與電腦連上同一個 Wi-Fi）`
+                  : '目前為單機或雲端模式；本機啟動 python launcher.py --lan 可自動開啟區網手機存取。';
+                note.textContent = ips;
+              }
+            }
+          }
+        } catch (e) {}
+      } else if (note) {
+        note.textContent = '目前為靜態網頁 / GitHub Pages 模式：手機直接開啟此網址即可安裝 PWA 並直連即時行情與雲端 AI！';
+      }
+      if (out) out.value = displayUrl;
+      renderMobileAccessGraphic(displayUrl);
     }
 
     function switchTab(tabId) {
@@ -7274,8 +8131,6 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     function populateSettingsInputs() {
       const kGroq = document.getElementById('keyGroq');
       if (kGroq) kGroq.value = state.aiKeys.groq || '';
-      const gSel = document.getElementById('groqModelSelect');
-      if (gSel && state.modelOptions.groq_model) gSel.value = state.modelOptions.groq_model;
       const oUrl = document.getElementById('ollamaUrlInput');
       if (oUrl) oUrl.value = state.modelOptions.ollama_url || 'http://127.0.0.1:11434';
       const oMod = document.getElementById('ollamaModelInput');
@@ -7285,6 +8140,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('keyGemini').value = state.aiKeys.gemini || '';
       document.getElementById('keyClaude').value = state.aiKeys.claude || '';
       document.getElementById('keyChatgpt').value = state.aiKeys.chatgpt || '';
+
+      // Hydrate all 6 provider model dropdowns with persisted detected models + chosen selection
+      AI_MODELS.forEach(def => {
+        populateProviderModelSelect(
+          def.id,
+          state.detectedModels[def.id] || [],
+          state.modelOptions[AI_OPTION_KEY_MAP[def.id]] || ''
+        );
+      });
+      renderAiModelPickerBar();
 
       const preChk = document.getElementById('orderMultiAgentChk');
       if (preChk) preChk.checked = state.agentConfig.precheckOnOrder !== false;
@@ -7313,6 +8178,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       renderTelegramBindingUI();
 
       document.getElementById('cloudBackendInput').value = state.backendUrl || '';
+      const mobBack = document.getElementById('mobileBackendUrlQuick');
+      if (mobBack) mobBack.value = state.backendUrl || '';
       document.getElementById('finmindTokenInput').value = state.finmindToken || '';
       document.getElementById('tvUsernameInput').value = state.tvAccount.username || '';
       document.getElementById('tvTierSelect').value = state.tvAccount.tier || 'Essential';
@@ -7604,7 +8471,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       });
 
-      // AI Analysis (6 Models + Groq + Ollama Local)
+      // AI Analysis (Token -> Auto Detect Models -> Select Analysis Models)
       document.getElementById('btnRunAiQuick').addEventListener('click', () => runMultiAiAnalysis('', { forceActive: true }));
       document.getElementById('btnRunAiStudio').addEventListener('click', () => {
         runMultiAiAnalysis(document.getElementById('aiStudioPrompt').value.trim(), { forceActive: false });
@@ -7612,12 +8479,78 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('aiStudioPrompt')?.addEventListener('input', updateAiFocusHint);
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', updateAiFocusHint);
       document.getElementById('btnOpenStrategyFromAi')?.addEventListener('click', () => openFeatureModal('strategy'));
-      document.getElementById('btnFetchGroqModels')?.addEventListener('click', fetchGroqModelsUI);
+      document.getElementById('btnFetchGroqModels')?.addEventListener('click', () => testSingleAiModel('groq', false));
       document.getElementById('btnDetectOllamaModels')?.addEventListener('click', detectOllamaModelsUI);
       document.querySelectorAll('[data-test-ai]').forEach(btn => {
         btn.addEventListener('click', () => testSingleAiModel(btn.dataset.testAi, false));
       });
-      document.getElementById('btnTestAllAiModels')?.addEventListener('click', testAllAiModels);
+      document.getElementById('btnTestAllAiModels')?.addEventListener('click', () => testAllAiModels(false));
+
+      // Auto-detect available models immediately when user pastes or enters an AI Token
+      const aiAutoDetectTimers = {};
+      document.querySelectorAll('[data-ai-token]').forEach(inp => {
+        const mid = inp.dataset.aiToken;
+        const scheduleDetect = (delayMs) => {
+          clearTimeout(aiAutoDetectTimers[mid]);
+          const val = (inp.value || '').trim();
+          if (val.length < 10) return;
+          aiAutoDetectTimers[mid] = setTimeout(() => {
+            if ((inp.value || '').trim().length >= 10) {
+              testSingleAiModel(mid, false);
+            }
+          }, delayMs);
+        };
+        inp.addEventListener('paste', () => scheduleDetect(320));
+        inp.addEventListener('change', () => scheduleDetect(120));
+      });
+
+      // Keep model dropdown changes synced into state & picker chips in real time
+      document.querySelectorAll('[data-ai-model-select]').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const mid = sel.dataset.aiModelSelect;
+          const optKey = AI_OPTION_KEY_MAP[mid];
+          if (optKey && sel.value) {
+            state.modelOptions[optKey] = sel.value;
+            persistState();
+            renderAiModelPickerBar();
+            renderAiPanels();
+          }
+        });
+      });
+      document.getElementById('ollamaModelInput')?.addEventListener('change', (e) => {
+        state.modelOptions.ollama_model = (e.target.value || 'qwen2.5:14b').trim();
+        persistState();
+        renderAiModelPickerBar();
+      });
+
+      // Import .env or JSON token file -> auto-detect all loaded tokens
+      document.getElementById('btnImportAiEnvFile')?.addEventListener('click', () => {
+        document.getElementById('aiEnvFileInput')?.click();
+      });
+      document.getElementById('aiEnvFileInput')?.addEventListener('change', async (e) => {
+        const f = e.target.files?.[0];
+        if (f) await importAiTokensFromFile(f);
+        e.target.value = '';
+      });
+
+      // Analysis model selection quick filters
+      document.getElementById('btnSelectReadyAiModels')?.addEventListener('click', () => {
+        const ready = AI_MODELS.map(m => m.id).filter(id => Boolean(state.aiTestStatus?.[id]?.ok));
+        if (ready.length === 0) {
+          showToast('尚無已驗證的模型', '請先貼上 Token 並點擊「偵測」或「一鍵偵測全部可用模型」。', 'warn');
+          return;
+        }
+        state.selectedAiModels = ready;
+        persistState();
+        renderAiPanels();
+        showToast('已套用僅選已驗證模型', `目前勾選 ${ready.length} 個可用分析引擎：${ready.map(x => x.toUpperCase()).join('、')}`, 'success');
+      });
+      document.getElementById('btnSelectAllAiModels')?.addEventListener('click', () => {
+        state.selectedAiModels = AI_MODELS.map(m => m.id);
+        persistState();
+        renderAiPanels();
+      });
+
       document.getElementById('btnPushAiReport').addEventListener('click', () => {
         const report = formatAiReportMessage();
         if (!report) {
@@ -7627,18 +8560,89 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         sendNotification(report);
       });
       document.getElementById('btnSaveAiKeys').addEventListener('click', () => {
-        state.aiKeys.groq = (document.getElementById('keyGroq')?.value || '').trim();
-        state.aiKeys.grok = document.getElementById('keyGrok').value.trim();
-        state.aiKeys.gemini = document.getElementById('keyGemini').value.trim();
-        state.aiKeys.claude = document.getElementById('keyClaude').value.trim();
-        state.aiKeys.chatgpt = document.getElementById('keyChatgpt').value.trim();
-        state.modelOptions.groq_model = document.getElementById('groqModelSelect')?.value || 'llama-3.3-70b-versatile';
-        state.modelOptions.ollama_url = (document.getElementById('ollamaUrlInput')?.value || 'http://127.0.0.1:11434').trim().replace(/\/+$/, '');
-        state.modelOptions.ollama_model = (document.getElementById('ollamaModelInput')?.value || 'qwen2.5:14b').trim();
+        const live = readAiKeysFromInputs();
+        Object.assign(state.aiKeys, live.apiKeys);
+        Object.assign(state.modelOptions, live.modelOptions);
         persistState();
         renderAiPanels();
         renderTopRibbon();
-        showToast('六模型與 Ollama 設定已儲存', `已儲存 Groq (${state.modelOptions.groq_model})、Ollama (${state.modelOptions.ollama_model}) 與四大雲端模型金鑰。`, 'success');
+        showToast(
+          'Token 與選定分析模型已儲存',
+          `Gemini(${state.modelOptions.gemini_model}) · GPT(${state.modelOptions.chatgpt_model}) · Claude(${state.modelOptions.claude_model}) · Groq(${state.modelOptions.groq_model})`,
+          'success'
+        );
+      });
+
+      // Mobile Bottom Navigation & PWA / LAN Install Center
+      document.querySelectorAll('[data-mobile-nav]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.mobileNav;
+          document.querySelectorAll('[data-mobile-nav]').forEach(b => b.classList.toggle('active', b === btn));
+          if (target === 'market') {
+            closeModal('featureStudioModal');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else if (target === 'order') {
+            closeModal('featureStudioModal');
+            const ticket = document.getElementById('btnSubmitOrder') || document.getElementById('orderPriceInput');
+            ticket?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else if (target === 'ai' || target === 'strategy' || target === 'mobile') {
+            openFeatureModal(target);
+          }
+        });
+      });
+
+      document.getElementById('btnInstallPwa')?.addEventListener('click', async () => {
+        if (deferredPwaInstallPrompt) {
+          deferredPwaInstallPrompt.prompt();
+          const res = await deferredPwaInstallPrompt.userChoice.catch(() => ({ outcome: 'dismissed' }));
+          if (res?.outcome === 'accepted') {
+            showToast('正在安裝 SYNAPSE TW 手機版', '完成後即可直接從手機主畫面全螢幕開啟！', 'success');
+          }
+          deferredPwaInstallPrompt = null;
+          updatePwaInstallStatusUI();
+        } else {
+          const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent || '');
+          showToast(
+            isIos ? 'iOS 安裝教學' : '安裝至手機主畫面',
+            isIos
+              ? '請點擊 Safari 下方「分享 ↑」圖示 → 選擇「加入主畫面」即可變成獨立手機 App。'
+              : '請點擊瀏覽器右上角選單（⋮）→ 選擇「安裝應用程式」或「加到主畫面」。',
+            'info'
+          );
+        }
+      });
+      document.getElementById('btnRefreshMobileInfo')?.addEventListener('click', refreshMobileCenterUI);
+      document.getElementById('btnCopyMobileLanUrl')?.addEventListener('click', async () => {
+        const url = document.getElementById('mobileLanUrlOutput')?.value || '';
+        if (!url) return;
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast('已複製手機連線網址', url, 'success');
+        } catch (e) {
+          showToast('請手動複製網址', url, 'info');
+        }
+      });
+      document.getElementById('btnCopyTermuxCmd')?.addEventListener('click', async () => {
+        const cmd = document.getElementById('termuxCmdCode')?.textContent || '';
+        try {
+          await navigator.clipboard.writeText(cmd);
+          showToast('已複製 Termux 一鍵啟動指令', '貼上至 Android Termux 即可直接在本機啟動完整後端。', 'success');
+        } catch (e) {
+          showToast('請手動複製指令', cmd, 'info');
+        }
+      });
+      document.getElementById('btnSaveMobileBackendQuick')?.addEventListener('click', async () => {
+        const val = (document.getElementById('mobileBackendUrlQuick')?.value || '').trim().replace(/\/+$/, '');
+        state.backendUrl = val;
+        const mainInp = document.getElementById('cloudBackendInput');
+        if (mainInp) mainInp.value = val;
+        persistState();
+        const ok = await detectBackend();
+        showToast(
+          ok ? '手機已連線至後端伺服器' : '已儲存後端位址（目前離線）',
+          ok ? `成功連線：${val || window.location.origin}` : '請確認電腦端已啟動 launcher.py --lan 且處於同 Wi-Fi。',
+          ok ? 'success' : 'warn'
+        );
       });
 
       // Multi-Agent Strategy Switches & Auto-Trade Studio Controls
@@ -10414,8 +11418,38 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }, 2800);
 
+      // Register PWA Service Worker & capture install prompt (iOS/Android mobile app support)
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaInstallPrompt = e;
+        updatePwaInstallStatusUI();
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredPwaInstallPrompt = null;
+        updatePwaInstallStatusUI();
+        showToast('SYNAPSE TW 已安裝至手機主畫面', '現在可從桌面直接全螢幕開啟操作！', 'success');
+      });
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+      updatePwaInstallStatusUI();
+
+      // Open shortcut pane directly if launched via PWA shortcut hash (#studio-ai, #studio-strategy, #studio-dca, #studio-mobile)
+      const hashPane = (window.location.hash || '').replace(/^#studio-/, '');
+      if (['ai', 'strategy', 'dca', 'review', 'notify', 'deploy', 'settings', 'mobile'].includes(hashPane)) {
+        openFeatureModal(hashPane);
+      }
+
       // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
       await detectBackend();
+
+      // Automatically detect available AI models if user has saved tokens or backend .env keys
+      const hasAnyConfiguredToken = Object.values(state.aiKeys).some(v => Boolean((v || '').trim())) ||
+        Object.values(state.backendHealth?.ai_env_configured || {}).some(Boolean);
+      if (hasAnyConfiguredToken) {
+        testAllAiModels(true).catch(() => {});
+      }
+
       await fetchMarketData(state.activeSymbol, 'auto');
       // Sync top 4 benchmark stocks automatically in background
       for (const sym of ['2317', '2454', '0050', '3037']) {

@@ -1,0 +1,47 @@
+{
+  "name": "SYNAPSE TW · 全自動台股交易系統",
+  "short_name": "SYNAPSE TW",
+  "description": "台股即時行情、六模型 AI 動態選模深度解析、量化策略實驗室與模擬/真實下單中控台",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "lang": "zh-Hant",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI 模型深度解析",
+      "short_name": "AI 解析",
+      "url": "./index.html#studio-ai",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "技術分析與量化實驗室",
+      "short_name": "量化策略",
+      "url": "./index.html#studio-strategy",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "台股真實定投回測",
+      "short_name": "定投回測",
+      "url": "./index.html#studio-dca",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

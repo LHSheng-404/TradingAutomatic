@@ -24,3 +24,10 @@ certs/
 Thumbs.db
 .vscode/
 .idea/
+
+# Android APK build outputs
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/app/src/main/assets/
+mobile/android/local.properties
+

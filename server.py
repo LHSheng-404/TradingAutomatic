@@ -20,6 +20,7 @@ import json
 import os
 import re
 import secrets
+import socket
 import sqlite3
 import sys
 import time
@@ -336,10 +337,81 @@ app.add_middleware(
 
 
 @app.get("/", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
 async def serve_frontend():
     if INDEX_HTML.exists():
         return FileResponse(INDEX_HTML)
     return JSONResponse({"status": "ok", "message": "SYNAPSE TW Backend Running"})
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+async def serve_manifest():
+    p = ASSET_DIR / "manifest.webmanifest"
+    if p.exists():
+        return FileResponse(p, media_type="application/manifest+json")
+    raise HTTPException(status_code=404, detail="manifest.webmanifest not found")
+
+
+@app.get("/sw.js", include_in_schema=False)
+async def serve_service_worker():
+    p = ASSET_DIR / "sw.js"
+    if p.exists():
+        return FileResponse(p, media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
+    raise HTTPException(status_code=404, detail="sw.js not found")
+
+
+@app.get("/icons/{filename}", include_in_schema=False)
+async def serve_pwa_icon(filename: str):
+    safe = Path(filename).name
+    p = ASSET_DIR / "icons" / safe
+    if p.exists() and p.is_file():
+        return FileResponse(p, media_type="image/png")
+    raise HTTPException(status_code=404, detail="icon not found")
+
+
+def _detect_lan_ips() -> list[str]:
+    ips: list[str] = []
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            if ip and not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except Exception:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if ip and not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except Exception:
+        pass
+    return ips
+
+
+@app.get("/api/v1/mobile/info")
+async def get_mobile_access_info(request: Request):
+    host_hdr = request.headers.get("host", "")
+    port = int(os.getenv("SYNAPSE_ACTIVE_PORT", os.getenv("PORT", "8000")))
+    if ":" in host_hdr:
+        try:
+            port = int(host_hdr.rsplit(":", 1)[-1])
+        except ValueError:
+            pass
+    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme or "http"
+    lan_ips = _detect_lan_ips()
+    lan_urls = [f"http://{ip}:{port}" for ip in lan_ips]
+    primary_url = lan_urls[0] if lan_urls else f"{scheme}://{host_hdr or f'127.0.0.1:{port}'}"
+    return {
+        "ok": True,
+        "version": "v3.4.0",
+        "port": port,
+        "lan_ips": lan_ips,
+        "lan_urls": lan_urls,
+        "primary_mobile_url": primary_url,
+        "pwa_ready": (ASSET_DIR / "manifest.webmanifest").exists() and (ASSET_DIR / "sw.js").exists(),
+        "bind_host": os.getenv("SYNAPSE_BIND_HOST", os.getenv("HOST", "0.0.0.0")),
+    }
 
 
 @app.get("/api/v1/health")
@@ -1204,13 +1276,15 @@ async def _call_single_ai(
             key = req.api_keys.get("gemini") or os.getenv("GEMINI_API_KEY", "")
             if not key:
                 return {"model": "gemini", "connected": False, "error": "尚未設定 Google Gemini API Key"}
-            primary_gem = opts.get("gemini_model") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+            primary_gem = (opts.get("gemini_model") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")).strip()
+            if primary_gem.startswith("models/"):
+                primary_gem = primary_gem[7:]
             gem_candidates = [primary_gem] + ([m for m in ("gemini-2.0-flash",) if m != primary_gem])
             used_name = primary_gem
             status, body = 0, {}
-            for gm in gem_candidates:
+            for idx, gm in enumerate(gem_candidates):
                 used_name = gm
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gm}:generateContent?key={urllib.parse.quote(key)}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{urllib.parse.quote(gm, safe='.-_')}:generateContent?key={urllib.parse.quote(key)}"
                 status, body = await http_json(
                     url,
                     method="POST",
@@ -1222,8 +1296,11 @@ async def _call_single_ai(
                 )
                 if status == 200 and isinstance(body, dict) and (body.get("candidates") or []):
                     break
+                # Only fallback if first candidate returned 404/400 (model unavailable)
+                if idx == 0 and status not in (400, 404):
+                    break
             if status != 200 or not isinstance(body, dict) or not (body.get("candidates") or []):
-                return {"model": "gemini", "connected": False, "error": f"Gemini HTTP {status}"}
+                return {"model": "gemini", "connected": False, "error": f"Gemini HTTP {status} ({used_name})"}
             parts = ((body["candidates"][0].get("content") or {}).get("parts") or [])
             # Prefer non-thought text parts (Gemini 2.5 thinking models may emit thought parts first)
             non_thought = [str(p.get("text") or "") for p in parts if p.get("text") and not p.get("thought")]
@@ -1233,7 +1310,7 @@ async def _call_single_ai(
             key = req.api_keys.get("claude") or os.getenv("ANTHROPIC_API_KEY", "")
             if not key:
                 return {"model": "claude", "connected": False, "error": "尚未設定 Anthropic Claude API Key"}
-            used_name = opts.get("claude_model") or os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+            used_name = (opts.get("claude_model") or os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")).strip()
             status, body = await http_json(
                 "https://api.anthropic.com/v1/messages",
                 method="POST",
@@ -1250,27 +1327,30 @@ async def _call_single_ai(
                 timeout=26.0,
             )
             if status != 200:
-                return {"model": "claude", "connected": False, "error": f"Claude HTTP {status}"}
+                return {"model": "claude", "connected": False, "error": f"Claude HTTP {status} ({used_name})"}
             text = body["content"][0]["text"]
 
         elif model_id == "chatgpt":
             key = req.api_keys.get("chatgpt") or os.getenv("OPENAI_API_KEY", "")
             if not key:
                 return {"model": "chatgpt", "connected": False, "error": "尚未設定 OpenAI ChatGPT API Key"}
-            used_name = opts.get("chatgpt_model") or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+            used_name = (opts.get("chatgpt_model") or os.getenv("OPENAI_MODEL", "gpt-4o-mini")).strip()
+            oai_payload: dict[str, Any] = {
+                "model": used_name,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            # OpenAI o1/o3/o4 reasoning models reject custom temperature
+            if not used_name.lower().startswith(("o1", "o3", "o4")):
+                oai_payload["temperature"] = 0.2
             status, body = await http_json(
                 "https://api.openai.com/v1/chat/completions",
                 method="POST",
                 headers={"Authorization": f"Bearer {key}"},
-                json_body={
-                    "model": used_name,
-                    "temperature": 0.2,
-                    "messages": [{"role": "user", "content": prompt}],
-                },
+                json_body=oai_payload,
                 timeout=26.0,
             )
             if status != 200:
-                return {"model": "chatgpt", "connected": False, "error": f"OpenAI HTTP {status}"}
+                return {"model": "chatgpt", "connected": False, "error": f"OpenAI HTTP {status} ({used_name})"}
             text = body["choices"][0]["message"]["content"]
 
         else:
@@ -1295,6 +1375,62 @@ async def _call_single_ai(
             "latency_ms": round((time.perf_counter() - t0) * 1000),
             "error": redact_secrets(str(exc), list((req.api_keys or {}).values()))[:140],
         }
+
+
+def _filter_and_sort_ai_models(mid: str, raw_models: list[str]) -> list[str]:
+    """Filter non-chat utility models and sort flagship/latest analysis models first."""
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for raw in raw_models:
+        m = str(raw or "").strip()
+        if mid == "gemini" and m.startswith("models/"):
+            m = m[7:]
+        if not m or m in seen:
+            continue
+        low = m.lower()
+        if mid == "groq":
+            if any(x in low for x in ("whisper", "tts", "playai", "prompt-guard", "llama-guard", "safeguard")):
+                continue
+        elif mid == "gemini":
+            if not ("gemini" in low or "gemma" in low):
+                continue
+            if any(x in low for x in ("embedding", "imagen", "veo", "aqa", "tts", "audio", "robotics", "computer-use")):
+                continue
+        elif mid == "chatgpt":
+            if not any(low.startswith(p) for p in ("gpt-", "o1", "o3", "o4", "chatgpt-")):
+                continue
+            if any(x in low for x in ("realtime", "audio", "transcribe", "tts", "image", "instruct", "embed", "search-preview", "diarize", "codex-mini")):
+                continue
+        elif mid == "grok":
+            if any(x in low for x in ("image", "embed", "tts", "whisper")):
+                continue
+        elif mid == "claude":
+            if not low.startswith("claude"):
+                continue
+        seen.add(m)
+        cleaned.append(m)
+
+    priority_rules: dict[str, list[str]] = {
+        "gemini": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+        "chatgpt": ["gpt-4.1", "gpt-4o", "o4-mini", "o3-mini", "o3", "gpt-4o-mini", "gpt-4.1-mini"],
+        "claude": ["claude-sonnet-4", "claude-opus-4", "claude-3-7-sonnet", "claude-3-5-sonnet", "claude-3-5-haiku"],
+        "grok": ["grok-4", "grok-3-mini", "grok-3", "grok-2"],
+        "groq": ["llama-3.3-70b", "deepseek-r1", "qwen", "llama-3.1-8b"],
+    }
+    prefs = priority_rules.get(mid, [])
+
+    def _rank(name: str) -> tuple[int, int, str]:
+        low = name.lower()
+        for idx, pat in enumerate(prefs):
+            if low == pat:
+                return (0, idx, low)
+            if low.startswith(pat):
+                return (1, idx, low)
+        return (2, 99, low)
+
+    if mid == "ollama":
+        return cleaned
+    return sorted(cleaned, key=_rank)
 
 
 @app.get("/api/v1/ai/ollama-models")
@@ -1336,13 +1472,8 @@ async def list_groq_models(api_key: str = ""):
             timeout=8.0,
         )
         if status == 200 and isinstance(body, dict):
-            models = sorted(
-                [
-                    m.get("id")
-                    for m in (body.get("data") or [])
-                    if m.get("id") and "whisper" not in str(m.get("id")).lower()
-                ]
-            )
+            raw = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
+            models = _filter_and_sort_ai_models("groq", raw)
             return {"ok": True, "models": models}
         return {"ok": False, "models": [], "error": f"Groq HTTP {status}"}
     except Exception as exc:
@@ -1400,20 +1531,26 @@ async def _test_single_ai_connection(
         if mid == "groq":
             use_key = key or os.getenv("GROQ_API_KEY", "").strip()
             if not use_key:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入 Groq API Key"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入 Groq API Key"}
             base = os.getenv("GROQ_API_BASE", "https://api.groq.com/openai/v1").rstrip("/")
             st, body = await http_json(f"{base}/models", headers={"Authorization": f"Bearer {use_key}"}, timeout=8.0)
             lat = round((time.perf_counter() - t0) * 1000)
             if st == 200 and isinstance(body, dict):
-                models = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
-                return {"ok": True, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"Groq 驗證成功（可用 {len(models)} 個模型）"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": _err_msg(st, body, use_key)}
+                raw = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
+                models = _filter_and_sort_ai_models("groq", raw)
+                return {
+                    "ok": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"Groq 驗證成功（偵測到 {len(models)} 個可用分析模型）",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": _err_msg(st, body, use_key)}
 
         if mid == "ollama":
             base_url = (opts.get("ollama_url") or os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")).strip().rstrip("/")
             target_model = (opts.get("ollama_model") or os.getenv("OLLAMA_MODEL", "qwen2.5:14b")).strip()
             if not base_url:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入地端 Ollama 網址"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入地端 Ollama 網址"}
             st, body = await http_json(f"{base_url}/api/tags", timeout=5.0)
             models: list[str] = []
             if st == 200 and isinstance(body, dict):
@@ -1427,73 +1564,115 @@ async def _test_single_ai_connection(
             if st == 200:
                 matched = any(m == target_model or m.startswith(target_model + ":") for m in models) if target_model else bool(models)
                 if matched:
-                    return {"ok": True, "warning": False, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"Ollama 連線成功，模型 {target_model} 已就緒（共 {len(models)} 個）"}
-                return {"ok": True, "warning": True, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"Ollama 服務在線（共 {len(models)} 個模型），但尚未找到 {target_model}"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": f"無法連線至 {base_url}（請確認本機已啟動 ollama serve）"}
+                    return {
+                        "ok": True, "warning": False, "model": mid, "latency_ms": lat,
+                        "models": models, "models_count": len(models),
+                        "recommended_model": target_model if target_model in models else (models[0] if models else ""),
+                        "message": f"Ollama 連線成功，模型 {target_model} 已就緒（共 {len(models)} 個）",
+                    }
+                return {
+                    "ok": True, "warning": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"Ollama 服務在線（共 {len(models)} 個模型），已更新清單供選擇",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": f"無法連線至 {base_url}（請確認本機已啟動 ollama serve）"}
 
         if mid == "grok":
             use_key = key or os.getenv("XAI_API_KEY", "").strip()
             if not use_key:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入 xAI Grok API Key"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入 xAI Grok API Key"}
             base = os.getenv("XAI_API_BASE", "https://api.x.ai/v1").rstrip("/")
             st, body = await http_json(f"{base}/models", headers={"Authorization": f"Bearer {use_key}"}, timeout=8.0)
             lat = round((time.perf_counter() - t0) * 1000)
             if st == 200 and isinstance(body, dict):
-                models = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
-                return {"ok": True, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"xAI Grok 驗證成功（可用 {len(models)} 個模型）"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": _err_msg(st, body, use_key)}
+                raw = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
+                models = _filter_and_sort_ai_models("grok", raw)
+                return {
+                    "ok": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"xAI Grok 驗證成功（偵測到 {len(models)} 個可用模型）",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": _err_msg(st, body, use_key)}
 
         if mid == "gemini":
             use_key = key or os.getenv("GEMINI_API_KEY", "").strip()
             if not use_key:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入 Google Gemini API Key"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入 Google Gemini API Key"}
             base = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta").rstrip("/")
-            st, body = await http_json(f"{base}/models?key={urllib.parse.quote(use_key)}&pageSize=5", timeout=8.0)
+            st, body = await http_json(f"{base}/models?key={urllib.parse.quote(use_key)}&pageSize=100", timeout=9.0)
             lat = round((time.perf_counter() - t0) * 1000)
             if st == 200 and isinstance(body, dict) and isinstance(body.get("models"), list):
-                return {"ok": True, "model": mid, "latency_ms": lat, "models_count": len(body["models"]), "message": "Google Gemini API Token 驗證成功"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": _err_msg(st, body, use_key)}
+                raw = [
+                    m.get("name", "")
+                    for m in body["models"]
+                    if isinstance(m, dict)
+                    and "generateContent" in (m.get("supportedGenerationMethods") or ["generateContent"])
+                ]
+                models = _filter_and_sort_ai_models("gemini", raw)
+                return {
+                    "ok": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"Google Gemini 驗證成功（偵測到 {len(models)} 個可用分析模型）",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": _err_msg(st, body, use_key)}
 
         if mid == "claude":
             use_key = key or os.getenv("ANTHROPIC_API_KEY", "").strip()
             if not use_key:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入 Anthropic Claude API Key"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入 Anthropic Claude API Key"}
             base = os.getenv("ANTHROPIC_API_BASE", "https://api.anthropic.com/v1").rstrip("/")
             st, body = await http_json(
-                f"{base}/models",
+                f"{base}/models?limit=100",
                 headers={"x-api-key": use_key, "anthropic-version": "2023-06-01"},
                 timeout=8.0,
             )
             lat = round((time.perf_counter() - t0) * 1000)
             if st == 200 and isinstance(body, dict):
-                models = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
-                return {"ok": True, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"Anthropic Claude 驗證成功（可用 {len(models)} 個模型）"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": _err_msg(st, body, use_key)}
+                raw = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
+                models = _filter_and_sort_ai_models("claude", raw)
+                return {
+                    "ok": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"Anthropic Claude 驗證成功（偵測到 {len(models)} 個可用模型）",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": _err_msg(st, body, use_key)}
 
         if mid == "chatgpt":
             use_key = key or os.getenv("OPENAI_API_KEY", "").strip()
             if not use_key:
-                return {"ok": False, "model": mid, "latency_ms": 0, "message": "尚未輸入 OpenAI ChatGPT API Key"}
+                return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": "尚未輸入 OpenAI ChatGPT API Key"}
             base = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
             st, body = await http_json(f"{base}/models", headers={"Authorization": f"Bearer {use_key}"}, timeout=8.0)
             lat = round((time.perf_counter() - t0) * 1000)
             if st == 200 and isinstance(body, dict):
-                models = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
-                return {"ok": True, "model": mid, "latency_ms": lat, "models_count": len(models), "message": f"OpenAI ChatGPT 驗證成功（可用 {len(models)} 個模型）"}
-            return {"ok": False, "model": mid, "latency_ms": lat, "message": _err_msg(st, body, use_key)}
+                raw = [m.get("id") for m in (body.get("data") or []) if m.get("id")]
+                models = _filter_and_sort_ai_models("chatgpt", raw)
+                return {
+                    "ok": True, "model": mid, "latency_ms": lat,
+                    "models": models, "models_count": len(models),
+                    "recommended_model": models[0] if models else "",
+                    "message": f"OpenAI ChatGPT 驗證成功（偵測到 {len(models)} 個可用分析模型）",
+                }
+            return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": _err_msg(st, body, use_key)}
 
-        return {"ok": False, "model": mid, "latency_ms": 0, "message": f"不支援的模型：{mid}"}
+        return {"ok": False, "model": mid, "latency_ms": 0, "models": [], "message": f"不支援的模型：{mid}"}
     except Exception as exc:
         lat = round((time.perf_counter() - t0) * 1000)
-        return {"ok": False, "model": mid, "latency_ms": lat, "message": redact_secrets(str(exc), [key])[:140]}
+        return {"ok": False, "model": mid, "latency_ms": lat, "models": [], "message": redact_secrets(str(exc), [key])[:140]}
 
 
 @app.post("/api/v1/ai/test-connection")
+@app.post("/api/v1/ai/models")
 async def test_single_ai_endpoint(req: AITestRequest):
     return await _test_single_ai_connection(req.model, req.api_key, req.model_options)
 
 
 @app.post("/api/v1/ai/test-all")
+@app.post("/api/v1/ai/discover-models")
 async def test_all_ai_endpoints(req: AITestAllRequest):
     results = await asyncio.gather(
         *(

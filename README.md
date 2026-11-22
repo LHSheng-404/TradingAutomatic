@@ -66,12 +66,13 @@
 
 ![量化策略實驗室 30 支策略排行與風險指標](docs/screenshots/quant_lab_modal.png)
 
-### 5. AI 六模型深度解析 & Ollama 地端模型工作室（支援自訂分析焦點多股整合 ＋ Token 即時測試）
-> 整合 **Groq 極速雲端 API**（支援線上載入可用模型）與 **Ollama 地端模型**（支援自動偵測本機已安裝模型及 LM Studio / vLLM 相容端點），與 Grok、Gemini、Claude、ChatGPT 組成六模型矩陣。
-> - **彈性自訂分析焦點（不再鎖定 2330）**：在「自訂分析焦點」直接輸入多檔台股代號（如 `分析 6213、2368、3037、3189`）或策略主題，系統會自動偵測代號並即時平行抓取所有標的的**真實日線報價、中文股名、單日漲跌與 RSI** 進行整合比較，並提供「自動偵測焦點標的 / 全自選股組合 / 純自訂焦點 / 僅主畫面標的」四種模式。
-> - **Token 即時測試**：每個模型輸入欄右側皆內建「測試」按鈕與即時驗證徽章，執行深度解析時直接讀取最新輸入之金鑰與模型設定。
+### 5. 多模型 AI 深度解析 & 自動偵測選模中心（載入 Token → 偵測可用模型 → 供選分析模型）
+> 整合 **Groq 極速雲端 API**、**Ollama 地端模型**、**Gemini**、**ChatGPT (OpenAI)**、**Claude (Anthropic)**、**Grok Bot (xAI)** 六大引擎：
+> - **載入 AI Token 自動偵測可用模型**：支援貼上 Token 即時自動偵測，或透過「**匯入 Token / .env**」一次載入 `.env`／`JSON` 金鑰檔，零推論費呼叫各家模型清單端點，自動過濾並依最新旗艦排序填入每家獨立下拉選單（如 `gemini-2.5-pro`、`gpt-4.1`、`o4-mini`、`claude-sonnet-4`、`llama-3.3-70b-versatile`）。
+> - **供選分析模型選擇器**：上方提供互動式模型勾選列，可自由指定參與深度解析的引擎與版本，或一鍵點擊「**僅選已驗證可用**」只跑已連通模型。
+> - **彈性自訂分析焦點（不再鎖定 2330）**：在「自訂分析焦點」直接輸入多檔台股代號（如 `分析 6213、2368、3037、3189`）或策略主題，自動即時平行抓取所有標的的真實日線報價、中文股名、單日漲跌與 RSI 進行整合比較。
 
-![AI 六模型與 Ollama 地端工作室](docs/screenshots/ai_six_models_modal.png)
+![AI 六模型自動偵測選模與多股深度解析](docs/screenshots/ai_six_models_modal.png)
 
 ### 6. 對帳單交易復盤（支援 PDF 含密碼 / XLSX / CSV / JSON 匯入與退佣試算）
 > 支援券商對帳單匯入、手續費折數（預設 `2.8` 折，可修改，最低 `6` 折）預估退佣計算、交易健康度評分、五維能力雷達圖與一鍵送交 AI 復盤。
@@ -84,56 +85,67 @@
 ![台股真實定投回測彈窗](docs/screenshots/dca_backtest_modal.png)
 
 ### 8. LINE Bot & Telegram 自動綁定通知中心（僅填 Bot Token・免填 Chat ID）
-> **Telegram Bot 零門檻安全串接**：畫面僅需貼上 `Bot Token`（免填 Chat ID），後端即以 Encrypt-then-MAC 加密存檔並遮罩顯示，自動產生一次性 `/start <setup_code>` 防搶先設定碼；建立者私訊 Bot 傳送該指令後，系統透過 `getUpdates` 自動取存 `owner_chat_id` 並令設定碼失效，後續交易警示自動以 HTML 格式推播至建立者。
+> **Telegram Bot 零門檻安全串接**：畫面僅需貼上 `Bot Token`（免填 Chat ID），後端即以 Encrypt-then-MAC 加密存檔並遮罩顯示，自動產生一次性 `/start <setup_code>` 防搶先設定碼；建立者私訊 Bot 傳送該指令後，系統透過 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效，後續交易警示自動以 HTML 格式推播至建立者。
 
 ![Telegram 等待建立者傳送 /start 驗證](docs/screenshots/tg_awaiting_start.png)
 ![LINE Bot 與 Telegram 已綁定通知中心](docs/screenshots/notify_line_tg.png)
 
-### 9. RWD 行動裝置自適應介面（390px 零水平溢出）
-> 手機解析度下交握拓撲與卡片自動自適應排版，零水平溢出。
+### 9. 手機版獨立執行介面（Android APK × iOS/Android PWA × 底部導覽列 × 區網直連）
+> 專為手機操作最佳化：內建固定底部五頁籤導覽列（`行情` · `下單` · `AI 選模` · `量化策略` · `手機安裝`）、安全區適配（`safe-area-inset`）、防 iOS 自動縮放輸入欄與全螢幕行動彈窗，零水平溢出。
 
 <p align="center">
-  <img src="docs/screenshots/mobile_rwd.png" alt="行動版 RWD 介面" width="320" />
+  <img src="docs/screenshots/mobile_app_view.png" alt="手機版 App 安裝與操作介面" width="320" />
+  <img src="docs/screenshots/mobile_rwd.png" alt="行動版 RWD 看盤主畫面" width="320" />
 </p>
 
 ---
 
-## 核心功能（v3.3.1）
+## 核心功能（v3.4.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
-| **2. 六模型 AI（彈性自訂焦點整合 ＋ Groq / Ollama ＋ Token 測試）** | 整合 **Groq 極速雲端**、**Ollama / LM Studio 地端模型** 與 **Grok / Gemini / Claude / ChatGPT**；支援透過「自訂分析焦點」自動偵測多檔台股（如 `6213、2368、3037、3189`）即時抓取真實報價整合比較或純主題研判，不再鎖定主畫面個股；各模型皆附即時 Token 測試按鈕。 |
-| **3. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
-| **4. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
-| **5. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
-| **6. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測、量化策略實驗室與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
-| **7. 對帳單交易復盤 & 台股真實定投回測** | 支援多選匯入 PDF（含密碼解鎖）/ XLSX / CSV / JSON 對帳單復盤與退佣試算；並提供 FinMind 真實歷史股價＋除權息配股定投回測查詢，嚴禁猜測假數據。 |
-| **8. TradingView × LINE Bot × SIM/LIVE 切換** | 內嵌 TradingView 進階線圖與帳號／雲端 Layout 綁定、Pine Script v5 Webhook；LINE Bot 條列股票代號＋中文名稱；支援 SIM 模擬盤與永豐金 Shioaji LIVE 實盤安全切換與緊急熔斷。 |
+| **1. AI Token 自動偵測可用模型 ＋ 供選分析模型** | 貼上 API Token 或匯入 `.env`／`JSON` 金鑰檔後，系統自動呼叫各家輕量 `/models` 端點（零推論費），自動過濾並更新 **Gemini、ChatGPT、Claude、Grok、Groq、Ollama** 六大下拉清單；使用者可自由挑選具體模型版本並勾選參與分析的模型（支援一鍵「僅選已驗證可用」），結合自訂分析焦點多檔即時整合比較。 |
+| **2. 手機版可執行（Android APK / iOS & Android PWA / 區網 / Termux）** | 提供四種零門檻手機執行方式：① **Android 獨立 APK**（內建本機 HTTP 資源與白名單安全代理，免開電腦即可抓真實報價與呼叫全部雲端 AI）；② **iOS / Android PWA**（支援「加入主畫面」全螢幕 App 與 Service Worker 離線外殼）；③ **電腦 `--lan` 區網直連**（同 Wi-Fi 手機共用電腦端 Ollama 與 Shioaji）；④ **Android Termux 完整本機後端腳本**。 |
+| **3. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
+| **4. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
+| **5. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
+| **6. 雙向資料交握視覺化 & 選單彈窗架構** | 60fps Canvas 雙向 `SYN → ACK` 封包、旋轉交握環與節點檢視器；所有進階模組整合至頂部「**功能選單 ▾**」彈窗切換，保持主介面簡潔清爽。 |
+| **7. 手續費折數全域連動** | 預設 **`2.8` 折**，可於下單票、復盤彈窗、定投回測、量化策略實驗室與設定中自由修改，最低優惠上限 **`6.0` 折**（超過自動校驗），即時套用至所有手續費與退佣計算。 |
+| **8. 對帳單交易復盤 & 台股真實定投回測** | 支援多選匯入 PDF（含密碼解鎖）/ XLSX / CSV / JSON 對帳單復盤與退佣試算；並提供 FinMind 真實歷史股價＋除權息配股定投回測查詢，嚴禁猜測假數據。 |
+| **9. TradingView × LINE Bot × SIM/LIVE 切換** | 內嵌 TradingView 進階線圖與帳號／雲端 Layout 綁定、Pine Script v5 Webhook；LINE Bot 條列股票代號＋中文名稱；支援 SIM 模擬盤與永豐金 Shioaji LIVE 實盤安全切換與緊急熔斷。 |
 
 ---
 
-## 快速開始（支援直接執行與一鍵打包）
+## 快速開始（電腦版 ＋ 手機版直接執行）
 
-### 方式一：直接下載 GitHub Release 執行（最簡單、免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.3.1`：
+### 方式一：直接下載 GitHub Release 執行（免裝 Python · 含手機 Android APK）
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.4.0`：
 
+- **Android 手機（獨立安裝執行檔 APK）**：
+  - 下載 `SYNAPSE-TW-v3.4.0-android.apk` 直接於 Android 手機安裝開啟（內建本機資源與安全代理，無需電腦即可即時看盤、自動偵測 AI 模型與執行深度分析；亦可綁定電腦區網或雲端後端）。
+- **iPhone / iPad / Android（免裝檔 PWA 手機 App）**：
+  - 手機瀏覽器開啟 **[線上 PWA 網頁版](https://lhsheng-404.github.io/TradingAutomatic/)**（或同 Wi-Fi 電腦區網網址），iPhone Safari 點「分享 ↑ → 加入主畫面」、Android Chrome 點「安裝應用程式」，即可全螢幕 App 執行。
+- **Android Termux（零電腦於手機本機執行完整 Python 後端）**：
+  ```bash
+  git clone https://github.com/LHSheng-404/TradingAutomatic.git && cd TradingAutomatic
+  chmod +x mobile/termux-start.sh && ./mobile/termux-start.sh
+  ```
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SYNAPSE-TW-v3.3.1-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器。
+  - 下載 `SYNAPSE-TW-v3.4.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器並顯示同 Wi-Fi 手機區網連線網址。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.3.1-macos-arm64
-  ./SYNAPSE-TW-v3.3.1-macos-arm64
+  chmod +x SYNAPSE-TW-v3.4.0-macos-arm64
+  ./SYNAPSE-TW-v3.4.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SYNAPSE-TW-v3.3.1-linux-x64
-  ./SYNAPSE-TW-v3.3.1-linux-x64
+  chmod +x SYNAPSE-TW-v3.4.0-linux-x64
+  ./SYNAPSE-TW-v3.4.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SYNAPSE-TW-v3.3.1-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SYNAPSE-TW-v3.4.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
-啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`（如欲不開啟瀏覽器或自訂埠號，可加參數 `--port 8080 --no-browser`）。
+啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`，同時於終端機顯示同 Wi-Fi 手機區網位址 `http://<區網IP>:8000`（如欲僅限本機存取可加 `--local-only`，或自訂 `--port 8080 --no-browser`）。
 
 ---
 

@@ -57,3 +57,48 @@ jobs:
             dist/SYNAPSE-TW-*-macos-*
             dist/SYNAPSE-TW-*-portable.zip
             dist/SYNAPSE-TW-*-portable.tar.gz
+
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Stage Web & PWA assets into Android APK
+        shell: bash
+        run: |
+          mkdir -p mobile/android/app/src/main/assets/icons
+          cp index.html mobile/android/app/src/main/assets/index.html
+          cp manifest.webmanifest mobile/android/app/src/main/assets/manifest.webmanifest
+          cp sw.js mobile/android/app/src/main/assets/sw.js
+          cp -r icons/* mobile/android/app/src/main/assets/icons/
+
+      - name: Build installable Android APK
+        working-directory: mobile/android
+        run: gradle assembleRelease --no-daemon
+
+      - name: Package & Upload Android APK Asset
+        shell: bash
+        run: |
+          VERSION="${{ inputs.version || github.ref_name }}"
+          mkdir -p dist
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk "dist/SYNAPSE-TW-${VERSION}-android.apk"
+          ls -lh "dist/SYNAPSE-TW-${VERSION}-android.apk"
+
+      - name: Upload Android APK to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            dist/SYNAPSE-TW-*-android.apk

@@ -94,7 +94,7 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         initiatedByFrame frame: WKFrameInfo,
         completionHandler: @escaping () -> Void
     ) {
-        let alert = UIAlertController(title: "SYNAPSE TW", message: message, preferredStyle: .alert)
+        let alert = UIAlertController(title: "SHL TW", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "確定", style: .default) { _ in completionHandler() })
         present(alert, animated: true)
     }
@@ -105,7 +105,7 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         initiatedByFrame frame: WKFrameInfo,
         completionHandler: @escaping (Bool) -> Void
     ) {
-        let alert = UIAlertController(title: "SYNAPSE TW", message: message, preferredStyle: .alert)
+        let alert = UIAlertController(title: "SHL TW", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(false) })
         alert.addAction(UIAlertAction(title: "確認", style: .default) { _ in completionHandler(true) })
         present(alert, animated: true)
@@ -118,7 +118,7 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         initiatedByFrame frame: WKFrameInfo,
         completionHandler: @escaping (String?) -> Void
     ) {
-        let alert = UIAlertController(title: "SYNAPSE TW", message: prompt, preferredStyle: .alert)
+        let alert = UIAlertController(title: "SHL TW", message: prompt, preferredStyle: .alert)
         alert.addTextField { tf in tf.text = defaultText }
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(nil) })
         alert.addAction(UIAlertAction(title: "確定", style: .default) { _ in

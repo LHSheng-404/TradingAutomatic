@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh-Hant</string>
     <key>CFBundleDisplayName</key>
-    <string>SYNAPSE TW</string>
+    <string>SHL TW</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -28,7 +28,7 @@
         <true/>
     </dict>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>SYNAPSE TW 需要區域網路權限，以便連線至同 Wi-Fi 電腦端後端與地端 Ollama AI 模型。</string>
+    <string>SHL TW 需要區域網路權限，以便連線至同 Wi-Fi 電腦端後端與地端 Ollama AI 模型。</string>
     <key>UIStatusBarStyle</key>
     <string>UIStatusBarStyleLightContent</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>

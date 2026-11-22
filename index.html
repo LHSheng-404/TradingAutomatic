@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="SYNAPSE TW" />
+  <meta name="apple-mobile-web-app-title" content="SHL TW" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png" />
   <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png" />
   <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120.png" />
-  <title>SYNAPSE TW · 全自動台股交易系統（TradingView × Yahoo/FinMind × 多模型 AI × 模擬/實盤）</title>
+  <title>SHL TW · 全自動台股交易系統（TradingView × Yahoo/FinMind × 多模型 AI × 模擬/實盤）</title>
   <meta name="description" content="全自動台股交易系統網頁版：雙向資料交流交握拓撲、TradingView 進階線圖與帳號串接、Yahoo/FinMind 真實台股行情、Grok/Gemini/Claude/ChatGPT 多模型 AI 解析、LINE Bot/Telegram 條列推播與模擬/真實下單切換。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -2099,7 +2099,7 @@
         <div class="brand-mark">TW</div>
         <div class="brand-text">
           <h1 class="brand-title">
-            SYNAPSE TW
+            SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
           </h1>
           <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 六模型 AI (Groq / Ollama) × 多 Agent 自動買賣</p>
@@ -2253,7 +2253,7 @@
           <div class="card-title-group">
             <h2 class="card-title">
               <i data-lucide="network" style="width:16px;height:16px;color:var(--accent);"></i>
-              SYNAPSE 雙向資料交流交握網路
+              SHL TW 雙向資料交流交握網路
               <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
             </h2>
             <p class="card-subtitle">即時視覺化呈現 Yahoo / FinMind 真實行情、TradingView 訊號、AI 六模型 &amp; 多 Agent、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
@@ -4098,7 +4098,7 @@
           FINMIND: { status: '待命', latencyMs: null, lastMsg: '等待同步 FinMind v4' },
           TRADINGVIEW: { status: '已連線', latencyMs: 18, lastMsg: 'TradingView 進階線圖已就緒' },
           SCANNER: { status: '待命', latencyMs: null, lastMsg: '等待真實 K 線掃描' },
-          CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SYNAPSE 多 Agent 風控與路由中樞就緒' },
+          CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SHL TW 多 Agent 風控與路由中樞就緒' },
           AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Groq / Ollama / Grok / Gemini / Claude / ChatGPT 待命' },
           LINE_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 LINE Token' },
           TG_BOT: { status: '未綁定', latencyMs: null, lastMsg: '僅需輸入 Bot Token 並傳送 /start 完成自動綁定' },
@@ -4482,7 +4482,7 @@
 
         nodes.push({
           id: 'CORE',
-          label: 'SYNAPSE',
+          label: 'SHL TW',
           sub: state.killSwitch ? 'HALTED' : `${state.envMode} HUB`,
           color: state.killSwitch ? '#dc2626' : (state.envMode === 'LIVE' ? '#ea580c' : '#2563eb'),
           side: 'core',
@@ -4526,7 +4526,7 @@
 
         nodes.push({
           id: 'CORE',
-          label: 'SYNAPSE',
+          label: 'SHL TW',
           sub: state.killSwitch ? '已熔斷鎖定' : (state.envMode === 'LIVE' ? '實盤交握中樞' : '模擬交握中樞'),
           color: state.killSwitch ? '#dc2626' : (state.envMode === 'LIVE' ? '#ea580c' : '#2563eb'),
           side: 'core',
@@ -4763,7 +4763,7 @@
         ctx.textAlign = 'center';
         ctx.fillStyle = '#0f172a';
         ctx.font = `800 ${compact ? 10 : 12}px Inter, sans-serif`;
-        ctx.fillText('SYNAPSE', core.x, core.y - 2);
+        ctx.fillText('SHL TW', core.x, core.y - 2);
         ctx.fillStyle = core.color;
         ctx.font = `700 ${compact ? 8.5 : 9.5}px "Noto Sans TC", Inter, sans-serif`;
         ctx.fillText(core.sub, core.x, core.y + 13);
@@ -4824,7 +4824,7 @@
       const box = document.getElementById('handshakeInspector');
       if (!box) return;
       const id = state.handshake.selectedNodeId || 'CORE';
-      const node = handshakeNodes.find(n => n.id === id) || { id: 'CORE', label: 'SYNAPSE 交握核心', sub: '雙向協議路由與風控中樞', color: '#2563eb' };
+      const node = handshakeNodes.find(n => n.id === id) || { id: 'CORE', label: 'SHL TW 交握核心', sub: '雙向協議路由與風控中樞', color: '#2563eb' };
       const st = state.handshake.nodeStats[id] || { status: '運作中', latencyMs: null, lastMsg: '--' };
 
       const actionMap = {
@@ -7246,7 +7246,7 @@
       const signals = state.watchlist.map(w => evaluateStockSignal(w.symbol));
       const synced = signals.filter(s => s.price !== null);
       const lines = [
-        '【SYNAPSE TW 台股自動交易訊號彙整】',
+        '【SHL TW 台股自動交易訊號彙整】',
         `時間：${nowTwDateTime()} (UTC+8)`,
         `模式：${state.envMode === 'LIVE' ? '真實下單 LIVE' : '模擬下單 SIM'} ｜ 已同步：${synced.length}/${signals.length} 檔`,
         '━━━━━━━━━━━━━━━━━━━━'
@@ -7272,7 +7272,7 @@
     function formatSingleSignalMessage(sig) {
       const chgStr = sig.changePct !== null ? (sig.changePct >= 0 ? `+${sig.changePct}%` : `${sig.changePct}%`) : '--';
       return [
-        '【SYNAPSE TW 單筆台股訊號通知】',
+        '【SHL TW 單筆台股訊號通知】',
         `時間：${nowTwDateTime()} (UTC+8)`,
         '━━━━━━━━━━━━━━━━━━━━',
         `• 股票代號：${sig.symbol}`,
@@ -7291,7 +7291,7 @@
       const pack = state.aiResults[state.activeSymbol];
       if (!pack) return '';
       const lines = [
-        '【SYNAPSE TW · AI 六模型共識報告】',
+        '【SHL TW · AI 六模型共識報告】',
         `標的：${meta.symbol} ${meta.name}`,
         `真實現價：${fmtNum(pack.price, 2)}（來源：${pack.source}）`,
         `時間：${pack.timestamp} (UTC+8)`,
@@ -7874,7 +7874,7 @@
 
       if (document.getElementById('orderAutoNotify')?.checked && (state.notifier.lineEnabled || state.notifier.tgEnabled)) {
         const receipt = [
-          `【SYNAPSE TW ${state.envMode === 'LIVE' ? '實盤' : '模擬'}成交回報】`,
+          `【SHL TW ${state.envMode === 'LIVE' ? '實盤' : '模擬'}成交回報】`,
           `時間：${nowTwDateTime()} (UTC+8)`,
           '━━━━━━━━━━━━━━━━━━━━',
           `• 股票代號：${meta.symbol}`,
@@ -8126,7 +8126,7 @@
       const meta = getStockMeta(state.activeSymbol);
       const endpoint = (getApiBase() || 'https://你的雲端網址.onrender.com') + '/api/v1/webhook/tv';
       box.textContent = `//@version=5
-strategy("SYNAPSE TW Auto ${meta.symbol} ${meta.name}", overlay=true)
+strategy("SHL TW Auto ${meta.symbol} ${meta.name}", overlay=true)
 
 // === 填入您的雲端 Webhook 網址 ===
 // Webhook URL: ${endpoint}
@@ -8297,12 +8297,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       if (isIosNativeAppHost()) {
         if (badge) { badge.className = 'badge badge-down'; badge.textContent = '🍎 iOS App 獨立執行中'; }
-        if (statusEl) statusEl.textContent = '✓ 您正在使用 SYNAPSE TW 原生 Swift iOS App（內建安全代理，免電腦支援即時行情與含 Claude 六大 AI）。';
+        if (statusEl) statusEl.textContent = '✓ 您正在使用 SHL TW 原生 Swift iOS App（內建安全代理，免電腦支援即時行情與含 Claude 六大 AI）。';
         if (btn) btn.style.display = 'none';
         if (iosBar) iosBar.classList.remove('show');
       } else if (isAndroidApkHost()) {
         if (badge) { badge.className = 'badge badge-down'; badge.textContent = 'Android APK 獨立執行中'; }
-        if (statusEl) statusEl.textContent = '✓ 您正在使用 SYNAPSE TW Android 獨立執行檔（內建安全代理與離線介面）。';
+        if (statusEl) statusEl.textContent = '✓ 您正在使用 SHL TW Android 獨立執行檔（內建安全代理與離線介面）。';
         if (btn) btn.style.display = 'none';
         if (iosBar) iosBar.classList.remove('show');
       } else if (isStandalone) {
@@ -8927,7 +8927,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           deferredPwaInstallPrompt.prompt();
           const res = await deferredPwaInstallPrompt.userChoice.catch(() => ({ outcome: 'dismissed' }));
           if (res?.outcome === 'accepted') {
-            showToast('正在安裝 SYNAPSE TW 手機版', '完成後即可直接從手機主畫面全螢幕開啟！', 'success');
+            showToast('正在安裝 SHL TW 手機版', '完成後即可直接從手機主畫面全螢幕開啟！', 'success');
           }
           deferredPwaInstallPrompt = null;
           updatePwaInstallStatusUI();
@@ -9651,7 +9651,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         pnl: (g.buy > 0 && g.sell > 0) ? (g.sell - g.buy - Math.round(g.fees * (state.feeDiscount / 10)) - g.tax) : 0
       }));
       state.reviewData = rows;
-      state.reviewSource = `SYNAPSE 本系統成交紀錄 (${rows.length} 筆)`;
+      state.reviewSource = `SHL TW 本系統成交紀錄 (${rows.length} 筆)`;
       persistState();
       populateReviewSymbolFilter();
       renderReviewDashboard();
@@ -11634,12 +11634,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (!this.D) { showToast('尚無回測資料', '請先載入真實日線並執行 30 支策略回測。', 'warn'); return; }
           const slim = m => m ? Object.fromEntries(Object.entries(m).filter(([k]) => k !== 'uw')) : null;
           const rep = {
-            tool: 'SYNAPSE TW v01 量化策略實驗室', generatedAt: new Date().toISOString(),
+            tool: 'SHL TW v01 量化策略實驗室', generatedAt: new Date().toISOString(),
             stock: { code: this.code, name: this.name, source: this.src, from: this.D.d[0], to: this.D.d[this.D.d.length - 1], bars: this.D.c.length },
             config: CFG, buyHold: slim(this.bh.ev.m),
             strategies: this.results.map(r => ({ id: r.s.id, name: r.s.name, category: QCORE.CATS[r.s.cat][0], lastSignal: r.res.lastSignal, params: r.res.params, metrics: slim(r.ev.m), trades: r.ev.t, outOfSample: slim(r.ev.oos) }))
           };
-          this.dl(`SYNAPSE_量化回測報告_${this.code}.json`, JSON.stringify(rep, null, 2), 'application/json');
+          this.dl(`SHL_TW_量化回測報告_${this.code}.json`, JSON.stringify(rep, null, 2), 'application/json');
         },
         md(t) { return esc(t).replace(/^#{1,4}\s*(.+)$/gm, '<h4>$1</h4>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^\s*[-*•]\s+(.+)$/gm, '<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>').replace(/\n{2,}/g, '<br>').replace(/\n/g, ' '); },
         async callGroqOrFallback(prompt, fallbackHtml) {
@@ -11763,7 +11763,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       window.addEventListener('appinstalled', () => {
         deferredPwaInstallPrompt = null;
         updatePwaInstallStatusUI();
-        showToast('SYNAPSE TW 已安裝至手機主畫面', '現在可從桌面直接全螢幕開啟操作！', 'success');
+        showToast('SHL TW 已安裝至手機主畫面', '現在可從桌面直接全螢幕開啟操作！', 'success');
       });
       if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});

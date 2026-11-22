@@ -1,6 +1,6 @@
 {
-  "name": "SYNAPSE TW · 全自動台股交易系統",
-  "short_name": "SYNAPSE TW",
+  "name": "SHL TW · 全自動台股交易系統",
+  "short_name": "SHL TW",
   "description": "台股即時行情、六模型 AI 動態選模深度解析、量化策略實驗室與模擬/真實下單中控台",
   "start_url": "./index.html",
   "scope": "./",

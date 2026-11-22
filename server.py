@@ -249,6 +249,19 @@ def init_db() -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS encrypted_vault_sync (
+            vault_id TEXT PRIMARY KEY,
+            auth_hash TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 1,
+            device_name TEXT DEFAULT '',
+            updated_at TEXT NOT NULL,
+            updated_ts_ms INTEGER NOT NULL
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -324,8 +337,8 @@ def tw_now_str() -> str:
 # FastAPI App
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="SYNAPSE TW — 全自動台股交易系統 API",
-    version="3.0.0",
+    title="SHL TW — 全自動台股交易系統 API",
+    version="3.6.0",
 )
 
 app.add_middleware(
@@ -334,6 +347,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def optional_access_password_guard(request: Request, call_next):
+    """
+    若伺服器環境變數設定了 SHL_ACCESS_PASSWORD，則所有 /api/v1/* 私有端點
+    （/api/v1/health 與 /api/v1/webhook/tv 除外）皆須於標頭攜帶相符的
+    X-SHL-Access-Token，防止同區網或外部陌生人存取。
+    """
+    required_pw = os.getenv("SHL_ACCESS_PASSWORD", "").strip()
+    path = request.url.path or ""
+    if (
+        required_pw
+        and request.method != "OPTIONS"
+        and path.startswith("/api/v1/")
+        and path not in ("/api/v1/health", "/api/v1/webhook/tv")
+    ):
+        provided = (request.headers.get("x-shl-access-token") or "").strip()
+        if not provided or not hmac.compare_digest(provided, required_pw):
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "detail": "此伺服器已啟用存取密碼保護，請於「安全保險箱 & 多設備連動」填入正確的後端存取密碼（X-SHL-Access-Token）。",
+                    "access_password_required": True,
+                },
+            )
+    return await call_next(request)
 
 
 @app.get("/", include_in_schema=False)
@@ -423,6 +463,9 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
+        "version": "3.6.0",
+        "e2ee_sync_supported": True,
+        "access_password_required": bool(os.getenv("SHL_ACCESS_PASSWORD", "").strip()),
         "server_time": tw_now_str(),
         "trading_mode": SERVER_TRADING_MODE,
         "kill_switch": KILL_SWITCH_ACTIVE,
@@ -3212,6 +3255,151 @@ async def receive_tv_webhook(payload: TVWebhookPayload, request: Request):
     )
     res = await place_order(order_req)
     return {"status": "executed", "signal_id": payload.signal_id, "order": res}
+
+
+# ---------------------------------------------------------------------------
+# 6. Zero-Knowledge End-to-End Encrypted Multi-Device Vault Sync
+#    (Server NEVER sees plaintext API keys, tokens, holdings, or master password)
+# ---------------------------------------------------------------------------
+_VAULT_ID_RE = re.compile(r"^[a-fA-F0-9_-]{16,128}$")
+_AUTH_HASH_RE = re.compile(r"^[a-fA-F0-9]{32,128}$")
+
+
+class VaultPushRequest(BaseModel):
+    vault_id: str = Field(..., min_length=16, max_length=128)
+    auth_hash: str = Field(..., min_length=32, max_length=128)
+    payload_json: str = Field(..., min_length=2, max_length=4_000_000)
+    device_name: str = Field(default="Unknown Device", max_length=120)
+    base_revision: Optional[int] = None
+
+
+class VaultPullRequest(BaseModel):
+    vault_id: str = Field(..., min_length=16, max_length=128)
+    auth_hash: str = Field(..., min_length=32, max_length=128)
+
+
+def _validate_vault_creds(vault_id: str, auth_hash: str) -> tuple[str, str]:
+    vid = vault_id.strip()
+    ah = auth_hash.strip().lower()
+    if not _VAULT_ID_RE.match(vid):
+        raise HTTPException(status_code=400, detail="無效的同步空間識別碼（vault_id）")
+    if not _AUTH_HASH_RE.match(ah):
+        raise HTTPException(status_code=400, detail="無效的同步驗證雜湊（auth_hash）")
+    return vid, ah
+
+
+@app.post("/api/v1/vault/push")
+async def vault_e2ee_push(req: VaultPushRequest):
+    vid, ah = _validate_vault_creds(req.vault_id, req.auth_hash)
+    # Verify payload is valid JSON containing ciphertext envelope (zero-knowledge: never decrypt)
+    try:
+        parsed = json.loads(req.payload_json)
+        if not isinstance(parsed, dict) or not parsed.get("ct") or not parsed.get("iv"):
+            raise ValueError("missing encrypted fields")
+    except Exception:
+        raise HTTPException(status_code=400, detail="同步資料必須為有效的 AES-256-GCM 加密封包")
+
+    now_iso = tw_now_str()
+    now_ms = int(time.time() * 1000)
+    dev_name = (req.device_name or "Unknown Device").strip()[:120]
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT auth_hash, revision FROM encrypted_vault_sync WHERE vault_id = ?",
+            (vid,),
+        ).fetchone()
+        if row is not None:
+            if not hmac.compare_digest(str(row["auth_hash"]), ah):
+                raise HTTPException(status_code=403, detail="同步驗證金鑰不符，拒絕寫入此加密保險箱空間")
+            new_rev = int(row["revision"]) + 1
+            conn.execute(
+                """
+                UPDATE encrypted_vault_sync
+                SET payload_json = ?, revision = ?, device_name = ?, updated_at = ?, updated_ts_ms = ?
+                WHERE vault_id = ?
+                """,
+                (req.payload_json, new_rev, dev_name, now_iso, now_ms, vid),
+            )
+        else:
+            new_rev = 1
+            conn.execute(
+                """
+                INSERT INTO encrypted_vault_sync
+                (vault_id, auth_hash, payload_json, revision, device_name, updated_at, updated_ts_ms)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (vid, ah, req.payload_json, new_rev, dev_name, now_iso, now_ms),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "revision": new_rev,
+        "device_name": dev_name,
+        "updated_at": now_iso,
+        "updated_ts_ms": now_ms,
+    }
+
+
+@app.post("/api/v1/vault/pull")
+async def vault_e2ee_pull(req: VaultPullRequest):
+    vid, ah = _validate_vault_creds(req.vault_id, req.auth_hash)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT auth_hash, payload_json, revision, device_name, updated_at, updated_ts_ms FROM encrypted_vault_sync WHERE vault_id = ?",
+            (vid,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return {"ok": True, "exists": False, "revision": 0}
+
+    if not hmac.compare_digest(str(row["auth_hash"]), ah):
+        raise HTTPException(status_code=403, detail="同步驗證金鑰不符，無法讀取此加密保險箱")
+
+    return {
+        "ok": True,
+        "exists": True,
+        "revision": int(row["revision"]),
+        "payload_json": str(row["payload_json"]),
+        "device_name": str(row["device_name"] or ""),
+        "updated_at": str(row["updated_at"]),
+        "updated_ts_ms": int(row["updated_ts_ms"]),
+    }
+
+
+@app.post("/api/v1/vault/meta")
+async def vault_e2ee_meta(req: VaultPullRequest):
+    vid, ah = _validate_vault_creds(req.vault_id, req.auth_hash)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT auth_hash, revision, device_name, updated_at, updated_ts_ms FROM encrypted_vault_sync WHERE vault_id = ?",
+            (vid,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return {"ok": True, "exists": False, "revision": 0}
+    if not hmac.compare_digest(str(row["auth_hash"]), ah):
+        raise HTTPException(status_code=403, detail="同步驗證金鑰不符")
+    return {
+        "ok": True,
+        "exists": True,
+        "revision": int(row["revision"]),
+        "device_name": str(row["device_name"] or ""),
+        "updated_at": str(row["updated_at"]),
+        "updated_ts_ms": int(row["updated_ts_ms"]),
+    }
 
 
 if __name__ == "__main__":

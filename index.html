@@ -2089,6 +2089,111 @@
     .ios-install-bar.show {
       display: flex;
     }
+
+    /* ==================== DEVICE SANDBOX VAULT LOCK OVERLAY ==================== */
+    .vault-lock-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: calc(20px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+      background: radial-gradient(circle at 20% 15%, rgba(37, 99, 235, 0.28), transparent 45%),
+                  radial-gradient(circle at 80% 85%, rgba(15, 118, 110, 0.25), transparent 45%),
+                  rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      color: #f8fafc;
+    }
+    .vault-lock-overlay.active {
+      display: flex;
+    }
+    .vault-lock-card {
+      width: 100%;
+      max-width: 410px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 22px;
+      padding: 26px 22px 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: center;
+    }
+    .vault-lock-shield {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 26px rgba(37, 99, 235, 0.42);
+      color: #ffffff;
+    }
+    .vault-lock-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(30, 41, 59, 0.92);
+      color: #f8fafc;
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 0.08em;
+      outline: none;
+    }
+    .vault-lock-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+    }
+    .vault-lock-btn-bio {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 13px;
+      border: 1px solid rgba(56, 189, 248, 0.55);
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: #ffffff;
+      font-size: 14.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+    }
+    .vault-lock-btn-bio:hover {
+      filter: brightness(1.07);
+    }
+    .vault-lock-btn-pw {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .vault-lock-btn-pw:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .vault-lock-err {
+      min-height: 18px;
+      font-size: 12px;
+      color: #fca5a5;
+      font-weight: 600;
+    }
+    .vault-pill-locked {
+      background: #ecfdf5 !important;
+      color: #065f46 !important;
+      border-color: #6ee7b7 !important;
+    }
   </style>
 </head>
 <body>
@@ -2172,10 +2277,27 @@
               <div class="menu-item-desc">iOS / Android 加入主畫面 · Android APK · 同 Wi-Fi 直連</div>
             </div>
           </button>
+          <button type="button" class="menu-item" data-open-studio="vault">
+            <span class="menu-item-icon" style="background:#ecfdf5;color:#047857;"><i data-lucide="shield-check" style="width:15px;height:15px;"></i></span>
+            <div>
+              <div class="menu-item-title">安全保險箱 &amp; 多設備連動 (Face ID / E2EE)</div>
+              <div class="menu-item-desc">本機沙盒 AES-256 加密 · Face ID / 手機密碼解鎖 · 跨裝置加密同步</div>
+            </div>
+          </button>
         </div>
       </div>
 
       <div class="top-controls">
+        <!-- Quick Device Sandbox Vault Pill -->
+        <button id="btnHeaderVaultPill" type="button" class="btn btn-sm" title="開啟本機沙盒保險箱（Face ID / 密碼驗證）與多設備端對端加密連動">
+          <i data-lucide="shield" style="width:12px;height:12px;"></i>
+          <span id="headerVaultLabel">安全保險箱</span>
+        </button>
+        <button id="btnQuickLockNow" type="button" class="btn btn-sm" style="display:none;" title="立即上鎖本機沙盒保險箱">
+          <i data-lucide="lock" style="width:12px;height:12px;"></i>
+          <span>鎖定</span>
+        </button>
+
         <!-- Quick Fee Discount Pill -->
         <button id="btnHeaderFeePill" type="button" class="btn btn-sm" title="點擊修改手續費折數（預設 2.8 折，最低 6 折）">
           <i data-lucide="percent" style="width:12px;height:12px;color:var(--amber);"></i>
@@ -2661,6 +2783,9 @@
           </button>
           <button type="button" class="studio-pill" data-studio-pane="mobile">
             <i data-lucide="smartphone" style="width:13px;height:13px;"></i>手機版 App
+          </button>
+          <button type="button" class="studio-pill" data-studio-pane="vault">
+            <i data-lucide="shield-check" style="width:13px;height:13px;"></i>安全保險箱 &amp; 連動
           </button>
         </div>
         <button type="button" class="btn btn-sm" data-close-modal="featureStudioModal">
@@ -3829,11 +3954,200 @@
                     <button id="btnSaveMobileBackendQuick" type="button" class="btn btn-sm btn-dark">儲存並連線測試</button>
                   </div>
                 </div>
+
+                <div style="padding:12px;border-radius:12px;background:#ecfdf5;border:1px solid #a7f3d0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <div style="font-size:12px;color:#065f46;line-height:1.5;">
+                    <strong>🛡️ 裝置沙盒加密保險箱（Face ID / 手機密碼）與多設備連動</strong><br />
+                    保護本機 API Token 與持倉，支援 iPhone ↔ Mac / iPad 端對端加密同步。
+                  </div>
+                  <button type="button" class="btn btn-sm btn-primary" data-open-studio="vault">開啟安全與連動</button>
+                </div>
               </div>
             </article>
           </div>
         </div>
 
+        <!-- ========== PANE 9: DEVICE SANDBOX VAULT & E2EE MULTI-DEVICE SYNC ========== -->
+        <div id="studio-vault" class="studio-pane">
+          <div class="grid-2">
+            <!-- Left Card: Device-Sandboxed AES-256-GCM Vault + Face ID / Touch ID / Device Passcode -->
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">🛡️ 裝置沙盒安全保險箱（密碼 + Face ID / 手機解鎖密碼）</h2>
+                  <p class="card-subtitle">以 AES-256-GCM 加密儲存在本機沙盒，只有此裝置人員通過驗證才能讀取 API Token 與持倉</p>
+                </div>
+                <span id="vaultStatusBadge" class="badge badge-gray">未啟用加密鎖</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);color:#f8fafc;display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:13.5px;">🔒 沙盒隔離與存取保護狀態</strong>
+                    <span id="vaultBioEnvBadge" class="badge" style="background:rgba(56,189,248,0.2);color:#e0f2fe;border:1px solid rgba(56,189,248,0.4);">偵測裝置驗證能力中...</span>
+                  </div>
+                  <div id="vaultSecuritySummary" style="font-size:11.5px;color:#cbd5e1;line-height:1.55;">
+                    啟用後，系統會以 PBKDF2-SHA256 (210,000 次迭代) + AES-256-GCM 將所有 AI Token、FinMind/LINE 憑證、自選股、模擬部位與量化參數加密封存，並立即清除本機明文資料。
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div>
+                    <label class="field-label" for="vaultDeviceNameInput">本裝置名稱（連動辨識用）</label>
+                    <input id="vaultDeviceNameInput" type="text" class="input" placeholder="例如：我的 iPhone 16 Pro" maxlength="60" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="vaultAutoLockSelect">離開 App 自動上鎖時間</label>
+                    <select id="vaultAutoLockSelect" class="select">
+                      <option value="0">切出 App 立即上鎖（最安全）</option>
+                      <option value="1">離開 1 分鐘後自動上鎖</option>
+                      <option value="5" selected>離開 5 分鐘後自動上鎖</option>
+                      <option value="15">離開 15 分鐘後自動上鎖</option>
+                      <option value="-1">僅重新開啟頁面時上鎖</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div>
+                    <label class="field-label" for="vaultPasswordInput">保險箱主密碼 / PIN（至少 4 碼）</label>
+                    <input id="vaultPasswordInput" type="password" class="input mono" autocomplete="new-password" placeholder="輸入加密主密碼或數字 PIN" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="vaultPasswordConfirmInput">再次確認主密碼</label>
+                    <input id="vaultPasswordConfirmInput" type="password" class="input mono" autocomplete="new-password" placeholder="再次輸入以確認" />
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button id="btnVaultEnableOrUpdate" type="button" class="btn btn-primary">
+                    <i data-lucide="shield-check" style="width:14px;height:14px;"></i>啟用／更新本機沙盒加密
+                  </button>
+                  <button id="btnVaultBindBiometric" type="button" class="btn btn-teal">
+                    <i data-lucide="scan-face" style="width:14px;height:14px;"></i><span id="btnVaultBioLabel">綁定 Face ID / 手機解鎖密碼</span>
+                  </button>
+                  <button id="btnVaultLockNow" type="button" class="btn btn-dark" style="display:none;">
+                    <i data-lucide="lock" style="width:14px;height:14px;"></i>立即上鎖測試
+                  </button>
+                  <button id="btnVaultDisable" type="button" class="btn btn-sm" style="display:none;color:#b91c1c;border-color:#fecaca;">
+                    停用加密鎖
+                  </button>
+                </div>
+
+                <div id="vaultBioExplainBox" style="padding:10px 12px;border-radius:10px;background:var(--bg-subtle);border:1px solid var(--border);font-size:11.5px;color:var(--ink-2);line-height:1.55;">
+                  • <strong>iPhone 原生 App (IPA)</strong>：直接呼叫 Apple <span class="mono">LAContext</span>（Face ID / Touch ID，自動支援備援手機解鎖密碼）並將解鎖金鑰鎖在 <span class="mono">iOS Keychain (ThisDeviceOnly)</span> 單機沙盒。<br />
+                  • <strong>iPhone Safari PWA (HTTPS) / Mac / PC</strong>：透過 WebAuthn 平台驗證器呼叫 Face ID / Touch ID / 裝置密碼，搭配瀏覽器 IndexedDB 不可匯出金鑰（<span class="mono">extractable: false</span>）保護。
+                </div>
+              </div>
+            </article>
+
+            <!-- Right Card: Zero-Knowledge E2EE Multi-Device Sync -->
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">🔄 多設備端對端加密連動（iPhone ↔ Mac / iPad / PC）</h2>
+                  <p class="card-subtitle">全程在裝置本機以主密碼加密後才傳送，伺服器與傳輸通道完全無法解密您的 Token 與帳務</p>
+                </div>
+                <span id="vaultSyncStatusBadge" class="badge badge-blue">零知識 E2EE</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                <!-- Method A: Serverless Apple AirDrop / iCloud Drive / Universal Clipboard -->
+                <div style="padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12.5px;color:#1e3a8a;">🍎 方式一：免伺服器快速連動（AirDrop / iCloud Drive / Apple 通用剪貼簿）</strong>
+                    <span class="badge badge-blue">PWA &amp; 離線皆可用</span>
+                  </div>
+                  <div style="font-size:11.5px;color:#1e40af;line-height:1.5;">
+                    適合 iPhone 搭配 Mac / iPad 使用：匯出的 <span class="mono">.shlvault</span> 檔或同步碼已以主密碼加密，可直接透過 <strong>AirDrop</strong>、<strong>儲存至個人 iCloud 檔案</strong> 或 <strong>Apple 通用剪貼簿</strong> 傳到另一台裝置解密套用。
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="btnVaultExportFile" type="button" class="btn btn-sm btn-primary">
+                      <i data-lucide="share-2" style="width:13px;height:13px;"></i>匯出 / AirDrop 加密同步檔
+                    </button>
+                    <button id="btnVaultImportFile" type="button" class="btn btn-sm btn-dark">
+                      <i data-lucide="folder-down" style="width:13px;height:13px;"></i>匯入加密同步檔
+                    </button>
+                    <input id="vaultImportFileInput" type="file" accept=".shlvault,.json,application/json" style="display:none;" />
+                    <button id="btnVaultCopyCode" type="button" class="btn btn-sm">
+                      <i data-lucide="copy" style="width:13px;height:13px;"></i>複製加密同步碼
+                    </button>
+                    <button id="btnVaultPasteCode" type="button" class="btn btn-sm">
+                      <i data-lucide="clipboard-paste" style="width:13px;height:13px;"></i>貼上同步碼還原
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Method B: Private Backend E2EE Auto-Sync -->
+                <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12.5px;color:var(--ink-1);">☁️ 方式二：個人私有後端自動加密連動（選用）</strong>
+                    <span id="vaultBackendSyncNote" class="badge badge-gray">尚未連線後端</span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--ink-2);line-height:1.5;">
+                    在多台設備填寫相同的「<strong>後端網址</strong> + <strong>同步空間代號</strong> + <strong>保險箱主密碼</strong>」，即可自動推送與拉取加密狀態；後端僅存放密文，零明文洩漏。
+                  </div>
+                  <div class="form-grid-2">
+                    <div>
+                      <label class="field-label" for="vaultSyncSpaceInput">個人同步空間代號（多裝置須一致）</label>
+                      <input id="vaultSyncSpaceInput" type="text" class="input mono" placeholder="例如：my-iphone-mac-desk" maxlength="64" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="vaultBackendAccessInput">後端存取密碼（選填，對應 SHL_ACCESS_PASSWORD）</label>
+                      <input id="vaultBackendAccessInput" type="password" class="input mono" placeholder="若後端有設存取密碼請填此" />
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button id="btnVaultSyncPush" type="button" class="btn btn-sm btn-primary">
+                      <i data-lucide="cloud-upload" style="width:13px;height:13px;"></i>加密推送至後端
+                    </button>
+                    <button id="btnVaultSyncPull" type="button" class="btn btn-sm btn-teal">
+                      <i data-lucide="cloud-download" style="width:13px;height:13px;"></i>從後端拉取解密
+                    </button>
+                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);cursor:pointer;margin-left:auto;">
+                      <input id="vaultAutoSyncToggle" type="checkbox" />
+                      變更時自動加密同步
+                    </label>
+                  </div>
+                  <div id="vaultSyncLastMeta" class="mono" style="font-size:11px;color:var(--ink-3);">
+                    同步紀錄：尚未執行跨裝置同步
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-Screen Device Sandbox Vault Lock Screen (Face ID / Touch ID / Phone Passcode / Vault Password) -->
+  <div id="shlVaultLockOverlay" class="vault-lock-overlay" role="dialog" aria-modal="true" aria-labelledby="vaultLockTitle">
+    <div class="vault-lock-card">
+      <div class="vault-lock-shield">
+        <i data-lucide="shield-check" style="width:30px;height:30px;"></i>
+      </div>
+      <div>
+        <h2 id="vaultLockTitle" style="margin:0;font-size:20px;font-weight:800;letter-spacing:0.02em;">SHL TW 沙盒保險箱已鎖定</h2>
+        <p id="vaultLockSubtitle" style="margin:6px 0 0;font-size:12.5px;color:#94a3b8;line-height:1.5;">
+          您的 API Token 與交易設定已於本機沙盒 AES-256 加密保護，請驗證身分後取用。
+        </p>
+      </div>
+
+      <button id="btnUnlockBiometric" type="button" class="vault-lock-btn-bio" style="display:none;">
+        <i data-lucide="scan-face" style="width:18px;height:18px;"></i>
+        <span id="btnUnlockBioText">使用 Face ID / 手機解鎖密碼解鎖</span>
+      </button>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input id="vaultUnlockPasswordInput" type="password" class="vault-lock-input mono" autocomplete="current-password" placeholder="輸入保險箱密碼 / PIN" />
+        <button id="btnUnlockPassword" type="button" class="vault-lock-btn-pw">以保險箱密碼解鎖</button>
+      </div>
+
+      <div id="vaultLockError" class="vault-lock-err"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding-top:4px;border-top:1px solid rgba(148,163,184,0.15);">
+        <span id="vaultLockDeviceBadge">本機沙盒隔離中</span>
+        <button id="btnVaultEmergencyReset" type="button" style="background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;text-decoration:underline;">忘記密碼？重置本機保險箱</button>
       </div>
     </div>
   </div>
@@ -3856,9 +4170,9 @@
       <i data-lucide="bot" style="width:18px;height:18px;"></i>
       <span>量化策略</span>
     </button>
-    <button type="button" class="mobile-nav-btn" data-mobile-nav="mobile">
-      <i data-lucide="smartphone" style="width:18px;height:18px;"></i>
-      <span>iOS/安裝</span>
+    <button type="button" class="mobile-nav-btn" data-mobile-nav="vault">
+      <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+      <span>安全/連動</span>
     </button>
   </nav>
 
@@ -4106,50 +4420,142 @@
         }
       }
     };
+    state.backendAccessToken = '';
+
+    // Automatically attach X-SHL-Access-Token on calls to our private FastAPI backend when configured
+    (function installShlBackendAuthFetch() {
+      const origFetch = window.fetch.bind(window);
+      window.fetch = function(input, init) {
+        try {
+          const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+          const token = (state.backendAccessToken || '').trim();
+          const backendBase = (state.backendUrl || '').trim().replace(/\/+$/, '');
+          const isApiCall = url && (
+            url.includes('/api/v1/') &&
+            (url.startsWith('/') || url.startsWith(window.location.origin) || (backendBase && url.startsWith(backendBase)))
+          );
+          if (token && isApiCall) {
+            const nextInit = Object.assign({}, init || {});
+            const headers = new Headers(nextInit.headers || (typeof input !== 'string' && input && input.headers ? input.headers : undefined));
+            if (!headers.has('X-SHL-Access-Token')) {
+              headers.set('X-SHL-Access-Token', token);
+            }
+            nextInit.headers = headers;
+            return origFetch(input, nextInit);
+          }
+        } catch (e) {}
+        return origFetch(input, init);
+      };
+    })();
+
+    function collectPersistableSnapshot() {
+      const qlab = {};
+      ['synapse_qlab_cfg', 'synapse_qlab_params', 'synapse_qlab_batch', 'synapse_qlab_log'].forEach(k => {
+        try {
+          const v = localStorage.getItem(k);
+          if (v !== null) qlab[k] = v;
+        } catch (e) {}
+      });
+      return {
+        watchlist: state.watchlist,
+        simCashTwd: state.simCashTwd,
+        feeDiscount: state.feeDiscount,
+        positions: state.positions,
+        orders: state.orders.slice(0, 120),
+        reviewData: state.reviewData.slice(0, 600),
+        reviewSource: state.reviewSource,
+        dcaPortfolio: state.dcaPortfolio,
+        dcaPhases: state.dcaPhases,
+        backendUrl: state.backendUrl,
+        backendAccessToken: state.backendAccessToken || '',
+        finmindToken: state.finmindToken,
+        tvAccount: state.tvAccount,
+        aiKeys: state.aiKeys,
+        modelOptions: state.modelOptions,
+        detectedModels: state.detectedModels,
+        selectedAiModels: state.selectedAiModels,
+        techSwitches: state.techSwitches,
+        agentConfig: state.agentConfig,
+        agentLogs: state.agentLogs.slice(0, 40),
+        linkedQuantStrategy: state.linkedQuantStrategy,
+        notifier: {
+          lineEnabled: state.notifier.lineEnabled,
+          lineToken: state.notifier.lineToken,
+          lineTargetId: state.notifier.lineTargetId,
+          tgEnabled: state.notifier.tgEnabled,
+          logs: state.notifier.logs.slice(0, 30)
+        },
+        activeSymbol: state.activeSymbol,
+        qlab
+      };
+    }
+
+    function applyPersistedSnapshot(saved) {
+      if (!saved || typeof saved !== 'object') return;
+      if (Array.isArray(saved.watchlist) && saved.watchlist.length > 0) state.watchlist = saved.watchlist;
+      if (typeof saved.simCashTwd === 'number') state.simCashTwd = saved.simCashTwd;
+      if (typeof saved.feeDiscount === 'number') state.feeDiscount = Math.max(0.1, Math.min(6.0, saved.feeDiscount));
+      if (Array.isArray(saved.positions)) state.positions = saved.positions;
+      if (Array.isArray(saved.orders)) state.orders = saved.orders;
+      if (Array.isArray(saved.reviewData)) state.reviewData = saved.reviewData;
+      if (saved.reviewSource) state.reviewSource = saved.reviewSource;
+      if (Array.isArray(saved.dcaPortfolio) && saved.dcaPortfolio.length > 0) state.dcaPortfolio = saved.dcaPortfolio;
+      if (Array.isArray(saved.dcaPhases) && saved.dcaPhases.length > 0) state.dcaPhases = saved.dcaPhases;
+      if (typeof saved.backendUrl === 'string') state.backendUrl = saved.backendUrl;
+      if (typeof saved.backendAccessToken === 'string') state.backendAccessToken = saved.backendAccessToken;
+      if (typeof saved.finmindToken === 'string') state.finmindToken = saved.finmindToken;
+      if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
+      if (saved.aiKeys) Object.assign(state.aiKeys, saved.aiKeys);
+      if (saved.modelOptions) Object.assign(state.modelOptions, saved.modelOptions);
+      if (saved.detectedModels && typeof saved.detectedModels === 'object') {
+        Object.keys(state.detectedModels).forEach(k => {
+          if (Array.isArray(saved.detectedModels[k]) && saved.detectedModels[k].length > 0) {
+            state.detectedModels[k] = saved.detectedModels[k];
+          }
+        });
+      }
+      if (Array.isArray(saved.selectedAiModels) && saved.selectedAiModels.length > 0) {
+        state.selectedAiModels = saved.selectedAiModels;
+      }
+      if (saved.techSwitches) Object.assign(state.techSwitches, saved.techSwitches);
+      if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
+      if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
+      if (saved.linkedQuantStrategy && typeof saved.linkedQuantStrategy === 'object') {
+        state.linkedQuantStrategy = saved.linkedQuantStrategy;
+      }
+      if (saved.notifier) {
+        state.notifier.lineEnabled = Boolean(saved.notifier.lineEnabled);
+        state.notifier.lineToken = String(saved.notifier.lineToken || '');
+        state.notifier.lineTargetId = String(saved.notifier.lineTargetId || '');
+        state.notifier.tgEnabled = Boolean(saved.notifier.tgEnabled);
+        state.notifier.logs = Array.isArray(saved.notifier.logs) ? saved.notifier.logs : [];
+      }
+      if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
+      if (saved.qlab && typeof saved.qlab === 'object') {
+        Object.entries(saved.qlab).forEach(([k, v]) => {
+          try { if (typeof v === 'string') localStorage.setItem(k, v); } catch (e) {}
+        });
+      }
+      if (state.watchlist.length === 0) {
+        state.watchlist = DEFAULT_WATCHLIST.map(x => ({ ...x }));
+      }
+      if (!state.watchlist.some(x => x.symbol === state.activeSymbol)) {
+        state.activeSymbol = state.watchlist[0].symbol;
+      }
+    }
 
     function loadPersistedState() {
+      // If Device Sandbox Vault is enabled, skip plaintext storage until user unlocks via Face ID / Password
+      if (window.SHL_VAULT && window.SHL_VAULT.isEnabled()) {
+        if (state.watchlist.length === 0) {
+          state.watchlist = DEFAULT_WATCHLIST.map(x => ({ ...x }));
+        }
+        return;
+      }
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
-          const saved = JSON.parse(raw);
-          if (Array.isArray(saved.watchlist) && saved.watchlist.length > 0) state.watchlist = saved.watchlist;
-          if (typeof saved.simCashTwd === 'number') state.simCashTwd = saved.simCashTwd;
-          if (typeof saved.feeDiscount === 'number') state.feeDiscount = Math.max(0.1, Math.min(6.0, saved.feeDiscount));
-          if (Array.isArray(saved.positions)) state.positions = saved.positions;
-          if (Array.isArray(saved.orders)) state.orders = saved.orders;
-          if (Array.isArray(saved.reviewData)) state.reviewData = saved.reviewData;
-          if (saved.reviewSource) state.reviewSource = saved.reviewSource;
-          if (Array.isArray(saved.dcaPortfolio) && saved.dcaPortfolio.length > 0) state.dcaPortfolio = saved.dcaPortfolio;
-          if (Array.isArray(saved.dcaPhases) && saved.dcaPhases.length > 0) state.dcaPhases = saved.dcaPhases;
-          if (saved.backendUrl) state.backendUrl = saved.backendUrl;
-          if (saved.finmindToken) state.finmindToken = saved.finmindToken;
-          if (saved.tvAccount) Object.assign(state.tvAccount, saved.tvAccount);
-          if (saved.aiKeys) Object.assign(state.aiKeys, saved.aiKeys);
-          if (saved.modelOptions) Object.assign(state.modelOptions, saved.modelOptions);
-          if (saved.detectedModels && typeof saved.detectedModels === 'object') {
-            Object.keys(state.detectedModels).forEach(k => {
-              if (Array.isArray(saved.detectedModels[k]) && saved.detectedModels[k].length > 0) {
-                state.detectedModels[k] = saved.detectedModels[k];
-              }
-            });
-          }
-          if (Array.isArray(saved.selectedAiModels) && saved.selectedAiModels.length > 0) {
-            state.selectedAiModels = saved.selectedAiModels;
-          }
-          if (saved.techSwitches) Object.assign(state.techSwitches, saved.techSwitches);
-          if (saved.agentConfig) Object.assign(state.agentConfig, saved.agentConfig);
-          if (Array.isArray(saved.agentLogs)) state.agentLogs = saved.agentLogs.slice(0, 40);
-          if (saved.linkedQuantStrategy && typeof saved.linkedQuantStrategy === 'object') {
-            state.linkedQuantStrategy = saved.linkedQuantStrategy;
-          }
-          if (saved.notifier) {
-            state.notifier.lineEnabled = Boolean(saved.notifier.lineEnabled);
-            state.notifier.lineToken = String(saved.notifier.lineToken || '');
-            state.notifier.lineTargetId = String(saved.notifier.lineTargetId || '');
-            state.notifier.tgEnabled = Boolean(saved.notifier.tgEnabled);
-            state.notifier.logs = Array.isArray(saved.notifier.logs) ? saved.notifier.logs : [];
-          }
-          if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
+          applyPersistedSnapshot(JSON.parse(raw));
         }
       } catch (e) {}
 
@@ -4163,36 +4569,13 @@
 
     function persistState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          watchlist: state.watchlist,
-          simCashTwd: state.simCashTwd,
-          feeDiscount: state.feeDiscount,
-          positions: state.positions,
-          orders: state.orders.slice(0, 120),
-          reviewData: state.reviewData.slice(0, 600),
-          reviewSource: state.reviewSource,
-          dcaPortfolio: state.dcaPortfolio,
-          dcaPhases: state.dcaPhases,
-          backendUrl: state.backendUrl,
-          finmindToken: state.finmindToken,
-          tvAccount: state.tvAccount,
-          aiKeys: state.aiKeys,
-          modelOptions: state.modelOptions,
-          detectedModels: state.detectedModels,
-          selectedAiModels: state.selectedAiModels,
-          techSwitches: state.techSwitches,
-          agentConfig: state.agentConfig,
-          agentLogs: state.agentLogs.slice(0, 40),
-          linkedQuantStrategy: state.linkedQuantStrategy,
-          notifier: {
-            lineEnabled: state.notifier.lineEnabled,
-            lineToken: state.notifier.lineToken,
-            lineTargetId: state.notifier.lineTargetId,
-            tgEnabled: state.notifier.tgEnabled,
-            logs: state.notifier.logs.slice(0, 30)
-          },
-          activeSymbol: state.activeSymbol
-        }));
+        const snapshot = collectPersistableSnapshot();
+        if (window.SHL_VAULT && window.SHL_VAULT.isEnabled()) {
+          // Never write plaintext secrets to localStorage when Sandbox Vault is active
+          window.SHL_VAULT.saveEncryptedSnapshot(snapshot);
+          return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
       } catch (e) {}
     }
 
@@ -8278,6 +8661,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderAiPanels();
       } else if (paneId === 'mobile') {
         refreshMobileCenterUI();
+      } else if (paneId === 'vault') {
+        if (window.SHL_VAULT) window.SHL_VAULT.refreshUI();
       }
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
@@ -8916,10 +9301,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             closeModal('featureStudioModal');
             const ticket = document.getElementById('btnSubmitOrder') || document.getElementById('orderPriceInput');
             ticket?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          } else if (target === 'ai' || target === 'strategy' || target === 'mobile') {
+          } else if (target === 'ai' || target === 'strategy' || target === 'mobile' || target === 'vault') {
             openFeatureModal(target);
           }
         });
+      });
+
+      document.getElementById('btnHeaderVaultPill')?.addEventListener('click', () => {
+        openFeatureModal('vault');
+      });
+      document.getElementById('btnQuickLockNow')?.addEventListener('click', () => {
+        if (window.SHL_VAULT) window.SHL_VAULT.lockNow('已手動鎖定本機沙盒保險箱');
       });
 
       document.getElementById('btnInstallPwa')?.addEventListener('click', async () => {
@@ -11711,6 +12103,1064 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     })();
 
     // =========================================================================
+    // 11.5 DEVICE-SANDBOXED ENCRYPTED VAULT (Face ID / Passcode + E2EE SYNC)
+    // =========================================================================
+    window.SHL_VAULT = (function () {
+      const VAULT_KEY = 'shl_tw_vault_v1';
+      const IDB_NAME = 'shl_tw_sandbox_db';
+      const IDB_STORE = 'device_keys';
+      const PBKDF2_ITER = 210000;
+
+      let unlockedPassword = null;
+      let isLocked = false;
+      let hiddenSinceMs = null;
+      let autoSyncTimer = null;
+      let pendingUnlockCallbacks = [];
+      let bioCaps = { available: false, mode: 'none', label: '保險箱密碼' };
+      let saveQueue = Promise.resolve();
+
+      function getDefaultDeviceName() {
+        const ua = navigator.userAgent || '';
+        if (window.__SYNAPSE_IOS_APP__) return /iPad/i.test(ua) ? 'iPad (SHL TW App)' : 'iPhone (SHL TW App)';
+        if (/iPhone/i.test(ua)) return 'iPhone (Safari PWA)';
+        if (/iPad/i.test(ua) || (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1)) return 'iPad (Safari)';
+        if (/Android/i.test(ua)) return 'Android 手機';
+        if (/Mac/i.test(ua)) return 'Mac 電腦';
+        if (/Win/i.test(ua)) return 'Windows 電腦';
+        return '個人裝置';
+      }
+
+      function readMeta() {
+        try {
+          const raw = localStorage.getItem(VAULT_KEY);
+          if (!raw) return null;
+          const obj = JSON.parse(raw);
+          return (obj && typeof obj === 'object') ? obj : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function writeMeta(obj) {
+        localStorage.setItem(VAULT_KEY, JSON.stringify(obj));
+      }
+
+      function isEnabled() {
+        const m = readMeta();
+        return Boolean(m && m.enabled && m.ct && m.iv && m.salt);
+      }
+
+      function isCryptoReady() {
+        return Boolean(window.crypto && window.crypto.subtle);
+      }
+
+      function b64Encode(bytes) {
+        let bin = '';
+        const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        for (let i = 0; i < arr.length; i++) bin += String.fromCharCode(arr[i]);
+        return btoa(bin);
+      }
+
+      function b64Decode(str) {
+        const bin = atob(str);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+
+      function b64UrlEncode(bytes) {
+        return b64Encode(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      function b64UrlDecode(str) {
+        const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4));
+        return b64Decode(str.replace(/-/g, '+').replace(/_/g, '/') + pad);
+      }
+
+      async function sha256Hex(text) {
+        const enc = new TextEncoder().encode(String(text || ''));
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      async function deriveAesKey(password, saltBytes, iterations = PBKDF2_ITER) {
+        const baseKey = await crypto.subtle.importKey(
+          'raw',
+          new TextEncoder().encode(password),
+          { name: 'PBKDF2' },
+          false,
+          ['deriveKey']
+        );
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: saltBytes, iterations, hash: 'SHA-256' },
+          baseKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      }
+
+      async function encryptEnvelope(obj, password) {
+        if (!isCryptoReady()) {
+          throw new Error('目前環境未啟用 Web Crypto（請改用 HTTPS 線上 PWA、localhost 或原生 iOS App）');
+        }
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await deriveAesKey(password, salt, PBKDF2_ITER);
+        const plain = new TextEncoder().encode(JSON.stringify(obj));
+        const ctBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+        return {
+          v: 1,
+          alg: 'AES-256-GCM',
+          kdf: 'PBKDF2-SHA256',
+          iter: PBKDF2_ITER,
+          salt: b64Encode(salt),
+          iv: b64Encode(iv),
+          ct: b64Encode(new Uint8Array(ctBuf)),
+          ts: Date.now()
+        };
+      }
+
+      async function decryptEnvelope(env, password) {
+        if (!isCryptoReady()) {
+          throw new Error('瀏覽器不支援 Web Crypto 解密');
+        }
+        if (!env || !env.salt || !env.iv || !env.ct) {
+          throw new Error('加密封包格式無效');
+        }
+        const salt = b64Decode(env.salt);
+        const iv = b64Decode(env.iv);
+        const ct = b64Decode(env.ct);
+        const iter = Number(env.iter) || PBKDF2_ITER;
+        const key = await deriveAesKey(password, salt, iter);
+        const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+        return JSON.parse(new TextDecoder().decode(plainBuf));
+      }
+
+      // IndexedDB sandbox for non-extractable browser device key
+      function openSandboxIdb() {
+        return new Promise((resolve, reject) => {
+          if (!window.indexedDB) return reject(new Error('IndexedDB unavailable'));
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
+        });
+      }
+
+      async function idbPut(k, val) {
+        const db = await openSandboxIdb();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(val, k);
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+        });
+      }
+
+      async function idbGet(k) {
+        const db = await openSandboxIdb();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).get(k);
+          req.onsuccess = () => { db.close(); resolve(req.result); };
+          req.onerror = () => { db.close(); reject(req.error); };
+        });
+      }
+
+      async function idbClear() {
+        try {
+          const db = await openSandboxIdb();
+          await new Promise((resolve) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).clear();
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => { db.close(); resolve(); };
+          });
+        } catch (e) {}
+      }
+
+      async function detectBiometricCapability() {
+        // Path 1: Native iOS App (LAContext: Face ID / Touch ID / iPhone Passcode + Keychain ThisDeviceOnly)
+        if (window.__SHL_IOS_BRIDGE__ && typeof window.__SHL_IOS_BRIDGE__.canEvaluateAuth === 'function') {
+          try {
+            const res = await window.__SHL_IOS_BRIDGE__.canEvaluateAuth();
+            if (res && res.available) {
+              const label = res.biometryType === 'faceID'
+                ? 'Face ID / 手機解鎖密碼'
+                : (res.biometryType === 'touchID' ? 'Touch ID / 手機解鎖密碼' : 'iPhone 解鎖密碼');
+              bioCaps = { available: true, mode: 'ios_keychain', label };
+              return bioCaps;
+            }
+          } catch (e) {}
+        }
+        // Path 2: iPhone Safari PWA / macOS / Windows / Android WebAuthn Platform Authenticator
+        if (window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && window.isSecureContext) {
+          try {
+            const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            if (ok) {
+              const ua = navigator.userAgent || '';
+              const isApple = /iPhone|iPad|iPod|Mac/i.test(ua);
+              bioCaps = {
+                available: true,
+                mode: 'webauthn_idb',
+                label: isApple ? 'Face ID / Touch ID / 裝置密碼' : '裝置生物辨識 / 解鎖密碼'
+              };
+              return bioCaps;
+            }
+          } catch (e) {}
+        }
+        bioCaps = {
+          available: false,
+          mode: 'none',
+          label: window.isSecureContext ? '此瀏覽器僅支援保險箱密碼' : '需 HTTPS 或 iOS App 才支援 Face ID'
+        };
+        return bioCaps;
+      }
+
+      async function bindBiometric() {
+        const meta = readMeta();
+        if (!meta || !meta.enabled || !unlockedPassword) {
+          showToast('請先啟用本機沙盒加密', '請先設定保險箱主密碼並點擊「啟用／更新本機沙盒加密」。', 'warn');
+          return;
+        }
+        await detectBiometricCapability();
+        if (!bioCaps.available) {
+          showToast(
+            '目前環境不支援生物辨識',
+            window.isSecureContext
+              ? '此裝置瀏覽器未偵測到平台生物辨識器，仍可使用保險箱密碼安全保護。'
+              : '請改從 HTTPS 線上 PWA（GitHub Pages）或原生 iOS App 開啟即可綁定 Face ID / 手機解鎖密碼！',
+            'warn'
+          );
+          return;
+        }
+
+        try {
+          if (bioCaps.mode === 'ios_keychain') {
+            const authRes = await window.__SHL_IOS_BRIDGE__.authenticate('驗證身分以綁定 SHL TW 沙盒保險箱（Face ID / 手機密碼）');
+            if (!authRes || !authRes.ok) {
+              showToast('驗證未完成', authRes?.error || '已取消 Face ID / 手機解鎖密碼驗證', 'warn');
+              return;
+            }
+            const saveRes = await window.__SHL_IOS_BRIDGE__.keychainSet('shl_vault_master', unlockedPassword);
+            if (!saveRes || !saveRes.ok) {
+              throw new Error('寫入 iOS Keychain 失敗');
+            }
+            meta.biometricEnabled = true;
+            meta.biometricMode = 'ios_keychain';
+            writeMeta(meta);
+          } else if (bioCaps.mode === 'webauthn_idb') {
+            const challenge = crypto.getRandomValues(new Uint8Array(32));
+            const userId = crypto.getRandomValues(new Uint8Array(16));
+            const devName = meta.deviceName || getDefaultDeviceName();
+            const cred = await navigator.credentials.create({
+              publicKey: {
+                challenge,
+                rp: { name: 'SHL TW 安全沙盒保險箱', id: window.location.hostname || undefined },
+                user: { id: userId, name: devName, displayName: devName },
+                pubKeyCredParams: [
+                  { type: 'public-key', alg: -7 },
+                  { type: 'public-key', alg: -257 }
+                ],
+                authenticatorSelection: {
+                  authenticatorAttachment: 'platform',
+                  userVerification: 'required',
+                  residentKey: 'preferred'
+                },
+                timeout: 60000,
+                attestation: 'none'
+              }
+            });
+            if (!cred || !cred.rawId) {
+              throw new Error('裝置未回傳平台驗證憑證');
+            }
+            // Store non-extractable device AES key in IndexedDB sandbox to wrap master password
+            const wrapKey = await crypto.subtle.generateKey(
+              { name: 'AES-GCM', length: 256 },
+              false,
+              ['encrypt', 'decrypt']
+            );
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const wrappedBuf = await crypto.subtle.encrypt(
+              { name: 'AES-GCM', iv },
+              wrapKey,
+              new TextEncoder().encode(unlockedPassword)
+            );
+            await idbPut('wrapKey', wrapKey);
+            await idbPut('wrappedMaster', { iv: b64Encode(iv), ct: b64Encode(new Uint8Array(wrappedBuf)) });
+            meta.biometricEnabled = true;
+            meta.biometricMode = 'webauthn_idb';
+            meta.webauthnCredId = b64UrlEncode(new Uint8Array(cred.rawId));
+            writeMeta(meta);
+          }
+
+          refreshUI();
+          showToast('Face ID / 裝置密碼綁定成功', '下次開啟或切回 App 時，可直接以人臉辨識或手機解鎖密碼一鍵解鎖！', 'success');
+        } catch (err) {
+          showToast('綁定未完成', err?.message || String(err), 'error');
+        }
+      }
+
+      async function verifyAndRetrieveBiometricPassword() {
+        const meta = readMeta();
+        if (!meta || !meta.biometricEnabled) {
+          throw new Error('尚未綁定生物辨識');
+        }
+        if (meta.biometricMode === 'ios_keychain' && window.__SHL_IOS_BRIDGE__) {
+          const authRes = await window.__SHL_IOS_BRIDGE__.authenticate('請使用 Face ID 或手機解鎖密碼解鎖 SHL TW 保險箱');
+          if (!authRes || !authRes.ok) {
+            throw new Error(authRes?.error || '身分驗證失敗或已取消');
+          }
+          const kc = await window.__SHL_IOS_BRIDGE__.keychainGet('shl_vault_master');
+          if (!kc || !kc.ok || !kc.value) {
+            throw new Error('iOS Keychain 中找不到金鑰，請先改以保險箱密碼解鎖後重新綁定');
+          }
+          return kc.value;
+        }
+        if (meta.biometricMode === 'webauthn_idb' && window.PublicKeyCredential && meta.webauthnCredId) {
+          const challenge = crypto.getRandomValues(new Uint8Array(32));
+          const assertion = await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              allowCredentials: [{ id: b64UrlDecode(meta.webauthnCredId), type: 'public-key' }],
+              userVerification: 'required',
+              timeout: 60000
+            }
+          });
+          if (!assertion) throw new Error('生物辨識驗證未通過');
+          const wrapKey = await idbGet('wrapKey');
+          const wrapped = await idbGet('wrappedMaster');
+          if (!wrapKey || !wrapped || !wrapped.iv || !wrapped.ct) {
+            throw new Error('本機沙盒金鑰已清除，請改以保險箱密碼解鎖後重新綁定');
+          }
+          const plainBuf = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: b64Decode(wrapped.iv) },
+            wrapKey,
+            b64Decode(wrapped.ct)
+          );
+          return new TextDecoder().decode(plainBuf);
+        }
+        throw new Error('此環境無法使用已綁定的生物辨識方式，請改輸入保險箱密碼');
+      }
+
+      function wipePlaintextFromStorage() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      }
+
+      function scrubSensitiveRuntimeMemory() {
+        Object.keys(state.aiKeys).forEach(k => { state.aiKeys[k] = ''; });
+        state.finmindToken = '';
+        state.backendAccessToken = '';
+        state.notifier.lineToken = '';
+        state.notifier.lineTargetId = '';
+        ['keyGroq', 'keyGrok', 'keyGemini', 'keyClaude', 'keyChatgpt', 'finmindTokenInput', 'lineTokenInput', 'vaultBackendAccessInput'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      }
+
+      function saveEncryptedSnapshot(snapshot) {
+        const meta = readMeta();
+        if (!meta || !meta.enabled) return;
+        if (isLocked || !unlockedPassword) return; // Never overwrite encrypted vault while locked
+        const pw = unlockedPassword;
+        saveQueue = saveQueue.then(async () => {
+          try {
+            const env = await encryptEnvelope(snapshot, pw);
+            const cur = readMeta() || {};
+            const updated = Object.assign({}, cur, {
+              v: 1,
+              enabled: true,
+              salt: env.salt,
+              iv: env.iv,
+              ct: env.ct,
+              iter: env.iter,
+              updatedAt: nowTwDateTime()
+            });
+            writeMeta(updated);
+            wipePlaintextFromStorage();
+            if (updated.autoSync && state.backendDetected) {
+              scheduleAutoPush();
+            }
+          } catch (e) {}
+        });
+      }
+
+      function scheduleAutoPush() {
+        if (autoSyncTimer) clearTimeout(autoSyncTimer);
+        autoSyncTimer = setTimeout(() => {
+          pushToBackend(true).catch(() => {});
+        }, 2500);
+      }
+
+      async function enableOrUpdateVault() {
+        if (!isCryptoReady()) {
+          showToast('需安全加密環境', 'Web Crypto 需要透過 HTTPS（GitHub Pages PWA）、localhost 或原生 iOS App 開啟。', 'error');
+          return;
+        }
+        const pw = (document.getElementById('vaultPasswordInput')?.value || '').trim();
+        const pw2 = (document.getElementById('vaultPasswordConfirmInput')?.value || '').trim();
+        const devName = (document.getElementById('vaultDeviceNameInput')?.value || '').trim() || getDefaultDeviceName();
+        const autoLockMin = Number(document.getElementById('vaultAutoLockSelect')?.value ?? 5);
+        const syncSpace = (document.getElementById('vaultSyncSpaceInput')?.value || '').trim();
+        const backendAcc = (document.getElementById('vaultBackendAccessInput')?.value || '').trim();
+        state.backendAccessToken = backendAcc;
+
+        const existing = readMeta();
+        if (!pw && existing && existing.enabled && unlockedPassword) {
+          // Allow updating deviceName / autoLock / syncSpace / backendAccessToken without changing password
+          existing.deviceName = devName;
+          existing.autoLockMin = autoLockMin;
+          existing.syncSpace = syncSpace;
+          writeMeta(existing);
+          persistState();
+          refreshUI();
+          showToast('安全保險箱設定已更新', `裝置：${devName} · 自動上鎖設定已儲存`, 'success');
+          return;
+        }
+
+        if (pw.length < 4) {
+          showToast('主密碼過短', '請設定至少 4 碼以上的保險箱主密碼或 PIN。', 'warn');
+          return;
+        }
+        if (pw !== pw2) {
+          showToast('兩次密碼不一致', '請確認「保險箱主密碼」與「再次確認主密碼」相同。', 'warn');
+          return;
+        }
+
+        try {
+          const snapshot = collectPersistableSnapshot();
+          const env = await encryptEnvelope(snapshot, pw);
+          const nextMeta = Object.assign({}, existing || {}, {
+            v: 1,
+            enabled: true,
+            deviceId: (existing && existing.deviceId) || ('shl-' + b64UrlEncode(crypto.getRandomValues(new Uint8Array(8)))),
+            deviceName: devName,
+            autoLockMin,
+            syncSpace: syncSpace || (existing && existing.syncSpace) || 'personal-main',
+            autoSync: Boolean(existing && existing.autoSync),
+            lastSyncRev: (existing && existing.lastSyncRev) || 0,
+            lastSyncAt: (existing && existing.lastSyncAt) || '',
+            biometricEnabled: Boolean(existing && existing.biometricEnabled),
+            biometricMode: (existing && existing.biometricMode) || '',
+            webauthnCredId: (existing && existing.webauthnCredId) || '',
+            salt: env.salt,
+            iv: env.iv,
+            ct: env.ct,
+            iter: env.iter,
+            updatedAt: nowTwDateTime()
+          });
+          writeMeta(nextMeta);
+          wipePlaintextFromStorage();
+          unlockedPassword = pw;
+          isLocked = false;
+
+          // If biometric was already bound, update wrapped key with new password
+          if (nextMeta.biometricEnabled) {
+            if (nextMeta.biometricMode === 'ios_keychain' && window.__SHL_IOS_BRIDGE__) {
+              await window.__SHL_IOS_BRIDGE__.keychainSet('shl_vault_master', pw).catch(() => {});
+            } else if (nextMeta.biometricMode === 'webauthn_idb') {
+              try {
+                const wrapKey = await idbGet('wrapKey');
+                if (wrapKey) {
+                  const iv = crypto.getRandomValues(new Uint8Array(12));
+                  const wrappedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrapKey, new TextEncoder().encode(pw));
+                  await idbPut('wrappedMaster', { iv: b64Encode(iv), ct: b64Encode(new Uint8Array(wrappedBuf)) });
+                }
+              } catch (e) {}
+            }
+          }
+
+          const pIn = document.getElementById('vaultPasswordInput');
+          const pIn2 = document.getElementById('vaultPasswordConfirmInput');
+          if (pIn) pIn.value = '';
+          if (pIn2) pIn2.value = '';
+
+          refreshUI();
+          showToast(
+            '裝置沙盒加密保險箱已啟用',
+            '本機明文資料已清除，所有 Token 與帳務皆以 AES-256-GCM 封存！建議順手點擊「綁定 Face ID / 手機解鎖密碼」。',
+            'success'
+          );
+        } catch (err) {
+          showToast('啟用保險箱失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function disableVault() {
+        const meta = readMeta();
+        if (!meta || !meta.enabled) return;
+        if (!confirm('確定要停用本機沙盒加密鎖嗎？停用後設定將改回一般明文 localStorage 儲存，且會解除 Face ID 綁定。')) {
+          return;
+        }
+        const snapshot = collectPersistableSnapshot();
+        localStorage.removeItem(VAULT_KEY);
+        await idbClear();
+        if (window.__SHL_IOS_BRIDGE__) {
+          await window.__SHL_IOS_BRIDGE__.keychainDelete('shl_vault_master').catch(() => {});
+        }
+        unlockedPassword = null;
+        isLocked = false;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        refreshUI();
+        showToast('已停用安全保險箱', '資料已還原為一般本機儲存模式。', 'info');
+      }
+
+      function showLockOverlay(subtitleText) {
+        const ov = document.getElementById('shlVaultLockOverlay');
+        if (!ov) return;
+        const meta = readMeta() || {};
+        const sub = document.getElementById('vaultLockSubtitle');
+        if (sub && subtitleText) sub.textContent = subtitleText;
+        const devBadge = document.getElementById('vaultLockDeviceBadge');
+        if (devBadge) devBadge.textContent = `沙盒裝置：${meta.deviceName || getDefaultDeviceName()}`;
+        const errEl = document.getElementById('vaultLockError');
+        if (errEl) errEl.textContent = '';
+        const pwEl = document.getElementById('vaultUnlockPasswordInput');
+        if (pwEl) pwEl.value = '';
+
+        const bioBtn = document.getElementById('btnUnlockBiometric');
+        const bioTxt = document.getElementById('btnUnlockBioText');
+        const showBio = Boolean(meta.biometricEnabled);
+        if (bioBtn) bioBtn.style.display = showBio ? 'flex' : 'none';
+        if (bioTxt) bioTxt.textContent = `使用 ${bioCaps.label || 'Face ID / 手機解鎖密碼'} 解鎖`;
+
+        ov.classList.add('active');
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      }
+
+      function hideLockOverlay() {
+        document.getElementById('shlVaultLockOverlay')?.classList.remove('active');
+      }
+
+      function lockNow(reason) {
+        if (!isEnabled()) return;
+        unlockedPassword = null;
+        isLocked = true;
+        scrubSensitiveRuntimeMemory();
+        showLockOverlay(reason || '您的 API Token 與交易設定已於本機沙盒 AES-256 加密保護，請驗證身分後取用。');
+        refreshUI();
+      }
+
+      async function completeUnlockWithPassword(pw) {
+        const meta = readMeta();
+        if (!meta || !meta.enabled) {
+          hideLockOverlay();
+          return true;
+        }
+        const errEl = document.getElementById('vaultLockError');
+        try {
+          const decrypted = await decryptEnvelope(meta, pw);
+          unlockedPassword = pw;
+          isLocked = false;
+          applyPersistedSnapshot(decrypted);
+          hideLockOverlay();
+          populateSettingsInputs();
+          if (window.QLAB && typeof window.QLAB.init === 'function') {
+            // Re-hydrate QLAB inputs if needed
+            try { window.QLAB.renderLib(); } catch (e) {}
+          }
+          renderAllViews();
+          renderAiPanels();
+          renderTopRibbon();
+          refreshUI();
+
+          // Resolve boot waiters
+          const waiters = pendingUnlockCallbacks.splice(0, pendingUnlockCallbacks.length);
+          waiters.forEach(fn => { try { fn(); } catch (e) {} });
+
+          showToast('安全保險箱已解鎖', `裝置沙盒已驗證（${meta.deviceName || getDefaultDeviceName()}）`, 'success');
+
+          // Auto-check newer E2EE revision on backend when autoSync enabled
+          if (meta.autoSync && state.backendDetected) {
+            checkRemoteNewerRevision().catch(() => {});
+          }
+          return true;
+        } catch (e) {
+          if (errEl) errEl.textContent = '密碼錯誤或密文驗證失敗，請重新輸入。';
+          return false;
+        }
+      }
+
+      async function unlockWithBiometric() {
+        const errEl = document.getElementById('vaultLockError');
+        if (errEl) errEl.textContent = '正在呼叫裝置身分驗證...';
+        try {
+          const pw = await verifyAndRetrieveBiometricPassword();
+          if (errEl) errEl.textContent = '';
+          return await completeUnlockWithPassword(pw);
+        } catch (err) {
+          if (errEl) errEl.textContent = err?.message || '生物辨識未通過，請改用保險箱密碼解鎖。';
+          return false;
+        }
+      }
+
+      async function ensureUnlockedOnBoot() {
+        await detectBiometricCapability();
+        if (!isEnabled()) {
+          refreshUI();
+          return true;
+        }
+        isLocked = true;
+        showLockOverlay();
+        return new Promise((resolve) => {
+          pendingUnlockCallbacks.push(() => resolve(true));
+        });
+      }
+
+      // ---- Zero-Knowledge E2EE Multi-Device Sync ----
+      async function getPasswordForSync(promptReason) {
+        if (unlockedPassword) return unlockedPassword;
+        const pw = prompt(promptReason || '請輸入用於端對端加密的保險箱主密碼（至少 4 碼）：');
+        if (!pw || pw.trim().length < 4) {
+          throw new Error('已取消或密碼少於 4 碼');
+        }
+        return pw.trim();
+      }
+
+      async function exportEncryptedFile() {
+        try {
+          const pw = await getPasswordForSync('請輸入加密同步檔保護密碼（跨裝置匯入時須輸入同一密碼）：');
+          const meta = readMeta() || {};
+          const devName = meta.deviceName || (document.getElementById('vaultDeviceNameInput')?.value || '').trim() || getDefaultDeviceName();
+          const syncSpace = meta.syncSpace || (document.getElementById('vaultSyncSpaceInput')?.value || '').trim() || 'personal-main';
+          const snapshot = collectPersistableSnapshot();
+          const envelope = await encryptEnvelope(snapshot, pw);
+          const pkg = {
+            format: 'SHL_TW_E2EE_VAULT_V1',
+            exportedAt: nowTwDateTime(),
+            deviceName: devName,
+            syncSpace,
+            envelope
+          };
+          const jsonStr = JSON.stringify(pkg, null, 2);
+          const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+          const fileName = `SHL_TW_Vault_${stamp}.shlvault`;
+
+          // Native iPhone AirDrop / iCloud Drive Share Sheet when supported
+          try {
+            const fileObj = new File([jsonStr], fileName, { type: 'application/json' });
+            if (navigator.canShare && navigator.canShare({ files: [fileObj] })) {
+              await navigator.share({
+                title: 'SHL TW 端對端加密同步檔',
+                text: '可使用 AirDrop 傳送至 Mac / iPad，或存至 iCloud 檔案 App',
+                files: [fileObj]
+              });
+              showToast('已開啟系統分享（AirDrop / iCloud）', fileName, 'success');
+              return;
+            }
+          } catch (shareErr) {
+            if (shareErr && shareErr.name === 'AbortError') return;
+          }
+
+          const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          showToast('已匯出端對端加密同步檔', `${fileName}（可透過 AirDrop / iCloud Drive 傳到其他裝置匯入）`, 'success');
+        } catch (err) {
+          showToast('匯出失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function importEncryptedPackage(pkgObj, providedPw) {
+        if (!pkgObj || pkgObj.format !== 'SHL_TW_E2EE_VAULT_V1' || !pkgObj.envelope) {
+          throw new Error('非有效的 SHL TW 加密同步檔格式');
+        }
+        const pw = providedPw || await getPasswordForSync('請輸入此加密同步檔的解鎖主密碼：');
+        const decrypted = await decryptEnvelope(pkgObj.envelope, pw);
+        applyPersistedSnapshot(decrypted);
+
+        // Re-encrypt locally if vault enabled, or save via persistState
+        if (isEnabled() && unlockedPassword) {
+          persistState();
+        } else {
+          // Offer auto-enabling local sandbox vault with the imported password for maximum security
+          const env = await encryptEnvelope(collectPersistableSnapshot(), pw);
+          const devName = (document.getElementById('vaultDeviceNameInput')?.value || '').trim() || getDefaultDeviceName();
+          writeMeta({
+            v: 1,
+            enabled: true,
+            deviceId: 'shl-' + b64UrlEncode(crypto.getRandomValues(new Uint8Array(8))),
+            deviceName: devName,
+            autoLockMin: 5,
+            syncSpace: pkgObj.syncSpace || 'personal-main',
+            autoSync: false,
+            lastSyncRev: 0,
+            lastSyncAt: nowTwDateTime(),
+            biometricEnabled: false,
+            salt: env.salt,
+            iv: env.iv,
+            ct: env.ct,
+            iter: env.iter,
+            updatedAt: nowTwDateTime()
+          });
+          wipePlaintextFromStorage();
+          unlockedPassword = pw;
+          isLocked = false;
+        }
+
+        populateSettingsInputs();
+        renderAllViews();
+        renderAiPanels();
+        renderTopRibbon();
+        refreshUI();
+        showToast(
+          '跨設備加密資料已解密還原',
+          `來源裝置：${pkgObj.deviceName || '另一裝置'}（匯出時間 ${pkgObj.exportedAt || '--'}），並已鎖入本機沙盒保險箱！`,
+          'success'
+        );
+      }
+
+      async function copyEncryptedSyncCode() {
+        try {
+          const pw = await getPasswordForSync('請輸入加密同步碼保護密碼：');
+          const meta = readMeta() || {};
+          const pkg = {
+            format: 'SHL_TW_E2EE_VAULT_V1',
+            exportedAt: nowTwDateTime(),
+            deviceName: meta.deviceName || getDefaultDeviceName(),
+            syncSpace: meta.syncSpace || 'personal-main',
+            envelope: await encryptEnvelope(collectPersistableSnapshot(), pw)
+          };
+          const code = 'SHLVAULT1:' + b64Encode(new TextEncoder().encode(JSON.stringify(pkg)));
+          await navigator.clipboard.writeText(code);
+          showToast('已複製端對端加密同步碼', '可直接透過 Apple 通用剪貼簿到 Mac / iPad 點「貼上同步碼還原」！', 'success');
+        } catch (err) {
+          showToast('複製同步碼失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function pasteEncryptedSyncCode() {
+        try {
+          let raw = '';
+          try {
+            raw = await navigator.clipboard.readText();
+          } catch (e) {}
+          if (!raw || !raw.trim().startsWith('SHLVAULT1:')) {
+            raw = prompt('請貼上由另一裝置複製的加密同步碼（SHLVAULT1:...）：') || '';
+          }
+          const trimmed = raw.trim();
+          if (!trimmed.startsWith('SHLVAULT1:')) {
+            throw new Error('剪貼簿內容非 SHLVAULT1: 加密同步碼');
+          }
+          const jsonStr = new TextDecoder().decode(b64Decode(trimmed.slice('SHLVAULT1:'.length)));
+          const pkg = JSON.parse(jsonStr);
+          await importEncryptedPackage(pkg);
+        } catch (err) {
+          showToast('還原同步碼失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function deriveSyncCreds(syncSpace, password) {
+        const cleanSpace = (syncSpace || 'personal-main').trim().toLowerCase();
+        const vaultId = (await sha256Hex(`shl-tw-vault-id-v1:${cleanSpace}:${password}`)).slice(0, 48);
+        const authHash = await sha256Hex(`shl-tw-vault-auth-v1:${cleanSpace}:${password}`);
+        return { vaultId, authHash, cleanSpace };
+      }
+
+      async function pushToBackend(silent = false) {
+        const base = getApiBase();
+        if (!base) {
+          if (!silent) showToast('尚未連線至個人後端', '請先於「手機版 App」或「雲端部署」設定您的個人後端網址，或改用方式一 AirDrop / 加密檔同步。', 'warn');
+          return;
+        }
+        try {
+          const pw = await getPasswordForSync('請輸入端對端同步主密碼：');
+          const meta = readMeta() || {};
+          const syncSpace = (document.getElementById('vaultSyncSpaceInput')?.value || meta.syncSpace || 'personal-main').trim();
+          const backendAcc = (document.getElementById('vaultBackendAccessInput')?.value || '').trim();
+          if (backendAcc) state.backendAccessToken = backendAcc;
+          const devName = (document.getElementById('vaultDeviceNameInput')?.value || meta.deviceName || getDefaultDeviceName()).trim();
+
+          const { vaultId, authHash } = await deriveSyncCreds(syncSpace, pw);
+          const envelope = await encryptEnvelope(collectPersistableSnapshot(), pw);
+          const resp = await fetch(`${base}/api/v1/vault/push`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vault_id: vaultId,
+              auth_hash: authHash,
+              payload_json: JSON.stringify(envelope),
+              device_name: devName
+            })
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+
+          if (meta.enabled) {
+            meta.syncSpace = syncSpace;
+            meta.deviceName = devName;
+            meta.lastSyncRev = data.revision;
+            meta.lastSyncAt = data.updated_at;
+            writeMeta(meta);
+          }
+          refreshUI();
+          if (!silent) {
+            showToast('端對端加密同步推送成功', `版本 rev #${data.revision}（${data.updated_at}）· 伺服器僅存密文`, 'success');
+          }
+        } catch (err) {
+          if (!silent) showToast('加密推送失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function pullFromBackend() {
+        const base = getApiBase();
+        if (!base) {
+          showToast('尚未連線至個人後端', '請先設定後端網址，或改用方式一匯入 .shlvault 檔。', 'warn');
+          return;
+        }
+        try {
+          const pw = await getPasswordForSync('請輸入端對端同步主密碼（須與推送端一致）：');
+          const meta = readMeta() || {};
+          const syncSpace = (document.getElementById('vaultSyncSpaceInput')?.value || meta.syncSpace || 'personal-main').trim();
+          const backendAcc = (document.getElementById('vaultBackendAccessInput')?.value || '').trim();
+          if (backendAcc) state.backendAccessToken = backendAcc;
+
+          const { vaultId, authHash } = await deriveSyncCreds(syncSpace, pw);
+          const resp = await fetch(`${base}/api/v1/vault/pull`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vault_id: vaultId, auth_hash: authHash })
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+          if (!data.exists) {
+            showToast('後端尚無同步資料', `同步空間「${syncSpace}」尚未推送過加密資料。`, 'info');
+            return;
+          }
+          const envelope = JSON.parse(data.payload_json);
+          await importEncryptedPackage({
+            format: 'SHL_TW_E2EE_VAULT_V1',
+            exportedAt: data.updated_at,
+            deviceName: data.device_name,
+            syncSpace,
+            envelope
+          }, pw);
+          const cur = readMeta();
+          if (cur) {
+            cur.lastSyncRev = data.revision;
+            cur.lastSyncAt = data.updated_at;
+            cur.syncSpace = syncSpace;
+            writeMeta(cur);
+          }
+          refreshUI();
+        } catch (err) {
+          showToast('拉取解密失敗', err?.message || String(err), 'error');
+        }
+      }
+
+      async function checkRemoteNewerRevision() {
+        const base = getApiBase();
+        const meta = readMeta();
+        if (!base || !meta || !meta.enabled || !unlockedPassword) return;
+        const { vaultId, authHash } = await deriveSyncCreds(meta.syncSpace || 'personal-main', unlockedPassword);
+        const resp = await fetch(`${base}/api/v1/vault/meta`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vault_id: vaultId, auth_hash: authHash })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json().catch(() => ({}));
+        if (data.exists && Number(data.revision) > Number(meta.lastSyncRev || 0)) {
+          showToast(
+            '偵測到其他裝置的新版加密同步資料',
+            `來源：${data.device_name}（rev #${data.revision}），可至「安全保險箱 & 連動」一鍵拉取解密。`,
+            'info'
+          );
+        }
+      }
+
+      function refreshUI() {
+        const meta = readMeta();
+        const enabled = Boolean(meta && meta.enabled);
+
+        const headerPill = document.getElementById('btnHeaderVaultPill');
+        const headerLbl = document.getElementById('headerVaultLabel');
+        const quickLock = document.getElementById('btnQuickLockNow');
+        if (headerPill) headerPill.classList.toggle('vault-pill-locked', enabled);
+        if (headerLbl) headerLbl.textContent = enabled ? (meta.biometricEnabled ? 'Face ID 沙盒已保護' : '沙盒加密已啟用') : '安全保險箱';
+        if (quickLock) quickLock.style.display = enabled ? 'inline-flex' : 'none';
+
+        const statusBadge = document.getElementById('vaultStatusBadge');
+        if (statusBadge) {
+          statusBadge.className = enabled ? 'badge badge-teal' : 'badge badge-gray';
+          statusBadge.textContent = enabled ? (meta.biometricEnabled ? 'AES-256 + 生物辨識' : 'AES-256 密碼鎖') : '未啟用加密鎖';
+        }
+
+        const envBadge = document.getElementById('vaultBioEnvBadge');
+        if (envBadge) {
+          envBadge.textContent = bioCaps.available
+            ? (bioCaps.mode === 'ios_keychain' ? `🍎 iOS Keychain · ${bioCaps.label}` : `✓ WebAuthn · ${bioCaps.label}`)
+            : bioCaps.label;
+        }
+
+        const btnLockNow = document.getElementById('btnVaultLockNow');
+        const btnDisable = document.getElementById('btnVaultDisable');
+        const btnBioLabel = document.getElementById('btnVaultBioLabel');
+        if (btnLockNow) btnLockNow.style.display = enabled ? 'inline-flex' : 'none';
+        if (btnDisable) btnDisable.style.display = enabled ? 'inline-flex' : 'none';
+        if (btnBioLabel) {
+          btnBioLabel.textContent = (meta && meta.biometricEnabled)
+            ? `已綁定 ${bioCaps.label}（點擊重綁）`
+            : `綁定 ${bioCaps.available ? bioCaps.label : 'Face ID / 手機解鎖密碼'}`;
+        }
+
+        const devInput = document.getElementById('vaultDeviceNameInput');
+        if (devInput && !devInput.value) devInput.value = (meta && meta.deviceName) || getDefaultDeviceName();
+        const lockSel = document.getElementById('vaultAutoLockSelect');
+        if (lockSel && meta && meta.autoLockMin !== undefined) lockSel.value = String(meta.autoLockMin);
+        const spaceIn = document.getElementById('vaultSyncSpaceInput');
+        if (spaceIn && !spaceIn.value) spaceIn.value = (meta && meta.syncSpace) || 'personal-main';
+        const accIn = document.getElementById('vaultBackendAccessInput');
+        if (accIn && !accIn.value && state.backendAccessToken) accIn.value = state.backendAccessToken;
+        const autoSyncCb = document.getElementById('vaultAutoSyncToggle');
+        if (autoSyncCb) autoSyncCb.checked = Boolean(meta && meta.autoSync);
+
+        const backendNote = document.getElementById('vaultBackendSyncNote');
+        if (backendNote) {
+          if (state.backendDetected) {
+            backendNote.className = 'badge badge-teal';
+            backendNote.textContent = state.backendHealth?.access_password_required ? '已連線（存取密碼保護）' : '已連線私有後端';
+          } else {
+            backendNote.className = 'badge badge-gray';
+            backendNote.textContent = '離線／PWA 模式（可用方式一）';
+          }
+        }
+        const metaEl = document.getElementById('vaultSyncLastMeta');
+        if (metaEl) {
+          metaEl.textContent = (meta && meta.lastSyncAt)
+            ? `同步紀錄：最後同步 ${meta.lastSyncAt} · 版本 rev #${meta.lastSyncRev || 0} · 空間 ${meta.syncSpace || 'personal-main'}`
+            : '同步紀錄：尚未執行跨裝置同步';
+        }
+      }
+
+      function bindVaultUIEvents() {
+        document.getElementById('btnVaultEnableOrUpdate')?.addEventListener('click', enableOrUpdateVault);
+        document.getElementById('btnVaultBindBiometric')?.addEventListener('click', bindBiometric);
+        document.getElementById('btnVaultLockNow')?.addEventListener('click', () => {
+          closeModal('featureStudioModal');
+          lockNow('已手動鎖定本機沙盒保險箱');
+        });
+        document.getElementById('btnVaultDisable')?.addEventListener('click', disableVault);
+
+        document.getElementById('vaultAutoLockSelect')?.addEventListener('change', (e) => {
+          const meta = readMeta();
+          if (meta && meta.enabled) {
+            meta.autoLockMin = Number(e.target.value);
+            writeMeta(meta);
+            showToast('自動上鎖時間已更新', '切出 App 後將依新設定自動保護沙盒。', 'info');
+          }
+        });
+        document.getElementById('vaultAutoSyncToggle')?.addEventListener('change', (e) => {
+          const meta = readMeta();
+          if (meta && meta.enabled) {
+            meta.autoSync = Boolean(e.target.checked);
+            writeMeta(meta);
+            if (meta.autoSync && state.backendDetected) pushToBackend(true).catch(() => {});
+          }
+        });
+
+        document.getElementById('btnVaultExportFile')?.addEventListener('click', exportEncryptedFile);
+        document.getElementById('btnVaultImportFile')?.addEventListener('click', () => {
+          document.getElementById('vaultImportFileInput')?.click();
+        });
+        document.getElementById('vaultImportFileInput')?.addEventListener('change', async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (!f) return;
+          try {
+            const text = await f.text();
+            const pkg = JSON.parse(text);
+            await importEncryptedPackage(pkg);
+          } catch (err) {
+            showToast('匯入加密檔失敗', err?.message || String(err), 'error');
+          }
+        });
+        document.getElementById('btnVaultCopyCode')?.addEventListener('click', copyEncryptedSyncCode);
+        document.getElementById('btnVaultPasteCode')?.addEventListener('click', pasteEncryptedSyncCode);
+        document.getElementById('btnVaultSyncPush')?.addEventListener('click', () => pushToBackend(false));
+        document.getElementById('btnVaultSyncPull')?.addEventListener('click', pullFromBackend);
+
+        // Lock Overlay buttons
+        document.getElementById('btnUnlockBiometric')?.addEventListener('click', unlockWithBiometric);
+        document.getElementById('btnUnlockPassword')?.addEventListener('click', () => {
+          const pw = (document.getElementById('vaultUnlockPasswordInput')?.value || '').trim();
+          if (!pw) {
+            const errEl = document.getElementById('vaultLockError');
+            if (errEl) errEl.textContent = '請輸入保險箱密碼 / PIN';
+            return;
+          }
+          completeUnlockWithPassword(pw);
+        });
+        document.getElementById('vaultUnlockPasswordInput')?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btnUnlockPassword')?.click();
+          }
+        });
+        document.getElementById('btnVaultEmergencyReset')?.addEventListener('click', async () => {
+          if (!confirm('⚠️ 忘記密碼將無法解密原有加密資料！確定要清空此裝置的沙盒保險箱並重新開始嗎？')) return;
+          if (!confirm('再次確認：這將清除本裝置已加密的設定（不影響其他已同步裝置）。確定繼續？')) return;
+          localStorage.removeItem(VAULT_KEY);
+          localStorage.removeItem(STORAGE_KEY);
+          await idbClear();
+          if (window.__SHL_IOS_BRIDGE__) {
+            await window.__SHL_IOS_BRIDGE__.keychainDelete('shl_vault_master').catch(() => {});
+          }
+          window.location.reload();
+        });
+
+        // Auto-lock on background / resume (iOS Safari, PWA, and Native iOS App)
+        const handleBackground = () => {
+          if (!isEnabled() || isLocked) return;
+          hiddenSinceMs = Date.now();
+          const meta = readMeta();
+          if (meta && Number(meta.autoLockMin) === 0) {
+            lockNow('切出 App 時已自動鎖定本機沙盒保險箱');
+          }
+        };
+        const handleResume = () => {
+          if (!isEnabled() || isLocked) return;
+          const meta = readMeta();
+          const mins = meta ? Number(meta.autoLockMin) : 5;
+          if (mins >= 0 && hiddenSinceMs && (Date.now() - hiddenSinceMs) >= mins * 60 * 1000) {
+            lockNow('離開超過設定時間，已自動重新鎖定沙盒保險箱');
+          }
+          hiddenSinceMs = null;
+        };
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) handleBackground();
+          else handleResume();
+        });
+        window.__shlOnNativeBackground = handleBackground;
+        window.__shlOnNativeResume = handleResume;
+      }
+
+      return {
+        isEnabled,
+        saveEncryptedSnapshot,
+        ensureUnlockedOnBoot,
+        lockNow,
+        refreshUI,
+        bindVaultUIEvents,
+        detectBiometricCapability
+      };
+    })();
+
+    // =========================================================================
     // 12. BOOTSTRAP
     // =========================================================================
     async function initApp() {
@@ -11718,6 +13168,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       populateSettingsInputs();
       bindEvents();
       bindReviewAndDcaEvents();
+      if (window.SHL_VAULT) window.SHL_VAULT.bindVaultUIEvents();
       QLAB.init();
       setTradingMode('SIM');
       renderTradingViewChart();
@@ -11770,14 +13221,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
       updatePwaInstallStatusUI();
 
-      // Open shortcut pane directly if launched via PWA shortcut hash (#studio-ai, #studio-strategy, #studio-dca, #studio-mobile)
+      // Gate startup behind Device Sandbox Vault (Face ID / Touch ID / Phone Passcode / Vault Password) if enabled
+      if (window.SHL_VAULT) {
+        await window.SHL_VAULT.ensureUnlockedOnBoot();
+      }
+
+      // Open shortcut pane directly if launched via PWA shortcut hash (#studio-ai, #studio-strategy, #studio-dca, #studio-mobile, #studio-vault)
       const hashPane = (window.location.hash || '').replace(/^#studio-/, '');
-      if (['ai', 'strategy', 'dca', 'review', 'notify', 'deploy', 'settings', 'mobile'].includes(hashPane)) {
+      if (['ai', 'strategy', 'dca', 'review', 'notify', 'deploy', 'settings', 'mobile', 'vault'].includes(hashPane)) {
         openFeatureModal(hashPane);
       }
 
       // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
       await detectBackend();
+      if (window.SHL_VAULT) window.SHL_VAULT.refreshUI();
 
       // Automatically detect available AI models if user has saved tokens or backend .env keys
       const hasAnyConfiguredToken = Object.values(state.aiKeys).some(v => Boolean((v || '').trim())) ||

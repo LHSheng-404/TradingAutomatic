@@ -29,6 +29,8 @@
     </dict>
     <key>NSLocalNetworkUsageDescription</key>
     <string>SHL TW 需要區域網路權限，以便連線至同 Wi-Fi 電腦端後端與地端 Ollama AI 模型。</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>SHL TW 需要使用 Face ID 或裝置解鎖密碼驗證身分，保護您儲存於本機沙盒保險箱的 API Token 與交易資料。</string>
     <key>UIStatusBarStyle</key>
     <string>UIStatusBarStyleLightContent</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>

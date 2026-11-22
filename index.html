@@ -8,9 +8,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SYNAPSE TW" />
+  <meta name="format-detection" content="telephone=no" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120.png" />
   <title>SYNAPSE TW · 全自動台股交易系統（TradingView × Yahoo/FinMind × 多模型 AI × 模擬/實盤）</title>
   <meta name="description" content="全自動台股交易系統網頁版：雙向資料交流交握拓撲、TradingView 進階線圖與帳號串接、Yahoo/FinMind 真實台股行情、Grok/Gemini/Claude/ChatGPT 多模型 AI 解析、LINE Bot/Telegram 條列推播與模擬/真實下單切換。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -2045,6 +2049,46 @@
         max-width: none !important;
       }
     }
+
+    /* Apple iOS Safari / Standalone PWA / Native WKWebView Enhancements */
+    button, a, .btn, .studio-pill, .mobile-nav-btn, .ai-pick-chip {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      overscroll-behavior-y: none;
+    }
+    @media (display-mode: standalone) {
+      .topbar {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      .modal-dialog-xl {
+        padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+      }
+    }
+    .ios-install-bar {
+      display: none;
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+      z-index: 65;
+      background: rgba(15, 23, 42, 0.96);
+      color: #f8fafc;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.35);
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      backdrop-filter: blur(14px);
+    }
+    .ios-install-bar.show {
+      display: flex;
+    }
   </style>
 </head>
 <body>
@@ -3689,51 +3733,62 @@
           </div>
         </div>
 
-        <!-- ========== PANE 7: MOBILE APP (PWA / ANDROID APK / LAN / TERMUX) ========== -->
+        <!-- ========== PANE 7: MOBILE APP (APPLE iOS / ANDROID APK / PWA / LAN / TERMUX) ========== -->
         <div id="studio-mobile" class="studio-pane">
           <div class="grid-2">
             <article class="card">
               <div class="card-header">
                 <div class="card-title-group">
-                  <h2 class="card-title">手機版一鍵安裝與獨立執行 (iOS / Android)</h2>
-                  <p class="card-subtitle">支援 PWA 主畫面全螢幕 App、Android 獨立安裝檔 APK，以及手機 Termux 完整後端</p>
+                  <h2 class="card-title">🍎 Apple iOS &amp; Android 手機版安裝執行</h2>
+                  <p class="card-subtitle">完整支援 iPhone / iPad（Safari 全螢幕 PWA ＋ 原生 Swift iOS IPA）與 Android（APK ＋ PWA）</p>
                 </div>
-                <span id="mobileEnvBadge" class="badge badge-blue">PWA Ready</span>
+                <span id="mobileEnvBadge" class="badge badge-blue">iOS &amp; Android Ready</span>
               </div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
                 <div class="mobile-install-card">
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <strong style="font-size:14px;">📱 方案一：安裝為手機桌面 App（PWA · 免商店）</strong>
-                    <span class="badge" style="background:rgba(56,189,248,0.2);color:#e0f2fe;border:1px solid rgba(56,189,248,0.4);">iOS + Android</span>
+                    <strong style="font-size:14px;">🍎 Apple iPhone / iPad 方案一：Safari 加入主畫面（推薦・免越獄・永久有效）</strong>
+                    <span class="badge" style="background:rgba(56,189,248,0.2);color:#e0f2fe;border:1px solid rgba(56,189,248,0.4);">iOS 15+ / iPadOS</span>
                   </div>
-                  <p style="margin:0;font-size:12px;color:#cbd5e1;line-height:1.55;">
-                    支援全螢幕開啟、手機底部專屬導覽列、安全區適配與離線外殼快取。Android Chrome 可直接一鍵安裝；iPhone Safari 請點底部「分享 ↑ → 加入主畫面」。
-                  </p>
+                  <div style="font-size:12px;color:#cbd5e1;line-height:1.6;">
+                    ① 使用 iPhone / iPad 的 <strong>Safari</strong> 開啟線上 HTTPS 網址（或同 Wi-Fi 電腦區網網址）<br />
+                    ② 點擊 Safari 底部 <strong>「分享 ↑」</strong> 按鈕 → 滑動選擇 <strong>「加入主畫面」</strong><br />
+                    ③ 點右上角 <strong>「新增」</strong>，即成無網址列、支援動態島／安全區與底部五鍵導覽的全螢幕 iOS App！
+                  </div>
                   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                     <button id="btnInstallPwa" type="button" class="btn btn-primary" style="background:#38bdf8;color:#0f172a;border-color:#38bdf8;font-weight:800;">
-                      <i data-lucide="download" style="width:14px;height:14px;"></i>安裝至手機主畫面 (PWA)
+                      <i data-lucide="download" style="width:14px;height:14px;"></i>安裝至主畫面 (iOS / Android PWA)
                     </button>
-                    <a href="https://github.com/LHSheng-404/TradingAutomatic/releases/latest" target="_blank" rel="noopener" class="btn" style="background:rgba(255,255,255,0.12);color:#ffffff;border-color:rgba(255,255,255,0.28);text-decoration:none;">
-                      <i data-lucide="smartphone" style="width:14px;height:14px;"></i>下載 Android APK 執行檔
+                    <a href="https://lhsheng-404.github.io/TradingAutomatic/" target="_blank" rel="noopener" class="btn" style="background:rgba(255,255,255,0.12);color:#ffffff;border-color:rgba(255,255,255,0.28);text-decoration:none;">
+                      <i data-lucide="globe" style="width:14px;height:14px;"></i>開啟線上 HTTPS PWA 網址
                     </a>
                   </div>
                   <div id="pwaInstallStatusText" style="font-size:11.5px;color:#93c5fd;">偵測手機安裝狀態中...</div>
                 </div>
 
-                <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
-                  <strong style="font-size:12.5px;color:var(--ink-1);">🤖 方案二：Android 獨立 APK（免電腦即可抓即時報價＋呼叫六模型 AI）</strong>
-                  <div style="font-size:12px;color:var(--ink-2);line-height:1.6;">
-                    • 前往 GitHub Releases 下載 <span class="mono">SYNAPSE-TW-v3.4.0-android.apk</span> 並直接於 Android 手機安裝。<br />
-                    • APK 內建本機 HTTP 資源與安全白名單代理橋接，即使未連電腦後端，手機獨立執行也能即時抓取 Yahoo / FinMind 真實台股報價，並直接偵測與呼叫 Gemini、OpenAI、Claude、Grok、Groq！
+                <div style="padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12.5px;color:#1e3a8a;">🍎 Apple iOS 方案二：原生 Swift iOS 獨立 App（.ipa / Xcode）</strong>
+                    <a href="https://github.com/LHSheng-404/TradingAutomatic/releases/latest" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none;">下載 iOS IPA</a>
+                  </div>
+                  <div style="font-size:12px;color:#1e40af;line-height:1.6;">
+                    • 前往 Releases 下載 <span class="mono">SYNAPSE-TW-v3.5.0-ios-unsigned.ipa</span>，可透過 <strong>AltStore / SideStore / Sideloadly / TrollStore</strong> 安裝至 iPhone / iPad；或用 Mac Xcode 開啟 <span class="mono">mobile/ios/</span> 一鍵實機執行。<br />
+                    • 內建純 Swift 本機伺服器與白名單安全代理（<span class="mono">LocalAssetServer.swift</span>），免開電腦即可於 iPhone 獨立抓取即時台股報價並呼叫全部 AI 模型（<strong>含 Claude</strong>）！
                   </div>
                 </div>
 
-                <div style="padding:12px;border-radius:12px;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;flex-direction:column;gap:8px;">
+                <div style="padding:12px;border-radius:12px;background:var(--bg-subtle);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <strong style="font-size:12.5px;color:#166534;">⚡ 方案三：Android Termux 零電腦完整本機後端</strong>
-                    <button id="btnCopyTermuxCmd" type="button" class="btn btn-sm">複製一鍵指令</button>
+                    <strong style="font-size:12.5px;color:var(--ink-1);">🤖 Android 獨立 APK &amp; Termux 本機後端</strong>
+                    <a href="https://github.com/LHSheng-404/TradingAutomatic/releases/latest" target="_blank" rel="noopener" class="btn btn-sm" style="text-decoration:none;">下載 Android APK</a>
                   </div>
-                  <code id="termuxCmdCode" class="mono" style="display:block;padding:8px 10px;border-radius:8px;background:#0f172a;color:#34d399;font-size:11px;overflow-x:auto;white-space:nowrap;">git clone https://github.com/LHSheng-404/TradingAutomatic.git &amp;&amp; cd TradingAutomatic &amp;&amp; chmod +x mobile/termux-start.sh &amp;&amp; ./mobile/termux-start.sh</code>
+                  <div style="font-size:12px;color:var(--ink-2);line-height:1.55;">
+                    Android 直接安裝 <span class="mono">SYNAPSE-TW-v3.5.0-android.apk</span>，或於 Termux 執行完整 Python 後端：
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <code id="termuxCmdCode" class="mono" style="flex:1;min-width:0;padding:7px 9px;border-radius:8px;background:#0f172a;color:#34d399;font-size:10.5px;overflow-x:auto;white-space:nowrap;">git clone https://github.com/LHSheng-404/TradingAutomatic.git &amp;&amp; cd TradingAutomatic &amp;&amp; chmod +x mobile/termux-start.sh &amp;&amp; ./mobile/termux-start.sh</code>
+                    <button id="btnCopyTermuxCmd" type="button" class="btn btn-sm">複製</button>
+                  </div>
                 </div>
               </div>
             </article>
@@ -3741,8 +3796,8 @@
             <article class="card">
               <div class="card-header">
                 <div class="card-title-group">
-                  <h2 class="card-title">電腦 ↔ 手機區網即時連線中心</h2>
-                  <p class="card-subtitle">電腦啟動 launcher.py（預設開啟區網）後，同 Wi-Fi 手機開啟以下網址即可共享完整後端與 Ollama</p>
+                  <h2 class="card-title">電腦 ↔ iPhone / Android 區網即時連線中心</h2>
+                  <p class="card-subtitle">Mac / Windows 啟動 launcher.py 後，同 Wi-Fi 的 iPhone / iPad 開啟以下網址即可共用完整後端與 Ollama</p>
                 </div>
                 <button id="btnRefreshMobileInfo" type="button" class="btn btn-sm">重新偵測</button>
               </div>
@@ -3750,7 +3805,7 @@
                 <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;">
                   <div class="mobile-qr-box">
                     <div id="mobileLanQrBox" style="width:136px;height:136px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-3);">載入連線位址...</div>
-                    <span style="font-size:10.5px;color:var(--ink-3);font-weight:700;">手機連線條碼 / 快速連結</span>
+                    <span style="font-size:10.5px;color:var(--ink-3);font-weight:700;">iOS / Android 快速連線位址</span>
                   </div>
                   <div style="flex:1;min-width:190px;display:flex;flex-direction:column;gap:8px;">
                     <div style="font-size:12px;color:var(--ink-2);font-weight:700;">偵測到的同 Wi-Fi 手機連線網址：</div>
@@ -3759,15 +3814,15 @@
                       <button id="btnCopyMobileLanUrl" type="button" class="btn btn-sm btn-primary">複製</button>
                     </div>
                     <div id="mobileLanMetaNote" style="font-size:11.5px;color:var(--ink-3);line-height:1.5;">
-                      電腦端執行 <span class="mono">python launcher.py --lan</span> 後，手機與電腦連上相同 Wi-Fi 即可直接操作。
+                      電腦端執行 <span class="mono">python launcher.py --lan</span> 後，iPhone 與電腦連上相同 Wi-Fi 即可直接操作。
                     </div>
                   </div>
                 </div>
 
                 <div style="padding:12px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;display:flex;flex-direction:column;gap:8px;">
-                  <strong style="font-size:12.5px;color:#92400e;">🔗 在手機 App 內綁定遠端／電腦後端網址（選用）</strong>
+                  <strong style="font-size:12.5px;color:#92400e;">🔗 在 iOS / Android App 內綁定遠端或電腦後端（選用）</strong>
                   <p style="margin:0;font-size:11.5px;color:#78350f;line-height:1.5;">
-                    若您從 GitHub Pages PWA 或 Android APK 開啟，可填入您電腦區網網址（例如 <span class="mono">http://192.168.1.50:8000</span>）或雲端 Render 網址，立即啟用 Shioaji 實盤、Telegram 推播與本機 Ollama。
+                    若您從 iOS Safari PWA、原生 iOS IPA 或 Android APK 開啟，可填入您 Mac / Windows 區網網址（如 <span class="mono">http://192.168.1.50:8000</span>）或雲端 Render 網址，立即啟用 Shioaji 實盤、Telegram 推播與本機 Ollama。
                   </p>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     <input id="mobileBackendUrlQuick" type="url" class="input mono" style="flex:1;min-width:180px;" placeholder="http://192.168.x.x:8000 或 https://..." />
@@ -3803,9 +3858,18 @@
     </button>
     <button type="button" class="mobile-nav-btn" data-mobile-nav="mobile">
       <i data-lucide="smartphone" style="width:18px;height:18px;"></i>
-      <span>手機安裝</span>
+      <span>iOS/安裝</span>
     </button>
   </nav>
+
+  <!-- Floating Apple iOS Safari "Add to Home Screen" Guide Bar (Auto-shown only on iPhone/iPad Safari) -->
+  <div id="iosInstallTipBar" class="ios-install-bar" role="region" aria-label="iPhone 加入主畫面提示">
+    <div>
+      <strong style="color:#38bdf8;">🍎 iPhone / iPad 全螢幕安裝：</strong>
+      點 Safari 下方 <strong>「分享 ↑」</strong> → <strong>「加入主畫面」</strong> 即成獨立 App！
+    </div>
+    <button id="btnDismissIosTip" type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.28);flex-shrink:0;">知道了</button>
+  </div>
 
   <!-- ==================== MODAL 1: LIVE TRADING SAFETY GATE ==================== -->
   <div id="liveSafetyModal" class="modal-backdrop">
@@ -5324,15 +5388,19 @@
       return { verdict: 'NEUTRAL', confidence: 55, summary: cleaned.slice(0, 140), key_levels: '--', risk_note: '非標準 JSON 回覆' };
     }
 
+    function isIosNativeAppHost() {
+      return Boolean(window.__SYNAPSE_IOS_APP__);
+    }
+
     function isAndroidApkHost() {
-      return Boolean(window.__SYNAPSE_ANDROID_PROXY__) ||
+      return Boolean(window.__SYNAPSE_IOS_APP__ || window.__SYNAPSE_MOBILE_PROXY__ || window.__SYNAPSE_ANDROID_PROXY__) ||
         (window.location.hostname === '127.0.0.1' && window.location.port === '18432');
     }
 
     async function androidProxyFetch(url, options = {}) {
       if (isAndroidApkHost()) {
-        const proxyUrl = `/_android_proxy?url=${encodeURIComponent(url)}`;
-        return fetch(proxyUrl, options);
+        const proxyPath = isIosNativeAppHost() ? '/_mobile_proxy' : '/_android_proxy';
+        return fetch(`${proxyPath}?url=${encodeURIComponent(url)}`, options);
       }
       return fetch(url, options);
     }
@@ -8001,27 +8069,40 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       const badge = document.getElementById('mobileEnvBadge');
       const statusEl = document.getElementById('pwaInstallStatusText');
       const btn = document.getElementById('btnInstallPwa');
+      const iosBar = document.getElementById('iosInstallTipBar');
       const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
-      const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent || '');
+      const ua = navigator.userAgent || '';
+      const isIos = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
 
-      if (isAndroidApkHost()) {
+      if (isIosNativeAppHost()) {
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = '🍎 iOS App 獨立執行中'; }
+        if (statusEl) statusEl.textContent = '✓ 您正在使用 SYNAPSE TW 原生 Swift iOS App（內建安全代理，免電腦支援即時行情與含 Claude 六大 AI）。';
+        if (btn) btn.style.display = 'none';
+        if (iosBar) iosBar.classList.remove('show');
+      } else if (isAndroidApkHost()) {
         if (badge) { badge.className = 'badge badge-down'; badge.textContent = 'Android APK 獨立執行中'; }
         if (statusEl) statusEl.textContent = '✓ 您正在使用 SYNAPSE TW Android 獨立執行檔（內建安全代理與離線介面）。';
         if (btn) btn.style.display = 'none';
+        if (iosBar) iosBar.classList.remove('show');
       } else if (isStandalone) {
-        if (badge) { badge.className = 'badge badge-down'; badge.textContent = '已安裝為手機 App'; }
+        if (badge) { badge.className = 'badge badge-down'; badge.textContent = isIos ? '🍎 iOS 全螢幕 App' : '已安裝為手機 App'; }
         if (statusEl) statusEl.textContent = '✓ 目前已以全螢幕 App (PWA) 模式運行於您的手機主畫面。';
         if (btn) btn.style.display = 'none';
+        if (iosBar) iosBar.classList.remove('show');
       } else if (deferredPwaInstallPrompt) {
         if (badge) { badge.className = 'badge badge-down'; badge.textContent = '可一鍵安裝 App'; }
-        if (statusEl) statusEl.textContent = '✓ 瀏覽器已就緒！點擊上方「安裝至手機主畫面 (PWA)」即可直接建立桌面圖示。';
+        if (statusEl) statusEl.textContent = '✓ 瀏覽器已就緒！點擊上方「安裝至主畫面 (iOS / Android PWA)」即可直接建立桌面圖示。';
         if (btn) btn.style.display = 'inline-flex';
+        if (iosBar) iosBar.classList.remove('show');
       } else if (isIos) {
-        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = 'iOS Safari PWA'; }
-        if (statusEl) statusEl.textContent = 'iPhone / iPad：請點擊 Safari 底部「分享 ↑」按鈕，選擇「加入主畫面」即可全螢幕 App 執行。';
+        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = '🍎 iOS Safari Ready'; }
+        if (statusEl) statusEl.textContent = 'iPhone / iPad：請點擊 Safari 底部「分享 ↑」按鈕 → 選擇「加入主畫面」→ 點「新增」即可全螢幕 App 執行。';
+        const dismissed = localStorage.getItem('synapse_ios_tip_dismissed') === '1';
+        if (iosBar && !dismissed) iosBar.classList.add('show');
       } else {
-        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = 'PWA Ready'; }
-        if (statusEl) statusEl.textContent = '手機 Chrome / Edge 開啟本網址，點擊瀏覽器選單「安裝應用程式 / 加到主畫面」即可全螢幕執行。';
+        if (badge) { badge.className = 'badge badge-blue'; badge.textContent = 'iOS & Android Ready'; }
+        if (statusEl) statusEl.textContent = 'iPhone Safari 請點「分享 ↑ → 加入主畫面」；Android Chrome 點「安裝應用程式」即可全螢幕執行。';
+        if (iosBar) iosBar.classList.remove('show');
       }
     }
 
@@ -8601,15 +8682,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           deferredPwaInstallPrompt = null;
           updatePwaInstallStatusUI();
         } else {
-          const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent || '');
+          const ua = navigator.userAgent || '';
+          const isIos = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
           showToast(
-            isIos ? 'iOS 安裝教學' : '安裝至手機主畫面',
+            isIos ? '🍎 Apple iOS 安裝教學' : '安裝至手機主畫面',
             isIos
-              ? '請點擊 Safari 下方「分享 ↑」圖示 → 選擇「加入主畫面」即可變成獨立手機 App。'
+              ? '請點擊 Safari 下方「分享 ↑」圖示 → 選擇「加入主畫面」→ 點「新增」，即成全螢幕 iOS App。'
               : '請點擊瀏覽器右上角選單（⋮）→ 選擇「安裝應用程式」或「加到主畫面」。',
             'info'
           );
         }
+      });
+      document.getElementById('btnDismissIosTip')?.addEventListener('click', () => {
+        localStorage.setItem('synapse_ios_tip_dismissed', '1');
+        document.getElementById('iosInstallTipBar')?.classList.remove('show');
       });
       document.getElementById('btnRefreshMobileInfo')?.addEventListener('click', refreshMobileCenterUI);
       document.getElementById('btnCopyMobileLanUrl')?.addEventListener('click', async () => {

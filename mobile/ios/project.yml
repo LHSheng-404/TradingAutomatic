@@ -1,0 +1,33 @@
+name: SynapseTW
+options:
+  bundleIdPrefix: com.synapsetw
+  deploymentTarget:
+    iOS: "15.0"
+  xcodeVersion: "15.0"
+
+targets:
+  SynapseTW:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: SynapseTW
+        excludes:
+          - WebAssets
+      - path: SynapseTW/WebAssets
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.synapsetw.ios
+        PRODUCT_NAME: SynapseTW
+        MARKETING_VERSION: "3.5.0"
+        CURRENT_PROJECT_VERSION: "350"
+        INFOPLIST_FILE: SynapseTW/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ENABLE_BITCODE: NO
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        SUPPORTS_MACCATALYST: NO

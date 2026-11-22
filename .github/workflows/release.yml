@@ -102,3 +102,51 @@ jobs:
         with:
           files: |
             dist/SYNAPSE-TW-*-android.apk
+
+  build-ios-ipa:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Stage Web & PWA assets into iOS Bundle
+        shell: bash
+        run: |
+          mkdir -p mobile/ios/SynapseTW/WebAssets/icons
+          cp index.html mobile/ios/SynapseTW/WebAssets/index.html
+          cp manifest.webmanifest mobile/ios/SynapseTW/WebAssets/manifest.webmanifest
+          cp sw.js mobile/ios/SynapseTW/WebAssets/sw.js
+          cp -r icons/* mobile/ios/SynapseTW/WebAssets/icons/
+
+      - name: Generate Xcode Project & Build Native iOS App (.ipa)
+        working-directory: mobile/ios
+        shell: bash
+        run: |
+          VERSION="${{ inputs.version || github.ref_name }}"
+          xcodegen generate
+          xcodebuild \
+            -project SynapseTW.xcodeproj \
+            -scheme SynapseTW \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+          mkdir -p build/ipa/Payload
+          cp -R build/DerivedData/Build/Products/Release-iphoneos/SynapseTW.app build/ipa/Payload/
+          mkdir -p ../../dist
+          (cd build/ipa && zip -qr "../../../../dist/SYNAPSE-TW-${VERSION}-ios-unsigned.ipa" Payload)
+          ls -lh "../../dist/SYNAPSE-TW-${VERSION}-ios-unsigned.ipa"
+
+      - name: Upload iOS IPA to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            dist/SYNAPSE-TW-*-ios-unsigned.ipa

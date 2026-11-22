@@ -404,7 +404,7 @@ async def get_mobile_access_info(request: Request):
     primary_url = lan_urls[0] if lan_urls else f"{scheme}://{host_hdr or f'127.0.0.1:{port}'}"
     return {
         "ok": True,
-        "version": "v3.4.0",
+        "version": "v3.5.0",
         "port": port,
         "lan_ips": lan_ips,
         "lan_urls": lan_urls,

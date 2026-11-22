@@ -1,11 +1,14 @@
-const CACHE_NAME = 'synapse-tw-shell-v3.4.0';
+const CACHE_NAME = 'synapse-tw-shell-v3.5.0';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  './icons/apple-touch-icon-167.png',
+  './icons/apple-touch-icon-152.png',
+  './icons/apple-touch-icon-120.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -29,11 +32,12 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Never cache live backend APIs, Android local proxy, or third-party market/AI calls
+  // Never cache live backend APIs, mobile native proxies, or third-party market/AI calls
   if (
     url.origin !== self.location.origin ||
     url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/_android_proxy')
+    url.pathname.startsWith('/_android_proxy') ||
+    url.pathname.startsWith('/_mobile_proxy')
   ) {
     return;
   }

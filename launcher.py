@@ -73,10 +73,10 @@ def main() -> None:
     lan_ip = detect_lan_ip() if bind_host == "0.0.0.0" else ""
 
     print("=" * 64)
-    print("  SYNAPSE TW · 全自動台股交易系統 v3.4.0")
+    print("  SYNAPSE TW · 全自動台股交易系統 v3.5.0")
     print(f"  本機介面：{url}")
     if lan_ip:
-        print(f"  手機區網：http://{lan_ip}:{port}  （同 Wi-Fi 手機瀏覽器開啟或安裝 PWA）")
+        print(f"  手機區網：http://{lan_ip}:{port}  （同 Wi-Fi iPhone / Android 開啟或加入主畫面）")
     print(f"  健康檢查：{url}/api/v1/health")
     print("  按 Ctrl+C 即可安全停止系統")
     print("=" * 64)

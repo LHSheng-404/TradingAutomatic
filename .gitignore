@@ -31,3 +31,9 @@ mobile/android/app/build/
 mobile/android/app/src/main/assets/
 mobile/android/local.properties
 
+# iOS IPA build outputs
+mobile/ios/SynapseTW.xcodeproj/
+mobile/ios/SynapseTW/WebAssets/
+mobile/ios/build/
+
+

@@ -1241,13 +1241,17 @@
       position: absolute;
       top: calc(100% + 8px);
       left: 0;
-      width: 288px;
+      width: 304px;
+      max-width: calc(100vw - 24px);
+      max-height: min(74vh, 560px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 14px;
-      box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.24);
       padding: 6px;
-      z-index: 70;
+      z-index: 120;
       display: none;
       flex-direction: column;
       gap: 3px;
@@ -1258,10 +1262,17 @@
       animation: slideUp 0.14s ease;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 960px) {
       .menu-dropdown {
-        left: 0;
-        width: min(296px, calc(100vw - 24px));
+        position: fixed !important;
+        top: calc(58px + env(safe-area-inset-top, 0px)) !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: calc(100vw - 20px) !important;
+        max-height: calc(100dvh - 136px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+        overflow-y: auto !important;
+        z-index: 130 !important;
       }
     }
 
@@ -1979,33 +1990,43 @@
         max-height: calc(100dvh - 58px - env(safe-area-inset-bottom, 0px)) !important;
         border-radius: 0 !important;
         margin: 0 !important;
-        padding: 10px 10px 0 !important;
+        padding: 0 !important;
       }
       .studio-modal-head {
+        flex-direction: column !important;
         flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px !important;
+      }
+      .studio-modal-toprow {
+        display: flex !important;
         align-items: center !important;
-        gap: 6px !important;
-        padding-bottom: 8px !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        width: 100% !important;
       }
       .studio-pills {
-        flex: 1 1 auto !important;
+        flex: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
         min-width: 0 !important;
         overflow-x: auto !important;
         flex-wrap: nowrap !important;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        padding-bottom: 2px;
+        padding: 2px 2px 4px !important;
       }
       .studio-pills::-webkit-scrollbar { display: none; }
       .studio-modal-body {
-        padding: 10px 0 18px !important;
+        padding: 12px 10px 20px !important;
         -webkit-overflow-scrolling: touch;
       }
       .studio-pill {
         white-space: nowrap;
         flex-shrink: 0;
-        padding: 6px 10px !important;
-        font-size: 11.5px !important;
+        padding: 7px 11px !important;
+        font-size: 12px !important;
       }
       .mobile-bottom-nav {
         position: fixed;
@@ -2194,6 +2215,180 @@
       color: #065f46 !important;
       border-color: #6ee7b7 !important;
     }
+
+    /* Studio modal topbar (never overlaps scrollable pills on desktop or iPhone) */
+    .studio-modal-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .studio-modal-toprow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+    }
+    .studio-modal-heading {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink-1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .studio-close-btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Interactive International Major Financial Event Popover (Tap anywhere to close) */
+    .macro-event-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      cursor: pointer;
+    }
+    .macro-event-backdrop.open {
+      display: flex;
+      animation: slideUp 0.14s ease;
+    }
+    .macro-event-card {
+      width: 100%;
+      max-width: 460px;
+      background: #ffffff;
+      border: 1px solid #fed7aa;
+      border-top: 4px solid #ea580c;
+      border-radius: 16px;
+      padding: 18px 18px 14px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.34);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: var(--ink-1);
+      cursor: pointer;
+    }
+    .macro-event-chip-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      align-items: center;
+    }
+    .macro-event-chip {
+      border: 1px solid #fed7aa;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .macro-event-chip:hover {
+      background: #ffedd5;
+      border-color: #ea580c;
+      transform: translateY(-1px);
+    }
+
+    /* Chengwaye-inspired Home Overview / Feature List / Workflow / Data Sources */
+    .shl-about-section {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .shl-about-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1e3a8a 100%);
+      color: #f8fafc;
+      border-radius: 16px;
+      padding: 22px 22px 20px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .shl-about-values {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .shl-about-values {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    .shl-value-box {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .shl-about-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .shl-about-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--ink-2);
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+    }
+    .shl-about-bullet {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Universal Bottom Disclaimer Footer (Shown at bottom of Home and every Studio page) */
+    .shl-disclaimer-footer {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid #64748b;
+      color: #475569;
+      font-size: 11.5px;
+      line-height: 1.65;
+    }
+    .shl-disclaimer-footer strong {
+      color: #0f172a;
+    }
   </style>
 </head>
 <body>
@@ -2244,8 +2439,8 @@
           <button type="button" class="menu-item" data-open-studio="dca">
             <span class="menu-item-icon" style="background:#f0fdfa;color:#0f766e;"><i data-lucide="trending-up" style="width:15px;height:15px;"></i></span>
             <div>
-              <div class="menu-item-title">台股真實定投回測</div>
-              <div class="menu-item-desc">FinMind 歷史股價＋除權息配股 · 多標的權重回測</div>
+              <div class="menu-item-title">台股真實回測</div>
+              <div class="menu-item-desc">多階段定投 / 單筆一次買入 · 除權息配股＋國際重大事件標註</div>
             </div>
           </button>
           <div class="menu-divider"></div>
@@ -2459,6 +2654,7 @@
               <canvas id="rawPriceChart"></canvas>
             </div>
           </div>
+          <div id="rawMacroEventsBar" class="macro-event-chip-bar" style="display:none;padding:8px 14px 10px;margin-top:0;border-top:1px solid var(--border);background:#fffbeb;"></div>
 
           <!-- TradingView Account Login & Advanced Features Bar -->
           <div class="tv-account-bar">
@@ -2752,13 +2948,168 @@
           </div>
         </article>
       </div>
+
+      <!-- ==================== ABOUT SHL TW: FEATURES, WORKFLOW & DATA SOURCES (Chengwaye-Style Structured Overview) ==================== -->
+      <section class="shl-about-section" aria-label="關於 SHL TW 與平台說明">
+        <div class="shl-about-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <span class="badge" style="background:rgba(56,189,248,0.2);color:#e0f2fe;border:1px solid rgba(56,189,248,0.4);">關於 SHL TW</span>
+              <h2 style="margin:6px 0 4px;font-size:20px;font-weight:800;letter-spacing:0.01em;">SHL TW 台股全自動量化與多模型 AI 研究中控台</h2>
+              <p style="margin:0;font-size:12.5px;color:#cbd5e1;line-height:1.65;">
+                用真實市場數據、量化回測與多模型 AI 輔助投資人建立有紀律的研究流程——整合分散於行情平台、官方除權息紀錄與量化工具的公開資訊，並以本機裝置沙盒保護您的金鑰與操作隱私。
+              </p>
+            </div>
+          </div>
+          <div class="shl-about-values">
+            <div class="shl-value-box">
+              <div style="font-size:12.5px;font-weight:800;color:#38bdf8;">透明真實</div>
+              <div style="font-size:11.5px;color:#cbd5e1;margin-top:3px;line-height:1.5;">嚴禁虛構報價，所有價格、歷史 K 線與除權息皆源自公開真實行情介面。</div>
+            </div>
+            <div class="shl-value-box">
+              <div style="font-size:12.5px;font-weight:800;color:#34d399;">即時多週期</div>
+              <div style="font-size:11.5px;color:#cbd5e1;margin-top:3px;line-height:1.5;">涵蓋 5 分 K 到週線切換、技術指標疊加與盤中雙向交握狀態監控。</div>
+            </div>
+            <div class="shl-value-box">
+              <div style="font-size:12.5px;font-weight:800;color:#fbbf24;">本機沙盒安全</div>
+              <div style="font-size:11.5px;color:#cbd5e1;margin-top:3px;line-height:1.5;">API Token 與設定加密鎖在本機沙盒，支援 iPhone Face ID / 裝置解鎖密碼。</div>
+            </div>
+            <div class="shl-value-box">
+              <div style="font-size:12.5px;font-weight:800;color:#c084fc;">客觀研究工具</div>
+              <div style="font-size:11.5px;color:#cbd5e1;margin-top:3px;line-height:1.5;">不提供投資明牌或買賣承諾，專注數據視覺化、歷史回測與風控輔助。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">📋 軟體功能項目說明</h3>
+                <p class="card-subtitle">SHL TW 目前整合八大核心模組（可由上方「功能選單」或底部導覽列一鍵切換）</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <ul class="shl-about-list">
+                <li>
+                  <span class="shl-about-bullet">1</span>
+                  <div><strong>即時行情中控台與技術圖表</strong>：追蹤自選台股與台指期（TXF），支援 Yahoo / FinMind 真實數據圖與 TradingView 進階線圖、多級距 K 線切換與<strong>國際重大金融事件標註</strong>。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">2</span>
+                  <div><strong>台股技術分析 (v01) 與量化策略實驗室</strong>：10 大技術／籌碼指標開關、多 Agent 自動風控引擎，以及 30 支 Pine Script 對齊量化策略之真實歷史回測與風險指標卡。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">3</span>
+                  <div><strong>台股真實回測（多階段定投 / 單筆買入）</strong>：支援多標的權重配置，可自由切換「多階段每月定期定額」或「單筆一次買入」，精算真實配息、配股、分割、減資與手續費折數，並在績效曲線標註國際重大金融事件。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">4</span>
+                  <div><strong>AI 六模型與 Ollama 地端深度解析</strong>：輸入 API Token 後自動偵測可用模型並勾選（Groq / Ollama / Grok / Gemini / Claude / ChatGPT），可依自訂焦點跨標的平行交叉分析。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">5</span>
+                  <div><strong>對帳單交易復盤</strong>：匯入 PDF / XLSX / CSV / JSON 對帳單或系統委託紀錄，統計勝率、獲利因子、手續費退佣與最大回撤。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">6</span>
+                  <div><strong>模擬 (SIM) / 實盤 (LIVE) 下單與推播</strong>：內建紙上模擬盤與永豐金 Shioaji 實盤串接介面、TradingView Webhook 派單，以及 LINE Bot / Telegram 結構化訊號通知。</div>
+                </li>
+                <li>
+                  <span class="shl-about-bullet">7</span>
+                  <div><strong>裝置沙盒安全保險箱與多設備連動</strong>：AES-256-GCM 本機加密、iPhone Face ID / Touch ID / 手機解鎖密碼保護，支援 AirDrop / iCloud `.shlvault`、Apple 通用剪貼簿與私有後端零知識同步。</div>
+                </li>
+              </ul>
+            </div>
+          </article>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title">🧭 建議應用方式（個人研究流程）</h3>
+                  <p class="card-subtitle">從觀察、回測驗證到跨裝置安全管理的標準步驟</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="shl-about-list">
+                  <li>
+                    <span class="shl-about-bullet" style="background:#dcfce7;color:#15803d;">①</span>
+                    <div><strong>建立自選與觀察行情</strong>：在主頁加入關注的台股代號（如 0050、2330），切換日線／週線與技術指標，點選圖表上的國際重大事件節點對照歷史波動。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#dcfce7;color:#15803d;">②</span>
+                    <div><strong>真實歷史回測與壓力測試</strong>：開啟「台股真實回測」比較多階段定投與單筆一次買入的含息報酬率，或至「量化策略實驗室」測試 30 支策略的夏普值與最大回撤。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#dcfce7;color:#15803d;">③</span>
+                    <div><strong>多模型 AI 輔助判讀</strong>：至「AI 六模型中心」貼上個人 API Token 並偵測可用模型，輸入自訂研究問題（例如族群比較、風險檢核）做多視角整理。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#dcfce7;color:#15803d;">④</span>
+                    <div><strong>對帳單復盤與模擬驗證</strong>：先在「模擬下單 SIM」檢驗紀律，再將成交或券商對帳單匯入復盤頁檢討勝率與手續費成本。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#dcfce7;color:#15803d;">⑤</span>
+                    <div><strong>iPhone 沙盒上鎖與跨裝置連動</strong>：於「安全保險箱 &amp; 連動」啟用密碼與 Face ID / 手機解鎖密碼，並透過 AirDrop / iCloud 或個人後端在 iPhone、iPad 與電腦間端對端加密同步。</div>
+                  </li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title">🏛️ 資料來源說明</h3>
+                  <p class="card-subtitle">SHL TW 不捏造行情，僅整理公開市場數據與使用者授權之模型介面</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="shl-about-list">
+                  <li>
+                    <span class="shl-about-bullet" style="background:#fef3c7;color:#b45309;">源</span>
+                    <div><strong>FinMind v4 公開金融資料介面</strong>：提供台股歷史日 K（OHLCV）、除權息現金股利／股票股利、台股代碼官方名稱與三大法人籌碼（底層整理自<strong>臺灣證券交易所 TWSE</strong>、<strong>證券櫃檯買賣中心 TPEx</strong> 與<strong>公開資訊觀測站 MOPS</strong>）。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#fef3c7;color:#b45309;">源</span>
+                    <div><strong>Yahoo Finance 行情介面</strong>：提供上市（`.TW`）／上櫃（`.TWO`）盤中分時 K 線（5m / 15m / 60m）與日線／週線報價。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#fef3c7;color:#b45309;">源</span>
+                    <div><strong>TradingView 進階線圖 Widget</strong>：提供互動式 K 線繪圖與自訂雲端工作區串接。</div>
+                  </li>
+                  <li>
+                    <span class="shl-about-bullet" style="background:#fef3c7;color:#b45309;">源</span>
+                    <div><strong>使用者自備 AI 模型與券商介面</strong>：Groq、Ollama（本機）、xAI Grok、Google Gemini、Anthropic Claude、OpenAI ChatGPT 及永豐金 Shioaji API（僅於使用者自行填入個人憑證時觸發）。</div>
+                  </li>
+                </ul>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Universal Bottom Disclaimer Footer (Home Page) -->
+      <footer class="shl-disclaimer-footer" role="contentinfo" aria-label="免責聲明">
+        <strong>⚠️ 免責聲明（Disclaimer）</strong>：SHL TW 所呈現之即時行情、歷史回測、除權息試算、國際重大金融事件標註、量化策略指標與多模型 AI 解析內容，均整理自公開市場資料來源（Yahoo Finance、FinMind／臺灣證券交易所 TWSE、證券櫃檯買賣中心 TPEx、公開資訊觀測站 MOPS、TradingView），<strong>僅供個人研究觀察與工具輔助參考，不構成任何投資建議、買賣推薦或獲利保證</strong>。歷史績效不代表未來表現，金融市場交易與自動化下單具高度波動與本金虧損風險；所有財務、除權息與公告資訊請以官方發布為準，使用者應獨立判斷、審慎評估並自負一切投資決策與盈虧責任。
+        <div style="margin-top:6px;font-size:11px;color:#64748b;">SHL TW © 2026 · 資料僅供研究參考，非投資建議 · 本機沙盒優先架構</div>
+      </footer>
     </section>
   </main>
 
-  <!-- ==================== UNIFIED FEATURE STUDIO MODAL (7 MODULES) ==================== -->
+  <!-- ==================== UNIFIED FEATURE STUDIO MODAL (9 MODULES) ==================== -->
   <div id="featureStudioModal" class="modal-backdrop">
     <div class="modal-dialog modal-dialog-xl">
       <div class="studio-modal-head">
+        <div class="studio-modal-toprow">
+          <div class="studio-modal-heading">
+            <span class="badge badge-blue">SHL TW</span>
+            <span id="studioModalActiveLabel">功能工作區</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-dark studio-close-btn" data-close-modal="featureStudioModal">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>關閉視窗
+          </button>
+        </div>
         <div class="studio-pills" role="tablist" aria-label="功能彈窗切換">
           <button type="button" class="studio-pill active" data-studio-pane="strategy">
             <i data-lucide="bot" style="width:13px;height:13px;"></i>技術開關 (v01) &amp; 量化實驗室
@@ -2770,7 +3121,7 @@
             <i data-lucide="file-spreadsheet" style="width:13px;height:13px;"></i>對帳單復盤
           </button>
           <button type="button" class="studio-pill" data-studio-pane="dca">
-            <i data-lucide="trending-up" style="width:13px;height:13px;"></i>台股真實定投回測
+            <i data-lucide="trending-up" style="width:13px;height:13px;"></i>台股真實回測
           </button>
           <button type="button" class="studio-pill" data-studio-pane="notify">
             <i data-lucide="bell-ring" style="width:13px;height:13px;"></i>LINE / TG 通知
@@ -2788,9 +3139,6 @@
             <i data-lucide="shield-check" style="width:13px;height:13px;"></i>安全保險箱 &amp; 連動
           </button>
         </div>
-        <button type="button" class="btn btn-sm" data-close-modal="featureStudioModal">
-          <i data-lucide="x" style="width:14px;height:14px;"></i>關閉視窗
-        </button>
       </div>
 
       <div class="studio-modal-body">
@@ -2989,8 +3337,8 @@
           <article class="card">
             <div class="card-header">
               <div class="card-title-group">
-                <h2 class="card-title">台股真實定投回測查詢（FinMind 真實歷史股價＋除權息配股）</h2>
-                <p class="card-subtitle">參考台股真實定投回測 v16：支援多標的權重配置、多階段定投金額、真實現金股利、配股／分割計算與手續費折數連動，嚴禁假數據</p>
+                <h2 class="card-title">台股真實回測（多階段定投 / 單筆一次買入 · FinMind 真實歷史股價＋除權息）</h2>
+                <p class="card-subtitle">支援多標的權重配置，可自由切換「多階段定期定額」或「單筆一次投入」查閱真實含息績效，並於走勢圖標註國際重大金融事件（點選事件點即可檢視說明）</p>
               </div>
               <div class="chart-group">
                 <button id="btnRunDcaBacktest" type="button" class="btn btn-primary">
@@ -3025,10 +3373,16 @@
                 </div>
               </div>
 
-              <!-- Multi-Phase Monthly DCA Strategy -->
+              <!-- Investment Mode Switch: Multi-Phase DCA vs Single Lump-Sum -->
               <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                  <span style="font-size:12px;font-weight:800;">2. 多階段每月定期定額設定</span>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:12px;font-weight:800;">2. 投入方式設定：</span>
+                    <div class="chart-group" role="tablist" aria-label="回測投入模式">
+                      <button id="btnDcaModeMulti" type="button" class="btn btn-sm btn-dark">多階段定期定額</button>
+                      <button id="btnDcaModeLump" type="button" class="btn btn-sm">單筆一次買入</button>
+                    </div>
+                  </div>
                   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;">
                     <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
                       <input id="dcaCalcSplitChk" type="checkbox" checked />計算配股 / 分割 / 減資
@@ -3036,15 +3390,48 @@
                     <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
                       <input id="dcaApplyFeeChk" type="checkbox" checked />扣除手續費 (<span id="dcaFeeRateLabel" class="mono">2.8</span>折)
                     </label>
+                  </div>
+                </div>
+
+                <!-- Mode A: Multi-Phase Monthly DCA -->
+                <div id="dcaMultiPhaseWrap" style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;">
                     <label style="display:inline-flex;align-items:center;gap:5px;">
                       每月扣款日：
                       <input id="dcaDeductionDay" type="number" min="1" max="31" value="6" class="input mono" style="width:58px;padding:3px 6px;text-align:center;" /> 日
                     </label>
                     <button id="btnDcaAddPhase" type="button" class="btn btn-sm">+ 新增投入階段</button>
                   </div>
+                  <div id="dcaPhasesList" style="display:flex;flex-direction:column;gap:6px;"></div>
                 </div>
-                <div id="dcaPhasesList" style="display:flex;flex-direction:column;gap:6px;"></div>
-                <div id="dcaStatusBanner" style="font-size:11.5px;color:var(--ink-3);">就緒：點擊「開始真實回測」將即時向 FinMind 抓取真實日 K 與除權息資料。</div>
+
+                <!-- Mode B: Single Lump-Sum Buy -->
+                <div id="dcaLumpSumWrap" style="display:none;flex-direction:column;gap:10px;padding:10px 12px;border-radius:10px;background:#ffffff;border:1px solid #bfdbfe;">
+                  <div class="form-grid-2" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+                    <div>
+                      <label class="field-label" for="dcaLumpAmountInput">單筆投入總金額 (TWD)</label>
+                      <input id="dcaLumpAmountInput" type="number" min="1000" step="10000" value="300000" class="input mono" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="dcaLumpBuyDateInput">單筆買入日期</label>
+                      <input id="dcaLumpBuyDateInput" type="date" value="2020-01-02" class="input mono" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="dcaLumpEndDateInput">績效結算日期</label>
+                      <input id="dcaLumpEndDateInput" type="date" value="2026-11-30" class="input mono" />
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-3);">
+                    <span>快速金額：</span>
+                    <button type="button" class="btn btn-sm" data-lump-preset="100000">$10萬</button>
+                    <button type="button" class="btn btn-sm" data-lump-preset="300000">$30萬</button>
+                    <button type="button" class="btn btn-sm" data-lump-preset="500000">$50萬</button>
+                    <button type="button" class="btn btn-sm" data-lump-preset="1000000">$100萬</button>
+                    <span style="margin-left:auto;">將於買入日後第一個真實交易日依權重一次建倉</span>
+                  </div>
+                </div>
+
+                <div id="dcaStatusBanner" style="font-size:11.5px;color:var(--ink-3);">就緒：選擇「多階段定期定額」或「單筆一次買入」，點擊「開始真實回測」即向 FinMind 抓取真實日 K 與除權息。</div>
               </div>
             </div>
           </article>
@@ -3076,20 +3463,24 @@
 
             <article class="card">
               <div class="card-header">
-                <h3 id="dcaChartTitle" class="card-title">組合總市值 vs 累積投入成本走勢（真實歷史數據）</h3>
+                <div class="card-title-group">
+                  <h3 id="dcaChartTitle" class="card-title">組合總市值 vs 累積投入成本走勢（含國際重大金融事件標註）</h3>
+                  <p class="card-subtitle">點擊圖中橘色「⚡ 國際重大金融事件」節點或下方事件標籤可檢視詳細說明，再點一下畫面任意處關閉</p>
+                </div>
                 <span id="dcaSourceBadge" class="badge badge-teal">FinMind 真實數據</span>
               </div>
               <div class="card-body">
-                <div style="position:relative;height:300px;width:100%;">
+                <div style="position:relative;height:320px;width:100%;">
                   <canvas id="dcaMainChart"></canvas>
                 </div>
+                <div id="dcaMacroEventsBar" class="macro-event-chip-bar" style="display:none;"></div>
               </div>
             </article>
 
             <article class="card">
               <div class="card-header">
                 <div class="chart-group">
-                  <button id="btnDcaTabBuy" type="button" class="btn btn-sm btn-dark">定期定額扣款明細 (<span id="dcaBuyCount">0</span>)</button>
+                  <button id="btnDcaTabBuy" type="button" class="btn btn-sm btn-dark">買入 / 扣款明細 (<span id="dcaBuyCount">0</span>)</button>
                   <button id="btnDcaTabCorp" type="button" class="btn btn-sm">配息與除權異動總表 (<span id="dcaCorpCount">0</span>)</button>
                 </div>
               </div>
@@ -4116,6 +4507,11 @@
           </div>
         </div>
 
+        <!-- Universal Bottom Disclaimer Footer (Shown at bottom of EVERY Studio Page) -->
+        <footer class="shl-disclaimer-footer" role="contentinfo" aria-label="免責聲明">
+          <strong>⚠️ 免責聲明（Disclaimer）</strong>：SHL TW 所有報價、歷史回測、除權息試算、國際重大金融事件標註、量化策略指標與 AI 分析內容均整理自公開資料源（Yahoo Finance、FinMind／TWSE／TPEx／MOPS、TradingView），<strong>僅供個人研究觀察與工具輔助參考，不構成任何投資建議、買賣推薦或獲利保證</strong>。歷史績效不代表未來表現，投資交易具高度波動與本金虧損風險，請自行查證官方公告並自負投資決策與盈虧責任。
+        </footer>
+
       </div>
     </div>
   </div>
@@ -4148,6 +4544,29 @@
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding-top:4px;border-top:1px solid rgba(148,163,184,0.15);">
         <span id="vaultLockDeviceBadge">本機沙盒隔離中</span>
         <button id="btnVaultEmergencyReset" type="button" style="background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;text-decoration:underline;">忘記密碼？重置本機保險箱</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive International Major Financial Event Detail Popover (Click/Tap Anywhere to Close) -->
+  <div id="macroEventBackdrop" class="macro-event-backdrop" role="dialog" aria-modal="true" aria-labelledby="macroEventTitle">
+    <div id="macroEventCard" class="macro-event-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span id="macroEventDateBadge" class="badge badge-amber mono" style="font-size:12px;">2024-08-05</span>
+        <span id="macroEventCategoryBadge" class="badge badge-blue">國際重大金融事件</span>
+      </div>
+      <h3 id="macroEventTitle" style="margin:0;font-size:16.5px;font-weight:800;color:#0f172a;line-height:1.35;">事件標題</h3>
+      <div id="macroEventContextValue" class="mono" style="font-size:12px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:6px 10px;display:none;"></div>
+      <div style="font-size:12.5px;color:#334155;line-height:1.65;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:2px;">🌐 國際事件背景</div>
+        <div id="macroEventSummary"></div>
+      </div>
+      <div style="font-size:12.5px;color:#334155;line-height:1.65;padding:9px 11px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;">
+        <div style="font-weight:800;color:#9a3412;margin-bottom:2px;">🇹🇼 對台股與市場影響</div>
+        <div id="macroEventTwImpact"></div>
+      </div>
+      <div style="text-align:center;font-size:11.5px;color:#64748b;padding-top:4px;border-top:1px dashed #e2e8f0;font-weight:700;">
+        👆 再點一下畫面任意處即可關閉
       </div>
     </div>
   </div>
@@ -4295,6 +4714,8 @@
         { id: '0050', name: '元大台灣50', weight: 60 },
         { id: '2330', name: '台積電', weight: 40 }
       ],
+      dcaMode: 'multi', // 'multi' | 'lump'
+      dcaLump: { amount: 300000, buyDate: '2020-01-02', endDate: '2026-11-30' },
       dcaPhases: [
         { id: 1, startDate: '2024-01-01', endDate: '2026-11-30', amount: 10000 }
       ],
@@ -4465,6 +4886,8 @@
         reviewData: state.reviewData.slice(0, 600),
         reviewSource: state.reviewSource,
         dcaPortfolio: state.dcaPortfolio,
+        dcaMode: state.dcaMode,
+        dcaLump: state.dcaLump,
         dcaPhases: state.dcaPhases,
         backendUrl: state.backendUrl,
         backendAccessToken: state.backendAccessToken || '',
@@ -4500,6 +4923,8 @@
       if (Array.isArray(saved.reviewData)) state.reviewData = saved.reviewData;
       if (saved.reviewSource) state.reviewSource = saved.reviewSource;
       if (Array.isArray(saved.dcaPortfolio) && saved.dcaPortfolio.length > 0) state.dcaPortfolio = saved.dcaPortfolio;
+      if (saved.dcaMode === 'multi' || saved.dcaMode === 'lump') state.dcaMode = saved.dcaMode;
+      if (saved.dcaLump && typeof saved.dcaLump === 'object') Object.assign(state.dcaLump, saved.dcaLump);
       if (Array.isArray(saved.dcaPhases) && saved.dcaPhases.length > 0) state.dcaPhases = saved.dcaPhases;
       if (typeof saved.backendUrl === 'string') state.backendUrl = saved.backendUrl;
       if (typeof saved.backendAccessToken === 'string') state.backendAccessToken = saved.backendAccessToken;
@@ -5772,6 +6197,310 @@
       }
     }
 
+    // =========================================================================
+    // 6.5 INTERNATIONAL MAJOR FINANCIAL EVENTS (Chart Annotation & Tap Popover)
+    // =========================================================================
+    const GLOBAL_FIN_EVENTS = [
+      {
+        date: '2008-09-15', shortTitle: '雷曼海嘯', category: '系統性金融危機',
+        title: '美國雷曼兄弟申請破產（全球金融海嘯引爆）',
+        summary: '美國第四大投資銀行雷曼兄弟倒閉，次貸危機全面擴散為全球流動性枯竭與信用凍結，引發 2008 年全球股市崩盤。',
+        twImpact: '台股加權指數自 9,309 點重挫至 3,955 點波段低點，外資大幅撤出電子權值股，隨後各國聯手降息與 QE 展開多年復甦。'
+      },
+      {
+        date: '2011-08-05', shortTitle: '美債降評', category: '主權信評危機',
+        title: '標普 (S&P) 史上首度下調美國主權信評至 AA+',
+        summary: '標準普爾因美國債務上限僵局與赤字問題下調美國 AAA 信評，疊加歐債危機升溫，引發全球風險資產恐慌性拋售。',
+        twImpact: '台股單週暴跌逾千點，外資連續大幅賣超權值股，市場轉向防禦型與高股息標的。'
+      },
+      {
+        date: '2015-08-11', shortTitle: '中國811匯改', category: '匯率與新興市場',
+        title: '中國人民銀行啟動「811 匯改」（人民幣急貶）',
+        summary: '中國人行一次性大幅下調人民幣中間價並引發新興市場貨幣競貶潮，全球擔心中國經濟硬著陸。',
+        twImpact: '台股於 2015 年 8 月下旬盤中一度急跌逾 7% 觸及 7,203 點，隨後國安基金進場護盤止穩。'
+      },
+      {
+        date: '2016-06-24', shortTitle: '英國脫歐', category: '地緣政治事件',
+        title: '英國脫歐公投 (Brexit) 結果意外通過',
+        summary: '英國公投以 51.9% 通過脫離歐盟，英鎊單日暴跌逾 10%，全球金融市場短線劇烈震盪。',
+        twImpact: '台股當日盤中重挫近 300 點，但因外資資金回流亞洲與台積電領軍，數週內即迅速收復失土。'
+      },
+      {
+        date: '2018-03-22', shortTitle: '美中貿易戰', category: '關稅與貿易衝突',
+        title: '美國簽署 301 條款備忘錄（美中貿易戰開打）',
+        summary: '美國宣布對中國數百億美元商品加徵關稅，全球供應鏈重組序幕正式拉開，科技與製造業面臨成本與訂單變數。',
+        twImpact: '台股震盪加劇，短線衝擊中國產能比重高之電子代工，但中長期促成台商回流與半導體轉單效應。'
+      },
+      {
+        date: '2020-03-19', shortTitle: '疫情股災', category: '全球黑天鵝',
+        title: 'COVID-19 全球疫情大流行＆美股四度熔斷',
+        summary: '歐美陸續封城引發全球經濟急凍與美元流動性危機，聯準會緊急降息至零並祭出無限量 QE 救市。',
+        twImpact: '台股 2020/03/19 急殺至 8,523 點低點；隨遠距辦公、半導體缺貨與無限 QE 資金行情，開啟史上最長多頭波段。'
+      },
+      {
+        date: '2021-05-12', shortTitle: '台灣疫情急殺', category: '區域突發事件',
+        title: '台灣本土疫情升溫（三級警戒前夕爆量急殺）',
+        summary: '台灣本土確診數驟增引發內需停擺恐慌，市場出現罕見單日巨量停損與融資斷頭潮。',
+        twImpact: '加權指數單日盤中重挫 1,417 點創當時紀錄，但電子出口與航運基本面未受重傷，數週後再創新高。'
+      },
+      {
+        date: '2022-02-24', shortTitle: '俄烏戰爭', category: '地緣政治衝突',
+        title: '俄烏戰爭爆發（能源與全球通膨飆升）',
+        summary: '俄羅斯對烏克蘭發動軍事行動，國際油價與大宗商品飆漲，加劇歐美通膨失控壓力。',
+        twImpact: '外資自台股大幅提款，高估值電子科技股承壓，資金轉向能源、原物料與防禦類股。'
+      },
+      {
+        date: '2022-03-16', shortTitle: 'Fed暴力升息', category: '央行貨幣政策',
+        title: '美國聯準會啟動 40 年來最激進升息循環',
+        summary: '為對抗逾 8% 高通膨，Fed 連續多次大幅升息 3 碼並縮表，美債 10 年期殖利率飆升，全球股市估值重估。',
+        twImpact: '台股 2022 年自 18,619 點一路修正至 12,629 點（跌幅逾 32%），外資全年賣超逾兆元。'
+      },
+      {
+        date: '2022-11-30', shortTitle: 'ChatGPT問世', category: 'AI 科技轉折',
+        title: 'OpenAI 發表 ChatGPT（生成式 AI 超級循環起點）',
+        summary: 'ChatGPT 引爆全球生成式 AI 軍備競賽，雲端巨頭大幅擴張 GPU 與 AI 伺服器資本支出。',
+        twImpact: '成為台灣半導體先進製程（台積電 CoWoS）與 AI 伺服器供應鏈（廣達、鴻海、散熱、載板）長線大行情起點。'
+      },
+      {
+        date: '2023-03-10', shortTitle: 'SVB銀行倒閉', category: '銀行流動性事件',
+        title: '美國矽谷銀行 (SVB) 遭擠兌倒閉',
+        summary: '高利率導致長債評價巨虧，引發矽谷銀行與瑞士信貸危機，美國聯準會火速推出 BTFP 流動性工具止血。',
+        twImpact: '金融股短線受衝擊，但因市場預期升息接近尾聲，資金反而加速回流大型科技與權值股。'
+      },
+      {
+        date: '2023-05-24', shortTitle: 'NVIDIA AI暴衝', category: 'AI 產業里程碑',
+        title: 'NVIDIA 財報與財測遠超預期（引爆 AI 狂潮）',
+        summary: 'NVIDIA 單季資料中心營收展望大幅超出華爾街預期逾 50%，正式驗證 AI 算力硬體爆發需求。',
+        twImpact: '台積電與台股 AI 供應鏈全面噴出，外資大舉回補台股，推升加權指數重返萬七以上。'
+      },
+      {
+        date: '2024-08-05', shortTitle: '日圓套利崩盤', category: '流動性閃崩',
+        title: '日本央行升息引爆日圓套利平倉「黑色星期一」',
+        summary: '日銀意外鷹派升息疊加美國非農數據轉弱，全球日圓套利交易恐慌平倉，日經指數單日暴跌 12.4%。',
+        twImpact: '台股單日重挫 1,807 點（-8.35%）創史上最大收盤跌點，台積電盤中一度跌停，隨後快速深 V 反彈。'
+      },
+      {
+        date: '2024-09-18', shortTitle: 'Fed降息2碼', category: '央行貨幣政策',
+        title: '美國聯準會啟動降息循環（首度降息 2 碼 / 50bps）',
+        summary: 'Fed 四年來首度降息並一次調降 50 個基點，宣示全球貨幣政策由緊縮轉向寬鬆軟著陸。',
+        twImpact: '美元轉弱、資金風險偏好回升，外資回流台股大型電子權值股與 0050 等市值型 ETF。'
+      },
+      {
+        date: '2024-11-06', shortTitle: '美國大選揭曉', category: '地緣與貿易政策',
+        title: '美國總統大選結果揭曉（關稅與減稅政策交易）',
+        summary: '川普贏得美國總統大選，市場迅速定價「美國優先」、企業減稅與新一輪關稅不確定性。',
+        twImpact: '美債殖利率與美元走強，台股半導體供應鏈面臨關稅雜音與美國建廠成本評估，走勢趨於高檔震盪。'
+      },
+      {
+        date: '2025-01-27', shortTitle: 'DeepSeek震撼', category: 'AI 算力重估',
+        title: 'DeepSeek R1 低成本開源模型震撼全球 AI 股',
+        summary: '中國新創 DeepSeek 以低訓練成本發表高效推理模型，引發市場對高階 GPU 資本支出前景的劇烈重新評估。',
+        twImpact: '春節封關期間美股 NVIDIA 單日重挫 17%，台股開紅盤日台積電與 AI 伺服器族群承壓，隨後轉向推論普及受惠題材。'
+      },
+      {
+        date: '2025-04-02', shortTitle: '美國對等關稅', category: '關稅衝擊事件',
+        title: '美國宣布「對等關稅」清單（全球股市劇烈震盪）',
+        summary: '美國公布涵蓋多國之高幅度對等關稅政策，遠超市場預期，引發全球貿易衰退疑慮與股市急挫。',
+        twImpact: '台股清明連假後面臨恐慌補跌與融資清洗，權值股與出口導向電子股單日出現罕見重挫。'
+      },
+      {
+        date: '2025-04-09', shortTitle: '關稅暫緩90天', category: '政策逆轉強彈',
+        title: '美國宣布多國對等關稅暫緩 90 天（全球股市史詩級強彈）',
+        summary: '美方宣布對多數國家高關稅暫緩實施 90 天以進行談判，那斯達克單日暴漲逾 12%。',
+        twImpact: '台股單日暴漲逾 1,600 點創史上最大漲點，千檔個股攻上漲停，成為恐慌低檔佈局與定投紀律的經典案例。'
+      },
+      {
+        date: '2025-09-17', shortTitle: 'Fed重啟降息', category: '央行貨幣政策',
+        title: '聯準會重啟降息＆全球雲端 AI 資本支出上修',
+        summary: '面對勞動市場降溫，Fed 重啟降息支持經濟，同時北美雲端四大廠持續上調 2026 年 AI 基礎設施投資。',
+        twImpact: '先進製程、CPO 光通訊、散熱與重電族群領軍走強，市值型 ETF 與權值股再寫波段新高。'
+      },
+      {
+        date: '2026-01-28', shortTitle: 'AI基建高峰', category: '產業景氣循環',
+        title: '全球 AI 算力資本支出與先進封裝產能再創高峰',
+        summary: '主要科技巨頭財報確認 AI 推論與代理運算進入商業變現期，先進製程產能持續滿載。',
+        twImpact: '台積電與台灣半導體設備、IC 設計族群獲利展望上修，支撐台股高檔結構。'
+      },
+      {
+        date: '2026-04-15', shortTitle: '貿易談判波動', category: '地緣與貿易政策',
+        title: '美中科技出口管制與國際貿易關稅新一輪談判',
+        summary: '國際間針對先進晶片出口規範與雙邊關稅協議展開新一輪磋商，引發全球科技股短線高波動。',
+        twImpact: '台股出口與半導體權值股隨消息面劇烈震盪，凸顯分批布局與風險控管的重要性。'
+      }
+    ];
+
+    let _macroEventOpenedAt = 0;
+
+    function showMacroEventPopup(evt, contextText = '') {
+      if (!evt) return;
+      const bd = document.getElementById('macroEventBackdrop');
+      if (!bd) return;
+      document.getElementById('macroEventDateBadge').textContent = evt.date;
+      document.getElementById('macroEventCategoryBadge').textContent = evt.category || '國際重大金融事件';
+      document.getElementById('macroEventTitle').textContent = evt.title;
+      document.getElementById('macroEventSummary').textContent = evt.summary;
+      document.getElementById('macroEventTwImpact').textContent = evt.twImpact;
+      const ctxEl = document.getElementById('macroEventContextValue');
+      if (ctxEl) {
+        if (contextText) {
+          ctxEl.textContent = contextText;
+          ctxEl.style.display = 'block';
+        } else {
+          ctxEl.style.display = 'none';
+        }
+      }
+      _macroEventOpenedAt = Date.now();
+      bd.classList.add('open');
+    }
+
+    function closeMacroEventPopup() {
+      if (Date.now() - _macroEventOpenedAt < 120) return;
+      document.getElementById('macroEventBackdrop')?.classList.remove('open');
+    }
+
+    function extractIsoDateFromCandle(candle) {
+      if (!candle) return '';
+      if (typeof candle.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(candle.date)) {
+        return candle.date.slice(0, 10);
+      }
+      if (typeof candle.label === 'string' && /^\d{4}-\d{2}-\d{2}/.test(candle.label)) {
+        return candle.label.slice(0, 10);
+      }
+      if (typeof candle.time === 'number' && Number.isFinite(candle.time)) {
+        const ms = candle.time > 1e12 ? candle.time : candle.time * 1000;
+        const d = new Date(ms);
+        if (!Number.isNaN(d.getTime())) {
+          return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Taipei' }).format(d);
+        }
+      }
+      return '';
+    }
+
+    function matchMacroEventsToDates(isoDates) {
+      if (!Array.isArray(isoDates) || isoDates.length === 0) return [];
+      const valid = isoDates.map((d, idx) => ({ d, idx })).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.d));
+      if (!valid.length) return [];
+      const firstDate = valid[0].d;
+      const lastDate = valid[valid.length - 1].d;
+      const matched = [];
+      const usedIdx = new Set();
+
+      GLOBAL_FIN_EVENTS.forEach(evt => {
+        if (evt.date < firstDate || evt.date > lastDate) return;
+        // Find closest trading point on or after evt.date (within 14 calendar days)
+        const evtMs = new Date(evt.date + 'T00:00:00Z').getTime();
+        let best = null;
+        let bestDiff = Infinity;
+        for (const item of valid) {
+          const ms = new Date(item.d + 'T00:00:00Z').getTime();
+          const diff = Math.abs(ms - evtMs) / 86400000;
+          if (diff <= 14 && diff < bestDiff) {
+            bestDiff = diff;
+            best = item;
+          }
+        }
+        if (best) {
+          // Avoid stacking two events on the exact same x index if adjacent slot exists
+          let targetIdx = best.idx;
+          if (usedIdx.has(targetIdx) && targetIdx + 1 < isoDates.length && !usedIdx.has(targetIdx + 1)) {
+            targetIdx = targetIdx + 1;
+          }
+          usedIdx.add(targetIdx);
+          matched.push({ index: targetIdx, matchedDate: isoDates[targetIdx], event: evt });
+        }
+      });
+      return matched;
+    }
+
+    function buildMacroEventChartPlugin(matchedEvents, isDark = false) {
+      return {
+        id: 'shlMacroEventLines',
+        afterDatasetsDraw(chart) {
+          if (!matchedEvents || !matchedEvents.length) return;
+          const dsIdx = chart.data.datasets.findIndex(d => d && d._isMacroEvents);
+          if (dsIdx < 0) return;
+          const meta = chart.getDatasetMeta(dsIdx);
+          if (!meta || meta.hidden) return;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return;
+
+          ctx.save();
+          let lastLabelX = -999;
+          matchedEvents.forEach((m, i) => {
+            const pt = meta.data[m.index];
+            if (!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y)) return;
+            const x = pt.x;
+            const y = pt.y;
+
+            // Vertical dashed guide line
+            ctx.beginPath();
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = isDark ? 'rgba(251, 146, 60, 0.55)' : 'rgba(234, 88, 12, 0.45)';
+            ctx.lineWidth = 1.2;
+            ctx.moveTo(x, chartArea.top + 16);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Compact event flag pill at top (staggered vertically if close)
+            const txt = `⚡${m.event.shortTitle}`;
+            ctx.font = '700 10px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif';
+            const tw = ctx.measureText(txt).width;
+            const pw = tw + 10;
+            const ph = 17;
+            const staggerY = (Math.abs(x - lastLabelX) < pw + 6) ? (i % 2 === 0 ? 0 : 19) : 0;
+            const py = chartArea.top + 2 + staggerY;
+            const px = Math.max(chartArea.left + 2, Math.min(chartArea.right - pw - 2, x - pw / 2));
+            lastLabelX = x;
+
+            ctx.fillStyle = isDark ? 'rgba(234, 88, 12, 0.92)' : '#fff7ed';
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(px, py, pw, ph, 5);
+            } else {
+              ctx.rect(px, py, pw, ph);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = isDark ? '#ffffff' : '#9a3412';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(txt, px + pw / 2, py + ph / 2 + 0.5);
+          });
+          ctx.restore();
+        }
+      };
+    }
+
+    function renderMacroEventChips(containerId, matchedEvents, formatContextFn) {
+      const bar = document.getElementById(containerId);
+      if (!bar) return;
+      if (!matchedEvents || !matchedEvents.length) {
+        bar.style.display = 'none';
+        bar.innerHTML = '';
+        return;
+      }
+      bar.style.display = 'flex';
+      bar.innerHTML = `<span style="font-size:11px;font-weight:800;color:#9a3412;">⚡ 區間國際重大事件（點擊檢視）：</span>` +
+        matchedEvents.map((m, idx) => `
+          <button type="button" class="macro-event-chip" data-macro-idx="${idx}">
+            <span class="mono">${escapeHtml(m.event.date.slice(0, 7))}</span> ${escapeHtml(m.event.shortTitle)}
+          </button>
+        `).join('');
+      bar.querySelectorAll('.macro-event-chip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const m = matchedEvents[Number(btn.dataset.macroIdx)];
+          if (!m) return;
+          const ctxText = typeof formatContextFn === 'function' ? formatContextFn(m) : '';
+          showMacroEventPopup(m.event, ctxText);
+        });
+      });
+    }
+
     function renderRawPriceChart() {
       const canvas = document.getElementById('rawPriceChart');
       if (!canvas) return;
@@ -5795,6 +6524,8 @@
 
       const labels = candles.map(c => c.label);
       const closes = candles.map(c => c.close);
+      const candleIsoDates = candles.map(extractIsoDateFromCandle);
+      const matchedEvents = matchMacroEventsToDates(candleIsoDates);
       const vwap = candles.length ? calcVwapSeries(candles) : [];
       const datasets = [
         {
@@ -5871,17 +6602,51 @@
         }
       }
 
+      if (matchedEvents.length > 0) {
+        const eventData = labels.map(() => null);
+        matchedEvents.forEach(m => { eventData[m.index] = closes[m.index]; });
+        datasets.push({
+          label: '⚡ 國際重大金融事件（點擊看說明）',
+          data: eventData,
+          _isMacroEvents: true,
+          showLine: false,
+          borderColor: '#ffffff',
+          backgroundColor: '#ea580c',
+          borderWidth: 2,
+          pointStyle: 'rectRot',
+          pointRadius: 7,
+          pointHoverRadius: 10,
+          pointHitRadius: 18
+        });
+      }
+
+      renderMacroEventChips('rawMacroEventsBar', matchedEvents, (m) => {
+        const px = closes[m.index];
+        return `${meta.symbol} ${meta.name} 當期真實價：${fmtNum(px, 2)}（${m.matchedDate}）`;
+      });
+
       rawChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
           labels: labels.length ? labels : ['等待同步真實資料'],
           datasets
         },
+        plugins: [buildMacroEventChartPlugin(matchedEvents, isDark)],
         options: {
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: 220 },
-          interaction: { mode: 'index', intersect: false },
+          interaction: { mode: 'nearest', intersect: false },
+          onClick: (evt, elements, chart) => {
+            if (!matchedEvents.length) return;
+            const macroHit = elements.find(el => chart.data.datasets[el.datasetIndex]?._isMacroEvents);
+            const idx = macroHit ? macroHit.index : (elements[0] ? elements[0].index : -1);
+            const found = matchedEvents.find(m => m.index === idx);
+            if (found) {
+              const px = closes[found.index];
+              showMacroEventPopup(found.event, `${meta.symbol} ${meta.name} 當期真實價：${fmtNum(px, 2)}（${found.matchedDate}）`);
+            }
+          },
           plugins: {
             legend: {
               position: 'top',
@@ -5890,6 +6655,15 @@
                 boxWidth: 12,
                 font: { size: 11 },
                 color: isDark ? '#e2e8f0' : '#334155'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                afterBody: (items) => {
+                  const idx = items?.[0]?.dataIndex;
+                  const found = matchedEvents.find(m => m.index === idx);
+                  return found ? [`⚡ 重大事件：${found.event.title}（點擊看說明）`] : [];
+                }
               }
             }
           },
@@ -8633,14 +9407,26 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       const btnMenu = document.getElementById('btnFeatureMenu');
       if (btnMenu) btnMenu.setAttribute('aria-expanded', 'false');
 
+      let activePillEl = null;
       document.querySelectorAll('.studio-pill').forEach(p => {
-        p.classList.toggle('active', p.dataset.studioPane === paneId);
+        const isAct = p.dataset.studioPane === paneId;
+        p.classList.toggle('active', isAct);
+        if (isAct) activePillEl = p;
       });
+      const lblEl = document.getElementById('studioModalActiveLabel');
+      if (lblEl && activePillEl) {
+        lblEl.textContent = activePillEl.textContent.trim();
+      }
       document.querySelectorAll('.studio-pane').forEach(p => {
         p.classList.toggle('active', p.id === `studio-${paneId}`);
       });
 
       openModal('featureStudioModal');
+      if (activePillEl && typeof activePillEl.scrollIntoView === 'function') {
+        setTimeout(() => {
+          try { activePillEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
+        }, 60);
+      }
 
       if (paneId === 'strategy') {
         renderStrategyModalUI();
@@ -8884,15 +9670,30 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     function bindEvents() {
-      // Unified Feature Menu Dropdown
+      // Unified Feature Menu Dropdown (viewport-safe positioning for iPhone & desktop)
       const btnMenu = document.getElementById('btnFeatureMenu');
       const dropdown = document.getElementById('featureMenuDropdown');
       if (btnMenu && dropdown) {
+        const positionDropdown = () => {
+          if (window.innerWidth <= 960) {
+            const rect = btnMenu.getBoundingClientRect();
+            const safeTop = Math.max(52, Math.round(rect.bottom + 6));
+            dropdown.style.top = `${safeTop}px`;
+            dropdown.style.maxHeight = `calc(100dvh - ${safeTop + 74}px)`;
+          } else {
+            dropdown.style.top = '';
+            dropdown.style.maxHeight = '';
+          }
+        };
         btnMenu.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !dropdown.classList.contains('open');
+          if (willOpen) positionDropdown();
           dropdown.classList.toggle('open', willOpen);
           btnMenu.setAttribute('aria-expanded', String(willOpen));
+        });
+        window.addEventListener('resize', () => {
+          if (dropdown.classList.contains('open')) positionDropdown();
         });
         document.addEventListener('click', e => {
           if (!dropdown.contains(e.target) && e.target !== btnMenu) {
@@ -8901,6 +9702,14 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           }
         });
       }
+
+      // International Major Financial Event Popover: tap/click anywhere on screen to close
+      document.getElementById('macroEventBackdrop')?.addEventListener('click', () => {
+        closeMacroEventPopup();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeMacroEventPopup();
+      });
 
       // Open Feature Studio Modal from dropdown items or modal pills
       document.querySelectorAll('[data-open-studio]').forEach(btn => {
@@ -10073,7 +10882,28 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // =========================================================================
     let dcaChartInstance = null;
 
+    function setDcaModeUI(mode) {
+      state.dcaMode = (mode === 'lump') ? 'lump' : 'multi';
+      const isLump = state.dcaMode === 'lump';
+      const btnMulti = document.getElementById('btnDcaModeMulti');
+      const btnLump = document.getElementById('btnDcaModeLump');
+      const wrapMulti = document.getElementById('dcaMultiPhaseWrap');
+      const wrapLump = document.getElementById('dcaLumpSumWrap');
+      if (btnMulti) btnMulti.className = isLump ? 'btn btn-sm' : 'btn btn-sm btn-dark';
+      if (btnLump) btnLump.className = isLump ? 'btn btn-sm btn-dark' : 'btn btn-sm';
+      if (wrapMulti) wrapMulti.style.display = isLump ? 'none' : 'flex';
+      if (wrapLump) wrapLump.style.display = isLump ? 'flex' : 'none';
+
+      const amtEl = document.getElementById('dcaLumpAmountInput');
+      const buyEl = document.getElementById('dcaLumpBuyDateInput');
+      const endEl = document.getElementById('dcaLumpEndDateInput');
+      if (amtEl && state.dcaLump) amtEl.value = String(state.dcaLump.amount || 300000);
+      if (buyEl && state.dcaLump) buyEl.value = state.dcaLump.buyDate || '2020-01-02';
+      if (endEl && state.dcaLump) endEl.value = state.dcaLump.endDate || '2026-11-30';
+    }
+
     function renderDcaConfigUI() {
+      setDcaModeUI(state.dcaMode);
       const pList = document.getElementById('dcaPortfolioList');
       const totalW = state.dcaPortfolio.reduce((s, x) => s + Number(x.weight || 0), 0);
       const wBadge = document.getElementById('dcaWeightTotal');
@@ -10238,12 +11068,25 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     }
 
     async function runDcaBacktest() {
-      if (state.dcaPortfolio.length === 0 || state.dcaPhases.length === 0) {
-        showToast('請確認回測參數', '請至少設定一檔台股標的與一個定投階段。', 'warn');
+      const isLump = state.dcaMode === 'lump';
+      if (state.dcaPortfolio.length === 0) {
+        showToast('請確認回測參數', '請至少加入一檔台股標的。', 'warn');
+        return;
+      }
+      if (!isLump && state.dcaPhases.length === 0) {
+        showToast('請確認回測參數', '多階段定期定額模式需至少設定一個投入階段。', 'warn');
         return;
       }
       const totalWeight = state.dcaPortfolio.reduce((s, x) => s + Number(x.weight || 0), 0);
       if (totalWeight <= 0) return;
+
+      const lumpAmount = Math.max(1000, Number(document.getElementById('dcaLumpAmountInput')?.value || state.dcaLump?.amount || 300000));
+      const lumpBuyDate = (document.getElementById('dcaLumpBuyDateInput')?.value || state.dcaLump?.buyDate || '2020-01-02').trim();
+      const lumpEndDate = (document.getElementById('dcaLumpEndDateInput')?.value || state.dcaLump?.endDate || '2026-11-30').trim();
+      if (isLump) {
+        state.dcaLump = { amount: lumpAmount, buyDate: lumpBuyDate, endDate: lumpEndDate };
+        persistState();
+      }
 
       const btn = document.getElementById('btnRunDcaBacktest');
       const banner = document.getElementById('dcaStatusBanner');
@@ -10253,31 +11096,48 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       const applyFee = document.getElementById('dcaApplyFeeChk')?.checked ?? true;
       const dDay = Math.max(1, Math.min(31, parseInt(document.getElementById('dcaDeductionDay')?.value || '6', 10)));
       const sortedPhases = [...state.dcaPhases].sort((a, b) => a.startDate.localeCompare(b.startDate));
-      const apiStart = sortedPhases[0].startDate.slice(0, 4) + '-01-01';
+      const apiStart = isLump
+        ? (lumpBuyDate.slice(0, 4) + '-01-01')
+        : (sortedPhases[0].startDate.slice(0, 4) + '-01-01');
 
       const allBuys = [], allCorps = [], stockDateMap = {};
-      const summary = { totalCost: 0, totalFees: 0, totalDiv: 0, totalSplit: 0, totalValue: 0, totalProfit: 0, roi: 0, firstDate: '9999-12-31', lastDate: '', sourceLabel: 'FinMind v4' };
+      const summary = {
+        mode: state.dcaMode,
+        totalCost: 0, totalFees: 0, totalDiv: 0, totalSplit: 0,
+        totalValue: 0, totalProfit: 0, roi: 0,
+        firstDate: '9999-12-31', lastDate: '', sourceLabel: 'FinMind v4'
+      };
 
       try {
         for (const stock of state.dcaPortfolio) {
           if (banner) banner.textContent = `正在向 FinMind 抓取 ${stock.id} ${stock.name} 真實歷史日 K 與除權息資料...`;
           const frac = Number(stock.weight) / totalWeight;
           const stockPhases = sortedPhases.map(p => ({ ...p, amount: Number(p.amount) * frac }));
-          const { prices, dividends, sourceLabel } = await fetchDcaHistoryAndDivs(stock.id, apiStart);
+          const { prices: rawPrices, dividends, sourceLabel } = await fetchDcaHistoryAndDivs(stock.id, apiStart);
           summary.sourceLabel = sourceLabel;
 
-          const startYr = new Date(stockPhases[0].startDate).getFullYear();
-          const endDt = new Date(prices[prices.length - 1].date);
-          const targets = [];
-          for (let y = startYr; y <= endDt.getFullYear(); y++) {
-            for (let m = 1; m <= 12; m++) {
-              if (y === endDt.getFullYear() && m > endDt.getMonth() + 1) break;
-              const safeDay = Math.min(dDay, new Date(y, m, 0).getDate());
-              targets.push(`${y}-${String(m).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`);
+          const prices = isLump && lumpEndDate
+            ? rawPrices.filter(r => r.date <= lumpEndDate)
+            : rawPrices;
+          if (!prices.length) {
+            throw new Error(`${stock.id} 在選定回測區間內查無真實收盤資料`);
+          }
+
+          let targets = [];
+          if (!isLump) {
+            const startYr = new Date(stockPhases[0].startDate).getFullYear();
+            const endDt = new Date(prices[prices.length - 1].date);
+            for (let y = startYr; y <= endDt.getFullYear(); y++) {
+              for (let m = 1; m <= 12; m++) {
+                if (y === endDt.getFullYear() && m > endDt.getMonth() + 1) break;
+                const safeDay = Math.min(dDay, new Date(y, m, 0).getDate());
+                targets.push(`${y}-${String(m).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`);
+              }
             }
           }
 
           let curShares = 0, curCost = 0, curFees = 0, curDiv = 0, curSplit = 0;
+          let lumpBought = false;
           let prevRec = prices[0];
           const pending = [...targets];
           const dateMap = {};
@@ -10325,28 +11185,50 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               });
             }
 
-            while (pending.length > 0 && dt >= pending[0]) {
-              const tgt = pending.shift();
-              const diffDays = (new Date(dt) - new Date(tgt)) / 86400000;
-              if (diffDays >= 0 && diffDays <= 15) {
-                const ph = stockPhases.find(p => tgt >= p.startDate && tgt <= p.endDate);
-                if (ph && rec.close > 0) {
-                  const sharesBought = Math.floor(ph.amount / rec.close);
-                  if (sharesBought > 0) {
-                    const gross = sharesBought * rec.close;
-                    const fee = applyFee ? Math.max(1, Math.round(gross * 0.001425 * (state.feeDiscount / 10))) : 0;
-                    curShares += sharesBought;
-                    curCost += (gross + fee);
-                    curFees += fee;
-                    allBuys.push({
-                      date: dt, stockId: stock.id, stockName: stock.name,
-                      price: rec.close, spent: Math.round(gross), fee,
-                      shares: sharesBought, cumShares: curShares, cumCost: Math.round(curCost)
-                    });
-                    if (dt < summary.firstDate) summary.firstDate = dt;
-                  }
+            if (isLump) {
+              // Single Lump-Sum Buy: execute full weighted budget on first real trading day >= lumpBuyDate
+              if (!lumpBought && dt >= lumpBuyDate && rec.close > 0) {
+                const budget = lumpAmount * frac;
+                const sharesBought = Math.floor(budget / rec.close);
+                if (sharesBought > 0) {
+                  const gross = sharesBought * rec.close;
+                  const fee = applyFee ? Math.max(1, Math.round(gross * 0.001425 * (state.feeDiscount / 10))) : 0;
+                  curShares += sharesBought;
+                  curCost += (gross + fee);
+                  curFees += fee;
+                  allBuys.push({
+                    date: dt, stockId: stock.id, stockName: stock.name,
+                    price: rec.close, spent: Math.round(gross), fee,
+                    shares: sharesBought, cumShares: curShares, cumCost: Math.round(curCost)
+                  });
+                  if (dt < summary.firstDate) summary.firstDate = dt;
                 }
-                break;
+                lumpBought = true;
+              }
+            } else {
+              while (pending.length > 0 && dt >= pending[0]) {
+                const tgt = pending.shift();
+                const diffDays = (new Date(dt) - new Date(tgt)) / 86400000;
+                if (diffDays >= 0 && diffDays <= 15) {
+                  const ph = stockPhases.find(p => tgt >= p.startDate && tgt <= p.endDate);
+                  if (ph && rec.close > 0) {
+                    const sharesBought = Math.floor(ph.amount / rec.close);
+                    if (sharesBought > 0) {
+                      const gross = sharesBought * rec.close;
+                      const fee = applyFee ? Math.max(1, Math.round(gross * 0.001425 * (state.feeDiscount / 10))) : 0;
+                      curShares += sharesBought;
+                      curCost += (gross + fee);
+                      curFees += fee;
+                      allBuys.push({
+                        date: dt, stockId: stock.id, stockName: stock.name,
+                        price: rec.close, spent: Math.round(gross), fee,
+                        shares: sharesBought, cumShares: curShares, cumCost: Math.round(curCost)
+                      });
+                      if (dt < summary.firstDate) summary.firstDate = dt;
+                    }
+                  }
+                  break;
+                }
               }
             }
 
@@ -10369,7 +11251,6 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         summary.totalProfit = summary.totalValue + summary.totalDiv - summary.totalCost;
         summary.roi = summary.totalCost > 0 ? (summary.totalProfit / summary.totalCost) * 100 : 0;
 
-        // Build combined timeline (sample evenly if > 160 points for crisp performance)
         const allDates = Array.from(new Set(Object.values(stockDateMap).flatMap(m => Object.keys(m)))).sort();
         const latestState = {};
         state.dcaPortfolio.forEach(s => { latestState[s.id] = { cumCost: 0, shares: 0, close: 0 }; });
@@ -10389,9 +11270,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         state.dcaResult = { summary, buys: allBuys, corps: allCorps, timeline };
         renderDcaResults();
-        triggerHandshake('FINMIND', 'CORE', '#0d9488', true, 48, `真實定投回測完成：ROI ${summary.roi.toFixed(2)}%`);
-        if (banner) banner.textContent = `✓ 真實回測完成：${state.dcaPortfolio.map(s => `${s.id} ${s.name}`).join(' + ')}（共 ${allBuys.length} 次扣款、${allCorps.length} 筆真實除權息）`;
-        showToast('台股真實定投回測完成', `含息總報酬率 ${summary.roi.toFixed(2)}%，累積現金股利 ${fmtMoney(summary.totalDiv)}。`, 'success');
+        const modeLabel = isLump ? '單筆一次買入' : '多階段定期定額';
+        triggerHandshake('FINMIND', 'CORE', '#0d9488', true, 48, `台股真實回測完成 (${modeLabel})：ROI ${summary.roi.toFixed(2)}%`);
+        if (banner) banner.textContent = `✓ 真實回測完成（${modeLabel}）：${state.dcaPortfolio.map(s => `${s.id} ${s.name}`).join(' + ')}（共 ${allBuys.length} 筆建倉／扣款、${allCorps.length} 筆真實除權息）`;
+        showToast(`台股真實回測完成（${modeLabel}）`, `含息總報酬率 ${summary.roi.toFixed(2)}%，累積現金股利 ${fmtMoney(summary.totalDiv)}。`, 'success');
       } catch (err) {
         if (banner) banner.textContent = `❌ 回測異常：${err.message}`;
         showToast('真實回測失敗', err.message, 'error');
@@ -10406,6 +11288,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (!r || !sec) return;
       sec.style.display = 'flex';
       const s = r.summary;
+      const modeLabel = s.mode === 'lump' ? '單筆一次買入' : '多階段定期定額';
+
+      const chartTitleEl = document.getElementById('dcaChartTitle');
+      if (chartTitleEl) {
+        chartTitleEl.textContent = `組合總市值 vs 累積投入成本走勢（${modeLabel} · 含國際重大金融事件）`;
+      }
 
       document.getElementById('dcaKpiCost').textContent = fmtMoney(s.totalCost);
       document.getElementById('dcaKpiFees').textContent = `累計手續費 (${state.feeDiscount.toFixed(1)}折)：${fmtMoney(s.totalFees)}`;
@@ -10423,42 +11311,95 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('dcaBuyCount').textContent = String(r.buys.length);
       document.getElementById('dcaCorpCount').textContent = String(r.corps.length);
 
-      // Downsample timeline slightly if very long so Chart.js stays super responsive
-      const step = Math.max(1, Math.floor(r.timeline.length / 180));
-      const pts = r.timeline.filter((_, i) => i % step === 0 || i === r.timeline.length - 1);
+      // Downsample timeline slightly if very long while preserving exact macro event dates
+      const step = Math.max(1, Math.floor(r.timeline.length / 200));
+      const macroSet = new Set(GLOBAL_FIN_EVENTS.map(e => e.date));
+      const pts = r.timeline.filter((pt, i) => i % step === 0 || i === r.timeline.length - 1 || macroSet.has(pt.date));
+      const ptDates = pts.map(p => p.date);
+      const matchedEvents = matchMacroEventsToDates(ptDates);
+
+      const dcaDatasets = [
+        {
+          label: '投資組合真實總市值 (TWD)',
+          data: pts.map(p => p.totalValue),
+          borderColor: '#059669',
+          backgroundColor: 'rgba(5, 150, 105, 0.12)',
+          borderWidth: 2.4,
+          fill: true,
+          tension: 0.2,
+          pointRadius: 0
+        },
+        {
+          label: '累積投入成本 (TWD)',
+          data: pts.map(p => p.totalCost),
+          borderColor: '#2563eb',
+          borderDash: [5, 4],
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 0
+        }
+      ];
+
+      if (matchedEvents.length > 0) {
+        const eventData = pts.map(() => null);
+        matchedEvents.forEach(m => { eventData[m.index] = pts[m.index].totalValue; });
+        dcaDatasets.push({
+          label: '⚡ 國際重大金融事件（點擊看說明）',
+          data: eventData,
+          _isMacroEvents: true,
+          showLine: false,
+          borderColor: '#ffffff',
+          backgroundColor: '#ea580c',
+          borderWidth: 2,
+          pointStyle: 'rectRot',
+          pointRadius: 7.5,
+          pointHoverRadius: 11,
+          pointHitRadius: 18
+        });
+      }
+
+      renderMacroEventChips('dcaMacroEventsBar', matchedEvents, (m) => {
+        const pt = pts[m.index];
+        return `當日組合市值：${fmtMoney(pt.totalValue)} ｜ 投入成本：${fmtMoney(pt.totalCost)}（${m.matchedDate}）`;
+      });
 
       if (dcaChartInstance) dcaChartInstance.destroy();
       dcaChartInstance = new Chart(document.getElementById('dcaMainChart').getContext('2d'), {
         type: 'line',
         data: {
-          labels: pts.map(p => p.date),
-          datasets: [
-            {
-              label: '投資組合真實總市值 (TWD)',
-              data: pts.map(p => p.totalValue),
-              borderColor: '#059669',
-              backgroundColor: 'rgba(5, 150, 105, 0.12)',
-              borderWidth: 2.4,
-              fill: true,
-              tension: 0.2,
-              pointRadius: 0
-            },
-            {
-              label: '累積投入成本 (TWD)',
-              data: pts.map(p => p.totalCost),
-              borderColor: '#2563eb',
-              borderDash: [5, 4],
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1,
-              pointRadius: 0
-            }
-          ]
+          labels: ptDates,
+          datasets: dcaDatasets
         },
+        plugins: [buildMacroEventChartPlugin(matchedEvents, false)],
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
+          interaction: { mode: 'nearest', intersect: false },
+          onClick: (evt, elements, chart) => {
+            if (!matchedEvents.length) return;
+            const macroHit = elements.find(el => chart.data.datasets[el.datasetIndex]?._isMacroEvents);
+            const idx = macroHit ? macroHit.index : (elements[0] ? elements[0].index : -1);
+            const found = matchedEvents.find(m => m.index === idx);
+            if (found) {
+              const pt = pts[found.index];
+              showMacroEventPopup(
+                found.event,
+                `當日組合市值：${fmtMoney(pt.totalValue)} ｜ 投入成本：${fmtMoney(pt.totalCost)}（${found.matchedDate}）`
+              );
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                afterBody: (items) => {
+                  const idx = items?.[0]?.dataIndex;
+                  const found = matchedEvents.find(m => m.index === idx);
+                  return found ? [`⚡ 重大事件：${found.event.title}（點擊看說明）`] : [];
+                }
+              }
+            }
+          },
           scales: {
             x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10 } } },
             y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => fmtMoney(v), font: { size: 10 } } }
@@ -10533,7 +11474,35 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         runMultiAiAnalysis(promptEl?.value || '');
       });
 
-      // DCA Backtest events
+      // Real Backtest events (Multi-Phase DCA & Single Lump-Sum)
+      document.getElementById('btnDcaModeMulti')?.addEventListener('click', () => {
+        setDcaModeUI('multi');
+        persistState();
+      });
+      document.getElementById('btnDcaModeLump')?.addEventListener('click', () => {
+        setDcaModeUI('lump');
+        persistState();
+      });
+      document.querySelectorAll('[data-lump-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = Number(btn.dataset.lumpPreset) || 300000;
+          state.dcaLump.amount = val;
+          const el = document.getElementById('dcaLumpAmountInput');
+          if (el) el.value = String(val);
+          persistState();
+        });
+      });
+      ['dcaLumpAmountInput', 'dcaLumpBuyDateInput', 'dcaLumpEndDateInput'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => {
+          state.dcaLump = {
+            amount: Math.max(1000, Number(document.getElementById('dcaLumpAmountInput')?.value || 300000)),
+            buyDate: (document.getElementById('dcaLumpBuyDateInput')?.value || '2020-01-02').trim(),
+            endDate: (document.getElementById('dcaLumpEndDateInput')?.value || '2026-11-30').trim()
+          };
+          persistState();
+        });
+      });
+
       document.getElementById('btnDcaAddStock')?.addEventListener('click', () => {
         const inp = document.getElementById('dcaAddStockInput');
         if (inp) { addDcaStockByCode(inp.value); inp.value = ''; }

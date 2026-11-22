@@ -38,7 +38,7 @@
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "台股真實定投回測",
+      "name": "台股真實回測",
       "short_name": "定投回測",
       "url": "./index.html#studio-dca",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]

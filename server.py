@@ -338,7 +338,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.6.0",
+    version="3.7.0",
 )
 
 app.add_middleware(
@@ -463,7 +463,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.6.0",
+        "version": "3.7.0",
         "e2ee_sync_supported": True,
         "access_password_required": bool(os.getenv("SHL_ACCESS_PASSWORD", "").strip()),
         "server_time": tw_now_str(),

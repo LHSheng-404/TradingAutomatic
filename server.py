@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.11.3",
+    version="3.12.0",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.11.3",
+        "version": "3.12.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4207,7 +4207,7 @@ def _resample_shioaji_kbars(raw_bars: list[dict[str, Any]], interval: str) -> li
         if c <= 0:
             continue
 
-        if iv in ("5", "15", "60"):
+        if iv in ("1", "5", "15", "30", "60"):
             mins = int(iv)
             floored_min = (dt.minute // mins) * mins
             b_dt = dt.replace(minute=floored_min, second=0, microsecond=0)
@@ -4219,6 +4219,10 @@ def _resample_shioaji_kbars(raw_bars: list[dict[str, Any]], interval: str) -> li
             key = monday.strftime("%Y-%m-%d")
             label = monday.strftime("%Y-%m-%d")
             date_str = key
+        elif iv == "M":
+            key = dt.strftime("%Y-%m")
+            label = key
+            date_str = dt.strftime("%Y-%m-01")
         else:
             key = dt.strftime("%Y-%m-%d")
             label = dt.strftime("%m-%d")
@@ -4252,7 +4256,7 @@ async def _fetch_shioaji_http_kbars(symbol: str, interval: str) -> Optional[dict
     if not http_url:
         return None
     iv = str(interval or "15").upper()
-    lookback_days = {"5": 5, "15": 10, "60": 30, "D": 150, "W": 365}.get(iv, 10)
+    lookback_days = {"1": 2, "5": 5, "15": 10, "30": 20, "60": 35, "D": 180, "W": 400, "M": 1500}.get(iv, 10)
     end_dt = datetime.now(TW_TZ)
     start_dt = end_dt - timedelta(days=lookback_days)
     is_fut = symbol.upper() in ("TXF", "TX", "MXF")
@@ -4326,7 +4330,7 @@ async def _fetch_shioaji_sdk_kbars(symbol: str, interval: str) -> Optional[dict[
     if not (ak and sk):
         return None
     iv = str(interval or "15").upper()
-    lookback_days = {"5": 5, "15": 10, "60": 30, "D": 150, "W": 365}.get(iv, 10)
+    lookback_days = {"1": 2, "5": 5, "15": 10, "30": 20, "60": 35, "D": 180, "W": 400, "M": 1500}.get(iv, 10)
     end_dt = datetime.now(TW_TZ)
     start_dt = end_dt - timedelta(days=lookback_days)
     try:
@@ -4429,7 +4433,7 @@ async def shioaji_kbars(symbol: str, interval: str = "15", yahoo_symbol: str = "
         return JSONResponse(res, headers={"Cache-Control": "no-store"})
 
     # 3. Seamless live-merged fallback (Yahoo/FinMind K-lines + official TWSE/TPEx MIS live tick)
-    iv_map = {"5": ("5m", "5d"), "15": ("15m", "5d"), "60": ("60m", "1mo"), "D": ("1d", "6mo"), "W": ("1wk", "2y")}
+    iv_map = {"1": ("1m", "1d"), "5": ("5m", "5d"), "15": ("15m", "5d"), "30": ("30m", "5d"), "60": ("60m", "1mo"), "D": ("1d", "6mo"), "W": ("1wk", "2y"), "M": ("1mo", "5y")}
     y_iv, y_rng = iv_map.get(iv, ("15m", "5d"))
     yh_sym = yahoo_symbol.strip() or ("^TWII" if sym in ("TXF", "T00") else ("^TWOII" if sym == "O00" else f"{sym}.TW"))
 

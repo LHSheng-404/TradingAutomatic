@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synapse-tw-shell-v3.11.3';
+const CACHE_NAME = 'synapse-tw-shell-v3.12.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -42,10 +42,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for HTML so upgrades arrive immediately while supporting offline fallback
-  if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+  // Network-first (bypassing HTTP cache) for HTML so upgrades arrive immediately while supporting offline fallback
+  if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/')) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((resp) => {
           if (resp && resp.ok) {
             const copy = resp.clone();

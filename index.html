@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.11.2 · 版本說明
+              v3.12.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2805,12 +2805,15 @@
               <button id="btnChartTv" class="btn btn-sm">TradingView 進階線圖</button>
             </div>
             <div class="chart-group">
-              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期">
+              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期（全級距含 1 分 K）">
+                <option value="1">1 分 K</option>
                 <option value="5">5 分 K</option>
                 <option value="15" selected>15 分 K</option>
+                <option value="30">30 分 K</option>
                 <option value="60">60 分 K</option>
                 <option value="D">日線 D</option>
                 <option value="W">週線 W</option>
+                <option value="M">月線 M</option>
               </select>
               <select id="tvStudySelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="技術指標組合">
                 <option value="ema_rsi" selected>EMA + RSI</option>
@@ -2822,6 +2825,9 @@
               <button id="btnTvTheme" class="btn btn-sm" title="切換 TradingView 亮暗主題">主題: 亮</button>
             </div>
           </div>
+
+          <!-- v3.12.0: Active Symbol Entry/Exit Points, Net P&L, Slippage & Monthly Fee Rebate Strip -->
+          <div id="chartTradePnlStrip" style="display:none;padding:7px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11.5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"></div>
 
           <!-- v3.10.0: Shioaji Pro 21-Indicator Suite Bar & Live Legend -->
           <div id="sjIndicatorBar" class="sj-ind-bar">
@@ -5638,7 +5644,9 @@
           sjIndicators: state.ext.sjIndicators,
           tabMemory: state.ext.tabMemory || {},
           aiFocusPrompt: state.ext.aiFocusPrompt || '',
-          aiFocusMode: state.ext.aiFocusMode || 'AUTO'
+          aiFocusMode: state.ext.aiFocusMode || 'AUTO',
+          monthlyRebateLedger: state.ext.monthlyRebateLedger || {},
+          profitHedge: state.ext.profitHedge || { enabled: true, triggerPct: 3.0, hedgeRatio: 0.5, slippagePct: 0.08 }
         },
         sharedQuotes: Object.fromEntries(
           Object.entries(state.quotes || {}).slice(0, 60).map(([k, q]) => [k, {
@@ -5731,6 +5739,12 @@
         }
         if (typeof saved.ext.aiFocusPrompt === 'string') state.ext.aiFocusPrompt = saved.ext.aiFocusPrompt;
         if (typeof saved.ext.aiFocusMode === 'string') state.ext.aiFocusMode = saved.ext.aiFocusMode;
+        if (saved.ext.monthlyRebateLedger && typeof saved.ext.monthlyRebateLedger === 'object') {
+          state.ext.monthlyRebateLedger = Object.assign({}, saved.ext.monthlyRebateLedger);
+        }
+        if (saved.ext.profitHedge && typeof saved.ext.profitHedge === 'object') {
+          state.ext.profitHedge = Object.assign({ enabled: true, triggerPct: 3.0, hedgeRatio: 0.5, slippagePct: 0.08 }, saved.ext.profitHedge);
+        }
       }
       if (saved.sharedQuotes && typeof saved.sharedQuotes === 'object') {
         Object.entries(saved.sharedQuotes).forEach(([sym, sq]) => {
@@ -6596,11 +6610,14 @@
     function getChartTimeframeSpec(tvInterval = state.tvInterval) {
       const iv = String(tvInterval || '15').toUpperCase();
       const map = {
-        '5':  { tv: '5',  yahooInterval: '5m',  yahooRange: '5d',  finmindDays: 35,  finmindLimit: 15, label: '5 分 K',  isIntraday: true },
-        '15': { tv: '15', yahooInterval: '15m', yahooRange: '5d',  finmindDays: 45,  finmindLimit: 24, label: '15 分 K', isIntraday: true },
-        '60': { tv: '60', yahooInterval: '60m', yahooRange: '1mo', finmindDays: 65,  finmindLimit: 36, label: '60 分 K', isIntraday: true },
-        'D':  { tv: 'D',  yahooInterval: '1d',  yahooRange: '3mo', finmindDays: 120, finmindLimit: 75, label: '日線 D',  isIntraday: false },
-        'W':  { tv: 'W',  yahooInterval: '1wk', yahooRange: '2y',  finmindDays: 380, finmindLimit: 60, label: '週線 W',  isIntraday: false }
+        '1':  { tv: '1',  yahooInterval: '1m',  yahooRange: '1d',  finmindDays: 10,  finmindLimit: 60, label: '1 分 K',  isIntraday: true },
+        '5':  { tv: '5',  yahooInterval: '5m',  yahooRange: '5d',  finmindDays: 35,  finmindLimit: 30, label: '5 分 K',  isIntraday: true },
+        '15': { tv: '15', yahooInterval: '15m', yahooRange: '5d',  finmindDays: 45,  finmindLimit: 36, label: '15 分 K', isIntraday: true },
+        '30': { tv: '30', yahooInterval: '30m', yahooRange: '5d',  finmindDays: 55,  finmindLimit: 36, label: '30 分 K', isIntraday: true },
+        '60': { tv: '60', yahooInterval: '60m', yahooRange: '1mo', finmindDays: 65,  finmindLimit: 45, label: '60 分 K', isIntraday: true },
+        'D':  { tv: 'D',  yahooInterval: '1d',  yahooRange: '6mo', finmindDays: 150, finmindLimit: 90, label: '日線 D',  isIntraday: false },
+        'W':  { tv: 'W',  yahooInterval: '1wk', yahooRange: '2y',  finmindDays: 380, finmindLimit: 60, label: '週線 W',  isIntraday: false },
+        'M':  { tv: 'M',  yahooInterval: '1mo', yahooRange: '5y',  finmindDays: 900, finmindLimit: 60, label: '月線 M',  isIntraday: false }
       };
       return map[iv] || map['15'];
     }
@@ -9584,6 +9601,52 @@
       }
     }
 
+    // v3.12.0 Auto Profit Hedging Engine (calculates net profit after TW fee + tax + slippage)
+    window.SHL_CHECK_PROFIT_HEDGE = async function checkAndRunAutoProfitHedge(forceCheck = false) {
+      if (state.killSwitch) return [];
+      const cfg = state.ext.profitHedge || (state.ext.profitHedge = { enabled: true, triggerPct: 3.0, hedgeRatio: 0.5, slippagePct: 0.08 });
+      if (!forceCheck && cfg.enabled === false) return [];
+      const triggerPct = Math.max(0.5, Number(cfg.triggerPct ?? 3.0));
+      const hedgeRatio = Math.max(0.2, Math.min(0.8, Number(cfg.hedgeRatio ?? 0.5)));
+      const slipPct = Math.max(0, Number(cfg.slippagePct ?? 0.08));
+      const hedged = [];
+      const positionsCopy = (state.positions || []).slice();
+      for (const pos of positionsCopy) {
+        if (!pos || !pos.shares || pos.shares < 1000) continue;
+        if (pos.hedgedAt && (Date.now() - pos.hedgedAt) < 1800000) continue;
+        const q = getQuote(pos.symbol);
+        const curPx = Number(q?.price || 0);
+        if (!curPx || !pos.avgPrice) continue;
+        const execSellPx = Number((curPx * (1 - slipPct / 100)).toFixed(2));
+        const grossCost = pos.avgPrice * pos.shares;
+        const grossVal = execSellPx * pos.shares;
+        const sellFee = Math.max(20, Math.round(grossVal * 0.001425));
+        const sellTax = Math.round(grossVal * (pos.symbol.startsWith('00') ? 0.001 : 0.003));
+        const buyFeeEst = Math.max(20, Math.round(grossCost * 0.001425));
+        const netPnl = grossVal - grossCost - sellFee - sellTax - buyFeeEst;
+        const netPct = grossCost > 0 ? (netPnl / grossCost) * 100 : 0;
+        if (netPct >= triggerPct) {
+          const totalLots = Math.floor(pos.shares / 1000);
+          const hedgeLots = Math.max(1, Math.min(totalLots, Math.round(totalLots * hedgeRatio)));
+          if (hedgeLots <= 0) continue;
+          pos.hedgedAt = Date.now();
+          await executeOrder({
+            symbol: pos.symbol,
+            side: 'SELL',
+            qty: hedgeLots,
+            unit: '張',
+            price: curPx,
+            orderType: 'LMT',
+            tif: 'ROD',
+            source: `AUTO_PROFIT_HEDGE_+${netPct.toFixed(2)}%`
+          });
+          hedged.push({ symbol: pos.symbol, hedgeLots, netPct: Number(netPct.toFixed(2)), netPnl: Math.round(netPnl) });
+          showToast('🛡️ 獲利自動套保已執行', `${pos.symbol} 淨獲利達 +${netPct.toFixed(2)}%（已扣手續費＋證交稅＋滑點），自動減碼 ${hedgeLots} 張鎖住利潤！`, 'success');
+        }
+      }
+      return hedged;
+    };
+
     function startOrUpdateAgentAutoLoop() {
       if (agentAutoTimer) {
         clearInterval(agentAutoTimer);
@@ -9608,6 +9671,9 @@
             intendedPrice: getQuote(sym)?.price || null,
             autoExecute: true
           });
+        }
+        if (typeof window.SHL_CHECK_PROFIT_HEDGE === 'function') {
+          await window.SHL_CHECK_PROFIT_HEDGE(false);
         }
       }, ms);
     }
@@ -10452,12 +10518,30 @@
       const isDayTrade = dayTrade !== null ? Boolean(dayTrade) : (Boolean(document.getElementById('orderDayTradeChk')?.checked) || hasOppositeToday);
 
       const shares = unit === '張' ? qty * 1000 : qty;
-      const notional = Math.round(shares * price);
+      // v3.12.0: Realistic slippage + standard fee + monthly rebate settlement (折讓為月結)
+      const slipPctCfg = state.envMode === 'SIM'
+        ? Math.max(0, Math.min(2.0, Number(state.agentConfig?.slippagePct ?? 0.1)))
+        : 0;
+      const slipRate = slipPctCfg / 100;
+      const execPrice = (state.envMode === 'SIM' && slipRate > 0)
+        ? Number((side === 'BUY' ? price * (1 + slipRate) : price * (1 - slipRate)).toFixed(2))
+        : Number(price);
+      const slippageTwd = Math.round(Math.abs(execPrice - price) * shares);
+      const notional = Math.round(shares * execPrice);
       const isEtf = symbol.startsWith('00');
-      const fee = Math.max(20, Math.round(notional * 0.001425 * (state.feeDiscount / 10)));
+      const stdFee = Math.max(20, Math.round(notional * 0.001425));
+      const discountedFee = Math.max(20, Math.round(notional * 0.001425 * (state.feeDiscount / 10)));
+      const fee = stdFee; // Standard fee paid at execution; discount rebate settles monthly
+      const monthlyRebateTwd = Math.max(0, stdFee - discountedFee);
       const taxRate = isEtf ? 0.001 : (isDayTrade ? 0.0015 : 0.003);
       const tax = side === 'SELL' ? Math.round(notional * taxRate) : 0;
       const netAmount = side === 'BUY' ? (notional + fee) : (notional - fee - tax);
+      const monthKey = todayStr.slice(0, 7);
+      if (!state.ext.monthlyRebateLedger || typeof state.ext.monthlyRebateLedger !== 'object') {
+        state.ext.monthlyRebateLedger = {};
+      }
+      let realizedPnlTwd = null;
+      let entryAvgBeforeSell = null;
 
       // LIVE MODE: Strictly require Shioaji API Token + Cloud Backend
       if (state.envMode === 'LIVE') {
@@ -10497,18 +10581,21 @@
           data.shares = shares;
           data.notional_twd = notional;
           data.net_amount_twd = netAmount;
+          data.monthly_rebate_twd = monthlyRebateTwd;
+          data.slippage_twd = 0;
           data.day_trade = isDayTrade;
           data.fill_confirmed = true;
+          state.ext.monthlyRebateLedger[monthKey] = (state.ext.monthlyRebateLedger[monthKey] || 0) + monthlyRebateTwd;
           state.orders.unshift(data);
           persistState();
           triggerHandshake('CORE', 'BROKER', '#dc2626', 'ORDER', true, 48, `LIVE 委託送出 ${meta.symbol} ${meta.name} ${side} ${qty}${unit}`);
-          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（${exactTime} · 金額 ${fmtMoney(netAmount)}）`, 'success');
+          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（${exactTime} · 金額 ${fmtMoney(netAmount)} · 月結折讓 +${fmtMoney(monthlyRebateTwd)}）`, 'success');
         } catch (err) {
           showToast('真實下單失敗', err.message, 'error');
           return;
         }
       } else {
-        // SIM MODE: Real-price paper matching
+        // SIM MODE: Real-price paper matching with slippage & monthly fee rebate accounting
         if (side === 'BUY') {
           const totalCost = notional + fee;
           if (totalCost > state.simCashTwd) {
@@ -10522,7 +10609,7 @@
             pos.avgPrice = Number(((pos.avgPrice * pos.shares + notional) / newShares).toFixed(2));
             pos.shares = newShares;
           } else {
-            state.positions.push({ symbol: meta.symbol, name: meta.name, shares, avgPrice: price });
+            state.positions.push({ symbol: meta.symbol, name: meta.name, shares, avgPrice: execPrice, entryTime: exactTime });
           }
         } else {
           const pos = state.positions.find(p => p.symbol === symbol);
@@ -10530,12 +10617,16 @@
             showToast('模擬持股不足', `${meta.symbol} ${meta.name} 目前持有 ${pos ? pos.shares : 0} 股，無法賣出 ${shares} 股。`, 'warn');
             return;
           }
+          entryAvgBeforeSell = pos.avgPrice;
+          realizedPnlTwd = Math.round((execPrice - pos.avgPrice) * shares - fee - tax);
           state.simCashTwd += (notional - fee - tax);
           pos.shares -= shares;
+          if (source === 'AUTO_PROFIT_HEDGE') pos.hedgedAt = exactTime;
           if (pos.shares <= 0) {
             state.positions = state.positions.filter(p => p.symbol !== symbol);
           }
         }
+        state.ext.monthlyRebateLedger[monthKey] = (state.ext.monthlyRebateLedger[monthKey] || 0) + monthlyRebateTwd;
 
         const rec = {
           order_id: `SIM-${meta.symbol}-${Date.now().toString().slice(-6)}`,
@@ -10549,11 +10640,16 @@
           qty,
           unit,
           shares,
-          price,
+          price: execPrice,
+          quoted_price: price,
+          slippage_twd: slippageTwd,
           notional_twd: notional,
           net_amount_twd: netAmount,
           fee_twd: fee,
+          monthly_rebate_twd: monthlyRebateTwd,
           tax_twd: tax,
+          realized_pnl_twd: realizedPnlTwd,
+          entry_avg_price: entryAvgBeforeSell,
           day_trade: isDayTrade,
           fill_confirmed: true,
           status: 'FILLED_SIM'
@@ -16770,6 +16866,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         if (autoTrigger && state.ext.battleAuto.enabled) {
           await evaluateAndMaybeAutoOrder(false);
+          if (typeof window.SHL_CHECK_PROFIT_HEDGE === 'function') {
+            await window.SHL_CHECK_PROFIT_HEDGE(false);
+          }
         }
       }
 
@@ -18282,6 +18381,66 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const sarPts = TA.sar(candles, 0.02, 0.2);
           datasets.push({ label: 'Parabolic SAR', data: sarPts, borderColor: '#0f172a', backgroundColor: '#0f172a', pointRadius: 2.2, showLine: false });
         }
+
+        // v3.12.0: Plot real SIM/LIVE Entry (BUY) & Exit (SELL) points on the K-line chart + render P&L strip
+        const symOrders = (state.orders || []).filter(o => o.symbol === state.activeSymbol && Number(o.price) > 0);
+        if (symOrders.length > 0 && candles.length > 0) {
+          const entryPts = new Array(candles.length).fill(null);
+          const exitPts = new Array(candles.length).fill(null);
+          const matchBarIdx = (isoTime) => {
+            const tStr = String(isoTime || '');
+            const dayPart = tStr.slice(0, 10);
+            const hmPart = tStr.slice(11, 16);
+            let bestIdx = candles.length - 1;
+            for (let i = candles.length - 1; i >= 0; i--) {
+              const lbl = String(candles[i].label || '');
+              const cDate = String(candles[i].date || '');
+              if (cDate === dayPart && (!hmPart || lbl.includes(hmPart.slice(0, 4)))) { bestIdx = i; break; }
+              if (cDate === dayPart) { bestIdx = i; break; }
+            }
+            return bestIdx;
+          };
+          symOrders.slice(0, 30).forEach(o => {
+            const idx = matchBarIdx(o.iso_time);
+            if (o.side === 'BUY') entryPts[idx] = Number(o.price);
+            else if (o.side === 'SELL') exitPts[idx] = Number(o.price);
+          });
+          if (entryPts.some(v => v !== null)) {
+            datasets.push({ label: '▲ 進場買點 (BUY)', data: entryPts, borderColor: '#b91c1c', backgroundColor: '#f59e0b', borderWidth: 2, pointStyle: 'triangle', pointRadius: 9, showLine: false });
+          }
+          if (exitPts.some(v => v !== null)) {
+            datasets.push({ label: '▼ 出場賣點 (SELL)', data: exitPts, borderColor: '#047857', backgroundColor: '#10b981', borderWidth: 2, pointStyle: 'triangle', rotation: 180, pointRadius: 9, showLine: false });
+          }
+        }
+        const pnlStrip = document.getElementById('chartTradePnlStrip');
+        if (pnlStrip) {
+          const pos = (state.positions || []).find(p => p.symbol === state.activeSymbol);
+          const curPx = closes[closes.length - 1] || getQuote(state.activeSymbol)?.price || 0;
+          const unrealPnl = (pos && curPx) ? Math.round((curPx - pos.avgPrice) * pos.shares) : 0;
+          const unrealPct = (pos && pos.avgPrice > 0 && curPx) ? ((curPx - pos.avgPrice) / pos.avgPrice * 100) : 0;
+          const realizedPnl = symOrders.reduce((s, o) => s + (typeof o.realized_pnl_twd === 'number' ? o.realized_pnl_twd : 0), 0);
+          const monthKey = nowTwDateTime().slice(0, 7);
+          const monthRebate = (state.ext?.monthlyRebateLedger && state.ext.monthlyRebateLedger[monthKey]) || 0;
+          const lastBuy = symOrders.find(o => o.side === 'BUY');
+          const lastSell = symOrders.find(o => o.side === 'SELL');
+          if (pos || symOrders.length > 0) {
+            pnlStrip.style.display = 'flex';
+            pnlStrip.innerHTML = `
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span class="badge badge-blue">🎯 ${escapeHtml(state.activeSymbol)} 進出點與損益</span>
+                <span>持倉：<strong class="mono">${pos ? `${(pos.shares / 1000).toFixed(pos.shares % 1000 ? 3 : 0)}張 @ ${pos.avgPrice}` : '0張'}</strong></span>
+                <span>未實現損益：<strong class="mono ${unrealPnl >= 0 ? 'text-up' : 'text-down'}">${unrealPnl >= 0 ? '+' : ''}${fmtMoney(unrealPnl)} (${unrealPct >= 0 ? '+' : ''}${unrealPct.toFixed(2)}%)</strong></span>
+                <span>已實現淨損益(含費稅滑點)：<strong class="mono ${realizedPnl >= 0 ? 'text-up' : 'text-down'}">${realizedPnl >= 0 ? '+' : ''}${fmtMoney(realizedPnl)}</strong></span>
+                <span>月結折讓(${monthKey})：<strong class="mono text-up">+${fmtMoney(monthRebate)}</strong></span>
+              </div>
+              <div class="mono" style="font-size:11px;color:var(--ink-3);">
+                ${lastBuy ? `最近進場：▲${lastBuy.price}` : ''}${lastBuy && lastSell ? ' ｜ ' : ''}${lastSell ? `最近出場：▼${lastSell.price}` : ''}
+              </div>
+            `;
+          } else {
+            pnlStrip.style.display = 'none';
+          }
+        }
         renderSubPaneChart(candles, closes);
       };
 
@@ -18373,22 +18532,71 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             return { symbol: p.symbol, name: p.name || meta.name, industry: meta.industry || '台股', pct, val, pnl: Math.round((px - p.avgPrice) * p.shares) };
           });
           const inflowRatioPct = totalVal > 0 ? Math.round((inWeight / totalVal) * 100) : 0;
+          const rotSorted = chains.slice().sort((a, b) => (b.avgPct - a.avgPct) || (b.netFlow - a.netFlow));
+          const stageOf = (c) => {
+            if (c.avgPct >= 0.8 && c.netFlow >= 0) return { label: '領先輪動', cls: 'up', bg: '#fef2f2', bd: '#fca5a5', tx: '#b91c1c' };
+            if (c.avgPct >= 0 || c.netFlow > 0) return { label: '資金改善', cls: 'up', bg: '#fffbeb', bd: '#fcd34d', tx: '#b45309' };
+            if (c.avgPct <= -0.8 && c.netFlow < 0) return { label: '弱勢落後', cls: 'down', bg: '#f0fdf4', bd: '#86efac', tx: '#15803d' };
+            return { label: '區間整理', cls: 'flat', bg: '#f8fafc', bd: '#cbd5e1', tx: '#475569' };
+          };
+          const leadCount = rotSorted.filter(c => c.avgPct >= 0.8 && c.netFlow >= 0).length;
+          const improveCount = rotSorted.filter(c => !(c.avgPct >= 0.8 && c.netFlow >= 0) && (c.avgPct >= 0 || c.netFlow > 0)).length;
+          const lagCount = rotSorted.filter(c => c.avgPct <= -0.8 && c.netFlow < 0).length;
+
           stage.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:10px;">
               <div>
-                <div style="font-size:13.5px;font-weight:900;">持股族群 · 順資金比重：<span class="mono text-up" style="font-size:16px;">${inflowRatioPct}%</span></div>
-                <div style="font-size:11px;color:#64748b;">復刻 Shioaji Pro 持股族群面板：泡泡圖 / 通道圖雙視圖切換</div>
+                <div style="font-size:13.5px;font-weight:900;">🌐 台灣 12 大產業全景 ／ 族群資金輪動總覽</div>
+                <div style="font-size:11px;color:#64748b;">即時追蹤 12 大主流產業鏈輪動象限（領先 ${leadCount} · 改善 ${improveCount} · 落後 ${lagCount}），點擊成分股立即切換 K 線與 21 指標</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <span class="badge mono" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;">領先 ${leadCount}</span>
+                <span class="badge mono" style="background:#fffbeb;color:#b45309;border:1px solid #fcd34d;">改善 ${improveCount}</span>
+                <span class="badge mono" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;">落後 ${lagCount}</span>
+              </div>
+            </div>
+            <div id="industryPanoramaGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:9px;margin-bottom:14px;">
+              ${rotSorted.map(c => {
+                const st = stageOf(c);
+                const pctColor = c.avgPct >= 0 ? '#dc2626' : '#16a34a';
+                const topMembers = c.members.slice().sort((a, b) => b.pct - a.pct);
+                return `<div class="panorama-chain-card" style="background:${st.bg};border:1px solid ${st.bd};border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                    <strong style="font-size:12.5px;color:#0f172a;">${escapeHtml(c.name)}</strong>
+                    <span class="badge" style="font-size:10px;padding:1px 6px;background:#fff;color:${st.tx};border:1px solid ${st.bd};font-weight:800;">${st.label}</span>
+                  </div>
+                  <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:#334155;">
+                    <span style="font-weight:900;color:${pctColor};">${c.avgPct >= 0 ? '+' : ''}${c.avgPct}%</span>
+                    <span>淨流 ${hideAmt ? '••' : `${c.netFlow >= 0 ? '+' : ''}${c.netFlow}億`}</span>
+                    <span style="color:#64748b;">量 ${hideAmt ? '••' : `${c.totalTurnover}億`}</span>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                    ${topMembers.map(m => {
+                      const mc = m.pct >= 0 ? '#dc2626' : '#16a34a';
+                      return `<button type="button" data-pick-stock="${escapeHtml(m.symbol)}" style="font-size:10.5px;padding:2px 6px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;color:#0f172a;cursor:pointer;display:inline-flex;align-items:center;gap:3px;">
+                        <span>${escapeHtml(m.name)}</span>
+                        <span class="mono" style="font-weight:800;color:${mc};">${m.pct >= 0 ? '+' : ''}${m.pct}%</span>
+                      </button>`;
+                    }).join('')}
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0 8px;border-top:1px dashed #cbd5e1;margin-bottom:8px;">
+              <div>
+                <div style="font-size:13px;font-weight:900;">💼 個人持股族群 · 順資金比重：<span class="mono text-up" style="font-size:15px;">${inflowRatioPct}%</span></div>
+                <div style="font-size:11px;color:#64748b;">泡泡圖 / 通道圖雙視圖切換 · 總市值 <strong class="mono">${hideAmt ? '••••••' : fmtMoney(totalVal)}</strong></div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <button type="button" class="btn btn-sm ${view === 'bubble' ? 'btn-dark' : ''}" data-hold-view="bubble">泡泡</button>
                 <button type="button" class="btn btn-sm ${view === 'channel' ? 'btn-dark' : ''}" data-hold-view="channel">通道</button>
-                <span class="mono" style="font-size:11.5px;margin-left:6px;">總市值 <strong>${hideAmt ? '••••••' : fmtMoney(totalVal)}</strong></span>
               </div>
             </div>
             ${!rows.length
-              ? '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px;">尚無模擬／實盤持倉，於下方下單後將即時繪製您的持股族群「順資金比重」泡泡／通道圖！</div>'
+              ? '<div style="padding:10px 12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;text-align:center;color:#64748b;font-size:11.5px;">目前尚無持倉；上方已即時呈現完整 12 大產業全景與族群輪動，下單後此區將同步繪製您的持股順資金比重。</div>'
               : (view === 'bubble'
-                ? `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:12px;">${rows.map(r => {
+                ? `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:10px;">${rows.map(r => {
                     const sz = totalVal > 0 ? Math.max(76, Math.min(148, Math.round(70 + (r.val / totalVal) * 110))) : 96;
                     const bg = r.pct >= 0 ? 'rgba(239,68,68,0.16)' : 'rgba(34,197,94,0.16)';
                     const bd = r.pct >= 0 ? '#dc2626' : '#16a34a';
@@ -19329,8 +19537,19 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.11.3';
+      const CURRENT_VERSION = 'v3.12.0';
       const HISTORY = [
+        {
+          ver: 'v3.12.0',
+          items: [
+            '修正 Service Worker 快取策略（HTML 導航強制 cache: no-store），確保瀏覽器即時載入最新版號與「v3.12.0 · 版本說明」按鈕',
+            '技術 K 線新增全級距切換：支援 1 分 K、5 分 K、15 分 K、30 分 K、60 分 K、日線 D、週線 W、月線 M（含後端永豐金 Shioaji 1m 重採樣）',
+            '強化「產業全景 / 持股族群」面板：即使目前 0 持股仍完整呈現台灣 12 大產業鏈全景與族群資金輪動象限（領先／改善／整理／落後），點擊成分股即刻切換 K 線',
+            '真實 K 線模擬／實盤下單整合圖表標記：下單後即時於 K 線圖繪製 ▲ 進場買點、▼ 出場賣點，並於圖表上方顯示持倉損益、已實現淨損益與月結手續費折讓',
+            '全自動量化＋AI 交易損益精算與獲利自動套保：下單自動納入台股 0.1425% 手續費、月結折讓帳本（monthlyRebateLedger）、證交稅與滑點，淨獲利達標（預設 +3.0%）自動觸發 50% 獲利套保鎖利',
+            '更新 README.md 畫面說明、重點摘要與最新操作示範動態 GIF（assets/shl-tw-v312-demo.gif）'
+          ]
+        },
         {
           ver: 'v3.11.3',
           items: [

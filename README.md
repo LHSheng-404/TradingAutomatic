@@ -6,7 +6,22 @@
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)
 ![RWD](https://img.shields.io/badge/UI-RWD%20Zero--Overflow-0f172a)
 
-**SHLTW TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統網頁版，整合 **雙向資料交流交握視覺化**、**TradingView 進階線圖與帳號串接**、**Yahoo Finance / FinMind 真實台股行情（嚴禁猜測）**、**六模型 AI（Groq 極速推理 · Ollama 地端模型 · Grok · Gemini · Claude · ChatGPT，附各模型 Token 即時測試）**、**下單實時偵測股價 ＋ 價量多 Agent 自動選模**、**10 大台股技術・籌碼・大盤強弱開關（策略版 v01）與 30 支 Pine 量化策略實驗室**、**LINE Bot & Telegram 單欄位 Token 加密自動推播**、**對帳單復盤**、**台股真實定投回測**，以及 **模擬下單（SIM）／真實下單（LIVE）安全切換**。
+**SHL TW** 是一套支援**雲端部署**與**單檔免安裝直接執行**的全自動台灣股市交易系統（最新 `v3.12.0`），整合 **永豐金 Shioaji Pro 即時行情與雙環境 SIM/LIVE API（預設模擬單）**、**FinMind 盤後輔助**、**全級距技術 K 線（1 分 K ～ 月線 M）與進出場買賣點／損益標記**、**台灣 12 大產業全景／族群資金輪動**、**六模型 AI 多空交戰與無上限自訂焦點記憶**、**全自動量化＋AI 交易（含手續費、月結折讓、證交稅、滑點與獲利自動套保）**、**LINE Bot & Telegram 加密自動推播**，以及 **電腦／手機跨獨立網路遠端共享帳號同步**。
+
+---
+
+## 🆕 v3.12.0 重點更新摘要與操作動態演示（GIF）
+
+![SHL TW v3.12.0 全新功能操作演示](assets/shl-tw-v312-demo.gif)
+
+| 更新項目 | 畫面位置與操作說明 |
+| :--- | :--- |
+| **1. 左上角版本號與歷史說明** | 頂部標題列點擊 **`v3.12.0 · 版本說明`** 按鈕，即可於網頁內即時檢視完整歷史修改／新增紀錄清單並支援關鍵字篩選；Service Worker 已升級為 `no-store` 導航策略，確保隨時載入最新版本。 |
+| **2. 全級距技術 K 線（含 1 分 K）** | 技術 K 線圖上方級距選單擴充支援 **`1 分 K`、`5 分 K`、`15 分 K`、`30 分 K`、`60 分 K`、`日線 D`、`週線 W`、`月線 M`**，後端永豐金 Shioaji 同步支援 1 分 K 即時重採樣。 |
+| **3. 12 大產業全景 ／ 族群輪動** | 切換至資金流向「**產業全景 / 持股族群**」分頁，即使目前 **0 持股** 仍完整顯示台灣 12 大主流產業鏈輪動象限（`領先輪動`／`資金改善`／`區間整理`／`弱勢落後`），點擊任一成分股即刻切換 K 線與 21 指標。 |
+| **4. 真實 K 線下單進出場點位與損益** | 於模擬盤（SIM）或實盤（LIVE）下單後，系統即時於該標的 K 線圖標記 **`▲ 進場買點 (BUY)`** 與 **`▼ 出場賣點 (SELL)`**，並於圖表上方損益條即時顯示持倉均價、未實現／已實現淨損益與當月累計月結折讓。 |
+| **5. 全自動交易精算與獲利自動套保** | 開啟全自動交易（量化技術＋AI 偵測）時，每筆成交皆嚴格計入 **0.1425% 手續費、月結折讓帳本、證交稅與滑點**；當持倉扣除全部成本後淨獲利達標（預設 `+3.0%`），系統自動觸發 **50% 獲利套保減碼** 鎖住利潤。 |
+| **6. 永豐金雙環境 SIM/LIVE ＋ 跨網共享** | 支援 SIM 模擬盤與 LIVE 正式單 Token 完全隔離、秒級即時刷新，以及電腦／手機各自獨立網路透過遠端共享帳號同步自選股、AI 焦點、推播設定與報價快照。 |
 
 ---
 
@@ -100,13 +115,13 @@
 
 ---
 
-## 核心功能（v3.5.0）
+## 核心功能（v3.12.0）
 
 | 模組 | 說明 |
 | :--- | :--- |
-| **1. 🍎 Apple iOS（iPhone / iPad）完整支援** | 提供三種 iOS 執行方式：① **Safari 全螢幕 PWA**（直接開啟 HTTPS 線上網址 `https://lhsheng-404.github.io/TradingAutomatic/` →「分享 ↑ → 加入主畫面」，免越獄、永久免重簽、支援多尺寸 Apple Touch Icon 與動態島安全區）；② **原生 Swift iOS 獨立 App（`SHLTW-TW-v3.5.0-ios-unsigned.ipa` 與 `mobile/ios/` Xcode 專案）**，內建純 Swift 本機伺服器與安全代理，免開電腦即可於 iPhone 獨立看盤並呼叫含 Claude 在內的六大 AI；③ **同 Wi-Fi 區網直連 Mac / Windows 後端**。 |
+| **1. 🍎 Apple iOS（iPhone / iPad）完整支援** | 提供三種 iOS 執行方式：① **Safari 全螢幕 PWA**（直接開啟 HTTPS 線上網址 `https://lhsheng-404.github.io/TradingAutomatic/` →「分享 ↑ → 加入主畫面」，免越獄、永久免重簽、支援多尺寸 Apple Touch Icon 與動態島安全區）；② **原生 Swift iOS 獨立 App（`SHLTW-TW-v3.12.0-ios-unsigned.ipa` 與 `mobile/ios/` Xcode 專案）**，內建純 Swift 本機伺服器與安全代理，免開電腦即可於 iPhone 獨立看盤並呼叫含 Claude 在內的六大 AI；③ **同 Wi-Fi 區網直連 Mac / Windows 後端**。 |
 | **2. AI Token 自動偵測可用模型 ＋ 供選分析模型** | 貼上 API Token 或匯入 `.env`／`JSON` 金鑰檔後，系統自動呼叫各家輕量 `/models` 端點（零推論費），自動過濾並更新 **Gemini、ChatGPT、Claude、Grok、Groq、Ollama** 六大下拉清單；使用者可自由挑選具體模型版本並勾選參與分析的模型（支援一鍵「僅選已驗證可用」），結合自訂分析焦點多檔即時整合比較。 |
-| **3. 🤖 Android 獨立執行（APK / PWA / Termux）** | 提供 **Android 獨立 APK (`SHLTW-TW-v3.5.0-android.apk`)**（內建本機 HTTP 資源與白名單安全代理）、**Chrome 一鍵安裝 PWA**，以及 **Android Termux 完整本機後端腳本 (`mobile/termux-start.sh`)**。 |
+| **3. 🤖 Android 獨立執行（APK / PWA / Termux）** | 提供 **Android 獨立 APK (`SHLTW-TW-v3.12.0-android.apk`)**（內建本機 HTTP 資源與白名單安全代理）、**Chrome 一鍵安裝 PWA**，以及 **Android Termux 完整本機後端腳本 (`mobile/termux-start.sh`)**。 |
 | **4. 台股技術分析 (v01) × 量化策略實驗室整合** | 結合 **10 大獨立開關（v01）**（MA/EMA、MACD、KDJ、RSI(14)、OBV 量比、布林通道、VWAP、5/20日動能輪動、FinMind 三大法人籌碼、相對大盤 `^TWII` RS 強弱）與 **30 支 Alorse PineScript 量化策略實驗室**（台股規則日線回測、參數最佳化、多股批次矩陣、標的風險卡）；任一量化策略最新訊號可一鍵連結至 v01 多 Agent 參與加權投票與自動買賣（支援上市 `.TW` 與上櫃 `.TWO` 雙市場）。 |
 | **5. 下單實時股價偵測 ＋ 價量多 Agent 自動選模** | 透過 `POST /api/v1/agent/orchestrate`（與前端靜態降級引擎），下單前繞過快取即時抓取最新真實股價、計算滑價，由 **價量動能 Agent**、**技術籌碼與量化策略 Agent**、**風控守門員 Agent**、**最適模型自動路由 Agent** 協作處理。支援 `AUTO`、`SPEED_FIRST`、`LOCAL_FIRST`、`DEEP_REASONING` 四種路由策略並具容錯切換。 |
 | **6. Telegram Bot 單欄位 Token 自動綁定推播** | 僅輸入 `Bot Token`（無 Chat ID 欄位）→ 驗證 `getMe` → Encrypt-then-MAC 加密存檔與畫面遮罩 → 產生一次性 `/start <setup_code>` → 輪詢 `getUpdates` 自動取存私訊 `owner_chat_id` 並令設定碼失效（每 Token 限 1 預設目標）；未綁定禁送；支援純文字、Markdown 轉安全 HTML 與交易警示表情。 |
@@ -120,33 +135,33 @@
 ## 快速開始（iOS / Android 手機版 ＋ 電腦版直接執行）
 
 ### 方式一：直接下載 GitHub Release 或線上安裝（免裝 Python）
-前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.5.0`：
+前往本專案的 **[Releases 頁面](https://github.com/LHSheng-404/TradingAutomatic/releases)** 下載最新版本 `v3.12.0`：
 
 - **🍎 Apple iPhone / iPad（方案 A：Safari 一鍵加入主畫面 · 推薦）**：
   - 使用 iPhone / iPad **Safari** 開啟 **[線上 HTTPS 網頁 App](https://lhsheng-404.github.io/TradingAutomatic/)** → 點底部「**分享 ↑**」→「**加入主畫面**」→「**新增**」，即成免越獄、永久有效的全螢幕 iOS App。
 - **🍎 Apple iPhone / iPad（方案 B：原生 Swift iOS 獨立 App `.ipa` / Xcode）**：
-  - 下載 `SHLTW-TW-v3.5.0-ios-unsigned.ipa`，透過 **AltStore / SideStore / Sideloadly / TrollStore** 安裝至實機；或於 Mac 使用 Xcode 開啟 `mobile/ios/` 一鍵建置至 iPhone / iPad（內建 `LocalAssetServer.swift`，免開電腦即可直連即時報價與包含 Claude 的六大 AI）。
+  - 下載 `SHLTW-TW-v3.12.0-ios-unsigned.ipa`，透過 **AltStore / SideStore / Sideloadly / TrollStore** 安裝至實機；或於 Mac 使用 Xcode 開啟 `mobile/ios/` 一鍵建置至 iPhone / iPad（內建 `LocalAssetServer.swift`，免開電腦即可直連即時報價與包含 Claude 的六大 AI）。
 - **🤖 Android 手機（獨立安裝執行檔 APK）**：
-  - 下載 `SHLTW-TW-v3.5.0-android.apk` 直接於 Android 手機安裝開啟（內建本機資源與安全代理，無需電腦即可即時看盤、自動偵測 AI 模型與執行深度分析；亦可綁定電腦區網或雲端後端）。
+  - 下載 `SHLTW-TW-v3.12.0-android.apk` 直接於 Android 手機安裝開啟（內建本機資源與安全代理，無需電腦即可即時看盤、自動偵測 AI 模型與執行深度分析；亦可綁定電腦區網或雲端後端）。
 - **⚡ Android Termux（零電腦於手機本機執行完整 Python 後端）**：
   ```bash
   git clone https://github.com/LHSheng-404/TradingAutomatic.git && cd TradingAutomatic
   chmod +x mobile/termux-start.sh && ./mobile/termux-start.sh
   ```
 - **Windows（免安裝單檔直接執行）**：
-  - 下載 `SHLTW-TW-v3.5.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器並顯示同 Wi-Fi 手機區網連線網址。
+  - 下載 `SHLTW-TW-v3.12.0-windows-x64.exe` 直接雙擊執行，自動開啟瀏覽器並顯示同 Wi-Fi 手機區網連線網址。
 - **macOS（Apple Silicon）**：
   ```bash
-  chmod +x SHLTW-TW-v3.5.0-macos-arm64
-  ./SHLTW-TW-v3.5.0-macos-arm64
+  chmod +x SHLTW-TW-v3.12.0-macos-arm64
+  ./SHLTW-TW-v3.12.0-macos-arm64
   ```
 - **Linux（免安裝單檔直接執行）**：
   ```bash
-  chmod +x SHLTW-TW-v3.5.0-linux-x64
-  ./SHLTW-TW-v3.5.0-linux-x64
+  chmod +x SHLTW-TW-v3.12.0-linux-x64
+  ./SHLTW-TW-v3.12.0-linux-x64
   ```
 - **跨平台可攜原始碼包**：
-  - 下載 `SHLTW-TW-v3.5.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
+  - 下載 `SHLTW-TW-v3.12.0-portable.zip`（或 `.tar.gz`），解壓縮後雙擊 `start.bat`（Windows）或執行 `./start.sh`（macOS / Linux）。
 
 啟動後瀏覽器會自動開啟 `http://127.0.0.1:8000`，同時於終端機顯示同 Wi-Fi 手機區網位址 `http://<區網IP>:8000`（如欲僅限本機存取可加 `--local-only`，或自訂 `--port 8080 --no-browser`）。
 

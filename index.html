@@ -4886,8 +4886,18 @@
                 <button type="button" id="btnRemoteAcctLogin" class="btn btn-sm btn-primary">🔐 登入／建立遠端共享帳號</button>
                 <button type="button" id="btnRemoteAcctPush" class="btn btn-sm btn-dark">⬆️ 上傳同步至遠端</button>
                 <button type="button" id="btnRemoteAcctPull" class="btn btn-sm btn-teal">⬇️ 從遠端拉取同步</button>
-                <button type="button" id="btnRemoteAcctCopyMobile" class="btn btn-sm">📋 複製手機快速登入碼</button>
+                <button type="button" id="btnRemoteAcctCopyMobile" class="btn btn-sm">📋 產生／複製手機快速登入碼</button>
                 <button type="button" id="btnRemoteAcctLogout" class="btn btn-sm" style="color:#b91c1c;">登出</button>
+              </div>
+              <div id="remoteAcctQuickCodeBox" style="display:none;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #93c5fd;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                  <span style="font-size:12px;font-weight:800;color:#1d4ed8;">📱 手機端快速登入碼（請傳送至 iPhone 貼上，含加密金鑰請勿外流）</span>
+                  <div style="display:flex;gap:6px;">
+                    <button type="button" id="btnRemoteAcctCopyAgain" class="btn btn-sm btn-primary" style="padding:3px 9px;font-size:11px;">📋 複製文字</button>
+                    <button type="button" id="btnRemoteAcctHideCode" class="btn btn-sm" style="padding:3px 9px;font-size:11px;">收合</button>
+                  </div>
+                </div>
+                <textarea id="remoteAcctQuickCodeOutput" readonly rows="3" class="textarea mono" style="font-size:11px;word-break:break-all;background:#ffffff;color:#0f172a;user-select:all;"></textarea>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                 <input id="remoteAcctQuickImportInput" type="text" class="input mono" style="flex:1;min-width:190px;" placeholder="手機端快速登入：貼上電腦複製的 SHLCLOUD1:... 登入碼" />
@@ -18830,6 +18840,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
+      async function copyTextSafe(text, textareaEl) {
+        let copied = false;
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+        }
+        if (!copied && textareaEl) {
+          try {
+            textareaEl.focus();
+            textareaEl.select();
+            textareaEl.setSelectionRange(0, text.length);
+            copied = Boolean(document.execCommand && document.execCommand('copy'));
+          } catch (e) {}
+        }
+        return copied;
+      }
+
       async function copyMobileQuickCode() {
         const cur = readCfg();
         if (!cur.loggedIn) { showToast('請先登入遠端共享帳號', '登入後即可產生手機快速登入碼。', 'warn'); return; }
@@ -18841,8 +18867,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           gistId: cur.gistId || '',
           backendUrl: state.backendUrl || ''
         }))));
-        try { await navigator.clipboard.writeText(code); } catch (e) {}
-        showToast('已複製手機快速登入碼', '請在 iPhone 的「遠端共享帳號 → 手機端快速登入」欄位貼上即可一鍵同步！', 'success');
+        const box = document.getElementById('remoteAcctQuickCodeBox');
+        const out = document.getElementById('remoteAcctQuickCodeOutput');
+        if (box) box.style.display = 'block';
+        if (out) {
+          out.value = code;
+          out.focus();
+          out.select();
+        }
+        const copied = await copyTextSafe(code, out);
+        showToast(
+          copied ? '已顯示並複製手機快速登入碼' : '已產生手機快速登入碼（請直接按 Ctrl+C 複製）',
+          '登入碼已顯示於下方藍色框內，請傳送到 iPhone 的「手機端快速登入」欄位貼上即可一鍵同步！',
+          'success'
+        );
       }
 
       async function quickImportMobileCode() {
@@ -18870,12 +18908,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.getElementById('btnRemoteAcctPush')?.addEventListener('click', push);
         document.getElementById('btnRemoteAcctPull')?.addEventListener('click', pull);
         document.getElementById('btnRemoteAcctCopyMobile')?.addEventListener('click', copyMobileQuickCode);
+        document.getElementById('btnRemoteAcctCopyAgain')?.addEventListener('click', async () => {
+          const out = document.getElementById('remoteAcctQuickCodeOutput');
+          if (!out || !out.value) return;
+          const ok = await copyTextSafe(out.value, out);
+          showToast(ok ? '已複製登入碼' : '已全選登入碼，請按 Ctrl+C', '請貼到 iPhone 的「手機端快速登入」欄位。', 'success');
+        });
+        document.getElementById('btnRemoteAcctHideCode')?.addEventListener('click', () => {
+          const box = document.getElementById('remoteAcctQuickCodeBox');
+          if (box) box.style.display = 'none';
+        });
         document.getElementById('btnRemoteAcctQuickImport')?.addEventListener('click', quickImportMobileCode);
         document.getElementById('btnRemoteAcctLogout')?.addEventListener('click', () => {
           localStorage.removeItem(REMOTE_KEY);
           ['remoteAcctNameInput', 'remoteAcctPassInput', 'remoteAcctGistTokenInput'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
           });
+          const box = document.getElementById('remoteAcctQuickCodeBox');
+          if (box) box.style.display = 'none';
           refreshUI();
           showToast('已登出遠端共享帳號', '本機已解除遠端共享連線。', 'info');
         });

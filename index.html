@@ -3357,9 +3357,15 @@
             <span class="badge badge-blue">SHL TW</span>
             <span id="studioModalActiveLabel">功能工作區</span>
           </div>
-          <button type="button" class="btn btn-sm btn-dark studio-close-btn" data-close-modal="featureStudioModal">
-            <i data-lucide="x" style="width:14px;height:14px;"></i>關閉視窗
-          </button>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <span id="studioTabMemBadge" class="mono" style="font-size:11px;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:3px 8px;border-radius:999px;display:none;">✓ 已記憶</span>
+            <button type="button" id="btnStudioSaveTab" class="btn btn-sm btn-primary" title="儲存目前分頁的畫面輸入與設定記憶，下次開啟自動恢復">
+              💾 儲存此分頁
+            </button>
+            <button type="button" class="btn btn-sm btn-dark studio-close-btn" data-close-modal="featureStudioModal">
+              <i data-lucide="x" style="width:14px;height:14px;"></i>關閉視窗
+            </button>
+          </div>
         </div>
         <div class="studio-pills" role="tablist" aria-label="功能彈窗切換">
           <button type="button" class="studio-pill active" data-studio-pane="strategy">
@@ -18767,9 +18773,181 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, login, push, pull, refreshUI };
     })();
 
+    // =========================================================================
+    // v3.10.6 PER-TAB SCREEN MEMORY (各分頁儲存與自動恢復記憶)
+    // =========================================================================
+    window.SHL_TAB_MEMORY = (function createTabMemory() {
+      const TAB_MEM_KEY = 'synapse_tw_tab_memory_v1';
+      const EXCLUDE_IDS = new Set([
+        'vaultUnlockPasswordInput',
+        'vaultSetupPin',
+        'vaultSetupPinConfirm',
+        'remoteAcctPassInput',
+        'remoteAcctQuickImportInput'
+      ]);
+
+      function readAll() {
+        try {
+          const fromLocal = JSON.parse(localStorage.getItem(TAB_MEM_KEY) || '{}');
+          if (fromLocal && typeof fromLocal === 'object' && Object.keys(fromLocal).length > 0) return fromLocal;
+        } catch (e) {}
+        return (state.ext && state.ext.tabMemory && typeof state.ext.tabMemory === 'object')
+          ? state.ext.tabMemory
+          : {};
+      }
+
+      function writeAll(all) {
+        try { localStorage.setItem(TAB_MEM_KEY, JSON.stringify(all)); } catch (e) {}
+        if (!state.ext) state.ext = {};
+        state.ext.tabMemory = all;
+        try { persistState(); } catch (e) {}
+      }
+
+      function getActivePaneId() {
+        const activePill = document.querySelector('.studio-pill.active');
+        if (activePill && activePill.dataset.studioPane) return activePill.dataset.studioPane;
+        const activePane = document.querySelector('.studio-pane.active');
+        if (activePane && activePane.id && activePane.id.startsWith('studio-')) return activePane.id.slice(7);
+        return 'strategy';
+      }
+
+      function getPaneLabel(paneId) {
+        const pill = document.querySelector(`.studio-pill[data-studio-pane="${paneId}"]`);
+        return pill ? pill.textContent.trim() : paneId;
+      }
+
+      function updateBadge(paneId) {
+        const badge = document.getElementById('studioTabMemBadge');
+        if (!badge) return;
+        const all = readAll();
+        const rec = all[paneId];
+        if (rec && rec.savedAt) {
+          badge.style.display = 'inline-flex';
+          badge.textContent = `✓ 已記憶 ${rec.savedAt}`;
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      function savePane(paneId = getActivePaneId(), silent = false) {
+        const paneEl = document.getElementById(`studio-${paneId}`);
+        if (!paneEl) return 0;
+        const fields = {};
+        let count = 0;
+        paneEl.querySelectorAll('input, textarea, select').forEach(el => {
+          const id = el.id;
+          if (!id || EXCLUDE_IDS.has(id)) return;
+          const t = (el.type || '').toLowerCase();
+          if (t === 'file' || t === 'button' || t === 'submit') return;
+          if (t === 'checkbox' || t === 'radio') {
+            fields[id] = { kind: 'checked', value: Boolean(el.checked) };
+          } else {
+            fields[id] = { kind: 'value', value: String(el.value ?? '') };
+          }
+          count++;
+        });
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const savedAt = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const all = readAll();
+        all[paneId] = { savedAt, count, fields };
+        writeAll(all);
+        updateBadge(paneId);
+
+        if (!silent) {
+          showToast(
+            '分頁畫面記憶已儲存',
+            `已記憶「${getPaneLabel(paneId)}」分頁內容（${count} 項欄位），重開或重新整理將自動恢復。`,
+            'success'
+          );
+        }
+        return count;
+      }
+
+      function restorePane(paneId) {
+        const paneEl = document.getElementById(`studio-${paneId}`);
+        if (!paneEl) return 0;
+        const all = readAll();
+        const rec = all[paneId];
+        if (!rec || !rec.fields) {
+          updateBadge(paneId);
+          return 0;
+        }
+        let restored = 0;
+        Object.entries(rec.fields).forEach(([id, entry]) => {
+          if (EXCLUDE_IDS.has(id)) return;
+          const el = document.getElementById(id);
+          if (!el || !paneEl.contains(el)) return;
+          if (entry.kind === 'checked') {
+            if (Boolean(el.checked) !== Boolean(entry.value)) {
+              el.checked = Boolean(entry.value);
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          } else {
+            // For select elements, only apply if option exists or non-empty
+            if (el.tagName === 'SELECT' && entry.value) {
+              const hasOpt = Array.from(el.options).some(o => o.value === entry.value);
+              if (!hasOpt) return;
+            }
+            if (String(el.value ?? '') !== String(entry.value ?? '')) {
+              el.value = entry.value;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
+          restored++;
+        });
+        updateBadge(paneId);
+        return restored;
+      }
+
+      function restoreAll() {
+        const all = readAll();
+        Object.keys(all).forEach(paneId => {
+          try { restorePane(paneId); } catch (e) {}
+        });
+        updateBadge(getActivePaneId());
+      }
+
+      function init() {
+        const btnSave = document.getElementById('btnStudioSaveTab');
+        if (btnSave && !btnSave._v3106Bound) {
+          btnSave._v3106Bound = true;
+          btnSave.addEventListener('click', () => savePane(getActivePaneId(), false));
+        }
+
+        // Hook studio-pill clicks & openFeatureModal so badge & saved fields sync on every tab switch
+        document.querySelectorAll('.studio-pill').forEach(pill => {
+          if (pill._v3106MemBound) return;
+          pill._v3106MemBound = true;
+          pill.addEventListener('click', () => {
+            const pid = pill.dataset.studioPane;
+            if (pid) setTimeout(() => { restorePane(pid); updateBadge(pid); }, 30);
+          });
+        });
+
+        if (typeof window.openFeatureModal === 'function' && !window._v3106WrappedOpenModal) {
+          window._v3106WrappedOpenModal = true;
+          const origOpen = window.openFeatureModal;
+          window.openFeatureModal = function wrappedOpenFeatureModal(paneId = 'strategy') {
+            const ret = origOpen.apply(this, arguments);
+            setTimeout(() => { restorePane(paneId); updateBadge(paneId); }, 40);
+            return ret;
+          };
+        }
+
+        restoreAll();
+      }
+
+      return { init, savePane, restorePane, restoreAll, updateBadge };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
+      if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.init();
       initApp().finally(() => {
         if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
+        if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
       });
     });
   </script>

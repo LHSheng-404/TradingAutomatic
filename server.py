@@ -385,7 +385,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.8.0",
+    version="3.9.0",
 )
 
 app.add_middleware(
@@ -503,14 +503,12 @@ async def get_mobile_access_info(request: Request):
 
 @app.get("/api/v1/health")
 async def health_check():
-    shioaji_configured = bool(
-        os.getenv("SHIOAJI_API_KEY") and os.getenv("SHIOAJI_SECRET_KEY")
-    )
+    shioaji_configured = _shioaji_has_token()
     ca_path = os.getenv("SHIOAJI_CA_PATH", "")
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.8.0",
+        "version": "3.9.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3096,19 +3094,50 @@ async def broadcast_notify(req: NotifyRequest):
     out: dict[str, Any] = {}
 
     if "line" in req.channels:
-        token = req.line_token.strip() or os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
-        target = req.line_target_id.strip() or os.getenv("LINE_TARGET_ID", "")
-        if not token or not target:
-            out["line"] = {"ok": False, "error": "尚未設定 LINE Channel Access Token 或 Target ID"}
+        token = req.line_token.strip() or os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+        target = req.line_target_id.strip() or os.getenv("LINE_TARGET_ID", "").strip()
+        clean_text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", str(req.text or "")).strip()
+        if len(clean_text) > 4900:
+            clean_text = clean_text[:4890] + "\n...(訊息過長已截斷)"
+        if not token:
+            out["line"] = {"ok": False, "error": "尚未設定 LINE Channel Access Token"}
+        elif not clean_text:
+            out["line"] = {"ok": False, "error": "推播內容不可為空"}
+        elif not target or target.upper() == "BROADCAST":
+            # Broadcast to all followers when Target ID is empty or BROADCAST (prevents 400 Invalid 'to')
+            status, body = await http_json(
+                "https://api.line.me/v2/bot/message/broadcast",
+                method="POST",
+                headers={"Authorization": f"Bearer {token}"},
+                json_body={"messages": [{"type": "text", "text": clean_text}]},
+                timeout=10.0,
+            )
+            err_msg = ""
+            if not (200 <= status < 300):
+                bmsg = body.get("message", "") if isinstance(body, dict) else str(body)[:160]
+                err_msg = f"LINE Broadcast HTTP {status}: {bmsg}"
+            out["line"] = {"ok": 200 <= status < 300, "status": status, "error": err_msg, "detail": redact_secrets(body, [token])}
+        elif not re.fullmatch(r"[UCR][0-9a-fA-F]{32}", target):
+            out["line"] = {
+                "ok": False,
+                "status": 400,
+                "error": "LINE Target ID 格式不符（須為 U/C/R 開頭的 33 碼 User/Group ID；若要群發請清空或填 BROADCAST）",
+            }
         else:
             status, body = await http_json(
                 "https://api.line.me/v2/bot/message/push",
                 method="POST",
                 headers={"Authorization": f"Bearer {token}"},
-                json_body={"to": target, "messages": [{"type": "text", "text": req.text}]},
+                json_body={"to": target, "messages": [{"type": "text", "text": clean_text}]},
                 timeout=10.0,
             )
-            out["line"] = {"ok": 200 <= status < 300, "status": status, "detail": redact_secrets(body, [token])}
+            err_msg = ""
+            if not (200 <= status < 300):
+                bmsg = body.get("message", "") if isinstance(body, dict) else str(body)[:160]
+                details = body.get("details", []) if isinstance(body, dict) else []
+                dtxt = f" ({details[0].get('message', '')})" if details and isinstance(details[0], dict) else ""
+                err_msg = f"LINE Push HTTP {status}: {bmsg}{dtxt}"
+            out["line"] = {"ok": 200 <= status < 300, "status": status, "error": err_msg, "detail": redact_secrets(body, [token])}
 
     if "telegram" in req.channels:
         out["telegram"] = await _send_telegram_bound_message(req.text, is_html=req.is_html)
@@ -3167,8 +3196,8 @@ async def place_order(req: PlaceOrderRequest, request: Request):
     order_id = f"{mode}-{req.symbol}-{ts_ms % 100000000}"
 
     if mode == "LIVE":
-        api_key = os.getenv("SHIOAJI_API_KEY", "")
-        secret_key = os.getenv("SHIOAJI_SECRET_KEY", "")
+        api_key = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "")
+        secret_key = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "")
         ca_path = os.getenv("SHIOAJI_CA_PATH", "")
         ca_pass = os.getenv("SHIOAJI_CA_PASS", "")
         if not api_key or not secret_key or not ca_path or not Path(ca_path).exists():
@@ -3774,6 +3803,105 @@ async def device_unlink(request: Request, device_id: str = ""):
     finally:
         conn.close()
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# v3.9.0 — Sinotrade Shioaji Pro Real-Time Bridge & Global Indices (NQ / SOX)
+# 支援連線本機 shioaji server (http://127.0.0.1:8080) 或 Python shioaji SDK，
+# 未填永豐金 Token 時自動降級至官方 TWSE/TPEx MIS + TAIFEX，確保行情不中斷。
+# ---------------------------------------------------------------------------
+_SHIOAJI_CFG: dict[str, Any] = {
+    "api_key": os.getenv("SHIOAJI_API_KEY", "").strip(),
+    "secret_key": os.getenv("SHIOAJI_SECRET_KEY", "").strip(),
+    "http_url": os.getenv("SHIOAJI_HTTP_URL", "http://127.0.0.1:8080").strip().rstrip("/"),
+    "simulation": True,
+    "connected_source": "",
+}
+
+
+class ShioajiConfigRequest(BaseModel):
+    api_key: str = ""
+    secret_key: str = ""
+    http_url: str = "http://127.0.0.1:8080"
+    simulation: bool = True
+
+
+def _shioaji_has_token() -> bool:
+    return bool(
+        (_SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip())
+        and (_SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip())
+    )
+
+
+@app.get("/api/v1/shioaji/status")
+async def shioaji_status():
+    http_ok = False
+    http_url = _SHIOAJI_CFG.get("http_url") or "http://127.0.0.1:8080"
+    try:
+        st, _ = await http_json(f"{http_url}/health", timeout=1.5)
+        http_ok = 200 <= st < 500
+    except Exception:
+        http_ok = False
+    sdk_installed = False
+    try:
+        import importlib.util
+        sdk_installed = importlib.util.find_spec("shioaji") is not None
+    except Exception:
+        sdk_installed = False
+    ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
+    masked = (ak[:4] + "••••" + ak[-4:]) if len(ak) >= 8 else ("****" if ak else "")
+    return {
+        "ok": True,
+        "token_configured": _shioaji_has_token(),
+        "api_key_masked": masked,
+        "http_url": http_url,
+        "http_server_online": http_ok,
+        "sdk_installed": sdk_installed,
+        "simulation": bool(_SHIOAJI_CFG.get("simulation", True)),
+        "active_source": "永豐金 Shioaji Pro HTTP" if http_ok else ("永豐金 Shioaji SDK" if (_shioaji_has_token() and sdk_installed) else "TWSE/TPEx MIS 官方即時（永豐金待連線）"),
+    }
+
+
+@app.post("/api/v1/shioaji/configure")
+async def shioaji_configure(req: ShioajiConfigRequest):
+    if req.api_key.strip():
+        _SHIOAJI_CFG["api_key"] = req.api_key.strip()
+    if req.secret_key.strip():
+        _SHIOAJI_CFG["secret_key"] = req.secret_key.strip()
+    if req.http_url.strip():
+        _SHIOAJI_CFG["http_url"] = req.http_url.strip().rstrip("/")
+    _SHIOAJI_CFG["simulation"] = bool(req.simulation)
+    return await shioaji_status()
+
+
+@app.get("/api/v1/market/global-indices")
+async def global_indices_realtime():
+    """Fetch live NQ=F (小那期貨) and ^SOX (費半指數) for Lock-Screen Live Activity (up to 5 items)."""
+    targets = [("NQ", "小那期貨", "NQ=F"), ("SOX", "費半指數", "^SOX")]
+    out: dict[str, Any] = {}
+    for code, name, ysym in targets:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ysym)}?interval=1m&range=1d&_={int(time.time()*1000)}"
+            st, body = await http_json(url, timeout=6.0)
+            if st == 200 and isinstance(body, dict):
+                meta = ((body.get("chart") or {}).get("result") or [{}])[0].get("meta") or {}
+                price = meta.get("regularMarketPrice")
+                prev = meta.get("chartPreviousClose") or meta.get("previousClose") or price
+                if price is not None and prev:
+                    chg = round(float(price) - float(prev), 2)
+                    pct = round((chg / float(prev)) * 100, 2)
+                    out[code] = {
+                        "code": code,
+                        "name": name,
+                        "price": round(float(price), 2),
+                        "prev_close": round(float(prev), 2),
+                        "change": chg,
+                        "change_pct": pct,
+                        "time": tw_now_str()[11:],
+                    }
+        except Exception:
+            pass
+    return JSONResponse({"ok": True, "indices": out, "server_time": tw_now_str()}, headers={"Cache-Control": "no-store"})
 
 
 if __name__ == "__main__":

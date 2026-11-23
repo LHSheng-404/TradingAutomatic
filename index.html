@@ -2071,13 +2071,15 @@
       }
     }
 
-    /* Apple iOS Safari / Standalone PWA / Native WKWebView Enhancements */
-    button, a, .btn, .studio-pill, .mobile-nav-btn, .ai-pick-chip {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    html, body {
-      overscroll-behavior-y: none;
+    /* Apple iOS Safari / Standalone PWA / Native WKWebView Enhancements (strictly isolated from Desktop mouse!) */
+    @media (pointer: coarse), (max-width: 960px) {
+      button, a, .btn, .studio-pill, .mobile-nav-btn, .ai-pick-chip {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html, body {
+        overscroll-behavior-y: none;
+      }
     }
     @media (display-mode: standalone) {
       .topbar {
@@ -2447,6 +2449,51 @@
     .shot-dropzone:hover { border-color:#0284c7; background:#f0f9ff; }
     .shot-preview-img { max-width:100%; max-height:240px; border-radius:10px; border:1px solid var(--border); margin-top:8px; object-fit:contain; }
     .pair-code-box { font-size:30px; font-weight:900; letter-spacing:0.22em; text-align:center; padding:12px; border-radius:12px; background:#0f172a; color:#38bdf8; border:1px solid #1e3a8a; }
+    /* === v3.9.0 Shioaji Pro Capital Flow Suite, Live Activity Toggle & Desktop Drag === */
+    @media (pointer: fine) and (min-width: 961px) {
+      .desktop-grab { cursor: grab; }
+      .desktop-grab.is-dragging { cursor: grabbing !important; user-select: none !important; }
+      body.desktop-page-dragging { cursor: grabbing !important; user-select: none !important; }
+    }
+    .shioaji-flow-suite { background:#faf8f4; border:1px solid #e7e2d8; border-radius:16px; padding:16px; margin-bottom:14px; color:#0f172a; }
+    .shioaji-flow-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .shioaji-flow-tabs { display:inline-flex; gap:6px; flex-wrap:wrap; }
+    .shioaji-flow-tab { border:1px solid #d6d0c4; background:#fff; color:#334155; border-radius:999px; padding:6px 15px; font-size:12.5px; font-weight:800; cursor:pointer; transition:all .15s; }
+    .shioaji-flow-tab.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+    .shioaji-flow-stage { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:12px; min-height:260px; }
+    .flow-rank-row { display:grid; grid-template-columns:130px 1fr 90px; gap:8px; align-items:center; padding:6px 4px; border-bottom:1px solid #f1f5f9; font-size:12px; cursor:pointer; }
+    .flow-rank-row:hover { background:#f8fafc; }
+    .flow-rank-track { position:relative; height:18px; background:#f8fafc; border-radius:999px; overflow:hidden; }
+    .flow-rank-mid { position:absolute; left:50%; top:0; bottom:0; width:1px; background:#cbd5e1; }
+    .flow-rank-fill-in { position:absolute; left:50%; top:2px; bottom:2px; background:linear-gradient(90deg,#fca5a5,#dc2626); border-radius:0 999px 999px 0; }
+    .flow-rank-fill-out { position:absolute; right:50%; top:2px; bottom:2px; background:linear-gradient(270deg,#86efac,#16a34a); border-radius:999px 0 0 999px; }
+    .flow-treemap-top { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; margin-bottom:10px; }
+    .flow-tm-tile { border-radius:10px; padding:10px; cursor:pointer; transition:transform .12s, box-shadow .12s; border:2px solid transparent; text-align:left; display:flex; flex-direction:column; justify-content:space-between; min-height:84px; }
+    .flow-tm-tile:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(15,23,42,0.12); }
+    .flow-tm-tile.selected { border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,0.22); }
+    .flow-tm-spark { display:flex; gap:2px; align-items:flex-end; height:12px; margin-top:6px; }
+    .flow-tm-spark span { flex:1; border-radius:2px; }
+    .flow-treemap-sub { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:5px; }
+    .flow-sub-tile { border-radius:8px; padding:7px 8px; cursor:pointer; border:1px solid rgba(15,23,42,0.08); text-align:left; }
+    .flow-sub-tile:hover { filter:brightness(0.96); }
+
+    /* Shioaji Pro Chart Indicator Bar & Legend */
+    .sj-ind-bar { display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding:6px 12px; background:#f8fafc; border-bottom:1px solid var(--border); font-size:11px; }
+    .sj-ind-chip { border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer; }
+    .sj-ind-chip.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+    .sj-legend-bar { font-size:11px; color:#475569; padding:4px 12px; background:#fff; border-bottom:1px solid #f1f5f9; display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* iOS Live Activity Dark Settings Card (matches image.png / image_2.png) */
+    .live-act-card { background:#18181b; color:#f4f4f5; border-radius:14px; padding:14px; border:1px solid #27272a; display:flex; flex-direction:column; gap:11px; }
+    .live-act-switch { position:relative; display:inline-block; width:46px; height:26px; flex-shrink:0; }
+    .live-act-switch input { opacity:0; width:0; height:0; }
+    .live-act-slider { position:absolute; cursor:pointer; inset:0; background:#3f3f46; transition:.2s; border-radius:999px; }
+    .live-act-slider:before { position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:#fff; transition:.2s; border-radius:50%; }
+    .live-act-switch input:checked + .live-act-slider { background:#f59e0b; }
+    .live-act-switch input:checked + .live-act-slider:before { transform:translateX(20px); }
+    .live-act-pill { background:#27272a; color:#a1a1aa; border:1.5px solid #3f3f46; border-radius:10px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+    .live-act-pill.active { background:rgba(245,158,11,0.18); color:#fef3c7; border-color:#f59e0b; }
+    .lock-ticker-grid-5 { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:7px; }
   </style>
 </head>
 <body>
@@ -2608,6 +2655,33 @@
     <!-- ==================== TAB 1: COMMAND DESK ==================== -->
     <section id="tab-desk" class="tab-section active">
 
+      <!-- 0. Shioaji Pro-Style Capital Flow Intelligence Suite (排行 · 輪動 · 熱力圖 · 產業全景 & 持股族群) -->
+      <section id="shlCapitalFlowSuite" class="shioaji-flow-suite" aria-label="永豐金風格產業鏈資金流向與產業全景">
+        <div class="shioaji-flow-head">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="badge badge-up" style="font-size:11px;">SHL TW × 永豐金 Shioaji Pro 風格</span>
+              <h2 style="margin:0;font-size:17px;font-weight:900;color:#0f172a;">產業鏈資金流向 · 排行 · 輪動 · 熱力圖 · 產業全景</h2>
+              <span id="shioajiSourcePill" class="badge badge-blue mono" style="font-size:10.5px;">即時數據源：永豐金 / TWSE 官方</span>
+            </div>
+            <p style="margin:4px 0 0;font-size:12px;color:#475569;">
+              依即時成交價量與漲跌幅即時計算產業資金流入／流出，點選族群可下鑽成分股，點選個股立即切換技術線圖與量化指標
+            </p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="shioaji-flow-tabs" role="tablist" aria-label="資金鏈視圖切換">
+              <button type="button" class="shioaji-flow-tab" data-flow-tab="rank">排行</button>
+              <button type="button" class="shioaji-flow-tab" data-flow-tab="rotation">輪動</button>
+              <button type="button" class="shioaji-flow-tab active" data-flow-tab="heatmap">熱力</button>
+              <button type="button" class="shioaji-flow-tab" data-flow-tab="panorama">產業全景 / 持股族群</button>
+            </div>
+            <button type="button" id="btnFlowPrivacyToggle" class="btn btn-sm" title="開啟金額遮蔽，截圖更放心">🙈 金額遮蔽</button>
+            <button type="button" id="btnOpenShioajiCfg" class="btn btn-sm btn-dark">⚡ 永豐金 API 設定</button>
+          </div>
+        </div>
+        <div id="shioajiFlowStage" class="shioaji-flow-stage"></div>
+      </section>
+
       <!-- 1. Watchlist & Add Real TW Stock Bar -->
       <div class="watchlist-bar">
         <div id="watchlistPills" class="watchlist-pills"></div>
@@ -2739,6 +2813,20 @@
               <button id="btnTvDrawTools" class="btn btn-sm" title="顯示/隱藏 TradingView 側邊繪圖工具列">繪圖工具: 開</button>
               <button id="btnTvTheme" class="btn btn-sm" title="切換 TradingView 亮暗主題">主題: 亮</button>
             </div>
+          </div>
+
+          <!-- v3.9.0: Shioaji Pro Quant Indicator Overlay Bar & Live Legend -->
+          <div id="sjIndicatorBar" class="sj-ind-bar">
+            <span style="font-weight:800;color:#0f172a;">📊 量化指標疊加：</span>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="ema">EMA5/12</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="ma20">MA20 均線</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="bb">布林通道</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="vwap">VWAP 機構均價</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="signals">量化買賣訊號</button>
+            <button type="button" id="btnSjOpenQuantLab" class="sj-ind-chip" style="margin-left:auto;background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;">🧪 串接量化實驗室</button>
+          </div>
+          <div id="sjChartLegendBar" class="sj-legend-bar mono">
+            <span>指標即時數值：等待行情同步...</span>
           </div>
 
           <div class="chart-viewport">
@@ -2877,6 +2965,11 @@
               </div>
 
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:6px;cursor:pointer;">
+                <input id="orderDayTradeChk" type="checkbox" />
+                <span><strong>當沖交易（DayTrade）</strong>· 證交稅減半 0.15%，成交明細標記「當沖」</span>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:6px;cursor:pointer;">
                 <input id="orderMultiAgentChk" type="checkbox" checked />
                 <span>下單前<strong>實時偵測最新股價</strong> ＋ 價量多 Agent 自動選模預檢</span>
               </label>
@@ -2951,6 +3044,12 @@
             <button id="btnScanSignals" class="btn btn-sm btn-dark">
               <i data-lucide="scan-search" style="width:13px;height:13px;"></i>立即掃描訊號
             </button>
+            <button id="btnToggleSignalHistory" type="button" class="btn btn-sm">
+              📜 歷史紀錄 (<span id="signalHistoryCount">0</span>)
+            </button>
+            <button id="btnClearSignalHistory" type="button" class="btn btn-sm" style="color:#b91c1c;">
+              🗑️ 清空紀錄
+            </button>
             <button id="btnPushBatchSignals" class="btn btn-sm btn-teal">
               <i data-lucide="send" style="width:13px;height:13px;"></i>一鍵條列推播 LINE / TG
             </button>
@@ -2974,6 +3073,28 @@
               </thead>
               <tbody id="signalTableBody"></tbody>
             </table>
+          </div>
+          <div id="signalHistoryWrap" style="display:none;border-top:2px solid var(--border);background:#f8fafc;padding:10px 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong style="font-size:12.5px;color:#0f172a;">📜 自動訊號掃描歷史紀錄（最新 100 筆）</strong>
+              <span style="font-size:11px;color:var(--ink-3);">自動記錄每次掃描之秒級時間、現價、RSI 與訊號</span>
+            </div>
+            <div class="table-wrap" style="max-height:240px;overflow-y:auto;">
+              <table class="data-table" style="font-size:11.5px;">
+                <thead>
+                  <tr>
+                    <th>掃描時間 (秒)</th>
+                    <th>標的</th>
+                    <th class="num-right">現價</th>
+                    <th class="num-right">漲跌幅</th>
+                    <th class="num-right">RSI(14)</th>
+                    <th class="num-center">訊號</th>
+                    <th>依據說明</th>
+                  </tr>
+                </thead>
+                <tbody id="signalHistoryBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </article>
@@ -3011,7 +3132,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h2 class="card-title">模擬 / 實盤委託成交稽核紀錄</h2>
-              <p class="card-subtitle">完整記錄交易模式 (SIM/LIVE)、時間戳、手續費與證交稅</p>
+              <p class="card-subtitle">比照真實回測完整顯示：秒級下單時間、真實成交確認、成交金額（含費稅）與當沖標記</p>
             </div>
             <div class="chart-group">
               <button id="btnSendOrdersToReview" class="btn btn-sm btn-primary">
@@ -3024,15 +3145,16 @@
           </div>
           <div class="card-body" style="padding:0;">
             <div class="table-wrap">
-              <table class="data-table" style="min-width:540px;">
+              <table class="data-table" style="min-width:640px;">
                 <thead>
                   <tr>
-                    <th>時間</th>
-                    <th>模式</th>
+                    <th>下單時間 (秒)</th>
+                    <th>模式 / 當沖</th>
                     <th>標的</th>
                     <th>方向 / 數量</th>
                     <th class="num-right">成交價</th>
-                    <th>狀態</th>
+                    <th class="num-right">成交金額 (費/稅)</th>
+                    <th>真實成交確認</th>
                   </tr>
                 </thead>
                 <tbody id="ordersHistoryBody"></tbody>
@@ -4690,22 +4812,44 @@
             <article class="card">
               <div class="card-header">
                 <div class="card-title-group">
-                  <h2 class="card-title">📱 鎖屏大盤即時看板自訂（可選指數或個股）</h2>
-                  <p class="card-subtitle">鎖定畫面或待機看盤模式即時顯示您挑選的大盤指數與個股（僅公開報價，不曝光私密金鑰）</p>
+                  <h2 class="card-title">📱 鎖屏即時動態（開關控制 · 最多 5 組即時狀態）</h2>
+                  <p class="card-subtitle">開啟後於鎖定畫面／待機模式顯示自訂大盤與個股即時動態，預設含台指近全</p>
                 </div>
                 <button type="button" id="btnPreviewStandbyFromVault" class="btn btn-sm btn-dark">立即開啟鎖屏看盤</button>
               </div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
-                <div style="font-size:12px;color:var(--ink-2);">
-                  點選下方按鈕切換鎖屏顯示標的（建議選 3～6 檔，首 3 檔顯示於鎖屏主列）：
+                <div class="live-act-card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div>
+                      <div style="font-size:15px;font-weight:900;">即時動態</div>
+                      <div style="font-size:11.5px;color:#a1a1aa;margin-top:2px;">開啟後在手機螢幕鎖定／待機時顯示即時大盤組合</div>
+                    </div>
+                    <label class="live-act-switch" title="開啟或關閉鎖屏即時動態">
+                      <input id="chkLiveActivityMaster" type="checkbox" checked />
+                      <span class="live-act-slider"></span>
+                    </label>
+                  </div>
+                  <div style="border-top:1px solid #27272a;padding-top:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <span style="font-size:12.5px;font-weight:800;color:#fbbf24;">✓ 大盤即時動態（最多選 5 組）</span>
+                      <span id="liveActCountBadge" class="mono" style="font-size:11.5px;color:#a1a1aa;">已選 3/5</span>
+                    </div>
+                    <div id="lockTickerChoicePills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #27272a;padding-top:9px;">
+                    <div>
+                      <div style="font-size:12.5px;font-weight:800;">庫存即時動態</div>
+                      <div style="font-size:11px;color:#a1a1aa;">於鎖屏顯示今日模擬／實盤損益與最強／弱股（僅解鎖或主動待機時顯示）</div>
+                    </div>
+                    <label class="live-act-switch">
+                      <input id="chkLiveActivityHoldings" type="checkbox" />
+                      <span class="live-act-slider"></span>
+                    </label>
+                  </div>
                 </div>
-                <div id="lockTickerChoicePills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                  <input id="lockTickerCustomInput" type="text" class="input mono" style="flex:1;min-width:150px;" placeholder="自訂加入代號（如 2330、2368、0050）" maxlength="8" />
-                  <button type="button" id="btnAddLockTickerCustom" class="btn btn-sm btn-primary">加入鎖屏清單</button>
-                </div>
-                <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
-                  💡 支援指數：<span class="mono">t00</span>（加權指數）、<span class="mono">o00</span>（櫃買指數）、<span class="mono">TXF</span>（台指電子盤/近全）及任意自選台股代號；亦可於設定中填入免費 Fugle API Key 以在純 Safari 網頁獲得毫秒盤中即時推播。
+                  <input id="lockTickerCustomInput" type="text" class="input mono" style="flex:1;min-width:150px;" placeholder="自訂加入個股代號（如 2330、2368、0050）" maxlength="8" />
+                  <button type="button" id="btnAddLockTickerCustom" class="btn btn-sm btn-primary">加入鎖屏組合</button>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                   <input id="fugleApiKeyInput" type="password" class="input mono" style="flex:1;min-width:170px;" placeholder="選填：富果 Fugle 即時行情 API Key（純網頁盤中直連）" />
@@ -4894,22 +5038,42 @@
 
   <!-- ==================== MODAL 1: LIVE TRADING SAFETY GATE ==================== -->
   <div id="liveSafetyModal" class="modal-backdrop">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width:560px;">
       <div class="modal-head">
         <div>
-          <h3 class="modal-title" style="color:#b91c1c;">切換至「真實下單 LIVE」安全檢核</h3>
-          <p class="card-subtitle">真實下單將透過雲端後端呼叫永豐金 Shioaji 實盤 API 動用真實資金，請先完成以下確認</p>
+          <h3 class="modal-title" style="color:#b91c1c;">永豐金 Shioaji API 設定 &amp; 切換「真實下單 LIVE」安全檢核</h3>
+          <p class="card-subtitle">系統預設為模擬下單 (SIM)；切換真實下單前必須具備有效永豐金 API Token 並經您二次確認</p>
         </div>
         <button class="btn btn-sm" data-close-modal="liveSafetyModal">關閉</button>
       </div>
-      <div id="liveCheckStatusBox" style="padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#991b1b;"></div>
+      <div id="liveCheckStatusBox" style="padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#991b1b;line-height:1.6;"></div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:12.5px;font-weight:800;color:#0f172a;">🔑 永豐金 Shioaji API Token 與本機 Shioaji Pro 伺服器</div>
+        <div class="form-grid-2">
+          <div>
+            <label class="field-label" for="shioajiApiKeyInput">Shioaji API Key</label>
+            <input id="shioajiApiKeyInput" type="password" class="input mono" placeholder="貼上永豐金 API Key" autocomplete="off" />
+          </div>
+          <div>
+            <label class="field-label" for="shioajiSecretKeyInput">Shioaji Secret Key</label>
+            <input id="shioajiSecretKeyInput" type="password" class="input mono" placeholder="貼上永豐金 Secret Key" autocomplete="off" />
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="shioajiHttpUrlInput" type="url" class="input mono" style="flex:1;min-width:180px;" value="http://127.0.0.1:8080" placeholder="Shioaji Pro HTTP 網址（預設 http://127.0.0.1:8080）" />
+          <button type="button" id="btnSaveShioajiConfig" class="btn btn-sm btn-primary">儲存並連線永豐金</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink-3);">
+          參考 <a href="https://github.com/Sinotrade/shioaji-pro-app" target="_blank" rel="noopener noreferrer">Sinotrade/shioaji-pro-app</a>：執行 <code class="mono">shioaji server start</code> 即可提供毫秒級即時行情；未填入 Token 時僅允許模擬盤 (SIM)。
+        </div>
+      </div>
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
         <input id="liveConfirm1" type="checkbox" style="margin-top:3px;" />
-        我已確認目前顯示之 Yahoo / FinMind 報價與委託數量皆為真實數值。
+        我已確認目前顯示之永豐金／官方即時報價與委託數量皆為真實數值。
       </label>
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
         <input id="liveConfirm2" type="checkbox" style="margin-top:3px;" />
-        我已於雲端伺服器設定永豐金 API Key、Secret Key 與有效 Sinopac.pfx 憑證，並理解實盤交易風險。
+        我已設定有效永豐金 Shioaji API Token 與憑證，確認將由「模擬下單 SIM」切換為「真實下單 LIVE」並自負盈虧。
       </label>
       <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:6px;">
         <button class="btn" data-close-modal="liveSafetyModal">維持模擬盤 SIM</button>
@@ -5246,7 +5410,12 @@
           realtimeRefreshSec: state.ext.realtimeRefreshSec,
           fugleApiKey: state.ext.fugleApiKey || '',
           battleAuto: state.ext.battleAuto,
-          device: state.ext.device
+          device: state.ext.device,
+          liveActivityEnabled: state.ext.liveActivityEnabled,
+          liveActivityHoldings: state.ext.liveActivityHoldings,
+          signalHistory: (state.ext.signalHistory || []).slice(0, 100),
+          shioaji: state.ext.shioaji,
+          sjIndicators: state.ext.sjIndicators
         },
         activeSymbol: state.activeSymbol,
         qlab
@@ -5311,6 +5480,11 @@
         if (typeof saved.ext.fugleApiKey === 'string') state.ext.fugleApiKey = saved.ext.fugleApiKey;
         if (saved.ext.battleAuto && typeof saved.ext.battleAuto === 'object') Object.assign(state.ext.battleAuto, saved.ext.battleAuto);
         if (saved.ext.device && typeof saved.ext.device === 'object') Object.assign(state.ext.device, saved.ext.device);
+        if (typeof saved.ext.liveActivityEnabled === 'boolean') state.ext.liveActivityEnabled = saved.ext.liveActivityEnabled;
+        if (typeof saved.ext.liveActivityHoldings === 'boolean') state.ext.liveActivityHoldings = saved.ext.liveActivityHoldings;
+        if (Array.isArray(saved.ext.signalHistory)) state.ext.signalHistory = saved.ext.signalHistory.slice(0, 100);
+        if (saved.ext.shioaji && typeof saved.ext.shioaji === 'object') state.ext.shioaji = Object.assign({ apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true }, saved.ext.shioaji);
+        if (saved.ext.sjIndicators && typeof saved.ext.sjIndicators === 'object') state.ext.sjIndicators = Object.assign({ ema: true, ma20: true, bb: false, vwap: true, signals: true }, saved.ext.sjIndicators);
       }
       if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
       if (saved.qlab && typeof saved.qlab === 'object') {
@@ -6947,6 +7121,9 @@
       ];
 
       if (closes.length >= 5) {
+        if (window.SHL_EXT && typeof window.SHL_EXT.augmentChartIndicators === 'function') {
+          window.SHL_EXT.augmentChartIndicators(datasets, candles, closes, vwap, meta);
+        }
         if (state.tvStudy === 'ema_rsi') {
           datasets.push({
             label: 'EMA 5',
@@ -9480,20 +9657,36 @@
       renderNotifyCenter();
     }
 
+    function hasValidShioajiToken() {
+      const sj = state.ext?.shioaji || {};
+      const localHas = Boolean((sj.apiKey || '').trim() && (sj.secretKey || '').trim());
+      const serverHas = Boolean(state.backendHealth?.shioaji_configured);
+      return localHas || serverHas;
+    }
+
     function openLiveSafetyModal() {
       const box = document.getElementById('liveCheckStatusBox');
+      const sj = state.ext?.shioaji || {};
+      const akIn = document.getElementById('shioajiApiKeyInput');
+      const skIn = document.getElementById('shioajiSecretKeyInput');
+      const urlIn = document.getElementById('shioajiHttpUrlInput');
+      if (akIn && sj.apiKey && !akIn.value) akIn.value = sj.apiKey;
+      if (skIn && sj.secretKey && !skIn.value) skIn.value = sj.secretKey;
+      if (urlIn && sj.httpUrl) urlIn.value = sj.httpUrl;
       if (box) {
         const backendOk = state.backendDetected;
-        const sjOk = Boolean(state.backendHealth?.shioaji_configured);
+        const sjOk = hasValidShioajiToken();
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
         box.innerHTML = `
-          <div>1. 雲端後端連線：<strong>${backendOk ? '✓ 已連線' : '✗ 尚未連線（請先部署並連線 server.py）'}</strong></div>
-          <div>2. 永豐金 Shioaji 金鑰：<strong>${sjOk ? '✓ 已設定' : '✗ 尚未設定環境變數 SHIOAJI_API_KEY'}</strong></div>
-          <div>3. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '✗ 尚未掛載憑證檔案'}</strong></div>
+          <div>1. 雲端後端連線：<strong>${backendOk ? '✓ 已連線' : '✗ 尚未連線（請先啟動 server.py）'}</strong></div>
+          <div>2. 永豐金 Shioaji API Token（必要）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 API Token' : '✗ 尚未設定（無 API Token 嚴禁切換實盤 LIVE）'}</strong></div>
+          <div>3. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
         `;
       }
-      document.getElementById('liveConfirm1').checked = false;
-      document.getElementById('liveConfirm2').checked = false;
+      const c1 = document.getElementById('liveConfirm1');
+      const c2 = document.getElementById('liveConfirm2');
+      if (c1) c1.checked = false;
+      if (c2) c2.checked = false;
       openModal('liveSafetyModal');
     }
 
@@ -9504,9 +9697,11 @@
       const shares = unit === '張' ? qty * 1000 : qty;
       const notional = price * shares;
       const isEtf = state.activeSymbol.startsWith('00');
+      const isDayTrade = Boolean(document.getElementById('orderDayTradeChk')?.checked);
       const discountFactor = state.feeDiscount / 10;
       const fee = notional > 0 ? Math.max(20, Math.round(notional * 0.001425 * discountFactor)) : 0;
-      const tax = (state.orderSide === 'SELL' && notional > 0) ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
+      const taxRate = isEtf ? 0.001 : (isDayTrade ? 0.0015 : 0.003);
+      const tax = (state.orderSide === 'SELL' && notional > 0) ? Math.round(notional * taxRate) : 0;
 
       const elNot = document.getElementById('estNotional');
       const elFt = document.getElementById('estFeeTax');
@@ -9518,7 +9713,7 @@
       if (elCash) elCash.textContent = fmtMoney(state.simCashTwd);
     }
 
-    async function executeOrder({ symbol, side, qty, unit, price, orderType = 'LMT', tif = 'ROD', source = 'WEB_UI' }) {
+    async function executeOrder({ symbol, side, qty, unit, price, orderType = 'LMT', tif = 'ROD', source = 'WEB_UI', dayTrade = null }) {
       if (state.killSwitch) {
         showToast('下單已攔截', '目前處於緊急熔斷狀態，請先解除熔斷。', 'error');
         return;
@@ -9529,15 +9724,31 @@
         return;
       }
 
+      const exactTime = nowTwDateTime();
+      const todayStr = exactTime.slice(0, 10);
+      const hasOppositeToday = state.orders.some(o =>
+        o.symbol === meta.symbol &&
+        String(o.iso_time || '').startsWith(todayStr) &&
+        o.side !== side
+      );
+      const isDayTrade = dayTrade !== null ? Boolean(dayTrade) : (Boolean(document.getElementById('orderDayTradeChk')?.checked) || hasOppositeToday);
+
       const shares = unit === '張' ? qty * 1000 : qty;
-      const notional = shares * price;
+      const notional = Math.round(shares * price);
       const isEtf = symbol.startsWith('00');
       const fee = Math.max(20, Math.round(notional * 0.001425 * (state.feeDiscount / 10)));
-      const tax = side === 'SELL' ? Math.round(notional * (isEtf ? 0.001 : 0.003)) : 0;
+      const taxRate = isEtf ? 0.001 : (isDayTrade ? 0.0015 : 0.003);
+      const tax = side === 'SELL' ? Math.round(notional * taxRate) : 0;
+      const netAmount = side === 'BUY' ? (notional + fee) : (notional - fee - tax);
 
-      // LIVE MODE: Strictly require Cloud Backend + real API execution
+      // LIVE MODE: Strictly require Shioaji API Token + Cloud Backend
       if (state.envMode === 'LIVE') {
         const apiBase = getApiBase();
+        if (!hasValidShioajiToken()) {
+          showToast('實盤下單阻斷（缺少 API Token）', '尚未設定永豐金 Shioaji API Token，已強制維持模擬下單模式！', 'error');
+          setTradingMode('SIM');
+          return;
+        }
         if (!apiBase) {
           showToast('實盤下單阻斷', '尚未連線雲端實盤後端（server.py），系統拒絕模擬假裝實盤成交！', 'error');
           return;
@@ -9564,10 +9775,16 @@
           if (!resp.ok) {
             throw new Error(data.detail || `HTTP ${resp.status}`);
           }
+          data.iso_time = data.iso_time || exactTime;
+          data.shares = shares;
+          data.notional_twd = notional;
+          data.net_amount_twd = netAmount;
+          data.day_trade = isDayTrade;
+          data.fill_confirmed = true;
           state.orders.unshift(data);
           persistState();
           triggerHandshake('CORE', 'BROKER', '#dc2626', 'ORDER', true, 48, `LIVE 委託送出 ${meta.symbol} ${meta.name} ${side} ${qty}${unit}`);
-          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（單號 ${data.order_id}）`, 'success');
+          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（${exactTime} · 金額 ${fmtMoney(netAmount)}）`, 'success');
         } catch (err) {
           showToast('真實下單失敗', err.message, 'error');
           return;
@@ -9604,7 +9821,7 @@
 
         const rec = {
           order_id: `SIM-${meta.symbol}-${Date.now().toString().slice(-6)}`,
-          iso_time: nowTwDateTime(),
+          iso_time: exactTime,
           env_mode: 'SIM',
           symbol: meta.symbol,
           stock_name: meta.name,
@@ -9613,9 +9830,14 @@
           tif,
           qty,
           unit,
+          shares,
           price,
+          notional_twd: notional,
+          net_amount_twd: netAmount,
           fee_twd: fee,
           tax_twd: tax,
+          day_trade: isDayTrade,
+          fill_confirmed: true,
           status: 'FILLED_SIM'
         };
         state.orders.unshift(rec);
@@ -9856,18 +10078,34 @@
       const oBody = document.getElementById('ordersHistoryBody');
       if (oBody) {
         if (state.orders.length === 0) {
-          oBody.innerHTML = '<tr><td colspan="6" class="num-center" style="padding:20px;color:var(--ink-4);">尚無委託紀錄。</td></tr>';
+          oBody.innerHTML = '<tr><td colspan="7" class="num-center" style="padding:20px;color:var(--ink-4);">尚無委託紀錄。</td></tr>';
         } else {
-          oBody.innerHTML = state.orders.slice(0, 20).map(o => `
-            <tr>
-              <td class="mono" style="font-size:11px;color:var(--ink-3);">${escapeHtml(String(o.iso_time || '').slice(5))}</td>
-              <td><span class="badge ${o.env_mode === 'LIVE' ? 'badge-up' : 'badge-blue'}">${escapeHtml(o.env_mode)}</span></td>
-              <td><strong class="mono">${escapeHtml(o.symbol)}</strong> ${escapeHtml(o.stock_name || '')}</td>
-              <td class="mono ${o.side === 'BUY' ? 'text-up' : 'text-down'}" style="font-weight:700;">${o.side === 'BUY' ? '買進' : '賣出'} ${o.qty}${escapeHtml(o.unit)}</td>
-              <td class="num-right mono" style="font-weight:700;">${fmtNum(o.price, 2)}</td>
-              <td><span class="badge badge-teal">${escapeHtml(o.status)}</span></td>
-            </tr>
-          `).join('');
+          oBody.innerHTML = state.orders.slice(0, 30).map(o => {
+            const shares = Number(o.shares || (o.unit === '張' ? Number(o.qty || 0) * 1000 : Number(o.qty || 0)));
+            const notional = Number(o.notional_twd || Math.round(shares * Number(o.price || 0)));
+            const fee = Number(o.fee_twd || 0);
+            const tax = Number(o.tax_twd || 0);
+            const netAmt = Number(o.net_amount_twd || (o.side === 'BUY' ? (notional + fee) : (notional - fee - tax)));
+            const isDt = Boolean(o.day_trade);
+            const filledTxt = o.env_mode === 'LIVE' ? '✓ 實盤真實成交' : '✓ 模擬真實價成交';
+            return `
+              <tr>
+                <td class="mono" style="font-size:11px;color:var(--ink-2);white-space:nowrap;">${escapeHtml(String(o.iso_time || '--'))}</td>
+                <td>
+                  <span class="badge ${o.env_mode === 'LIVE' ? 'badge-up' : 'badge-blue'}">${escapeHtml(o.env_mode)}</span>
+                  ${isDt ? '<span class="badge badge-amber" style="margin-left:3px;">當沖</span>' : '<span class="badge badge-slate" style="margin-left:3px;opacity:.75;">現股</span>'}
+                </td>
+                <td><strong class="mono">${escapeHtml(o.symbol)}</strong> ${escapeHtml(o.stock_name || '')}</td>
+                <td class="mono ${o.side === 'BUY' ? 'text-up' : 'text-down'}" style="font-weight:700;white-space:nowrap;">${o.side === 'BUY' ? '買進' : '賣出'} ${o.qty}${escapeHtml(o.unit)}</td>
+                <td class="num-right mono" style="font-weight:700;">${fmtNum(o.price, 2)}</td>
+                <td class="num-right mono" style="font-size:11.5px;white-space:nowrap;">
+                  <div style="font-weight:800;color:var(--ink-1);">${fmtMoney(netAmt)}</div>
+                  <div style="font-size:10px;color:var(--ink-3);">費 ${fmtMoney(fee)} / 稅 ${fmtMoney(tax)}</div>
+                </td>
+                <td><span class="badge badge-teal" style="white-space:nowrap;">${filledTxt}</span></td>
+              </tr>
+            `;
+          }).join('');
         }
       }
     }
@@ -9959,12 +10197,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_EXT) {
         try { window.SHL_EXT.renderMitakeBoard(); } catch (e) {}
         try { window.SHL_EXT.renderLockTickers(); } catch (e) {}
+        try { window.SHL_EXT.renderCapitalFlow(); } catch (e) {}
       }
     }
 
     function runSignalScan(notify = false) {
       const results = state.watchlist.map(w => evaluateStockSignal(w.symbol));
       const actionable = results.filter(r => r.signal === 'BUY' || r.signal === 'SELL');
+      if (window.SHL_EXT && typeof window.SHL_EXT.recordSignalScanHistory === 'function') {
+        window.SHL_EXT.recordSignalScanHistory(results);
+      }
       triggerHandshake('SCANNER', 'CORE', '#0d9488', 'SYN', true, 14, `掃描完成：偵測到 ${actionable.length} 筆買賣訊號`);
 
       if (actionable.length > 0 && state.autoTradeOnSignal && !state.killSwitch) {
@@ -10375,8 +10617,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       });
       document.getElementById('btnModeLive').addEventListener('click', () => openLiveSafetyModal());
       document.getElementById('btnConfirmLiveMode').addEventListener('click', () => {
+        if (!hasValidShioajiToken()) {
+          showToast('無法切換實盤（缺少永豐金 API Token）', '切換真實下單 LIVE 必須先於上方填入永豐金 Shioaji API Key 與 Secret Key 並點擊「儲存並連線永豐金」！', 'error');
+          document.getElementById('shioajiApiKeyInput')?.focus();
+          return;
+        }
         if (!document.getElementById('liveConfirm1').checked || !document.getElementById('liveConfirm2').checked) {
           showToast('請完成安全確認', '請勾選兩項實盤風險確認方塊後再切換。', 'warn');
+          return;
+        }
+        if (!confirm('⚠️ 最後確認：您確定要由「模擬下單 SIM」切換為「真實下單 LIVE」嗎？\n切換後所有送出之委託將透過永豐金 Shioaji 實際動用真實資金！')) {
           return;
         }
         closeModal('liveSafetyModal');
@@ -14044,7 +14294,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         state.notifier.lineTargetId = '';
         state.notifier.tgToken = '';
         state.notifier.tgChatId = '';
-        if (state.ext) state.ext.fugleApiKey = '';
+        if (state.ext) { state.ext.fugleApiKey = ''; if (state.ext.shioaji) { state.ext.shioaji.apiKey = ''; state.ext.shioaji.secretKey = ''; } }
         ['keyGroq', 'keyGrok', 'keyGemini', 'keyClaude', 'keyChatgpt', 'finmindTokenInput', 'lineTokenInput', 'cfgTgToken', 'fugleApiKeyInput', 'vaultBackendAccessInput'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
@@ -16022,6 +16272,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderMitakeBoard();
         renderLockTickers();
         refreshPairedDevices();
+        if (window.SHL_EXT && typeof window.SHL_EXT.initV39 === 'function') {
+          window.SHL_EXT.initV39();
+        }
       }
 
       return {
@@ -16036,6 +16289,655 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         createGroup,
         runLiveBattleNow,
         refreshPairedDevices
+      };
+    })();
+
+    // =========================================================================
+    // v3.9.0 SHL_EXT ENHANCEMENTS
+    // 1. Live Activity Toggle (ON/OFF) + Max 5 Customizable Items (t00/o00/TXF/NQ/SOX/Stocks)
+    // 2. Desktop-Only Mouse Drag-to-Scroll (100% separated from Mobile Touch)
+    // 4. Signal Scanner History Log + Clear
+    // 6/7/8. Sinotrade Shioaji Pro API Config, Quant Indicator Overlay + Legend
+    // 9. Shioaji Pro Capital Flow Suite (排行 / 輪動 / 熱力 Treemap / 產業全景 & 持股族群)
+    // =========================================================================
+    (function attachV39Extensions() {
+      const ext = window.SHL_EXT;
+      if (!ext) return;
+
+      // Ensure v3.9.0 state fields exist (backward compatible with v3.8.0 snapshots)
+      function ensureV39State() {
+        if (typeof state.ext.liveActivityEnabled !== 'boolean') state.ext.liveActivityEnabled = true;
+        if (typeof state.ext.liveActivityHoldings !== 'boolean') state.ext.liveActivityHoldings = false;
+        if (!Array.isArray(state.ext.signalHistory)) state.ext.signalHistory = [];
+        if (!state.ext.shioaji) state.ext.shioaji = { apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true };
+        if (!state.ext.sjIndicators) state.ext.sjIndicators = { ema: true, ma20: true, bb: false, vwap: true, signals: true };
+        if (!state.ext.flowTab) state.ext.flowTab = 'heatmap';
+        if (typeof state.ext.flowPrivacy !== 'boolean') state.ext.flowPrivacy = false;
+        if (!state.ext.flowSelectedSector) state.ext.flowSelectedSector = 'AI 伺服器';
+        if (!state.ext.flowHoldingView) state.ext.flowHoldingView = 'channel';
+        // Enforce max 5 lock-screen items & default includes 台指近全 (TXF)
+        if (!Array.isArray(state.ext.lockTickerSymbols) || !state.ext.lockTickerSymbols.length) {
+          state.ext.lockTickerSymbols = ['t00', 'o00', 'TXF'];
+        } else if (state.ext.lockTickerSymbols.length > 5) {
+          state.ext.lockTickerSymbols = state.ext.lockTickerSymbols.slice(0, 5);
+        }
+      }
+
+      // --- 1. LIVE ACTIVITY TOGGLE + MAX 5 INDICES (incl. NQ / SOX / TXF) ---
+      const LIVE_INDEX_CATALOG = [
+        { code: 't00', label: '加權指數' },
+        { code: 'o00', label: '櫃買指數' },
+        { code: 'TXF', label: '台指期/電子盤(近全)' },
+        { code: 'NQ', label: '小那期貨' },
+        { code: 'SOX', label: '費半指數' }
+      ];
+
+      async function fetchGlobalIndices() {
+        const apiBase = getApiBase();
+        if (!apiBase) return;
+        try {
+          const r = await fetch(`${apiBase}/api/v1/market/global-indices?_t=${Date.now()}`, { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          Object.entries(j.indices || {}).forEach(([k, v]) => {
+            state.ext.indices[k] = {
+              code: k,
+              name: v.name,
+              price: v.price,
+              prevClose: v.prev_close,
+              change: v.change,
+              changePct: v.change_pct,
+              time: v.time
+            };
+          });
+        } catch (e) {}
+      }
+
+      function renderLiveActivityCard() {
+        ensureV39State();
+        const masterChk = document.getElementById('chkLiveActivityMaster');
+        const holdChk = document.getElementById('chkLiveActivityHoldings');
+        const cntBadge = document.getElementById('liveActCountBadge');
+        const box = document.getElementById('lockTickerChoicePills');
+        if (masterChk) masterChk.checked = state.ext.liveActivityEnabled;
+        if (holdChk) holdChk.checked = state.ext.liveActivityHoldings;
+        if (cntBadge) cntBadge.textContent = `已選 ${state.ext.lockTickerSymbols.length}/5`;
+
+        const vEl = document.getElementById('vaultLockLiveTicker');
+        if (vEl) vEl.style.display = state.ext.liveActivityEnabled ? 'block' : 'none';
+
+        // Re-render up to 5 items cleanly on both Vault Lock Screen & Standby Lock Screen
+        const renderGridInto = (container) => {
+          if (!container) return;
+          const syms = state.ext.lockTickerSymbols.slice(0, 5);
+          const items = syms.map(code => {
+            const idx = state.ext.indices[code];
+            if (idx) return { code, name: idx.name, price: idx.price, change: idx.change, changePct: idx.changePct, dec: (code === 'TXF' || code === 'NQ') ? 0 : 2 };
+            const cat = LIVE_INDEX_CATALOG.find(c => c.code === code);
+            if (cat) return { code, name: cat.label, price: null, change: 0, changePct: 0, dec: 2 };
+            const m = getStockMeta(code);
+            const q = getQuote(code);
+            if (q && q.price !== null && q.price !== undefined) {
+              const prev = q.prevClose || q.open || q.price;
+              const chg = Number((q.price - prev).toFixed(2));
+              const pct = prev ? Number(((chg / prev) * 100).toFixed(2)) : 0;
+              return { code, name: m.name || code, price: q.price, change: chg, changePct: pct, dec: 2 };
+            }
+            return { code, name: m.name || code, price: null, change: 0, changePct: 0, dec: 2 };
+          });
+          const up = items.filter(x => x.price !== null && x.change > 0).length;
+          const dn = items.filter(x => x.price !== null && x.change < 0).length;
+          const mood = up > dn ? '指數全面走揚，買盤氣盛' : (dn > up ? '盤面偏弱震盪，留意風控' : '多空拉鋸整理，即時監控中');
+          const cells = items.map(it => {
+            const has = it.price !== null;
+            const cls = !has ? 'mitake-flat' : (it.change > 0 ? 'mitake-up' : (it.change < 0 ? 'mitake-down' : 'mitake-flat'));
+            const arrow = it.change > 0 ? '▲' : (it.change < 0 ? '▼' : '');
+            return `
+              <div class="lock-ticker-cell">
+                <div class="lock-ticker-lbl"><span style="width:6px;height:6px;border-radius:999px;background:#f59e0b;display:inline-block;flex-shrink:0;"></span>${escapeHtml(it.name)}</div>
+                <div class="lock-ticker-val mono ${cls}">${has ? fmtNum(it.price, it.dec) : '--'}</div>
+                <div class="lock-ticker-chg mono ${cls}">${has ? `${arrow}${Math.abs(it.change).toFixed(it.dec)} (${it.changePct >= 0 ? '+' : ''}${it.changePct.toFixed(2)}%)` : '待同步'}</div>
+              </div>
+            `;
+          }).join('');
+          let holdingsHtml = '';
+          if (state.ext.liveActivityHoldings && state.positions.length > 0 && !(window.SHL_VAULT && window.SHL_VAULT.isLocked && window.SHL_VAULT.isLocked())) {
+            let totalPnl = 0;
+            state.positions.forEach(p => { const q = getQuote(p.symbol); if (q?.price) totalPnl += Math.round((q.price - p.avgPrice) * p.shares); });
+            holdingsHtml = `<div style="margin-top:8px;padding:6px 9px;border-radius:10px;background:rgba(30,41,59,0.75);font-size:11px;display:flex;justify-content:space-between;"><span>💼 庫存即時損益 (${state.positions.length} 檔)</span><strong class="mono ${totalPnl >= 0 ? 'mitake-up' : 'mitake-down'}">${totalPnl >= 0 ? '+' : ''}${fmtMoney(totalPnl)}</strong></div>`;
+          }
+          container.innerHTML = `
+            <div class="lock-ticker-head">
+              <div><strong style="font-size:13px;">📈 大盤即時動態</strong> <span style="color:#94a3b8;font-size:11px;margin-left:4px;">${mood}</span></div>
+              <span class="mono" style="color:#94a3b8;font-size:11px;">${nowTwTime().slice(0, 5)} 更新</span>
+            </div>
+            <div class="lock-ticker-grid-5">${cells}</div>
+            ${holdingsHtml}
+            <div class="lock-ticker-foot">
+              <span>✨ 已自訂 ${items.length}/5 組即時狀態 · 預設含台指近全</span>
+              <span style="color:#94a3b8;font-size:10.5px;">SHL TW</span>
+            </div>
+          `;
+        };
+        if (state.ext.liveActivityEnabled) {
+          renderGridInto(vEl);
+          renderGridInto(document.getElementById('standbyTickerWidget'));
+        }
+        const extraGrid = document.getElementById('standbyExtraGrid');
+        if (extraGrid) extraGrid.innerHTML = '';
+
+        if (!box) return;
+        const candidates = [
+          ...LIVE_INDEX_CATALOG,
+          ...state.watchlist.slice(0, 10).map(w => ({ code: w.symbol, label: `${w.symbol} ${w.name}` }))
+        ];
+        state.ext.lockTickerSymbols.forEach(c => {
+          if (!candidates.some(x => x.code === c)) candidates.push({ code: c, label: c });
+        });
+        box.innerHTML = candidates.map(c => {
+          const on = state.ext.lockTickerSymbols.includes(c.code);
+          return `<button type="button" class="live-act-pill ${on ? 'active' : ''}" data-live-pick="${escapeHtml(c.code)}">${on ? '✓ ' : ''}${escapeHtml(c.label)}</button>`;
+        }).join('');
+        box.querySelectorAll('[data-live-pick]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const code = btn.dataset.livePick;
+            const list = state.ext.lockTickerSymbols;
+            if (list.includes(code)) {
+              if (list.length <= 1) { showToast('至少保留 1 組', '即時動態至少需保留 1 組顯示項目。', 'warn'); return; }
+              state.ext.lockTickerSymbols = list.filter(x => x !== code);
+            } else {
+              if (list.length >= 5) { showToast('最多 5 組即時狀態', '鎖屏即時動態最多可搭配 5 組，請先取消其中一項再新增。', 'warn'); return; }
+              state.ext.lockTickerSymbols = [...list, code];
+            }
+            persistState();
+            renderLiveActivityCard();
+            if (code === 'NQ' || code === 'SOX') fetchGlobalIndices().then(renderLiveActivityCard);
+          });
+        });
+      }
+
+      // Override renderLockTickers so all callers use the upgraded 5-item Live Activity renderer
+      ext.renderLockTickers = renderLiveActivityCard;
+
+      // --- 2. DESKTOP-ONLY MOUSE DRAG-TO-SCROLL (100% SEPARATED FROM MOBILE TOUCH) ---
+      function installDesktopMouseDrag() {
+        const isDesktop = window.matchMedia && window.matchMedia('(pointer: fine) and (min-width: 961px)').matches;
+        if (!isDesktop) return; // Never touch mobile/tablet touch scrolling!
+
+        // A. Horizontal grab-drag on scrollable toolbars & tables
+        const horizSelectors = '.watchlist-pills, .mitake-group-bar, .mitake-index-strip, .studio-pills, .table-wrap';
+        document.querySelectorAll(horizSelectors).forEach(el => {
+          if (el._desktopDragBound) return;
+          el._desktopDragBound = true;
+          el.classList.add('desktop-grab');
+          let down = false, startX = 0, scrollL = 0, moved = false;
+          el.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            if (e.target.closest('input, textarea, select')) return;
+            down = true; moved = false; startX = e.pageX; scrollL = el.scrollLeft;
+            el.classList.add('is-dragging');
+          });
+          window.addEventListener('mousemove', e => {
+            if (!down) return;
+            const dx = e.pageX - startX;
+            if (Math.abs(dx) > 4) moved = true;
+            if (moved) { el.scrollLeft = scrollL - dx; }
+          });
+          window.addEventListener('mouseup', () => {
+            if (!down) return;
+            down = false;
+            el.classList.remove('is-dragging');
+          });
+          el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+        });
+
+        // B. Desktop page/workspace mouse drag-to-scroll (when dragging background/cards outside inputs/buttons/text)
+        let pageDrag = null;
+        document.addEventListener('mousedown', e => {
+          if (e.button !== 0) return;
+          if (e.target.closest('input, textarea, select, button, a, label, canvas, .desktop-grab, [contenteditable]')) return;
+          // Allow drag-panning when grabbing empty space, card headers, or container padding
+          if (window.getSelection && window.getSelection().toString()) return;
+          pageDrag = { x: e.clientX, y: e.clientY, sx: window.scrollX, sy: window.scrollY, active: false };
+        });
+        window.addEventListener('mousemove', e => {
+          if (!pageDrag) return;
+          const dx = e.clientX - pageDrag.x;
+          const dy = e.clientY - pageDrag.y;
+          if (!pageDrag.active && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+            pageDrag.active = true;
+            document.body.classList.add('desktop-page-dragging');
+          }
+          if (pageDrag.active) {
+            window.scrollTo(pageDrag.sx - dx, pageDrag.sy - dy);
+          }
+        });
+        window.addEventListener('mouseup', () => {
+          if (pageDrag) {
+            pageDrag = null;
+            document.body.classList.remove('desktop-page-dragging');
+          }
+        });
+      }
+
+      // --- 4. SIGNAL SCANNER HISTORY LOG & CLEAR ---
+      function renderSignalHistory() {
+        ensureV39State();
+        const cntEl = document.getElementById('signalHistoryCount');
+        const body = document.getElementById('signalHistoryBody');
+        const list = state.ext.signalHistory || [];
+        if (cntEl) cntEl.textContent = String(list.length);
+        if (!body) return;
+        if (!list.length) {
+          body.innerHTML = '<tr><td colspan="7" class="num-center" style="padding:14px;color:var(--ink-4);">尚無訊號掃描歷史紀錄，點擊「立即掃描訊號」即自動留存。</td></tr>';
+          return;
+        }
+        body.innerHTML = list.slice(0, 100).map(h => {
+          const cls = h.signal === 'BUY' ? 'badge-up' : (h.signal === 'SELL' ? 'badge-down' : 'badge-slate');
+          const chgCls = (h.changePct || 0) >= 0 ? 'text-up' : 'text-down';
+          return `
+            <tr>
+              <td class="mono" style="white-space:nowrap;">${escapeHtml(h.time)}</td>
+              <td><strong class="mono">${escapeHtml(h.symbol)}</strong> ${escapeHtml(h.name || '')}</td>
+              <td class="num-right mono">${h.price ? fmtNum(h.price, 2) : '--'}</td>
+              <td class="num-right mono ${chgCls}">${h.changePct !== null && h.changePct !== undefined ? `${h.changePct >= 0 ? '+' : ''}${h.changePct}%` : '--'}</td>
+              <td class="num-right mono">${h.rsi ?? '--'}</td>
+              <td class="num-center"><span class="badge ${cls}">${escapeHtml(h.signalLabel || h.signal)}</span></td>
+              <td style="color:var(--ink-3);">${escapeHtml(h.reason || '')}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      ext.recordSignalScanHistory = function (results) {
+        ensureV39State();
+        const ts = nowTwDateTime();
+        const entries = (results || [])
+          .filter(r => r.price !== null && r.price !== undefined)
+          .map(r => ({
+            time: ts,
+            symbol: r.symbol,
+            name: r.name,
+            price: r.price,
+            changePct: r.changePct,
+            rsi: r.rsi,
+            signal: r.signal,
+            signalLabel: r.signalLabel,
+            reason: r.reason
+          }));
+        state.ext.signalHistory = [...entries, ...(state.ext.signalHistory || [])].slice(0, 100);
+        persistState();
+        renderSignalHistory();
+      };
+
+      // --- 6 & 8. SINOTRADE SHIOAJI PRO CONFIG & STATUS ---
+      async function refreshShioajiStatus() {
+        const pill = document.getElementById('shioajiSourcePill');
+        const apiBase = getApiBase();
+        if (!apiBase) {
+          if (pill) pill.textContent = hasValidShioajiToken() ? '永豐金 Token 已就緒（待連後端）' : '即時數據源：TWSE/TPEx 官方（未連永豐金）';
+          return;
+        }
+        try {
+          const r = await fetch(`${apiBase}/api/v1/shioaji/status`);
+          if (!r.ok) return;
+          const j = await r.json();
+          if (state.backendHealth) state.backendHealth.shioaji_configured = Boolean(j.token_configured);
+          if (pill) {
+            pill.textContent = `即時數據源：${j.active_source || '永豐金 / TWSE 官方'}`;
+            pill.className = j.http_server_online || j.token_configured ? 'badge badge-down mono' : 'badge badge-blue mono';
+          }
+        } catch (e) {}
+      }
+
+      async function saveShioajiConfig() {
+        ensureV39State();
+        const apiKey = (document.getElementById('shioajiApiKeyInput')?.value || '').trim();
+        const secretKey = (document.getElementById('shioajiSecretKeyInput')?.value || '').trim();
+        const httpUrl = (document.getElementById('shioajiHttpUrlInput')?.value || 'http://127.0.0.1:8080').trim();
+        if (!apiKey || !secretKey) {
+          showToast('請填入完整永豐金 API Token', '請同時輸入 Shioaji API Key 與 Secret Key。', 'warn');
+          return;
+        }
+        state.ext.shioaji = { apiKey, secretKey, httpUrl, simulation: state.envMode !== 'LIVE' };
+        persistState();
+        const apiBase = getApiBase();
+        if (apiBase) {
+          try {
+            const r = await fetch(`${apiBase}/api/v1/shioaji/configure`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ api_key: apiKey, secret_key: secretKey, http_url: httpUrl, simulation: state.envMode !== 'LIVE' })
+            });
+            if (r.ok) {
+              const j = await r.json();
+              if (state.backendHealth) state.backendHealth.shioaji_configured = Boolean(j.token_configured);
+            }
+          } catch (e) {}
+        }
+        await refreshShioajiStatus();
+        openLiveSafetyModal();
+        showToast('永豐金 Shioaji API Token 已儲存', '已更新永豐金連線設定（啟用保險箱時將自動 AES-256 加密保護）。', 'success');
+      }
+
+      // --- 7. SHIOAJI PRO QUANT STRATEGY INDICATOR OVERLAYS + LIVE LEGEND ---
+      ext.augmentChartIndicators = function (datasets, candles, closes, vwap, meta) {
+        ensureV39State();
+        const ind = state.ext.sjIndicators;
+        const n = closes.length;
+        const sma = (arr, p) => arr.map((_, i) => i + 1 < p ? null : Number((arr.slice(i - p + 1, i + 1).reduce((a, b) => a + b, 0) / p).toFixed(2)));
+        const ma20 = sma(closes, Math.min(20, Math.max(5, n)));
+        const ema5 = calcEmaArr(closes, 5).map(v => Number(v.toFixed(2)));
+        const ema12 = calcEmaArr(closes, 12).map(v => Number(v.toFixed(2)));
+
+        if (ind.ma20 && n >= 5) {
+          datasets.push({
+            label: 'MA20 均線 (量化)',
+            data: ma20,
+            borderColor: '#9333ea',
+            borderWidth: 1.5,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.2
+          });
+        }
+        if (ind.bb && n >= 10) {
+          const p = Math.min(20, n);
+          const up = [], dn = [];
+          for (let i = 0; i < n; i++) {
+            if (i + 1 < p) { up.push(null); dn.push(null); continue; }
+            const sl = closes.slice(i - p + 1, i + 1);
+            const avg = sl.reduce((a, b) => a + b, 0) / p;
+            const sd = Math.sqrt(sl.reduce((a, b) => a + (b - avg) ** 2, 0) / p);
+            up.push(Number((avg + 2 * sd).toFixed(2)));
+            dn.push(Number((avg - 2 * sd).toFixed(2)));
+          }
+          datasets.push({ label: 'BB 上軌 (+2σ)', data: up, borderColor: 'rgba(239,68,68,0.55)', borderDash: [3, 3], borderWidth: 1.2, fill: false, pointRadius: 0 });
+          datasets.push({ label: 'BB 下軌 (-2σ)', data: dn, borderColor: 'rgba(34,197,94,0.55)', borderDash: [3, 3], borderWidth: 1.2, fill: false, pointRadius: 0 });
+        }
+        if (ind.signals && n >= 6) {
+          const buyPts = closes.map((c, i) => (i > 0 && ema5[i] > ema12[i] && ema5[i - 1] <= ema12[i - 1]) ? c : null);
+          const sellPts = closes.map((c, i) => (i > 0 && ema5[i] < ema12[i] && ema5[i - 1] >= ema12[i - 1]) ? c : null);
+          if (buyPts.some(x => x !== null)) {
+            datasets.push({ label: '▲ 量化買訊', data: buyPts, borderColor: '#dc2626', backgroundColor: '#dc2626', pointStyle: 'triangle', pointRadius: 7, showLine: false });
+          }
+          if (sellPts.some(x => x !== null)) {
+            datasets.push({ label: '▼ 量化賣訊', data: sellPts, borderColor: '#16a34a', backgroundColor: '#16a34a', pointStyle: 'rectRot', pointRadius: 6, showLine: false });
+          }
+        }
+        const leg = document.getElementById('sjChartLegendBar');
+        if (leg && n > 0) {
+          const lastC = closes[n - 1];
+          const lastMa20 = ma20[n - 1];
+          const lastVwap = vwap[n - 1];
+          const linked = state.linkedQuantStrategy;
+          leg.innerHTML = `
+            <span><strong>${escapeHtml(meta.symbol)}</strong> 現價 <b class="text-up">${fmtNum(lastC, 2)}</b></span>
+            <span style="color:#f59e0b;">EMA5: ${fmtNum(ema5[n - 1], 2)}</span>
+            <span style="color:#6366f1;">EMA12: ${fmtNum(ema12[n - 1], 2)}</span>
+            ${lastMa20 ? `<span style="color:#9333ea;">MA20: ${fmtNum(lastMa20, 2)}</span>` : ''}
+            ${lastVwap ? `<span style="color:#0d9488;">VWAP: ${fmtNum(lastVwap, 2)}</span>` : ''}
+            ${linked ? `<span class="badge badge-blue" style="font-size:10px;">已串接量化策略：${escapeHtml(linked.name)} (${escapeHtml(linked.signal || '監控中')})</span>` : ''}
+          `;
+        }
+      };
+
+      // --- 9. SHIOAJI PRO CAPITAL FLOW SUITE (排行 / 輪動 / 熱力 / 產業全景 & 持股族群) ---
+      const INDUSTRY_CHAINS = [
+        { name: '半導體產業鏈', symbols: ['2330', '2454', '3711', '2303', '3034'] },
+        { name: 'AI 伺服器', symbols: ['2382', '2317', '3231', '6669', '2356'] },
+        { name: 'PCB / 載板', symbols: ['3037', '3189', '8046', '2368', '6213'] },
+        { name: 'CoWoS / 先進封裝', symbols: ['2330', '3711', '3131', '6187'] },
+        { name: '被動元件 / 零組件', symbols: ['2327', '3026', '2308', '4958'] },
+        { name: 'ETF / 大盤權值', symbols: ['0050', '0056', '00878', '00919'] }
+      ];
+
+      function computeChainMetrics() {
+        return INDUSTRY_CHAINS.map(ch => {
+          const members = ch.symbols.map(sym => {
+            const meta = getStockMeta(sym);
+            const q = getQuote(sym);
+            const price = q?.price ?? null;
+            const prev = q?.prevClose || q?.open || price || 0;
+            const pct = (price && prev) ? Number(((price - prev) / prev * 100).toFixed(2)) : 0;
+            const vol = Number(q?.volume || 0);
+            const turnoverYi = price && vol ? Number(((price * vol) / 1e8).toFixed(2)) : 0;
+            const netFlowYi = Number((turnoverYi * (pct / 10)).toFixed(2));
+            return { symbol: sym, name: meta.name || sym, price, pct, turnoverYi, netFlowYi, hasQuote: price !== null };
+          });
+          const liveMembers = members.filter(m => m.hasQuote);
+          const avgPct = liveMembers.length ? Number((liveMembers.reduce((s, m) => s + m.pct, 0) / liveMembers.length).toFixed(2)) : 0;
+          const totalTurnover = Number(members.reduce((s, m) => s + m.turnoverYi, 0).toFixed(2));
+          const netFlow = Number(members.reduce((s, m) => s + m.netFlowYi, 0).toFixed(2));
+          const momentum = Number((avgPct * 1.4 + (netFlow > 0 ? 0.5 : -0.5)).toFixed(2));
+          return { name: ch.name, avgPct, totalTurnover, netFlow, momentum, members, liveCount: liveMembers.length };
+        }).sort((a, b) => b.netFlow - a.netFlow);
+      }
+
+      function renderCapitalFlow() {
+        ensureV39State();
+        const stage = document.getElementById('shioajiFlowStage');
+        if (!stage) return;
+        const tab = state.ext.flowTab || 'heatmap';
+        const hideAmt = Boolean(state.ext.flowPrivacy);
+        const chains = computeChainMetrics();
+
+        document.querySelectorAll('[data-flow-tab]').forEach(b => b.classList.toggle('active', b.dataset.flowTab === tab));
+
+        if (tab === 'rank') {
+          const maxAbs = Math.max(1, ...chains.map(c => Math.abs(c.netFlow)));
+          stage.innerHTML = `
+            <div style="font-size:11.5px;color:#64748b;margin-bottom:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>產業鏈淨流入排行（右紅＝資金淨流入 · 左綠＝資金淨流出，依已同步即時成交值估算）</span>
+              <span class="mono">單位：億元（點擊族群切換至熱力下鑽）</span>
+            </div>
+            ${chains.map(c => {
+              const w = Math.min(48, Math.round((Math.abs(c.netFlow) / maxAbs) * 48));
+              const isIn = c.netFlow >= 0;
+              return `
+                <div class="flow-rank-row" data-flow-sector="${escapeHtml(c.name)}">
+                  <div style="font-weight:800;">${escapeHtml(c.name)} <span class="mono" style="font-size:10.5px;color:${c.avgPct >= 0 ? '#dc2626' : '#16a34a'};">${c.avgPct >= 0 ? '+' : ''}${c.avgPct}%</span></div>
+                  <div class="flow-rank-track">
+                    <div class="flow-rank-mid"></div>
+                    <div class="${isIn ? 'flow-rank-fill-in' : 'flow-rank-fill-out'}" style="width:${Math.max(2, w)}%;"></div>
+                  </div>
+                  <div class="mono" style="text-align:right;font-weight:800;color:${isIn ? '#dc2626' : '#16a34a'};">${hideAmt ? '••••' : `${isIn ? '+' : ''}${c.netFlow} 億`}</div>
+                </div>
+              `;
+            }).join('')}
+          `;
+          stage.querySelectorAll('[data-flow-sector]').forEach(r => {
+            r.addEventListener('click', () => { state.ext.flowSelectedSector = r.dataset.flowSector; state.ext.flowTab = 'heatmap'; renderCapitalFlow(); });
+          });
+          return;
+        }
+
+        if (tab === 'rotation') {
+          stage.innerHTML = `
+            <div style="font-size:11.5px;color:#64748b;margin-bottom:6px;">四象限資金輪動圖：橫軸＝淨流入強度 · 縱軸＝資金動能（右上領先、右下轉弱、左上改善、左下落後）</div>
+            <canvas id="flowRotationCanvas" style="width:100%;height:260px;display:block;"></canvas>
+          `;
+          const cv = document.getElementById('flowRotationCanvas');
+          if (cv) {
+            const dpr = Math.min(2, window.devicePixelRatio || 1);
+            const W = cv.clientWidth || 640, H = 260;
+            cv.width = W * dpr; cv.height = H * dpr;
+            const ctx = cv.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+            const mx = W / 2, my = H / 2;
+            ctx.fillStyle = 'rgba(254,226,226,0.35)'; ctx.fillRect(mx, 8, W - mx - 8, my - 8);
+            ctx.fillStyle = 'rgba(220,252,231,0.35)'; ctx.fillRect(8, my, mx - 8, H - my - 8);
+            ctx.strokeStyle = '#cbd5e1'; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(mx, 8); ctx.lineTo(mx, H - 8); ctx.moveTo(8, my); ctx.lineTo(W - 8, my); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#94a3b8';
+            ctx.fillText('領先 Leading', W - 82, 22); ctx.fillText('改善 Improving', 14, 22);
+            ctx.fillText('轉弱 Weakening', W - 92, H - 14); ctx.fillText('落後 Lagging', 14, H - 14);
+            const maxX = Math.max(2, ...chains.map(c => Math.abs(c.netFlow)));
+            const maxY = Math.max(2, ...chains.map(c => Math.abs(c.momentum)));
+            chains.forEach(c => {
+              const x = mx + (c.netFlow / maxX) * (mx - 50);
+              const y = my - (c.momentum / maxY) * (my - 36);
+              const rad = Math.max(10, Math.min(26, 10 + Math.sqrt(Math.max(0, c.totalTurnover)) * 1.4));
+              ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+              ctx.fillStyle = c.avgPct >= 0 ? 'rgba(239,68,68,0.28)' : 'rgba(34,197,94,0.28)';
+              ctx.fill();
+              ctx.strokeStyle = c.avgPct >= 0 ? '#dc2626' : '#16a34a'; ctx.lineWidth = 1.8; ctx.stroke();
+              ctx.fillStyle = '#0f172a'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+              ctx.fillText(`${c.name} (${c.avgPct >= 0 ? '+' : ''}${c.avgPct}%)`, x, y - rad - 4);
+            });
+          }
+          return;
+        }
+
+        if (tab === 'panorama') {
+          // 持股族群：你的持股站在資金哪一邊 (matching image_7.png)
+          const posList = state.positions || [];
+          let inWeight = 0, totalVal = 0;
+          const rows = posList.map(p => {
+            const q = getQuote(p.symbol);
+            const px = q?.price || p.avgPrice;
+            const prev = q?.prevClose || q?.open || p.avgPrice;
+            const pct = prev ? Number(((px - prev) / prev * 100).toFixed(2)) : 0;
+            const val = px * p.shares;
+            totalVal += val;
+            if (pct >= 0) inWeight += val;
+            const meta = getStockMeta(p.symbol);
+            return { symbol: p.symbol, name: p.name || meta.name, industry: meta.industry || '台股', pct, val, pnl: Math.round((px - p.avgPrice) * p.shares) };
+          });
+          const inflowRatioPct = totalVal > 0 ? Math.round((inWeight / totalVal) * 100) : 0;
+          stage.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:10px;">
+              <div>
+                <div style="font-size:13px;font-weight:800;">持股族群 · 順資金比重：<span class="mono text-up" style="font-size:16px;">${inflowRatioPct}%</span></div>
+                <div style="font-size:11px;color:#64748b;">把目前持倉對應產業資金流向，一眼看出持股是否站在資金流入的那一邊</div>
+              </div>
+              <div class="mono" style="font-size:12px;">總市值：<strong>${hideAmt ? '••••••' : fmtMoney(totalVal)}</strong>（${posList.length} 檔持倉）</div>
+            </div>
+            ${rows.length ? rows.map(r => {
+              const w = totalVal > 0 ? Math.max(6, Math.round((r.val / totalVal) * 100)) : 20;
+              return `
+                <div class="flow-rank-row" data-pick-stock="${escapeHtml(r.symbol)}">
+                  <div><strong>${escapeHtml(r.symbol)} ${escapeHtml(r.name)}</strong><div style="font-size:10px;color:#64748b;">${escapeHtml(r.industry)}</div></div>
+                  <div class="flow-rank-track"><div class="flow-rank-mid"></div><div class="${r.pct >= 0 ? 'flow-rank-fill-in' : 'flow-rank-fill-out'}" style="width:${Math.min(48, Math.round(w / 2))}%;"></div></div>
+                  <div class="mono" style="text-align:right;">
+                    <div class="${r.pct >= 0 ? 'text-up' : 'text-down'}" style="font-weight:800;">${r.pct >= 0 ? '+' : ''}${r.pct}%</div>
+                    <div style="font-size:10px;color:#64748b;">${hideAmt ? '••••' : `${r.pnl >= 0 ? '+' : ''}${fmtMoney(r.pnl)}`}</div>
+                  </div>
+                </div>
+              `;
+            }).join('') : '<div style="padding:18px;text-align:center;color:#64748b;font-size:12px;">尚無模擬／實盤持倉，於下方下單後將自動計算您的「持股族群順資金比重」！</div>'}
+          `;
+          stage.querySelectorAll('[data-pick-stock]').forEach(el => el.addEventListener('click', () => selectStock(el.dataset.pickStock)));
+          return;
+        }
+
+        // Default: 'heatmap' (Two-Tier Industry Chain + Constituent Treemap, matching image_6.png!)
+        const selected = chains.find(c => c.name === state.ext.flowSelectedSector) || chains[0];
+        const tileBg = pct => pct > 1.2 ? '#fca5a5' : (pct > 0 ? '#fecaca' : (pct < -1.2 ? '#86efac' : (pct < 0 ? '#bbf7d0' : '#f1f5f9')));
+        stage.innerHTML = `
+          <div class="flow-treemap-top">
+            ${chains.map(c => `
+              <button type="button" class="flow-tm-tile ${c.name === selected.name ? 'selected' : ''}" data-tm-sector="${escapeHtml(c.name)}" style="background:${tileBg(c.avgPct)};color:#0f172a;">
+                <div style="font-size:13.5px;font-weight:900;">${escapeHtml(c.name)}</div>
+                <div class="mono" style="font-size:12px;font-weight:800;margin-top:2px;">${c.avgPct >= 0 ? '+' : ''}${c.avgPct}% · ${hideAmt ? '••億' : `${c.netFlow >= 0 ? '+' : ''}${c.netFlow} 億`}</div>
+                <div class="flow-tm-spark">
+                  ${c.members.map(m => `<span style="height:${Math.max(4, Math.min(12, 6 + Math.abs(m.pct) * 2))}px;background:${m.pct >= 0 ? '#b91c1c' : '#15803d'};"></span>`).join('')}
+                </div>
+              </button>
+            `).join('')}
+          </div>
+          <div style="font-size:11.5px;font-weight:800;color:#334155;margin-bottom:6px;display:flex;justify-content:space-between;">
+            <span>🔍 下鑽成分股：${escapeHtml(selected.name)}（點擊個股立即切換技術圖表與量化指標）</span>
+            <span class="mono" style="color:#64748b;">總成交值 ${hideAmt ? '••••' : `${selected.totalTurnover} 億`}</span>
+          </div>
+          <div class="flow-treemap-sub">
+            ${selected.members.map(m => `
+              <button type="button" class="flow-sub-tile" data-tm-sym="${escapeHtml(m.symbol)}" style="background:${tileBg(m.pct)};color:#0f172a;">
+                <div style="font-size:12.5px;font-weight:900;">${escapeHtml(m.name)} <span class="mono" style="font-size:10px;opacity:.7;">${escapeHtml(m.symbol)}</span></div>
+                <div class="mono" style="font-size:11.5px;font-weight:800;margin-top:3px;">${m.price ? fmtNum(m.price, 2) : '待同步'} (${m.pct >= 0 ? '+' : ''}${m.pct}%)</div>
+                <div class="mono" style="font-size:10px;opacity:.8;">${hideAmt ? '••' : (m.turnoverYi ? `額 ${m.turnoverYi}億` : '點擊同步')}</div>
+              </button>
+            `).join('')}
+          </div>
+        `;
+        stage.querySelectorAll('[data-tm-sector]').forEach(btn => {
+          btn.addEventListener('click', () => { state.ext.flowSelectedSector = btn.dataset.tmSector; renderCapitalFlow(); });
+        });
+        stage.querySelectorAll('[data-tm-sym]').forEach(btn => {
+          btn.addEventListener('click', () => selectStock(btn.dataset.tmSym));
+        });
+      }
+
+      ext.renderCapitalFlow = renderCapitalFlow;
+
+      ext.initV39 = function () {
+        ensureV39State();
+        // Enforce strict SIM default on startup (Req #8)
+        setTradingMode('SIM');
+
+        // Live Activity toggles
+        document.getElementById('chkLiveActivityMaster')?.addEventListener('change', e => {
+          state.ext.liveActivityEnabled = Boolean(e.target.checked);
+          persistState();
+          renderLiveActivityCard();
+          showToast(state.ext.liveActivityEnabled ? '已開啟鎖屏即時動態' : '已關閉鎖屏即時動態', '鎖屏即時大盤顯示狀態已更新。', 'info');
+        });
+        document.getElementById('chkLiveActivityHoldings')?.addEventListener('change', e => {
+          state.ext.liveActivityHoldings = Boolean(e.target.checked);
+          persistState();
+          renderLiveActivityCard();
+        });
+
+        // Signal Scanner History toggle & clear
+        document.getElementById('btnToggleSignalHistory')?.addEventListener('click', () => {
+          const w = document.getElementById('signalHistoryWrap');
+          if (w) w.style.display = w.style.display === 'none' ? 'block' : 'none';
+          renderSignalHistory();
+        });
+        document.getElementById('btnClearSignalHistory')?.addEventListener('click', () => {
+          state.ext.signalHistory = [];
+          persistState();
+          renderSignalHistory();
+          showToast('已清空掃描歷史紀錄', '自動訊號掃描歷史紀錄已全部清除。', 'info');
+        });
+        document.getElementById('orderDayTradeChk')?.addEventListener('change', updateOrderSummary);
+
+        // Shioaji Pro Config & Indicator chips
+        document.getElementById('btnOpenShioajiCfg')?.addEventListener('click', () => openLiveSafetyModal());
+        document.getElementById('btnSaveShioajiConfig')?.addEventListener('click', saveShioajiConfig);
+        document.getElementById('btnSjOpenQuantLab')?.addEventListener('click', () => openFeatureModal('strategy'));
+        document.querySelectorAll('[data-sj-ind]').forEach(btn => {
+          const key = btn.dataset.sjInd;
+          btn.classList.toggle('active', Boolean(state.ext.sjIndicators[key]));
+          btn.addEventListener('click', () => {
+            state.ext.sjIndicators[key] = !state.ext.sjIndicators[key];
+            btn.classList.toggle('active', state.ext.sjIndicators[key]);
+            persistState();
+            renderRawPriceChart();
+          });
+        });
+
+        // Capital Flow tabs & Privacy toggle
+        document.querySelectorAll('[data-flow-tab]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.ext.flowTab = btn.dataset.flowTab;
+            renderCapitalFlow();
+          });
+        });
+        document.getElementById('btnFlowPrivacyToggle')?.addEventListener('click', e => {
+          state.ext.flowPrivacy = !state.ext.flowPrivacy;
+          e.currentTarget.textContent = state.ext.flowPrivacy ? '👁 取消遮蔽' : '🙈 金額遮蔽';
+          renderCapitalFlow();
+        });
+
+        installDesktopMouseDrag();
+        renderSignalHistory();
+        renderLiveActivityCard();
+        renderCapitalFlow();
+        refreshShioajiStatus();
+        fetchGlobalIndices().then(renderLiveActivityCard);
       };
     })();
 

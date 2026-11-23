@@ -385,7 +385,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.0",
+    version="3.10.1",
 )
 
 app.add_middleware(
@@ -508,7 +508,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.0",
+        "version": "3.10.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3160,6 +3160,7 @@ class PlaceOrderRequest(BaseModel):
     price: float
     fee_discount: float = 2.8  # 預設 2.8 折，可修改，最低 6 折（上限 6.0）
     source: str = "WEB_UI"
+    allow_after_hours: bool = False
 
 
 def _owner_from_request(request: Optional[Request]) -> str:
@@ -3183,6 +3184,16 @@ async def place_order(req: PlaceOrderRequest, request: Request):
     mode = req.env_mode.upper()
     if mode not in ("SIM", "LIVE"):
         raise HTTPException(status_code=400, detail="無效的交易模式")
+
+    if mode == "SIM" and not req.allow_after_hours:
+        now_tw = datetime.now(TW_TZ)
+        wd = now_tw.weekday()  # 0=Mon .. 4=Fri
+        hhmm = now_tw.hour * 100 + now_tw.minute
+        if wd > 4 or hhmm < 900 or hhmm > 1320:
+            raise HTTPException(
+                status_code=400,
+                detail=f"目前為非台股交易時段（台北時間 {now_tw.strftime('%Y-%m-%d %H:%M:%S')}），虛擬單僅開放台股交易日 09:00~13:20 下單。",
+            )
 
     shares = req.qty * 1000 if req.unit == "張" else req.qty
     notional = shares * req.price

@@ -2989,6 +2989,14 @@
                 </div>
               </div>
 
+              <div id="simSessionStatusBar" style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;padding:6px 9px;border-radius:8px;background:#f8fafc;border:1px solid var(--border);font-size:11.5px;margin-bottom:7px;">
+                <span id="simSessionBadge" class="mono" style="font-weight:700;color:#0f172a;">🕒 虛擬單時段：台股交易日 09:00~13:20</span>
+                <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-3);cursor:pointer;" title="預設嚴格限制台股交易日 09:00~13:20 才可下虛擬單；僅盤後自行演練測試時可手動勾選解鎖">
+                  <input id="orderAllowAfterHoursChk" type="checkbox" />
+                  盤後測試解鎖
+                </label>
+              </div>
+
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:6px;cursor:pointer;">
                 <input id="orderDayTradeChk" type="checkbox" />
                 <span><strong>當沖交易（DayTrade）</strong>· 證交稅減半 0.15%，成交明細標記「當沖」</span>
@@ -4321,6 +4329,37 @@
                     </select>
                   </div>
                   <button type="button" id="btnBattleExecOnce" class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;font-weight:800;">依目前比例模擬下單</button>
+                  <button type="button" id="btnRunBattleBacktest" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;">📊 多空策略總收益回測</button>
+                </div>
+                <div style="margin-top:8px;font-size:11px;color:#93c5fd;">
+                  🕒 自動虛擬單嚴格限定 <strong>台股交易日（週一～五）09:00~13:20 (UTC+8)</strong> 執行；點擊「📊 多空策略總收益回測」可隨時依目前標的真實歷史 K 線查看多空策略總收益、勝率、最大回撤與逐筆損益。
+                </div>
+                <!-- v3.10.1: Long/Short Strategy Total Return & P&L Backtest Viewer -->
+                <div id="battleBacktestWrap" style="display:none;margin-top:12px;padding:12px;border-radius:12px;background:#0b1220;border:1px solid rgba(56,189,248,0.3);color:#f8fafc;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                    <strong id="battleBtTitle" style="font-size:13px;color:#38bdf8;">📊 多空策略總收益損益回測報告</strong>
+                    <button type="button" id="btnCloseBattleBacktest" class="btn btn-sm" style="background:#1e293b;color:#cbd5e1;border-color:#334155;">收合回測</button>
+                  </div>
+                  <div id="battleBtKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-bottom:10px;"></div>
+                  <div style="position:relative;height:165px;width:100%;background:#0f172a;border-radius:10px;padding:8px;margin-bottom:10px;">
+                    <canvas id="battleBacktestChart"></canvas>
+                  </div>
+                  <div class="table-wrap" style="max-height:210px;overflow-y:auto;background:#0f172a;border-radius:8px;">
+                    <table class="data-table" style="font-size:11px;color:#e2e8f0;min-width:560px;">
+                      <thead>
+                        <tr style="background:#1e293b;color:#cbd5e1;">
+                          <th>進場時間</th>
+                          <th>出場時間</th>
+                          <th>方向</th>
+                          <th class="num-right">進場價</th>
+                          <th class="num-right">出場價</th>
+                          <th class="num-right">單筆淨損益 (含費稅)</th>
+                          <th class="num-right">累計總收益</th>
+                        </tr>
+                      </thead>
+                      <tbody id="battleBtTradesBody"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <div id="aiStudioContextBar" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--ink-2);line-height:1.55;"></div>
@@ -9755,10 +9794,48 @@
       if (elCash) elCash.textContent = fmtMoney(state.simCashTwd);
     }
 
+    function isTwSimTradingWindow(nowDate = new Date()) {
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Taipei',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const parts = {};
+      fmt.formatToParts(nowDate).forEach(p => { parts[p.type] = p.value; });
+      const wd = parts.weekday || '';
+      const isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(wd);
+      const hh = Number(parts.hour || 0);
+      const mm = Number(parts.minute || 0);
+      const ss = Number(parts.second || 0);
+      const hhmm = hh * 100 + mm;
+      const open = isWeekday && hhmm >= 900 && (hhmm < 1320 || (hhmm === 1320 && ss === 0));
+      return {
+        open,
+        isWeekday,
+        timeStr: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+        weekday: wd
+      };
+    }
+
     async function executeOrder({ symbol, side, qty, unit, price, orderType = 'LMT', tif = 'ROD', source = 'WEB_UI', dayTrade = null }) {
       if (state.killSwitch) {
         showToast('下單已攔截', '目前處於緊急熔斷狀態，請先解除熔斷。', 'error');
         return;
+      }
+      const allowAfterHours = Boolean(document.getElementById('orderAllowAfterHoursChk')?.checked);
+      if (state.envMode === 'SIM' && !allowAfterHours) {
+        const sess = isTwSimTradingWindow();
+        if (!sess.open) {
+          showToast(
+            '非台股虛擬下單時段',
+            `台北時間 ${sess.timeStr}（${sess.isWeekday ? '盤外時段' : '週末休市'}）— 虛擬單僅開放台股交易日 09:00~13:20 下單（如需盤後演練請勾選「盤後測試解鎖」）。`,
+            'warn'
+          );
+          return;
+        }
       }
       const meta = getStockMeta(symbol);
       if (!price || price <= 0) {
@@ -9894,7 +9971,7 @@
             body: JSON.stringify({
               env_mode: 'SIM', symbol: meta.symbol, stock_name: meta.name,
               side, order_type: orderType, tif, qty, unit, price,
-              fee_discount: state.feeDiscount, source
+              fee_discount: state.feeDiscount, source, allow_after_hours: allowAfterHours
             })
           }).catch(() => {});
         }
@@ -17599,9 +17676,225 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
 
         window.SHL_EXT.renderCapitalFlow();
+        updateSimSessionBadge();
+        setInterval(updateSimSessionBadge, 15000);
+        document.getElementById('orderAllowAfterHoursChk')?.addEventListener('change', updateSimSessionBadge);
+        document.getElementById('btnRunBattleBacktest')?.addEventListener('click', runBullBearStrategyBacktest);
+        document.getElementById('btnCloseBattleBacktest')?.addEventListener('click', () => {
+          const w = document.getElementById('battleBacktestWrap');
+          if (w) w.style.display = 'none';
+        });
       }
 
-      return { init, TA, INDICATOR_CATALOG, renderIndicatorPicker };
+      let battleBtChartInstance = null;
+
+      function updateSimSessionBadge() {
+        const el = document.getElementById('simSessionBadge');
+        if (!el || typeof isTwSimTradingWindow !== 'function') return;
+        const sess = isTwSimTradingWindow();
+        const allowOff = Boolean(document.getElementById('orderAllowAfterHoursChk')?.checked);
+        if (sess.open) {
+          el.style.color = '#15803d';
+          el.textContent = `🟢 台股開盤交易中 (${sess.timeStr}) · 虛擬單開放 09:00~13:20`;
+        } else if (allowOff) {
+          el.style.color = '#b45309';
+          el.textContent = `🟡 盤外時段 (${sess.timeStr}) · 已手動啟用盤後測試解鎖`;
+        } else {
+          el.style.color = '#b91c1c';
+          el.textContent = `🔴 盤外休市鎖定 (${sess.timeStr}) · 虛擬單限週一～五 09:00~13:20`;
+        }
+      }
+
+      async function runBullBearStrategyBacktest() {
+        const sym = state.activeSymbol;
+        const meta = getStockMeta(sym);
+        let q = getQuote(sym);
+        if (!q || !Array.isArray(q.candles) || q.candles.length < 15) {
+          showToast('抓取真實歷史 K 線中', `正在同步 ${sym} ${meta.name} 真實 K 線進行多空策略總收益回測...`, 'info');
+          await fetchMarketData(sym, 'auto', 'D');
+          q = getQuote(sym);
+        }
+        const candles = q?.candles || [];
+        if (candles.length < 12) {
+          showToast('K 線筆數不足', `${sym} 至少需 12 根真實 K 線才能執行多空策略回測，請先點「抓 Yahoo」或「抓 FinMind」。`, 'warn');
+          return;
+        }
+
+        const bullTh = Math.max(51, Math.min(95, Number(document.getElementById('battleBullThreshold')?.value || 65)));
+        const bearTh = Math.max(51, Math.min(95, Number(document.getElementById('battleBearThreshold')?.value || 65)));
+        const qtyLots = Math.max(1, Math.min(50, Number(document.getElementById('battleAutoQty')?.value || 1)));
+        const shares = qtyLots * 1000;
+        const isEtf = sym.startsWith('00');
+        const feeRate = 0.001425 * (state.feeDiscount / 10);
+        const taxRate = isEtf ? 0.001 : (Boolean(document.getElementById('orderDayTradeChk')?.checked) ? 0.0015 : 0.003);
+
+        const closes = candles.map(c => c.close);
+        const ema5 = TA.ema(closes, 5);
+        const ema12 = TA.ema(closes, 12);
+        const rsi14 = TA.rsi(closes, Math.min(14, Math.max(5, Math.floor(closes.length / 3))));
+        const macd = TA.macd(closes, 6, 13, 5);
+        const st = TA.supertrend(candles, Math.min(10, Math.max(4, Math.floor(closes.length / 4))), 2.5);
+
+        // Compute deterministic multi-factor Bull % vs Bear % per bar from real candles
+        const trades = [];
+        let pos = null; // { dir: 'LONG' | 'SHORT', entryPx, entryLabel }
+        let cumPnl = 0;
+        let totalCosts = 0;
+        let peakEq = 0;
+        let maxDdTwd = 0;
+        const eqLabels = [];
+        const eqSeries = [];
+        const baseCapital = Math.max(100000, Math.round(closes[0] * shares * 1.2));
+
+        const closePosition = (exitPx, exitLabel) => {
+          if (!pos) return;
+          const entryNotional = pos.entryPx * shares;
+          const exitNotional = exitPx * shares;
+          const feeIn = Math.max(20, Math.round(entryNotional * feeRate));
+          const feeOut = Math.max(20, Math.round(exitNotional * feeRate));
+          const tax = Math.round((pos.dir === 'LONG' ? exitNotional : entryNotional) * taxRate);
+          const gross = pos.dir === 'LONG' ? (exitPx - pos.entryPx) * shares : (pos.entryPx - exitPx) * shares;
+          const net = Math.round(gross - feeIn - feeOut - tax);
+          totalCosts += (feeIn + feeOut + tax);
+          cumPnl += net;
+          if (cumPnl > peakEq) peakEq = cumPnl;
+          if ((peakEq - cumPnl) > maxDdTwd) maxDdTwd = peakEq - cumPnl;
+          trades.push({
+            dir: pos.dir,
+            entryLabel: pos.entryLabel,
+            exitLabel,
+            entryPx: pos.entryPx,
+            exitPx,
+            net,
+            cumPnl
+          });
+          pos = null;
+        };
+
+        for (let i = 5; i < candles.length; i++) {
+          let bullScore = 50;
+          if (ema5[i] > ema12[i]) bullScore += 14; else bullScore -= 14;
+          if (macd.hist[i] > 0) bullScore += 10; else bullScore -= 10;
+          if (st.dir[i] === 1) bullScore += 12; else bullScore -= 12;
+          if (rsi14[i] !== null) {
+            if (rsi14[i] > 55) bullScore += 8;
+            else if (rsi14[i] < 45) bullScore -= 8;
+          }
+          const bullPct = Math.max(5, Math.min(95, Math.round(bullScore)));
+          const bearPct = 100 - bullPct;
+          const px = candles[i].close;
+          const lbl = candles[i].label || candles[i].date || `#${i}`;
+
+          if (!pos) {
+            if (bullPct >= bullTh) pos = { dir: 'LONG', entryPx: px, entryLabel: lbl };
+            else if (bearPct >= bearTh) pos = { dir: 'SHORT', entryPx: px, entryLabel: lbl };
+          } else if (pos.dir === 'LONG' && bearPct >= bearTh) {
+            closePosition(px, lbl);
+            pos = { dir: 'SHORT', entryPx: px, entryLabel: lbl };
+          } else if (pos.dir === 'SHORT' && bullPct >= bullTh) {
+            closePosition(px, lbl);
+            pos = { dir: 'LONG', entryPx: px, entryLabel: lbl };
+          }
+
+          const unreal = pos ? Math.round((pos.dir === 'LONG' ? (px - pos.entryPx) : (pos.entryPx - px)) * shares) : 0;
+          eqLabels.push(lbl);
+          eqSeries.push(cumPnl + unreal);
+        }
+        if (pos) {
+          const lastC = candles[candles.length - 1];
+          closePosition(lastC.close, `${lastC.label || '末根'} (平倉)`);
+        }
+
+        const wins = trades.filter(t => t.net > 0);
+        const losses = trades.filter(t => t.net <= 0);
+        const winRate = trades.length ? ((wins.length / trades.length) * 100).toFixed(1) : '0.0';
+        const grossWin = wins.reduce((s, t) => s + t.net, 0);
+        const grossLoss = Math.abs(losses.reduce((s, t) => s + t.net, 0));
+        const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : (grossWin > 0 ? '∞' : '0.00');
+        const retPct = ((cumPnl / baseCapital) * 100).toFixed(2);
+        const mddPct = ((maxDdTwd / baseCapital) * 100).toFixed(2);
+        const longCnt = trades.filter(t => t.dir === 'LONG').length;
+        const shortCnt = trades.filter(t => t.dir === 'SHORT').length;
+
+        const wrap = document.getElementById('battleBacktestWrap');
+        const titleEl = document.getElementById('battleBtTitle');
+        const kpisEl = document.getElementById('battleBtKpis');
+        const tbody = document.getElementById('battleBtTradesBody');
+        if (wrap) wrap.style.display = 'block';
+        if (titleEl) titleEl.textContent = `📊 ${sym} ${meta.name} 多空策略總收益回測（多≥${bullTh}% / 空≥${bearTh}% · ${qtyLots}張 · ${candles.length}根真實K線）`;
+        if (kpisEl) {
+          const pnlCls = cumPnl >= 0 ? 'mitake-up' : 'mitake-down';
+          kpisEl.innerHTML = `
+            <div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;">
+              <div style="font-size:10.5px;color:#94a3b8;">多空策略總收益損益</div>
+              <div class="mono ${pnlCls}" style="font-size:16px;font-weight:900;margin-top:2px;">${cumPnl >= 0 ? '+' : ''}${fmtMoney(cumPnl)}</div>
+            </div>
+            <div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;">
+              <div style="font-size:10.5px;color:#94a3b8;">總報酬率 / 最大回撤</div>
+              <div class="mono" style="font-size:14px;font-weight:800;margin-top:2px;"><span class="${pnlCls}">${cumPnl >= 0 ? '+' : ''}${retPct}%</span> / <span style="color:#fbbf24;">-${mddPct}%</span></div>
+            </div>
+            <div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;">
+              <div style="font-size:10.5px;color:#94a3b8;">勝率 / 獲利因子 PF</div>
+              <div class="mono" style="font-size:14px;font-weight:800;margin-top:2px;color:#38bdf8;">${winRate}% · PF ${pf}</div>
+            </div>
+            <div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;">
+              <div style="font-size:10.5px;color:#94a3b8;">交易次數 (做多/做空)</div>
+              <div class="mono" style="font-size:14px;font-weight:800;margin-top:2px;">${trades.length} 筆 (${longCnt}多 / ${shortCnt}空)</div>
+            </div>
+            <div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;">
+              <div style="font-size:10.5px;color:#94a3b8;">累計手續費＋證交稅</div>
+              <div class="mono" style="font-size:14px;font-weight:800;margin-top:2px;color:#cbd5e1;">${fmtMoney(totalCosts)}</div>
+            </div>
+          `;
+        }
+        if (tbody) {
+          tbody.innerHTML = trades.length ? trades.slice().reverse().map(t => `
+            <tr>
+              <td class="mono">${escapeHtml(t.entryLabel)}</td>
+              <td class="mono">${escapeHtml(t.exitLabel)}</td>
+              <td><span class="badge ${t.dir === 'LONG' ? 'badge-up' : 'badge-down'}">${t.dir === 'LONG' ? '做多 LONG' : '做空 SHORT'}</span></td>
+              <td class="num-right mono">${fmtNum(t.entryPx, 2)}</td>
+              <td class="num-right mono">${fmtNum(t.exitPx, 2)}</td>
+              <td class="num-right mono ${t.net >= 0 ? 'mitake-up' : 'mitake-down'}" style="font-weight:800;">${t.net >= 0 ? '+' : ''}${fmtMoney(t.net)}</td>
+              <td class="num-right mono ${t.cumPnl >= 0 ? 'mitake-up' : 'mitake-down'}">${t.cumPnl >= 0 ? '+' : ''}${fmtMoney(t.cumPnl)}</td>
+            </tr>
+          `).join('') : '<tr><td colspan="7" class="num-center" style="padding:14px;color:#94a3b8;">目前門檻在此區間尚未觸發進出訊號，可嘗試調低多空門檻（例如 60%）再回測。</td></tr>';
+        }
+
+        const cv = document.getElementById('battleBacktestChart');
+        if (cv) {
+          if (battleBtChartInstance) { battleBtChartInstance.destroy(); battleBtChartInstance = null; }
+          battleBtChartInstance = new Chart(cv.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: eqLabels,
+              datasets: [{
+                label: '多空策略累計淨收益 (TWD)',
+                data: eqSeries,
+                borderColor: cumPnl >= 0 ? '#ef4444' : '#22c55e',
+                backgroundColor: cumPnl >= 0 ? 'rgba(239,68,68,0.14)' : 'rgba(34,197,94,0.14)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+              scales: {
+                x: { ticks: { color: '#94a3b8', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.14)' } }
+              }
+            }
+          });
+        }
+        showToast('多空策略總收益回測完成', `${sym} 共 ${trades.length} 筆（${longCnt}多/${shortCnt}空），總收益 ${cumPnl >= 0 ? '+' : ''}${fmtMoney(cumPnl)}（勝率 ${winRate}%）`, 'success');
+      }
+
+      return { init, TA, INDICATOR_CATALOG, renderIndicatorPicker, runBullBearStrategyBacktest, updateSimSessionBadge };
     })();
 
     document.addEventListener('DOMContentLoaded', initApp);

@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.2",
+    version="3.10.3",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.2",
+        "version": "3.10.3",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4164,6 +4164,47 @@ async def remote_account_pull(req: RemoteAccountAuthRequest):
         }
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# v3.10.3 — Chinese Stock Name & Futures/Index Search (支援中文股名與台指電子盤查詢)
+# ---------------------------------------------------------------------------
+@app.get("/api/v1/market/stock-search")
+async def search_tw_stock(q: str = ""):
+    kw = (q or "").strip()
+    if not kw:
+        return {"ok": True, "matches": []}
+    cached = cache_get("finmind_all_stock_info", 43200)
+    if cached is None:
+        url = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo"
+        tok = FINMIND_TOKENS[0] if FINMIND_TOKENS else ""
+        if tok:
+            url += f"&token={urllib.parse.quote(tok)}"
+        st, body = await http_json(url, timeout=12.0)
+        if st == 200 and isinstance(body, dict) and isinstance(body.get("data"), list):
+            seen: dict[str, dict[str, str]] = {}
+            for row in body["data"]:
+                sid = str(row.get("stock_id") or "").strip().upper()
+                sname = str(row.get("stock_name") or "").strip()
+                if sid and sname and re.fullmatch(r"[0-9A-Z]{4,6}", sid):
+                    seen[sid] = {
+                        "stock_id": sid,
+                        "stock_name": sname,
+                        "industry": str(row.get("industry_category") or "台股"),
+                        "market_type": str(row.get("type") or "twse").lower(),
+                    }
+            cached = list(seen.values())
+            cache_set("finmind_all_stock_info", cached)
+        else:
+            cached = []
+    kw_up = kw.upper()
+    exact = [x for x in cached if x["stock_id"] == kw_up or x["stock_name"] == kw]
+    partial = [x for x in cached if x not in exact and (kw in x["stock_name"] or kw_up in x["stock_id"])]
+    matches = (exact + partial)[:12]
+    for m in matches:
+        m["yahoo_symbol"] = f"{m['stock_id']}.TWO" if m["market_type"] == "tpex" else f"{m['stock_id']}.TW"
+        m["tv_symbol"] = f"TPEX:{m['stock_id']}" if m["market_type"] == "tpex" else f"TWSE:{m['stock_id']}"
+    return {"ok": True, "query": kw, "matches": matches}
 
 
 if __name__ == "__main__":

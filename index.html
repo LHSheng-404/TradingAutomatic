@@ -2686,7 +2686,7 @@
       <div class="watchlist-bar">
         <div id="watchlistPills" class="watchlist-pills"></div>
         <form id="addStockForm" class="add-stock-form">
-          <input id="addStockInput" class="input mono" style="width:155px;" type="text" placeholder="加入台股代號如 2603" maxlength="8" />
+          <input id="addStockInput" class="input" style="width:205px;" type="text" placeholder="代號或中文如 台積電、台指電子盤" maxlength="24" />
           <button type="submit" class="btn btn-dark btn-sm">
             <i data-lucide="plus" style="width:13px;height:13px;"></i>查詢加入
           </button>
@@ -5018,8 +5018,8 @@
     </div>
   </div>
 
-  <!-- v3.8.0: Standalone Full-Screen Lock-Screen Live Market Ticker (Standby Mode) -->
-  <div id="shlStandbyLockOverlay" class="standby-lock-overlay" role="dialog" aria-modal="true" aria-label="鎖屏大盤即時看盤">
+  <!-- v3.8.0 / v3.10.3: Standalone Full-Screen Lock-Screen Live Market Ticker (Standby Mode + In-Place Customizer) -->
+  <div id="shlStandbyLockOverlay" class="standby-lock-overlay" role="dialog" aria-modal="true" aria-label="鎖屏大盤即時看盤" style="overflow-y:auto;padding-bottom:36px;">
     <div style="text-align:center;margin-top:8px;">
       <div id="standbyDateLine" style="font-size:14px;color:#cbd5e1;font-weight:600;margin-bottom:4px;">--</div>
       <div id="standbyClockLine" class="standby-clock-time mono">--:--</div>
@@ -5032,6 +5032,29 @@
       <button type="button" id="btnStandbyRefreshNow" class="btn btn-sm btn-primary">↻ 立即刷新即時報價</button>
       <button type="button" id="btnStandbyCustomize" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;">🔒 自訂指數 / 個股</button>
       <button type="button" id="btnStandbyClose" class="btn btn-sm" style="background:rgba(148,163,184,0.2);color:#fff;border-color:rgba(148,163,184,0.35);">返回交易桌面</button>
+    </div>
+
+    <!-- v3.10.3: In-Place Lock-Screen Customizer Sheet (Freely Combine up to 5 Indices / Stocks) -->
+    <div id="standbyCustomizerSheet" style="display:none;width:100%;max-width:420px;margin-top:14px;padding:14px;border-radius:18px;background:rgba(15,23,42,0.92);border:1px solid rgba(245,158,11,0.45);box-shadow:0 16px 40px rgba(0,0,0,0.55);color:#f8fafc;text-align:left;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:800;color:#fbbf24;">🔒 自由組合鎖屏即時狀態</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span id="standbyCustomCountBadge" class="mono" style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,0.2);color:#fde68a;font-weight:700;">已選 3/5</span>
+          <button type="button" id="btnStandbyCustomDone" class="btn btn-sm" style="padding:3px 9px;font-size:11px;background:rgba(148,163,184,0.22);color:#fff;border:1px solid rgba(148,163,184,0.35);">完成收合</button>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">目前組合（可按 ▲ / ▼ 調整順序，按 ✕ 移除，最多 5 組）：</div>
+      <div id="standbyActiveList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">搜尋加入（支援中文名稱、代號或台指電子盤）：</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;">
+        <input id="standbyCustomInput" type="text" maxlength="24" placeholder="如：台積電、台指電子盤、2330、NQ" style="flex:1;min-width:0;padding:7px 10px;border-radius:10px;border:1px solid rgba(148,163,184,0.35);background:rgba(30,41,59,0.9);color:#f8fafc;font-size:12px;" />
+        <button type="button" id="btnStandbyCustomAdd" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;white-space:nowrap;">+ 加入</button>
+      </div>
+
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">快速切換常用指數與自選個股：</div>
+      <div id="standbyQuickChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
   </div>
 
@@ -6770,62 +6793,287 @@
       renderAllViews();
     }
 
-    async function lookupAndAddStock(rawCode) {
-      const code = rawCode.trim().toUpperCase().replace(/\.TWO?$/i, '');
-      if (!code || !/^[A-Z0-9]{4,6}$/.test(code)) {
-        showToast('代號格式錯誤', '請輸入 4~6 碼台股代號（例如 2603、00878、6488）。', 'warn');
-        return;
+    // v3.10.3: Unified Stock / Futures / Index Input Resolver (Chinese Name, Code, & 台指電子盤)
+    const SHL_INDEX_FUTURES_ALIASES = [
+      {
+        symbol: 'TXF',
+        name: '台指電子盤/近全',
+        industry: '台股期貨',
+        marketType: 'futures',
+        tvSymbol: 'TWSE:TAIEX',
+        yahooSymbol: '^TWII',
+        dataset: 'TaiwanFuturesDaily',
+        finmindId: 'TX',
+        aliases: ['台指電子盤', '臺指電子盤', '台指夜盤', '台指期', '台指期貨', '台指近全', '台指近', '大台', '大台指', '小台', '小台指', 'TX', 'TXF', 'FITX', 'MTX']
+      },
+      {
+        symbol: 't00',
+        name: '加權指數',
+        industry: '台股指數',
+        marketType: 'index',
+        tvSymbol: 'TWSE:TAIEX',
+        yahooSymbol: '^TWII',
+        dataset: 'TaiwanStockPrice',
+        finmindId: 'TAIEX',
+        aliases: ['加權指數', '加權', '台灣加權', '台股大盤', '大盤', 'T00', 'TAIEX', '^TWII']
+      },
+      {
+        symbol: 'o00',
+        name: '櫃買指數',
+        industry: '台股指數',
+        marketType: 'index',
+        tvSymbol: 'TPEX:TPEX',
+        yahooSymbol: '^TWOII',
+        dataset: 'TaiwanStockPrice',
+        finmindId: 'TPEx',
+        aliases: ['櫃買指數', '櫃買', '上櫃指數', 'O00', 'TPEX', 'OTC', '^TWOII']
+      },
+      {
+        symbol: 'NQ',
+        name: '小那期貨',
+        industry: '美股期貨',
+        marketType: 'futures',
+        tvSymbol: 'CME_MINI:NQ1!',
+        yahooSymbol: 'NQ=F',
+        dataset: 'USStockPrice',
+        finmindId: 'NQ',
+        aliases: ['小那期貨', '小那', '那斯達克期貨', '納指期貨', 'NQ', 'NQ=F', 'MNQ']
+      },
+      {
+        symbol: 'SOX',
+        name: '費半指數',
+        industry: '美股指數',
+        marketType: 'index',
+        tvSymbol: 'NASDAQ:SOX',
+        yahooSymbol: '^SOX',
+        dataset: 'USStockPrice',
+        finmindId: 'SOX',
+        aliases: ['費半指數', '費城半導體', '費半', 'SOX', '^SOX']
       }
-      const existing = state.watchlist.find(w => w.symbol === code);
-      if (existing) {
-        selectStock(code);
-        showToast('已在監控清單', `已切換至 ${existing.symbol} ${existing.name}`, 'info');
-        return;
+    ];
+
+    const SHL_POPULAR_TW_NAME_MAP = {
+      '台積電': '2330', '臺積電': '2330', '護國神山': '2330',
+      '鴻海': '2317', '聯發科': '2454', '廣達': '2382', '台達電': '2308',
+      '日月光': '3711', '日月光投控': '3711', '欣興': '3037', '金像電': '2368',
+      '南電': '8046', '景碩': '3189', '臻鼎': '4958', '臻鼎-KY': '4958',
+      '國巨': '2327', '奇鋐': '3017', '雙鴻': '3324', '緯創': '3231',
+      '緯穎': '6669', '技嘉': '2376', '微星': '2377', '華碩': '2357',
+      '聯電': '2303', '長榮': '2603', '陽明': '2609', '萬海': '2615',
+      '長榮航': '2618', '華航': '2610', '富邦金': '2881', '國泰金': '2882',
+      '中信金': '2891', '兆豐金': '2886', '玉山金': '2884', '第一金': '2892',
+      '元大金': '2885', '中華電': '2412', '台灣大': '3045', '遠傳': '4904',
+      '統一': '1216', '中鋼': '2002', '台塑': '1301', '南亞': '1303',
+      '台化': '1326', '台塑化': '6505', '大立光': '3008', '世芯': '3661',
+      '世芯-KY': '3661', '創意': '3443', '智邦': '2345', '光寶科': '2301',
+      '瑞昱': '2379', '聯詠': '3034', '華通': '2313', '台光電': '2383',
+      '台燿': '6274', '聯茂': '6213', '川湖': '2059', '健策': '3653',
+      '元大台灣50': '0050', '台灣50': '0050', '元大高股息': '0056',
+      '國泰永續高股息': '00878', '群益台灣精選高息': '00919',
+      '復華台灣科技優息': '00929', '元大台灣價值高息': '00940', '富邦台50': '006208'
+    };
+
+    window.SHL_RESOLVE_STOCK_INPUT = async function resolveStockOrIndexInput(rawInput) {
+      const cleaned = String(rawInput || '').trim();
+      if (!cleaned) return null;
+      const upper = cleaned.toUpperCase().replace(/\.TWO?$/i, '');
+      const compact = cleaned.replace(/\s+/g, '');
+
+      // 1. Check Futures / Index aliases (e.g. 台指電子盤, TXF, 加權指數, 櫃買指數, 小那期貨, 費半指數)
+      for (const item of SHL_INDEX_FUTURES_ALIASES) {
+        if (
+          item.symbol.toUpperCase() === upper ||
+          item.aliases.some(a => a.toUpperCase() === upper || a === compact || (compact.length >= 2 && a.includes(compact)))
+        ) {
+          return { kind: 'index', ...item };
+        }
       }
 
-      showToast('查詢台股官方名稱中', `正在從 FinMind TaiwanStockInfo 驗證 ${code}...`, 'info');
-      try {
-        const apiBase = getApiBase();
+      // 2. Check existing watchlist by exact symbol or Chinese name
+      const wlHit = state.watchlist.find(w =>
+        w.symbol.toUpperCase() === upper ||
+        String(w.name || '').trim() === compact ||
+        (compact.length >= 2 && String(w.name || '').includes(compact))
+      );
+      if (wlHit) {
+        return {
+          kind: (wlHit.marketType === 'futures' || wlHit.marketType === 'index') ? 'index' : 'stock',
+          stock_id: wlHit.symbol,
+          symbol: wlHit.symbol,
+          stock_name: wlHit.name,
+          name: wlHit.name,
+          industry: wlHit.industry || '台股',
+          market_type: wlHit.marketType || 'twse',
+          yahoo_symbol: wlHit.yahooSymbol || `${wlHit.symbol}.TW`,
+          tv_symbol: wlHit.tvSymbol || `TWSE:${wlHit.symbol}`
+        };
+      }
+
+      // 3. Check built-in popular Taiwan stock Chinese name map
+      let candidateCode = SHL_POPULAR_TW_NAME_MAP[compact] || null;
+      if (!candidateCode) {
+        const mapKey = Object.keys(SHL_POPULAR_TW_NAME_MAP).find(k => compact.length >= 2 && k.includes(compact));
+        if (mapKey) candidateCode = SHL_POPULAR_TW_NAME_MAP[mapKey];
+      }
+
+      const codeToLookup = candidateCode || (/^[A-Z0-9]{4,6}$/.test(upper) ? upper : null);
+      const apiBase = getApiBase();
+
+      // 4. If we have a 4~6 char code (direct or mapped from popular Chinese name), fetch official info
+      if (codeToLookup) {
         let info = null;
         if (apiBase) {
-          const r = await fetch(`${apiBase}/api/v1/market/stock-info/${encodeURIComponent(code)}`);
-          if (r.ok) info = await r.json();
+          try {
+            const r = await fetch(`${apiBase}/api/v1/market/stock-info/${encodeURIComponent(codeToLookup)}`);
+            if (r.ok) info = await r.json();
+          } catch (e) {}
         }
         if (!info) {
-          let url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&data_id=${encodeURIComponent(code)}`;
+          let url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&data_id=${encodeURIComponent(codeToLookup)}`;
           if (state.finmindToken) url += `&token=${encodeURIComponent(state.finmindToken)}`;
           const r = await fetch(url, { mode: 'cors' });
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          const j = await r.json();
-          const row = (j.data || [])[0];
-          if (!row) throw new Error(`FinMind 查無台股代號 ${code}（嚴禁猜測）`);
-          const mtype = String(row.type || 'twse').toLowerCase();
-          info = {
-            stock_id: code,
-            stock_name: row.stock_name || code,
-            industry: row.industry_category || '台股',
-            market_type: mtype,
-            yahoo_symbol: mtype === 'tpex' ? `${code}.TWO` : `${code}.TW`,
-            tv_symbol: mtype === 'tpex' ? `TPEX:${code}` : `TWSE:${code}`
-          };
+          if (r.ok) {
+            const j = await r.json();
+            const row = (j.data || [])[0];
+            if (row) {
+              const mtype = String(row.type || 'twse').toLowerCase();
+              info = {
+                stock_id: codeToLookup,
+                stock_name: row.stock_name || codeToLookup,
+                industry: row.industry_category || '台股',
+                market_type: mtype,
+                yahoo_symbol: mtype === 'tpex' ? `${codeToLookup}.TWO` : `${codeToLookup}.TW`,
+                tv_symbol: mtype === 'tpex' ? `TPEX:${codeToLookup}` : `TWSE:${codeToLookup}`
+              };
+            }
+          }
+        }
+        if (info) return { kind: 'stock', symbol: info.stock_id, ...info };
+        if (!candidateCode) throw new Error(`FinMind 查無台股代號 ${codeToLookup}（嚴禁猜測）`);
+      }
+
+      // 5. Chinese name search via local backend `/api/v1/market/stock-search`
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/market/stock-search?q=${encodeURIComponent(compact)}&limit=8`);
+          if (r.ok) {
+            const j = await r.json();
+            const hit = (j.matches || j.results || [])[0];
+            if (hit && hit.stock_id) {
+              return { kind: 'stock', symbol: hit.stock_id, ...hit };
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 6. Static / PWA fallback: query FinMind TaiwanStockInfo (cached in memory for session)
+      try {
+        if (!Array.isArray(window._shlTaiwanStockInfoCache) || !window._shlTaiwanStockInfoCache.length) {
+          let url = 'https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo';
+          if (state.finmindToken) url += `&token=${encodeURIComponent(state.finmindToken)}`;
+          const r = await fetch(url, { mode: 'cors' });
+          if (r.ok) {
+            const j = await r.json();
+            if (Array.isArray(j.data) && j.data.length > 0) {
+              window._shlTaiwanStockInfoCache = j.data;
+            }
+          }
+        }
+        const rows = window._shlTaiwanStockInfoCache || [];
+        if (rows.length > 0) {
+          const seen = new Set();
+          const candidates = [];
+          for (const row of rows) {
+            const sid = String(row.stock_id || '').trim().toUpperCase();
+            const sname = String(row.stock_name || '').trim();
+            if (!sid || !/^[A-Z0-9]{4,6}$/.test(sid) || seen.has(sid)) continue;
+            if (sname === compact || sname.startsWith(compact) || sname.includes(compact)) {
+              seen.add(sid);
+              const rank = sname === compact ? 0 : (sname.startsWith(compact) ? 1 : 2);
+              const mtype = String(row.type || 'twse').toLowerCase();
+              candidates.push({
+                rank,
+                kind: 'stock',
+                symbol: sid,
+                stock_id: sid,
+                stock_name: sname || sid,
+                industry: row.industry_category || '台股',
+                market_type: mtype,
+                yahoo_symbol: mtype === 'tpex' ? `${sid}.TWO` : `${sid}.TW`,
+                tv_symbol: mtype === 'tpex' ? `TPEX:${sid}` : `TWSE:${sid}`
+              });
+            }
+          }
+          candidates.sort((a, b) => a.rank - b.rank || a.symbol.length - b.symbol.length);
+          if (candidates[0]) return candidates[0];
+        }
+      } catch (e) {}
+
+      throw new Error(`查無「${cleaned}」，請輸入正確台股代號、中文股名（如 台積電、長榮）或「台指電子盤」。`);
+    };
+
+    async function lookupAndAddStock(rawCode) {
+      const cleaned = String(rawCode || '').trim();
+      if (!cleaned) {
+        showToast('請輸入標的', '支援輸入 4~6 碼代號、中文股名（如 台積電）或「台指電子盤」。', 'warn');
+        return;
+      }
+
+      showToast('查詢台股／期貨標的', `正在解析「${cleaned}」...`, 'info');
+      try {
+        const resolved = await window.SHL_RESOLVE_STOCK_INPUT(cleaned);
+        if (!resolved) {
+          showToast('查無標的', `查無「${cleaned}」，請重新輸入。`, 'warn');
+          return;
         }
 
-        state.watchlist.push({
-          symbol: info.stock_id,
-          name: info.stock_name,
-          industry: info.industry,
-          marketType: info.market_type,
-          tvSymbol: info.tv_symbol,
-          yahooSymbol: info.yahoo_symbol,
-          dataset: 'TaiwanStockPrice',
-          finmindId: info.stock_id
-        });
-        persistState();
-        selectStock(info.stock_id);
-        await fetchMarketData(info.stock_id, 'auto');
-        showToast('已新增真實台股標的', `${info.stock_id} ${info.stock_name}（${info.industry}）已加入並同步。`, 'success');
+        const sym = resolved.symbol;
+        const existing = state.watchlist.find(w => w.symbol === sym);
+        if (!existing) {
+          state.watchlist.push({
+            symbol: sym,
+            name: resolved.stock_name || resolved.name || sym,
+            industry: resolved.industry || (resolved.kind === 'index' ? '指數／期貨' : '台股'),
+            marketType: resolved.market_type || resolved.marketType || 'twse',
+            tvSymbol: resolved.tv_symbol || resolved.tvSymbol || `TWSE:${sym}`,
+            yahooSymbol: resolved.yahoo_symbol || resolved.yahooSymbol || `${sym}.TW`,
+            dataset: resolved.dataset || 'TaiwanStockPrice',
+            finmindId: resolved.finmindId || sym
+          });
+          persistState();
+        }
+
+        selectStock(sym);
+
+        if (resolved.kind === 'index') {
+          // Immediately sync TAIFEX / TWSE / Global real-time quotes for 台指電子盤 / 加權 / 櫃買 / NQ / SOX
+          if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+            await window.SHL_EXT.refreshRealtimeQuotes(false);
+          }
+          if (sym === 'TXF' || sym === 't00' || sym === 'o00') {
+            await fetchMarketData(sym, 'auto').catch(() => {});
+          }
+          renderAllViews();
+          showToast(
+            existing ? '已切換至指數／期貨' : '已新增指數／期貨標的',
+            `${sym} ${resolved.name || resolved.stock_name} 已載入即時報價與圖表。`,
+            'success'
+          );
+          return;
+        }
+
+        if (existing) {
+          showToast('已在監控清單', `已切換至 ${existing.symbol} ${existing.name}`, 'info');
+          return;
+        }
+
+        await fetchMarketData(sym, 'auto');
+        if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+          window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {});
+        }
+        showToast('已新增真實台股標的', `${sym} ${resolved.stock_name}（${resolved.industry || '台股'}）已加入並同步。`, 'success');
       } catch (err) {
-        showToast('查詢失敗', err.message || '查無此股票代號', 'error');
+        showToast('查詢失敗', err.message || '查無此股票代號或中文名稱', 'error');
       }
     }
 
@@ -15415,7 +15663,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             if (!resp || !resp.ok) continue;
             const j = await resp.json();
             const list = j?.RtData?.QuoteList || [];
-            const near = list.find(x => x.SymbolID && !x.SymbolID.endsWith('-S') && !x.SymbolID.endsWith('-P') && parseNum(x.CLastPrice));
+            // v3.10.3: Filter single-leg contracts (exclude spread '/' and options '-S'/'-P') and pick highest-volume front-month TXF
+            const singles = list.filter(x =>
+              x.SymbolID &&
+              !String(x.SymbolID).includes('/') &&
+              !String(x.SymbolID).endsWith('-S') &&
+              !String(x.SymbolID).endsWith('-P') &&
+              parseNum(x.CLastPrice) !== null &&
+              parseNum(x.CLastPrice) > 1000
+            );
+            singles.sort((a, b) => (parseNum(b.CTotalVolume) || 0) - (parseNum(a.CTotalVolume) || 0));
+            const near = singles[0] || list.find(x => x.SymbolID && !String(x.SymbolID).includes('/') && !String(x.SymbolID).endsWith('-S') && !String(x.SymbolID).endsWith('-P') && parseNum(x.CLastPrice));
             if (near) {
               const price = parseNum(near.CLastPrice);
               const ref = parseNum(near.CRefPrice) || price;
@@ -15433,6 +15691,23 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                 volumeLots: parseNum(near.CTotalVolume) || 0,
                 time: tFmt,
                 stamp: `${near.CDate || ''} ${tFmt}`
+              };
+              // Mirror live TAIFEX quote into state.quotes['TXF'] so viewing 台指電子盤 on main desk shows real-time quote
+              const prevTxf = state.quotes['TXF'] || {};
+              state.quotes['TXF'] = {
+                ...prevTxf,
+                price,
+                prevClose: ref,
+                open: parseNum(near.COpenPrice) ?? price,
+                high: parseNum(near.CHighPrice) ?? price,
+                low: parseNum(near.CLowPrice) ?? price,
+                volume: (parseNum(near.CTotalVolume) || 0),
+                volumeLots: parseNum(near.CTotalVolume) || 0,
+                lastDate: `${near.CDate || ''} ${tFmt}`,
+                isRealtime: true,
+                realtimeTs: Date.now(),
+                realtimeSource: body.MarketType === '1' ? 'TAIFEX 台指電子盤即時' : 'TAIFEX 台指近全即時',
+                source: body.MarketType === '1' ? 'TAIFEX 台指電子盤' : 'TAIFEX 台指近全'
               };
               return true;
             }
@@ -16382,18 +16657,46 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (b) b.textContent = boardCollapsed ? '展開看板' : '收合看板';
         });
 
-        // Lock-screen standby buttons
+        // Lock-screen standby buttons (v3.10.3: in-place customizer sheet + Chinese/TXF search)
         document.getElementById('btnOpenStandbyLock')?.addEventListener('click', openStandbyLock);
         document.getElementById('btnPreviewStandbyFromVault')?.addEventListener('click', () => { closeModal('featureStudioModal'); openStandbyLock(); });
-        document.getElementById('btnStandbyClose')?.addEventListener('click', closeStandbyLock);
+        document.getElementById('btnStandbyClose')?.addEventListener('click', () => {
+          const sheet = document.getElementById('standbyCustomizerSheet');
+          if (sheet) sheet.style.display = 'none';
+          closeStandbyLock();
+        });
         document.getElementById('btnStandbyRefreshNow')?.addEventListener('click', () => refreshRealtimeQuotes(false));
-        document.getElementById('btnStandbyCustomize')?.addEventListener('click', () => { closeStandbyLock(); openFeatureModal('vault'); });
-        document.getElementById('btnAddLockTickerCustom')?.addEventListener('click', () => {
+        document.getElementById('btnStandbyCustomize')?.addEventListener('click', () => {
+          const sheet = document.getElementById('standbyCustomizerSheet');
+          if (!sheet) return;
+          const opening = sheet.style.display === 'none' || !sheet.style.display;
+          sheet.style.display = opening ? 'block' : 'none';
+          if (opening) {
+            if (window.SHL_EXT && typeof window.SHL_EXT.renderLockTickers === 'function') {
+              window.SHL_EXT.renderLockTickers();
+            }
+            setTimeout(() => sheet.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 40);
+          }
+        });
+        document.getElementById('btnStandbyCustomDone')?.addEventListener('click', () => {
+          const sheet = document.getElementById('standbyCustomizerSheet');
+          if (sheet) sheet.style.display = 'none';
+        });
+        document.getElementById('btnAddLockTickerCustom')?.addEventListener('click', async () => {
           const inp = document.getElementById('lockTickerCustomInput');
           const raw = (inp?.value || '').trim();
           if (!raw) return;
+          if (window.SHL_EXT && typeof window.SHL_EXT.addCustomLockTicker === 'function') {
+            const ok = await window.SHL_EXT.addCustomLockTicker(raw);
+            if (ok && inp) inp.value = '';
+            return;
+          }
           const code = ['t00', 'o00'].includes(raw.toLowerCase()) ? raw.toLowerCase() : raw.toUpperCase();
           if (!state.ext.lockTickerSymbols.includes(code)) {
+            if (state.ext.lockTickerSymbols.length >= 5) {
+              showToast('最多 5 組即時狀態', '請先移除其中一項再新增。', 'warn');
+              return;
+            }
             state.ext.lockTickerSymbols.push(code);
             persistState();
             renderLockTickers();
@@ -16603,38 +16906,167 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const extraGrid = document.getElementById('standbyExtraGrid');
         if (extraGrid) extraGrid.innerHTML = '';
 
-        if (!box) return;
-        const candidates = [
-          ...LIVE_INDEX_CATALOG,
-          ...state.watchlist.slice(0, 10).map(w => ({ code: w.symbol, label: `${w.symbol} ${w.name}` }))
-        ];
-        state.ext.lockTickerSymbols.forEach(c => {
-          if (!candidates.some(x => x.code === c)) candidates.push({ code: c, label: c });
-        });
-        box.innerHTML = candidates.map(c => {
-          const on = state.ext.lockTickerSymbols.includes(c.code);
-          return `<button type="button" class="live-act-pill ${on ? 'active' : ''}" data-live-pick="${escapeHtml(c.code)}">${on ? '✓ ' : ''}${escapeHtml(c.label)}</button>`;
-        }).join('');
-        box.querySelectorAll('[data-live-pick]').forEach(btn => {
+        if (box) {
+          const candidates = [
+            ...LIVE_INDEX_CATALOG,
+            ...state.watchlist.slice(0, 12).map(w => ({ code: w.symbol, label: `${w.symbol} ${w.name}` }))
+          ];
+          state.ext.lockTickerSymbols.forEach(c => {
+            if (!candidates.some(x => x.code === c)) candidates.push({ code: c, label: c });
+          });
+          box.innerHTML = candidates.map(c => {
+            const on = state.ext.lockTickerSymbols.includes(c.code);
+            return `<button type="button" class="live-act-pill ${on ? 'active' : ''}" data-live-pick="${escapeHtml(c.code)}">${on ? '✓ ' : ''}${escapeHtml(c.label)}</button>`;
+          }).join('');
+          box.querySelectorAll('[data-live-pick]').forEach(btn => {
+            btn.addEventListener('click', () => toggleLockTickerCode(btn.dataset.livePick));
+          });
+        }
+
+        renderStandbyCustomizerSheet();
+      }
+
+      function toggleLockTickerCode(code) {
+        const list = state.ext.lockTickerSymbols;
+        if (list.includes(code)) {
+          if (list.length <= 1) { showToast('至少保留 1 組', '即時動態至少需保留 1 組顯示項目。', 'warn'); return; }
+          state.ext.lockTickerSymbols = list.filter(x => x !== code);
+        } else {
+          if (list.length >= 5) { showToast('最多 5 組即時狀態', '鎖屏即時動態最多可搭配 5 組，請先移除其中一項再新增。', 'warn'); return; }
+          state.ext.lockTickerSymbols = [...list, code];
+        }
+        persistState();
+        renderLiveActivityCard();
+        if (code === 'NQ' || code === 'SOX') fetchGlobalIndices().then(renderLiveActivityCard);
+        else if (typeof ext.refreshRealtimeQuotes === 'function') ext.refreshRealtimeQuotes(true).catch(() => {});
+      }
+
+      function getLockTickerDisplayName(code) {
+        const idx = state.ext.indices[code];
+        if (idx && idx.name) return `${idx.name} (${code})`;
+        const cat = LIVE_INDEX_CATALOG.find(c => c.code === code);
+        if (cat) return `${cat.label} (${code})`;
+        const m = getStockMeta(code);
+        return (m && m.name && m.name !== code) ? `${code} ${m.name}` : code;
+      }
+
+      function renderStandbyCustomizerSheet() {
+        const activeListEl = document.getElementById('standbyActiveList');
+        const quickEl = document.getElementById('standbyQuickChips');
+        const countEl = document.getElementById('standbyCustomCountBadge');
+        if (!activeListEl || !quickEl) return;
+
+        const syms = state.ext.lockTickerSymbols.slice(0, 5);
+        if (countEl) countEl.textContent = `已選 ${syms.length}/5`;
+
+        activeListEl.innerHTML = syms.map((code, idx) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(30,41,59,0.85);border:1px solid rgba(148,163,184,0.22);">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              <span class="mono" style="font-size:11px;color:#fbbf24;font-weight:800;">#${idx + 1}</span>
+              <span style="font-size:12px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(getLockTickerDisplayName(code))}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <button type="button" data-sb-move="${idx}" data-sb-dir="-1" ${idx === 0 ? 'disabled' : ''} style="padding:2px 7px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:rgba(15,23,42,0.8);color:${idx === 0 ? '#475569' : '#e2e8f0'};font-size:11px;cursor:pointer;">▲</button>
+              <button type="button" data-sb-move="${idx}" data-sb-dir="1" ${idx === syms.length - 1 ? 'disabled' : ''} style="padding:2px 7px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:rgba(15,23,42,0.8);color:${idx === syms.length - 1 ? '#475569' : '#e2e8f0'};font-size:11px;cursor:pointer;">▼</button>
+              <button type="button" data-sb-del="${escapeHtml(code)}" style="padding:2px 7px;border-radius:6px;border:1px solid rgba(239,68,68,0.45);background:rgba(127,29,29,0.55);color:#fecaca;font-size:11px;cursor:pointer;">✕</button>
+            </div>
+          </div>
+        `).join('');
+
+        activeListEl.querySelectorAll('[data-sb-move]').forEach(btn => {
           btn.addEventListener('click', () => {
-            const code = btn.dataset.livePick;
-            const list = state.ext.lockTickerSymbols;
-            if (list.includes(code)) {
-              if (list.length <= 1) { showToast('至少保留 1 組', '即時動態至少需保留 1 組顯示項目。', 'warn'); return; }
-              state.ext.lockTickerSymbols = list.filter(x => x !== code);
-            } else {
-              if (list.length >= 5) { showToast('最多 5 組即時狀態', '鎖屏即時動態最多可搭配 5 組，請先取消其中一項再新增。', 'warn'); return; }
-              state.ext.lockTickerSymbols = [...list, code];
-            }
+            const i = Number(btn.dataset.sbMove);
+            const dir = Number(btn.dataset.sbDir);
+            const j = i + dir;
+            if (j < 0 || j >= state.ext.lockTickerSymbols.length) return;
+            const copy = [...state.ext.lockTickerSymbols];
+            const tmp = copy[i]; copy[i] = copy[j]; copy[j] = tmp;
+            state.ext.lockTickerSymbols = copy;
             persistState();
             renderLiveActivityCard();
-            if (code === 'NQ' || code === 'SOX') fetchGlobalIndices().then(renderLiveActivityCard);
           });
         });
+
+        activeListEl.querySelectorAll('[data-sb-del]').forEach(btn => {
+          btn.addEventListener('click', () => toggleLockTickerCode(btn.dataset.sbDel));
+        });
+
+        const candidates = [
+          ...LIVE_INDEX_CATALOG,
+          ...state.watchlist.slice(0, 14).map(w => ({ code: w.symbol, label: `${w.symbol} ${w.name}` }))
+        ];
+        syms.forEach(c => {
+          if (!candidates.some(x => x.code === c)) candidates.push({ code: c, label: getLockTickerDisplayName(c) });
+        });
+        quickEl.innerHTML = candidates.map(c => {
+          const on = syms.includes(c.code);
+          return `<button type="button" data-sb-pick="${escapeHtml(c.code)}" style="padding:5px 9px;border-radius:999px;font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid ${on ? '#f59e0b' : 'rgba(148,163,184,0.3)'};background:${on ? 'rgba(245,158,11,0.22)' : 'rgba(30,41,59,0.75)'};color:${on ? '#fde68a' : '#cbd5e1'};">${on ? '✓ ' : '+ '}${escapeHtml(c.label)}</button>`;
+        }).join('');
+        quickEl.querySelectorAll('[data-sb-pick]').forEach(btn => {
+          btn.addEventListener('click', () => toggleLockTickerCode(btn.dataset.sbPick));
+        });
+      }
+
+      async function addCustomLockTicker(rawInput) {
+        const cleaned = String(rawInput || '').trim();
+        if (!cleaned) return false;
+        if (state.ext.lockTickerSymbols.length >= 5) {
+          showToast('最多 5 組即時狀態', '鎖屏即時動態最多可搭配 5 組，請先移除其中一項再新增。', 'warn');
+          return false;
+        }
+        try {
+          let resolved = null;
+          if (typeof window.SHL_RESOLVE_STOCK_INPUT === 'function') {
+            resolved = await window.SHL_RESOLVE_STOCK_INPUT(cleaned);
+          }
+          const code = resolved ? resolved.symbol : (['t00', 'o00'].includes(cleaned.toLowerCase()) ? cleaned.toLowerCase() : cleaned.toUpperCase());
+          if (state.ext.lockTickerSymbols.includes(code)) {
+            showToast('已在鎖屏組合中', `${getLockTickerDisplayName(code)} 已在目前組合內。`, 'info');
+            return true;
+          }
+          // Ensure resolved stock exists in watchlist so its Chinese name renders cleanly
+          if (resolved && resolved.kind === 'stock' && !state.watchlist.some(w => w.symbol === code)) {
+            state.watchlist.push({
+              symbol: code,
+              name: resolved.stock_name || resolved.name || code,
+              industry: resolved.industry || '台股',
+              marketType: resolved.market_type || 'twse',
+              tvSymbol: resolved.tv_symbol || `TWSE:${code}`,
+              yahooSymbol: resolved.yahoo_symbol || `${code}.TW`,
+              dataset: 'TaiwanStockPrice',
+              finmindId: code
+            });
+          }
+          state.ext.lockTickerSymbols = [...state.ext.lockTickerSymbols, code].slice(0, 5);
+          persistState();
+          renderLiveActivityCard();
+          if (code === 'NQ' || code === 'SOX') fetchGlobalIndices().then(renderLiveActivityCard);
+          else if (typeof ext.refreshRealtimeQuotes === 'function') ext.refreshRealtimeQuotes(true).catch(() => {});
+          showToast('已加入鎖屏組合', `${getLockTickerDisplayName(code)} 已加入鎖屏即時狀態（${state.ext.lockTickerSymbols.length}/5）。`, 'success');
+          return true;
+        } catch (err) {
+          showToast('查無此標的', err.message || `查無「${cleaned}」`, 'error');
+          return false;
+        }
+      }
+
+      const sbAddBtn = document.getElementById('btnStandbyCustomAdd');
+      const sbAddInp = document.getElementById('standbyCustomInput');
+      if (sbAddBtn && !sbAddBtn._v3103Bound) {
+        sbAddBtn._v3103Bound = true;
+        const doAdd = async () => {
+          const val = (sbAddInp?.value || '').trim();
+          if (!val) return;
+          const ok = await addCustomLockTicker(val);
+          if (ok && sbAddInp) sbAddInp.value = '';
+        };
+        sbAddBtn.addEventListener('click', doAdd);
+        sbAddInp?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
       }
 
       // Override renderLockTickers so all callers use the upgraded 5-item Live Activity renderer
       ext.renderLockTickers = renderLiveActivityCard;
+      ext.addCustomLockTicker = addCustomLockTicker;
 
       // --- 2. DESKTOP-ONLY MOUSE DRAG-TO-SCROLL (100% SEPARATED FROM MOBILE TOUCH) ---
       function installDesktopMouseDrag() {

@@ -385,7 +385,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.9.0",
+    version="3.10.0",
 )
 
 app.add_middleware(
@@ -508,7 +508,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.9.0",
+        "version": "3.10.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3902,6 +3902,138 @@ async def global_indices_realtime():
         except Exception:
             pass
     return JSONResponse({"ok": True, "indices": out, "server_time": tw_now_str()}, headers={"Cache-Control": "no-store"})
+
+
+async def _fetch_shioaji_http_snapshots(symbols: list[str]) -> Optional[dict[str, Any]]:
+    """
+    Replica of Sinotrade/shioaji-pro-app `fetchSnapshots` protocol:
+    POST {http_url}/api/v1/data/snapshots with {"contracts": [{"security_type":"STK","code":...}]}
+    """
+    http_url = (_SHIOAJI_CFG.get("http_url") or "").strip().rstrip("/")
+    if not http_url or not symbols:
+        return None
+    contracts = [{"security_type": "STK", "code": sy, "exchange": "TSE"} for sy in symbols[:50]]
+    try:
+        st, body = await http_json(
+            f"{http_url}/api/v1/data/snapshots",
+            method="POST",
+            json_body={"contracts": contracts},
+            timeout=3.0,
+        )
+        if st != 200 or not isinstance(body, list):
+            return None
+        out: dict[str, Any] = {}
+        for row in body:
+            if not isinstance(row, dict):
+                continue
+            code = str(row.get("code") or "").strip()
+            close = _parse_mis_float(row.get("close"))
+            if not code or close is None:
+                continue
+            ref = _parse_mis_float(row.get("close")) - (_parse_mis_float(row.get("change_price")) or 0.0)
+            out[code] = {
+                "symbol": code,
+                "name": str(row.get("name") or code),
+                "exchange": str(row.get("exchange") or "TSE").lower(),
+                "price": close,
+                "prev_close": round(ref, 2) if ref else close,
+                "change": _parse_mis_float(row.get("change_price")) or 0.0,
+                "change_pct": _parse_mis_float(row.get("change_rate")) or 0.0,
+                "open": _parse_mis_float(row.get("open")) or close,
+                "high": _parse_mis_float(row.get("high")) or close,
+                "low": _parse_mis_float(row.get("low")) or close,
+                "volume_lots": _parse_mis_float(row.get("total_volume")) or 0.0,
+                "tick_volume": _parse_mis_float(row.get("volume")) or 0.0,
+                "amount": _parse_mis_float(row.get("total_amount")) or 0.0,
+                "bids": [_parse_mis_float(row.get("buy_price"))] if _parse_mis_float(row.get("buy_price")) else [],
+                "bid_sizes": [_parse_mis_float(row.get("buy_volume"))] if _parse_mis_float(row.get("buy_volume")) else [],
+                "asks": [_parse_mis_float(row.get("sell_price"))] if _parse_mis_float(row.get("sell_price")) else [],
+                "ask_sizes": [_parse_mis_float(row.get("sell_volume"))] if _parse_mis_float(row.get("sell_volume")) else [],
+                "date": tw_now_str()[:10],
+                "time": tw_now_str()[11:],
+                "source_engine": "shioaji_http",
+            }
+        return out if out else None
+    except Exception:
+        return None
+
+
+@app.post("/api/v1/shioaji/test-token")
+async def shioaji_test_token(req: ShioajiConfigRequest):
+    """Test Sinotrade Shioaji HTTP Server and/or Python shioaji SDK with user API Token."""
+    if req.api_key.strip():
+        _SHIOAJI_CFG["api_key"] = req.api_key.strip()
+    if req.secret_key.strip():
+        _SHIOAJI_CFG["secret_key"] = req.secret_key.strip()
+    if req.http_url.strip():
+        _SHIOAJI_CFG["http_url"] = req.http_url.strip().rstrip("/")
+    _SHIOAJI_CFG["simulation"] = bool(req.simulation)
+
+    http_snap = await _fetch_shioaji_http_snapshots(["2330"])
+    if http_snap and "2330" in http_snap:
+        return {
+            "ok": True,
+            "engine": "shioaji_http",
+            "message": f"已成功連線永豐金 Shioaji Pro HTTP 伺服器（2330 現價 {http_snap['2330']['price']}）",
+            "status": await shioaji_status(),
+        }
+
+    ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
+    sk = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip()
+    if ak and sk:
+        try:
+            import shioaji as sj  # type: ignore
+
+            def _try_sdk():
+                api = sj.Shioaji(simulation=bool(_SHIOAJI_CFG.get("simulation", True)))
+                api.login(api_key=ak, secret_key=sk)
+                c = api.Contracts.Stocks["2330"]
+                snaps = api.snapshots([c])
+                px = snaps[0].close if snaps else None
+                api.logout()
+                return px
+
+            px = await asyncio.to_thread(_try_sdk)
+            return {
+                "ok": True,
+                "engine": "shioaji_sdk",
+                "message": f"已透過永豐金 Shioaji Python SDK 驗證登入成功（2330 現價 {px}）",
+                "status": await shioaji_status(),
+            }
+        except ImportError:
+            return {
+                "ok": True,
+                "engine": "token_saved_pending_runtime",
+                "message": "永豐金 API Token 已安全儲存！若要啟用 Shioaji 串流，請啟動 shioaji server start 或安裝 pip install shioaji（目前自動使用 TWSE/TPEx 官方即時備援）",
+                "status": await shioaji_status(),
+            }
+        except Exception as exc:
+            return {
+                "ok": False,
+                "engine": "shioaji_sdk_error",
+                "message": f"永豐金 Shioaji 登入驗證失敗：{redact_secrets(str(exc), [ak, sk])}",
+                "status": await shioaji_status(),
+            }
+
+    return {
+        "ok": False,
+        "engine": "missing_token",
+        "message": "請填入永豐金 Shioaji API Key 與 Secret Key（或啟動本機 shioaji server start）。",
+        "status": await shioaji_status(),
+    }
+
+
+@app.get("/api/v1/shioaji/snapshots")
+async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
+    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:50]
+    sj_data = await _fetch_shioaji_http_snapshots(syms)
+    if sj_data:
+        return JSONResponse(
+            {"ok": True, "source": "永豐金 Shioaji Pro HTTP", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
+            headers={"Cache-Control": "no-store"},
+        )
+    # Automatic seamless fallback to official TWSE/TPEx MIS real-time quotes
+    return await twse_realtime_quotes(symbols=",".join(syms), indices="t00,o00")
 
 
 if __name__ == "__main__":

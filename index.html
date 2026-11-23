@@ -2815,15 +2815,33 @@
             </div>
           </div>
 
-          <!-- v3.9.0: Shioaji Pro Quant Indicator Overlay Bar & Live Legend -->
+          <!-- v3.10.0: Shioaji Pro 21-Indicator Suite Bar & Live Legend -->
           <div id="sjIndicatorBar" class="sj-ind-bar">
-            <span style="font-weight:800;color:#0f172a;">📊 量化指標疊加：</span>
+            <span style="font-weight:800;color:#0f172a;">📊 永豐 21 指標：</span>
             <button type="button" class="sj-ind-chip active" data-sj-ind="ema">EMA5/12</button>
-            <button type="button" class="sj-ind-chip active" data-sj-ind="ma20">MA20 均線</button>
-            <button type="button" class="sj-ind-chip" data-sj-ind="bb">布林通道</button>
-            <button type="button" class="sj-ind-chip active" data-sj-ind="vwap">VWAP 機構均價</button>
-            <button type="button" class="sj-ind-chip active" data-sj-ind="signals">量化買賣訊號</button>
-            <button type="button" id="btnSjOpenQuantLab" class="sj-ind-chip" style="margin-left:auto;background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;">🧪 串接量化實驗室</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="ma20">SMA20</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="bb">布林</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="supertrend">SuperTrend</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="sar">SAR</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="vwap">VWAP</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="signals">量化訊號</button>
+            <select id="sjSubPaneSelect" class="select" style="width:auto;padding:2px 7px;font-size:11px;font-weight:700;" title="副圖震盪指標">
+              <option value="macd" selected>副圖: MACD (12,26,9)</option>
+              <option value="rsi">副圖: RSI (14)</option>
+              <option value="stoch">副圖: KD (9,3,3)</option>
+              <option value="stochRsi">副圖: StochRSI</option>
+              <option value="dmi">副圖: DMI / ADX (14)</option>
+              <option value="cci">副圖: CCI (20)</option>
+              <option value="mfi">副圖: MFI 資金流 (14)</option>
+              <option value="atr">副圖: ATR 波幅 (14)</option>
+              <option value="obv">副圖: OBV 能量潮</option>
+              <option value="roc">副圖: ROC 變動率 (12)</option>
+              <option value="willr">副圖: Williams %R (14)</option>
+              <option value="bias">副圖: BIAS 乖離率 (20)</option>
+              <option value="none">隱藏副圖</option>
+            </select>
+            <button type="button" id="btnOpenSjIndPicker" class="sj-ind-chip" style="background:#0f172a;color:#fff;border-color:#0f172a;">🎛️ 全部 21 指標</button>
+            <button type="button" id="btnSjOpenQuantLab" class="sj-ind-chip" style="margin-left:auto;background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;">🧪 量化實驗室</button>
           </div>
           <div id="sjChartLegendBar" class="sj-legend-bar mono">
             <span>指標即時數值：等待行情同步...</span>
@@ -2833,6 +2851,13 @@
             <div id="tvWidgetMount"></div>
             <div id="rawChartMount">
               <canvas id="rawPriceChart"></canvas>
+            </div>
+          </div>
+          <!-- Dedicated Synchronized Oscillator Sub-Pane (Shioaji Pro 12 Sub-Pane Indicators) -->
+          <div id="sjSubPaneWrap" style="border-top:1px solid var(--border);background:#ffffff;padding:4px 12px 8px;">
+            <div id="sjSubPaneLegend" class="mono" style="font-size:11px;color:#475569;margin-bottom:3px;display:flex;gap:10px;flex-wrap:wrap;"></div>
+            <div style="position:relative;height:118px;width:100%;">
+              <canvas id="sjSubPaneCanvas"></canvas>
             </div>
           </div>
           <div id="rawMacroEventsBar" class="macro-event-chip-bar" style="display:none;padding:8px 14px 10px;margin-top:0;border-top:1px solid var(--border);background:#fffbeb;"></div>
@@ -4976,6 +5001,23 @@
             <button type="button" id="btnCommitShotToGroup" class="btn btn-teal btn-sm">✓ 新增至群組並同步即時報價</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.10.0: Shioaji Pro 21-Indicator Picker Modal (Replica of Sinotrade/shioaji-pro-app indicator-dialog) -->
+  <div id="sjIndicatorPickerModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="sjIndPickerTitle">
+    <div class="modal-card" style="max-width:640px;width:94vw;max-height:86vh;overflow-y:auto;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-up">Shioaji Pro 21 指標</span>
+          <h3 id="sjIndPickerTitle" style="margin:0;font-size:15.5px;font-weight:800;">🎛️ 永豐金 Shioaji Pro 技術指標庫（主圖 9 種 ＋ 副圖 12 種）</h3>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="sjIndicatorPickerModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+        <input id="sjIndSearchInput" type="search" class="input" placeholder="搜尋指標（例如：SuperTrend、SAR、Keltner、Donchian、MACD、KD、DMI、MFI、OBV、CCI...）" />
+        <div id="sjIndPickerList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;"></div>
       </div>
     </div>
   </div>
@@ -16938,7 +16980,628 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderCapitalFlow();
         refreshShioajiStatus();
         fetchGlobalIndices().then(renderLiveActivityCard);
+        if (window.SHIOAJI_PRO && typeof window.SHIOAJI_PRO.init === 'function') {
+          window.SHIOAJI_PRO.init();
+        }
       };
+    })();
+
+    // =========================================================================
+    // v3.10.0 SINOTRADE / SHIOAJI-PRO-APP FAITHFUL REPLICA (window.SHIOAJI_PRO)
+    // - 21 Built-In Technical Indicators (9 Overlays + 12 Sub-Pane Oscillators)
+    // - Exact binarySplit() Recursive Proportional-Area Capital Flow Treemap
+    // - 12 Taiwan Industry Chains + Bubble/Channel Holdings Panorama
+    // - Sinotrade Shioaji API Token & HTTP Server (/api/v1/shioaji/test-token)
+    // =========================================================================
+    window.SHIOAJI_PRO = (function () {
+      let subPaneChart = null;
+
+      // --- 1. ALL 21 SHIOAJI PRO TECHNICAL INDICATORS (src/lib/indicators.ts replica) ---
+      const INDICATOR_CATALOG = [
+        { id: 'ema', name: 'EMA 指數移動平均 (5/12)', cat: 'overlay', desc: '短線動能指數均線' },
+        { id: 'ma20', name: 'SMA 移動平均 (20)', cat: 'overlay', desc: '月線趨勢基準' },
+        { id: 'wma', name: 'WMA 加權移動平均 (20)', cat: 'overlay', desc: '近期權重加權均線' },
+        { id: 'bb', name: 'Bollinger 布林通道 (20, 2σ)', cat: 'overlay', desc: '波動率上下軌通道' },
+        { id: 'keltner', name: 'Keltner 肯特納通道 (20, 2×ATR)', cat: 'overlay', desc: 'EMA + ATR 波動通道' },
+        { id: 'donchian', name: 'Donchian 唐奇安通道 (20)', cat: 'overlay', desc: '20 期最高/最低突破通道' },
+        { id: 'sar', name: 'Parabolic SAR 拋物線轉向', cat: 'overlay', desc: '趨勢追蹤停損轉向點' },
+        { id: 'supertrend', name: 'SuperTrend 超級趨勢 (10, 3.0)', cat: 'overlay', desc: 'ATR 動態多空趨勢帶' },
+        { id: 'vwap', name: 'VWAP 成交量加權均價', cat: 'overlay', desc: '機構盤中成本線' },
+        { id: 'macd', name: 'MACD 指數平滑異同移動平均 (12,26,9)', cat: 'pane', desc: 'DIF / DEA / 柱狀動能' },
+        { id: 'rsi', name: 'RSI 相對強弱指標 (14)', cat: 'pane', desc: '超買 70 / 超賣 30 強弱濾網' },
+        { id: 'stoch', name: 'Stochastic KD 隨機指標 (9,3,3)', cat: 'pane', desc: 'K / D 高低檔交叉' },
+        { id: 'stochRsi', name: 'StochRSI 隨機相對強弱 (14)', cat: 'pane', desc: '高靈敏度 RSI 震盪' },
+        { id: 'dmi', name: 'DMI / ADX 趨向指標 (14)', cat: 'pane', desc: '+DI / -DI / ADX 趨勢強度' },
+        { id: 'cci', name: 'CCI 順勢指標 (20)', cat: 'pane', desc: '+100 / -100 偏離度' },
+        { id: 'mfi', name: 'MFI 資金流量指標 (14)', cat: 'pane', desc: '量價加權 RSI (20/80)' },
+        { id: 'atr', name: 'ATR 真實波幅 (14)', cat: 'pane', desc: '價格波動幅度量化' },
+        { id: 'obv', name: 'OBV 能量潮', cat: 'pane', desc: '累積價量資金流向' },
+        { id: 'roc', name: 'ROC 變動率 (12)', cat: 'pane', desc: '12 期價格動能百分比' },
+        { id: 'willr', name: 'Williams %R 威廉指標 (14)', cat: 'pane', desc: '-20 / -80 超買超賣' },
+        { id: 'bias', name: 'BIAS 乖離率 (20)', cat: 'pane', desc: '收盤價偏離 20MA 百分比' }
+      ];
+
+      const TA = {
+        sma(vals, p) {
+          return vals.map((_, i) => i + 1 < p ? null : Number((vals.slice(i - p + 1, i + 1).reduce((a, b) => a + b, 0) / p).toFixed(2)));
+        },
+        wma(vals, p) {
+          const denom = (p * (p + 1)) / 2;
+          return vals.map((_, i) => {
+            if (i + 1 < p) return null;
+            let sum = 0;
+            for (let k = 0; k < p; k++) sum += vals[i - p + 1 + k] * (k + 1);
+            return Number((sum / denom).toFixed(2));
+          });
+        },
+        ema(vals, p) {
+          if (!vals.length) return [];
+          const k = 2 / (p + 1);
+          const out = [vals[0]];
+          for (let i = 1; i < vals.length; i++) out.push(vals[i] * k + out[i - 1] * (1 - k));
+          return out.map(v => Number(v.toFixed(2)));
+        },
+        tr(candles) {
+          return candles.map((c, i) => {
+            if (i === 0) return c.high - c.low;
+            const pc = candles[i - 1].close;
+            return Math.max(c.high - c.low, Math.abs(c.high - pc), Math.abs(c.low - pc));
+          });
+        },
+        atr(candles, p = 14) {
+          const trs = this.tr(candles);
+          const out = new Array(candles.length).fill(null);
+          if (candles.length < p) return out;
+          let sum = 0;
+          for (let i = 0; i < p; i++) sum += trs[i];
+          out[p - 1] = sum / p;
+          for (let i = p; i < candles.length; i++) out[i] = (out[i - 1] * (p - 1) + trs[i]) / p;
+          return out.map(v => v === null ? null : Number(v.toFixed(2)));
+        },
+        donchian(candles, p = 20) {
+          const up = [], dn = [];
+          for (let i = 0; i < candles.length; i++) {
+            if (i + 1 < p) { up.push(null); dn.push(null); continue; }
+            const sl = candles.slice(i - p + 1, i + 1);
+            up.push(Math.max(...sl.map(c => c.high)));
+            dn.push(Math.min(...sl.map(c => c.low)));
+          }
+          return { up, dn };
+        },
+        keltner(candles, p = 20, mult = 2) {
+          const mid = this.ema(candles.map(c => c.close), p);
+          const a = this.atr(candles, Math.min(10, Math.max(3, candles.length - 1)));
+          return {
+            mid,
+            up: mid.map((m, i) => a[i] !== null ? Number((m + mult * a[i]).toFixed(2)) : null),
+            dn: mid.map((m, i) => a[i] !== null ? Number((m - mult * a[i]).toFixed(2)) : null)
+          };
+        },
+        supertrend(candles, p = 10, mult = 3.0) {
+          const n = candles.length;
+          const a = this.atr(candles, Math.min(p, Math.max(3, n - 1)));
+          const st = new Array(n).fill(null);
+          const dir = new Array(n).fill(1);
+          let fUp = 0, fDn = 0;
+          for (let i = 0; i < n; i++) {
+            if (a[i] === null) continue;
+            const hl2 = (candles[i].high + candles[i].low) / 2;
+            const bUp = hl2 + mult * a[i];
+            const bDn = hl2 - mult * a[i];
+            if (i === 0 || st[i - 1] === null) { fUp = bUp; fDn = bDn; dir[i] = 1; st[i] = Number(fDn.toFixed(2)); continue; }
+            const pc = candles[i - 1].close;
+            fUp = (bUp < fUp || pc > fUp) ? bUp : fUp;
+            fDn = (bDn > fDn || pc < fDn) ? bDn : fDn;
+            if (dir[i - 1] === 1) {
+              dir[i] = candles[i].close < fDn ? -1 : 1;
+            } else {
+              dir[i] = candles[i].close > fUp ? 1 : -1;
+            }
+            st[i] = Number((dir[i] === 1 ? fDn : fUp).toFixed(2));
+          }
+          return { st, dir };
+        },
+        sar(candles, step = 0.02, maxStep = 0.2) {
+          const n = candles.length;
+          if (n < 2) return [];
+          const out = new Array(n).fill(null);
+          let bull = candles[1].close >= candles[0].close;
+          let af = step;
+          let ep = bull ? candles[0].high : candles[0].low;
+          let sar = bull ? candles[0].low : candles[0].high;
+          out[0] = Number(sar.toFixed(2));
+          for (let i = 1; i < n; i++) {
+            sar = sar + af * (ep - sar);
+            if (bull) {
+              if (candles[i].low < sar) { bull = false; sar = ep; ep = candles[i].low; af = step; }
+              else if (candles[i].high > ep) { ep = candles[i].high; af = Math.min(maxStep, af + step); }
+            } else {
+              if (candles[i].high > sar) { bull = true; sar = ep; ep = candles[i].high; af = step; }
+              else if (candles[i].low < ep) { ep = candles[i].low; af = Math.min(maxStep, af + step); }
+            }
+            out[i] = Number(sar.toFixed(2));
+          }
+          return out;
+        },
+        macd(closes, fast = 12, slow = 26, sig = 9) {
+          const ef = this.ema(closes, fast), es = this.ema(closes, slow);
+          const dif = ef.map((v, i) => Number((v - es[i]).toFixed(2)));
+          const dea = this.ema(dif, sig);
+          const hist = dif.map((v, i) => Number((v - dea[i]).toFixed(2)));
+          return { dif, dea, hist };
+        },
+        rsi(closes, p = 14) {
+          const out = new Array(closes.length).fill(null);
+          if (closes.length <= p) return out;
+          let ag = 0, al = 0;
+          for (let i = 1; i <= p; i++) { const d = closes[i] - closes[i - 1]; if (d >= 0) ag += d; else al -= d; }
+          ag /= p; al /= p;
+          out[p] = al === 0 ? 100 : Number((100 - 100 / (1 + ag / al)).toFixed(2));
+          for (let i = p + 1; i < closes.length; i++) {
+            const d = closes[i] - closes[i - 1];
+            ag = (ag * (p - 1) + (d > 0 ? d : 0)) / p;
+            al = (al * (p - 1) + (d < 0 ? -d : 0)) / p;
+            out[i] = al === 0 ? 100 : Number((100 - 100 / (1 + ag / al)).toFixed(2));
+          }
+          return out;
+        },
+        stoch(candles, p = 9) {
+          const kArr = [], dArr = [];
+          let k = 50, d = 50;
+          for (let i = 0; i < candles.length; i++) {
+            const sl = candles.slice(Math.max(0, i - p + 1), i + 1);
+            const hi = Math.max(...sl.map(c => c.high)), lo = Math.min(...sl.map(c => c.low));
+            const rsv = hi === lo ? 50 : ((candles[i].close - lo) / (hi - lo)) * 100;
+            k = (2 * k + rsv) / 3; d = (2 * d + k) / 3;
+            kArr.push(Number(k.toFixed(2))); dArr.push(Number(d.toFixed(2)));
+          }
+          return { k: kArr, d: dArr };
+        },
+        cci(candles, p = 20) {
+          const tp = candles.map(c => (c.high + c.low + c.close) / 3);
+          return tp.map((v, i) => {
+            if (i + 1 < p) return null;
+            const sl = tp.slice(i - p + 1, i + 1);
+            const avg = sl.reduce((a, b) => a + b, 0) / p;
+            const md = sl.reduce((a, b) => a + Math.abs(b - avg), 0) / p;
+            return md === 0 ? 0 : Number(((v - avg) / (0.015 * md)).toFixed(2));
+          });
+        },
+        mfi(candles, p = 14) {
+          const tp = candles.map(c => (c.high + c.low + c.close) / 3);
+          const mf = tp.map((v, i) => v * (candles[i].volume || 1));
+          return candles.map((_, i) => {
+            if (i < p) return null;
+            let pos = 0, neg = 0;
+            for (let j = i - p + 1; j <= i; j++) { if (tp[j] >= tp[j - 1]) pos += mf[j]; else neg += mf[j]; }
+            return neg === 0 ? 100 : Number((100 - 100 / (1 + pos / neg)).toFixed(2));
+          });
+        },
+        obv(candles) {
+          const out = [0];
+          for (let i = 1; i < candles.length; i++) {
+            const v = candles[i].volume || 0;
+            out.push(out[i - 1] + (candles[i].close > candles[i - 1].close ? v : (candles[i].close < candles[i - 1].close ? -v : 0)));
+          }
+          return out;
+        },
+        roc(closes, p = 12) {
+          return closes.map((c, i) => i < p || !closes[i - p] ? null : Number((((c - closes[i - p]) / closes[i - p]) * 100).toFixed(2)));
+        },
+        willr(candles, p = 14) {
+          return candles.map((c, i) => {
+            if (i + 1 < p) return null;
+            const sl = candles.slice(i - p + 1, i + 1);
+            const hi = Math.max(...sl.map(x => x.high)), lo = Math.min(...sl.map(x => x.low));
+            return hi === lo ? -50 : Number((((hi - c.close) / (hi - lo)) * -100).toFixed(2));
+          });
+        },
+        bias(closes, p = 20) {
+          const m = this.sma(closes, p);
+          return closes.map((c, i) => !m[i] ? null : Number((((c - m[i]) / m[i]) * 100).toFixed(2)));
+        },
+        dmi(candles, p = 14) {
+          const n = candles.length;
+          const pdi = new Array(n).fill(null), mdi = new Array(n).fill(null), adx = new Array(n).fill(null);
+          if (n <= p) return { pdi, mdi, adx };
+          const trs = this.tr(candles);
+          const pdm = [0], mdm = [0];
+          for (let i = 1; i < n; i++) {
+            const u = candles[i].high - candles[i - 1].high;
+            const d = candles[i - 1].low - candles[i].low;
+            pdm.push(u > d && u > 0 ? u : 0);
+            mdm.push(d > u && d > 0 ? d : 0);
+          }
+          let sTr = 0, sP = 0, sM = 0;
+          for (let i = 1; i <= p; i++) { sTr += trs[i]; sP += pdm[i]; sM += mdm[i]; }
+          const dxArr = [];
+          for (let i = p; i < n; i++) {
+            if (i > p) { sTr = sTr - sTr / p + trs[i]; sP = sP - sP / p + pdm[i]; sM = sM - sM / p + mdm[i]; }
+            const pVal = sTr ? (sP / sTr) * 100 : 0;
+            const mVal = sTr ? (sM / sTr) * 100 : 0;
+            pdi[i] = Number(pVal.toFixed(2)); mdi[i] = Number(mVal.toFixed(2));
+            const dx = (pVal + mVal) ? (Math.abs(pVal - mVal) / (pVal + mVal)) * 100 : 0;
+            dxArr.push(dx);
+            if (dxArr.length >= p) {
+              const avgDx = dxArr.slice(-p).reduce((a, b) => a + b, 0) / p;
+              adx[i] = Number(avgDx.toFixed(2));
+            }
+          }
+          return { pdi, mdi, adx };
+        }
+      };
+
+      function renderSubPaneChart(candles, closes) {
+        const wrap = document.getElementById('sjSubPaneWrap');
+        const canvas = document.getElementById('sjSubPaneCanvas');
+        const leg = document.getElementById('sjSubPaneLegend');
+        const mode = document.getElementById('sjSubPaneSelect')?.value || 'macd';
+        if (!wrap || !canvas) return;
+        if (mode === 'none' || !candles.length) {
+          wrap.style.display = 'none';
+          if (subPaneChart) { subPaneChart.destroy(); subPaneChart = null; }
+          return;
+        }
+        wrap.style.display = 'block';
+        if (subPaneChart) { subPaneChart.destroy(); subPaneChart = null; }
+
+        const labels = candles.map(c => c.label);
+        const datasets = [];
+        let legendHtml = '';
+        const lastOf = arr => { for (let i = arr.length - 1; i >= 0; i--) if (arr[i] !== null && arr[i] !== undefined) return arr[i]; return '--'; };
+
+        if (mode === 'macd') {
+          const m = TA.macd(closes);
+          datasets.push(
+            { type: 'bar', label: 'OSC', data: m.hist, backgroundColor: m.hist.map(v => v >= 0 ? 'rgba(239,68,68,0.55)' : 'rgba(34,197,94,0.55)'), borderWidth: 0 },
+            { type: 'line', label: 'DIF', data: m.dif, borderColor: '#2563eb', borderWidth: 1.5, pointRadius: 0 },
+            { type: 'line', label: 'DEA', data: m.dea, borderColor: '#f59e0b', borderWidth: 1.4, pointRadius: 0 }
+          );
+          legendHtml = `<strong>MACD(12,26,9)</strong> <span style="color:#2563eb;">DIF: ${lastOf(m.dif)}</span> <span style="color:#f59e0b;">DEA: ${lastOf(m.dea)}</span> <span>OSC: ${lastOf(m.hist)}</span>`;
+        } else if (mode === 'rsi') {
+          const r = TA.rsi(closes, 14);
+          datasets.push({ label: 'RSI(14)', data: r, borderColor: '#7c3aed', borderWidth: 1.7, pointRadius: 0 });
+          legendHtml = `<strong>RSI(14)</strong> <span style="color:#7c3aed;">${lastOf(r)}</span> <span style="color:#94a3b8;">(超買 70 / 超賣 30)</span>`;
+        } else if (mode === 'stoch') {
+          const s = TA.stoch(candles, 9);
+          datasets.push(
+            { label: 'K(9)', data: s.k, borderColor: '#dc2626', borderWidth: 1.5, pointRadius: 0 },
+            { label: 'D(3)', data: s.d, borderColor: '#2563eb', borderWidth: 1.5, pointRadius: 0 }
+          );
+          legendHtml = `<strong>KD(9,3,3)</strong> <span style="color:#dc2626;">K: ${lastOf(s.k)}</span> <span style="color:#2563eb;">D: ${lastOf(s.d)}</span>`;
+        } else if (mode === 'stochRsi') {
+          const r = TA.rsi(closes, 14).map(v => v ?? 50);
+          const sr = r.map((v, i) => { const sl = r.slice(Math.max(0, i - 13), i + 1); const hi = Math.max(...sl), lo = Math.min(...sl); return hi === lo ? 50 : Number((((v - lo) / (hi - lo)) * 100).toFixed(2)); });
+          datasets.push({ label: 'StochRSI', data: sr, borderColor: '#db2777', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>StochRSI(14)</strong> <span style="color:#db2777;">${lastOf(sr)}</span>`;
+        } else if (mode === 'dmi') {
+          const d = TA.dmi(candles, 14);
+          datasets.push(
+            { label: '+DI', data: d.pdi, borderColor: '#dc2626', borderWidth: 1.4, pointRadius: 0 },
+            { label: '-DI', data: d.mdi, borderColor: '#16a34a', borderWidth: 1.4, pointRadius: 0 },
+            { label: 'ADX', data: d.adx, borderColor: '#f59e0b', borderWidth: 1.6, pointRadius: 0 }
+          );
+          legendHtml = `<strong>DMI/ADX(14)</strong> <span style="color:#dc2626;">+DI: ${lastOf(d.pdi)}</span> <span style="color:#16a34a;">-DI: ${lastOf(d.mdi)}</span> <span style="color:#f59e0b;">ADX: ${lastOf(d.adx)}</span>`;
+        } else if (mode === 'cci') {
+          const c = TA.cci(candles, 20);
+          datasets.push({ label: 'CCI(20)', data: c, borderColor: '#0284c7', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>CCI(20)</strong> <span style="color:#0284c7;">${lastOf(c)}</span>`;
+        } else if (mode === 'mfi') {
+          const m = TA.mfi(candles, 14);
+          datasets.push({ label: 'MFI(14)', data: m, borderColor: '#0f766e', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>MFI 資金流量(14)</strong> <span style="color:#0f766e;">${lastOf(m)}</span>`;
+        } else if (mode === 'atr') {
+          const a = TA.atr(candles, 14);
+          datasets.push({ label: 'ATR(14)', data: a, borderColor: '#ea580c', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>ATR 真實波幅(14)</strong> <span style="color:#ea580c;">${lastOf(a)}</span>`;
+        } else if (mode === 'obv') {
+          const o = TA.obv(candles);
+          datasets.push({ label: 'OBV', data: o, borderColor: '#0d9488', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>OBV 能量潮</strong> <span style="color:#0d9488;">${fmtInt(lastOf(o))}</span>`;
+        } else if (mode === 'roc') {
+          const r = TA.roc(closes, 12);
+          datasets.push({ label: 'ROC(12)%', data: r, borderColor: '#4f46e5', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>ROC 變動率(12)</strong> <span style="color:#4f46e5;">${lastOf(r)}%</span>`;
+        } else if (mode === 'willr') {
+          const w = TA.willr(candles, 14);
+          datasets.push({ label: 'Williams %R(14)', data: w, borderColor: '#b91c1c', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>Williams %R(14)</strong> <span style="color:#b91c1c;">${lastOf(w)}</span>`;
+        } else if (mode === 'bias') {
+          const b = TA.bias(closes, 20);
+          datasets.push({ label: 'BIAS(20)%', data: b, borderColor: '#9333ea', borderWidth: 1.6, pointRadius: 0 });
+          legendHtml = `<strong>BIAS 乖離率(20)</strong> <span style="color:#9333ea;">${lastOf(b)}%</span>`;
+        }
+        if (leg) leg.innerHTML = legendHtml;
+
+        subPaneChart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: false },
+              y: { position: 'right', ticks: { font: { size: 10 }, maxTicksLimit: 4 }, grid: { color: 'rgba(148,163,184,0.16)' } }
+            }
+          }
+        });
+      }
+
+      // Upgrade SHL_EXT.augmentChartIndicators to support ALL 9 overlays + 12 sub-pane oscillators!
+      const prevAugment = window.SHL_EXT.augmentChartIndicators;
+      window.SHL_EXT.augmentChartIndicators = function (datasets, candles, closes, vwap, meta) {
+        if (typeof prevAugment === 'function') prevAugment(datasets, candles, closes, vwap, meta);
+        const ind = state.ext.sjIndicators || {};
+        if (ind.wma && closes.length >= 10) {
+          datasets.push({ label: 'WMA 20', data: TA.wma(closes, Math.min(20, closes.length)), borderColor: '#0284c7', borderWidth: 1.4, fill: false, pointRadius: 0 });
+        }
+        if (ind.keltner && candles.length >= 10) {
+          const k = TA.keltner(candles, Math.min(20, candles.length), 2);
+          datasets.push({ label: 'Keltner 上軌', data: k.up, borderColor: '#0ea5e9', borderDash: [4, 3], borderWidth: 1.2, fill: false, pointRadius: 0 });
+          datasets.push({ label: 'Keltner 下軌', data: k.dn, borderColor: '#0ea5e9', borderDash: [4, 3], borderWidth: 1.2, fill: false, pointRadius: 0 });
+        }
+        if (ind.donchian && candles.length >= 10) {
+          const d = TA.donchian(candles, Math.min(20, candles.length));
+          datasets.push({ label: 'Donchian 高', data: d.up, borderColor: '#d97706', borderDash: [2, 2], borderWidth: 1.2, fill: false, pointRadius: 0 });
+          datasets.push({ label: 'Donchian 低', data: d.dn, borderColor: '#d97706', borderDash: [2, 2], borderWidth: 1.2, fill: false, pointRadius: 0 });
+        }
+        if (ind.supertrend && candles.length >= 8) {
+          const st = TA.supertrend(candles, 10, 3.0);
+          datasets.push({ label: 'SuperTrend(10,3)', data: st.st, borderColor: '#e11d48', borderWidth: 1.8, fill: false, pointRadius: 0 });
+        }
+        if (ind.sar && candles.length >= 5) {
+          const sarPts = TA.sar(candles, 0.02, 0.2);
+          datasets.push({ label: 'Parabolic SAR', data: sarPts, borderColor: '#0f172a', backgroundColor: '#0f172a', pointRadius: 2.2, showLine: false });
+        }
+        renderSubPaneChart(candles, closes);
+      };
+
+      // --- 2. EXACT BINARY-SPLIT PROPORTIONAL TREEMAP (src/lib/heat-layout.ts replica) ---
+      const SHIOAJI_CHAINS_12 = [
+        { name: 'AI 伺服器', symbols: ['2382', '2317', '3231', '6669', '2356'] },
+        { name: '半導體產業鏈', symbols: ['2330', '2454', '3711', '2303', '3034'] },
+        { name: 'CPO 共封裝光學', symbols: ['3363', '3163', '4979', '6442', '3450'] },
+        { name: '矽光子', symbols: ['2330', '3711', '3363', '4979'] },
+        { name: 'CoWoS 先進封裝', symbols: ['2330', '3711', '3131', '6187'] },
+        { name: 'NVIDIA 供應鏈', symbols: ['2330', '2317', '2382', '2308', '3017'] },
+        { name: 'Apple 供應鏈', symbols: ['2330', '2317', '3008', '4958', '2327'] },
+        { name: 'PCB / 載板', symbols: ['3037', '3189', '8046', '2368', '6213'] },
+        { name: '液冷散熱', symbols: ['3017', '3324', '2421', '6805'] },
+        { name: '資料中心', symbols: ['2308', '2345', '2382', '6669'] },
+        { name: '金融保險', symbols: ['2881', '2882', '2891', '2886'] },
+        { name: '權值 / 高股息 ETF', symbols: ['0050', '0056', '00878', '00919'] }
+      ];
+
+      function binarySplitRects(items, rect) {
+        const out = new Map();
+        const walk = (list, r) => {
+          if (!list.length) return;
+          if (list.length === 1) { out.set(list[0].key, r); return; }
+          const total = list.reduce((s, x) => s + x.weight, 0);
+          let best = 1, acc = list[0].weight;
+          while (best < list.length - 1 && acc + list[best].weight <= total / 2) { acc += list[best].weight; best++; }
+          const ratio = total > 0 ? acc / total : 0.5;
+          const head = list.slice(0, best), tail = list.slice(best);
+          if (r.w >= r.h) {
+            const w1 = r.w * ratio;
+            walk(head, { x: r.x, y: r.y, w: w1, h: r.h });
+            walk(tail, { x: r.x + w1, y: r.y, w: r.w - w1, h: r.h });
+          } else {
+            const h1 = r.h * ratio;
+            walk(head, { x: r.x, y: r.y, w: r.w, h: h1 });
+            walk(tail, { x: r.x, y: r.y + h1, w: r.w, h: r.h - h1 });
+          }
+        };
+        walk(items, rect);
+        return out;
+      }
+
+      const prevRenderFlow = window.SHL_EXT.renderCapitalFlow;
+      window.SHL_EXT.renderCapitalFlow = function () {
+        const tab = state.ext.flowTab || 'heatmap';
+        if (tab !== 'heatmap' && tab !== 'panorama') {
+          return prevRenderFlow();
+        }
+        const stage = document.getElementById('shioajiFlowStage');
+        if (!stage) return;
+        const hideAmt = Boolean(state.ext.flowPrivacy);
+        document.querySelectorAll('[data-flow-tab]').forEach(b => b.classList.toggle('active', b.dataset.flowTab === tab));
+
+        const chains = SHIOAJI_CHAINS_12.map(ch => {
+          const members = ch.symbols.map(sym => {
+            const meta = getStockMeta(sym);
+            const q = getQuote(sym);
+            const price = q?.price ?? null;
+            const prev = q?.prevClose || q?.open || price || 0;
+            const pct = (price && prev) ? Number(((price - prev) / prev * 100).toFixed(2)) : 0;
+            const vol = Number(q?.volume || 0);
+            const turnoverYi = price && vol ? Number(((price * vol) / 1e8).toFixed(2)) : 0;
+            // Exact Shioaji chain-flow proxy: Σ amount × sign(close - prevClose)
+            const sign = pct > 0 ? 1 : (pct < 0 ? -1 : 0);
+            const netFlowYi = Number((turnoverYi * sign * Math.min(1, Math.abs(pct) / 2.5 + 0.15)).toFixed(2));
+            return { symbol: sym, name: meta.name || sym, price, pct, turnoverYi, netFlowYi, hasQuote: price !== null };
+          });
+          const liveM = members.filter(m => m.hasQuote);
+          const avgPct = liveM.length ? Number((liveM.reduce((s, m) => s + m.pct, 0) / liveM.length).toFixed(2)) : 0;
+          const totalTurnover = Number(members.reduce((s, m) => s + m.turnoverYi, 0).toFixed(2));
+          const netFlow = Number(members.reduce((s, m) => s + m.netFlowYi, 0).toFixed(2));
+          return { name: ch.name, avgPct, totalTurnover, netFlow, members };
+        }).sort((a, b) => (b.totalTurnover || 1) - (a.totalTurnover || 1));
+
+        if (tab === 'panorama') {
+          const view = state.ext.flowHoldingView || 'channel';
+          const posList = state.positions || [];
+          let inWeight = 0, totalVal = 0;
+          const rows = posList.map(p => {
+            const q = getQuote(p.symbol);
+            const px = q?.price || p.avgPrice;
+            const prev = q?.prevClose || q?.open || p.avgPrice;
+            const pct = prev ? Number(((px - prev) / prev * 100).toFixed(2)) : 0;
+            const val = px * p.shares;
+            totalVal += val;
+            if (pct >= 0) inWeight += val;
+            const meta = getStockMeta(p.symbol);
+            return { symbol: p.symbol, name: p.name || meta.name, industry: meta.industry || '台股', pct, val, pnl: Math.round((px - p.avgPrice) * p.shares) };
+          });
+          const inflowRatioPct = totalVal > 0 ? Math.round((inWeight / totalVal) * 100) : 0;
+          stage.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:10px;">
+              <div>
+                <div style="font-size:13.5px;font-weight:900;">持股族群 · 順資金比重：<span class="mono text-up" style="font-size:16px;">${inflowRatioPct}%</span></div>
+                <div style="font-size:11px;color:#64748b;">復刻 Shioaji Pro 持股族群面板：泡泡圖 / 通道圖雙視圖切換</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="btn btn-sm ${view === 'bubble' ? 'btn-dark' : ''}" data-hold-view="bubble">泡泡</button>
+                <button type="button" class="btn btn-sm ${view === 'channel' ? 'btn-dark' : ''}" data-hold-view="channel">通道</button>
+                <span class="mono" style="font-size:11.5px;margin-left:6px;">總市值 <strong>${hideAmt ? '••••••' : fmtMoney(totalVal)}</strong></span>
+              </div>
+            </div>
+            ${!rows.length
+              ? '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px;">尚無模擬／實盤持倉，於下方下單後將即時繪製您的持股族群「順資金比重」泡泡／通道圖！</div>'
+              : (view === 'bubble'
+                ? `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:12px;">${rows.map(r => {
+                    const sz = totalVal > 0 ? Math.max(76, Math.min(148, Math.round(70 + (r.val / totalVal) * 110))) : 96;
+                    const bg = r.pct >= 0 ? 'rgba(239,68,68,0.16)' : 'rgba(34,197,94,0.16)';
+                    const bd = r.pct >= 0 ? '#dc2626' : '#16a34a';
+                    return `<button type="button" data-pick-stock="${escapeHtml(r.symbol)}" style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};border:2px solid ${bd};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#0f172a;padding:6px;text-align:center;">
+                      <strong style="font-size:12px;">${escapeHtml(r.name)}</strong>
+                      <span class="mono" style="font-size:11px;font-weight:800;color:${bd};">${r.pct >= 0 ? '+' : ''}${r.pct}%</span>
+                      <span class="mono" style="font-size:10px;color:#475569;">${hideAmt ? '••%' : fmtMoney(r.pnl)}</span>
+                    </button>`;
+                  }).join('')}</div>`
+                : rows.map(r => {
+                    const w = totalVal > 0 ? Math.max(6, Math.round((r.val / totalVal) * 100)) : 20;
+                    return `<div class="flow-rank-row" data-pick-stock="${escapeHtml(r.symbol)}">
+                      <div><strong>${escapeHtml(r.symbol)} ${escapeHtml(r.name)}</strong><div style="font-size:10px;color:#64748b;">${escapeHtml(r.industry)}</div></div>
+                      <div class="flow-rank-track"><div class="flow-rank-mid"></div><div class="${r.pct >= 0 ? 'flow-rank-fill-in' : 'flow-rank-fill-out'}" style="width:${Math.min(48, Math.round(w / 2))}%;"></div></div>
+                      <div class="mono" style="text-align:right;"><div class="${r.pct >= 0 ? 'text-up' : 'text-down'}" style="font-weight:800;">${r.pct >= 0 ? '+' : ''}${r.pct}%</div><div style="font-size:10px;color:#64748b;">${hideAmt ? '••••' : fmtMoney(r.pnl)}</div></div>
+                    </div>`;
+                  }).join(''))}
+          `;
+          stage.querySelectorAll('[data-hold-view]').forEach(b => b.addEventListener('click', () => { state.ext.flowHoldingView = b.dataset.holdView; window.SHL_EXT.renderCapitalFlow(); }));
+          stage.querySelectorAll('[data-pick-stock]').forEach(el => el.addEventListener('click', () => selectStock(el.dataset.pickStock)));
+          return;
+        }
+
+        // Exact Binary-Split Proportional Treemap (area = turnover, color = net flow / % change)
+        const selected = chains.find(c => c.name === state.ext.flowSelectedSector) || chains[0];
+        const maxTurn = Math.max(1, ...chains.map(c => c.totalTurnover));
+        const floorW = maxTurn * 0.14;
+        const topWeighted = chains.map(c => ({ key: c.name, weight: Math.max(c.totalTurnover, floorW) }));
+        const topRects = binarySplitRects(topWeighted, { x: 0, y: 0, w: 100, h: 100 });
+
+        const subMax = Math.max(1, ...selected.members.map(m => m.turnoverYi));
+        const subFloor = subMax * 0.18;
+        const subWeighted = selected.members.slice().sort((a, b) => b.turnoverYi - a.turnoverYi).map(m => ({ key: m.symbol, weight: Math.max(m.turnoverYi, subFloor) }));
+        const subRects = binarySplitRects(subWeighted, { x: 0, y: 0, w: 100, h: 100 });
+
+        const tileBg = pct => pct >= 2 ? '#f87171' : (pct > 0.3 ? '#fca5a5' : (pct > 0 ? '#fecaca' : (pct <= -2 ? '#4ade80' : (pct < -0.3 ? '#86efac' : (pct < 0 ? '#bbf7d0' : '#f1f5f9')))));
+
+        stage.innerHTML = `
+          <div style="font-size:11px;color:#64748b;margin-bottom:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <span>產業鏈資金熱力圖（Binary-Split 比例面積＝成交值 · 紅流入／綠流出 · 點擊族群下鑽成分股）</span>
+            <span class="mono">共 ${chains.length} 大台灣主流產業鏈</span>
+          </div>
+          <div style="position:relative;width:100%;height:245px;background:#fff;border-radius:10px;overflow:hidden;margin-bottom:10px;">
+            ${chains.map(c => {
+              const r = topRects.get(c.name) || { x: 0, y: 0, w: 20, h: 20 };
+              const isSel = c.name === selected.name;
+              return `<button type="button" class="flow-tm-tile ${isSel ? 'selected' : ''}" data-tm-sector="${escapeHtml(c.name)}" style="position:absolute;left:calc(${r.x}% + 1.5px);top:calc(${r.y}% + 1.5px);width:calc(${r.w}% - 3px);height:calc(${r.h}% - 3px);min-height:0;padding:6px 8px;background:${tileBg(c.avgPct)};color:#0f172a;overflow:hidden;">
+                <div style="font-size:12.5px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(c.name)}</div>
+                <div class="mono" style="font-size:11px;font-weight:800;">${c.avgPct >= 0 ? '+' : ''}${c.avgPct}% · ${hideAmt ? '••' : `${c.netFlow >= 0 ? '+' : ''}${c.netFlow}億`}</div>
+                <div class="flow-tm-spark">${c.members.map(m => `<span style="height:${Math.max(3, Math.min(10, 5 + Math.abs(m.pct) * 2))}px;background:${m.pct >= 0 ? '#b91c1c' : '#15803d'};"></span>`).join('')}</div>
+              </button>`;
+            }).join('')}
+          </div>
+          <div style="font-size:11.5px;font-weight:800;color:#334155;margin-bottom:6px;display:flex;justify-content:space-between;">
+            <span>🔍 下鑽成分股：${escapeHtml(selected.name)}（點擊個股立即切換 K 線與 21 指標）</span>
+            <span class="mono" style="color:#64748b;">成交值 ${hideAmt ? '••••' : `${selected.totalTurnover} 億`}</span>
+          </div>
+          <div style="position:relative;width:100%;height:122px;background:#fff;border-radius:10px;overflow:hidden;">
+            ${selected.members.map(m => {
+              const r = subRects.get(m.symbol) || { x: 0, y: 0, w: 20, h: 50 };
+              return `<button type="button" class="flow-sub-tile" data-tm-sym="${escapeHtml(m.symbol)}" style="position:absolute;left:calc(${r.x}% + 1.5px);top:calc(${r.y}% + 1.5px);width:calc(${r.w}% - 3px);height:calc(${r.h}% - 3px);background:${tileBg(m.pct)};color:#0f172a;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:6px 8px;">
+                <div style="font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.name)} <span class="mono" style="font-size:10px;opacity:.7;">${escapeHtml(m.symbol)}</span></div>
+                <div class="mono" style="font-size:11px;font-weight:800;">${m.price ? fmtNum(m.price, 2) : '待同步'} (${m.pct >= 0 ? '+' : ''}${m.pct}%)</div>
+                <div class="mono" style="font-size:10px;opacity:.8;">${hideAmt ? '••' : (m.turnoverYi ? `額 ${m.turnoverYi}億` : '點此同步')}</div>
+              </button>`;
+            }).join('')}
+          </div>
+        `;
+        stage.querySelectorAll('[data-tm-sector]').forEach(btn => btn.addEventListener('click', () => { state.ext.flowSelectedSector = btn.dataset.tmSector; window.SHL_EXT.renderCapitalFlow(); }));
+        stage.querySelectorAll('[data-tm-sym]').forEach(btn => btn.addEventListener('click', () => selectStock(btn.dataset.tmSym)));
+      };
+
+      function renderIndicatorPicker(filter = '') {
+        const box = document.getElementById('sjIndPickerList');
+        if (!box) return;
+        const q = String(filter || '').trim().toLowerCase();
+        const curPane = document.getElementById('sjSubPaneSelect')?.value || 'macd';
+        const ind = state.ext.sjIndicators || {};
+        const items = INDICATOR_CATALOG.filter(x => !q || x.name.toLowerCase().includes(q) || x.desc.toLowerCase().includes(q) || x.id.toLowerCase().includes(q));
+        box.innerHTML = items.map(x => {
+          const active = x.cat === 'overlay' ? Boolean(ind[x.id]) : (curPane === x.id);
+          return `
+            <button type="button" class="btn btn-sm ${active ? 'btn-dark' : ''}" data-pick-sjind="${x.id}" data-pick-cat="${x.cat}" style="justify-content:space-between;text-align:left;padding:8px 10px;height:auto;">
+              <div>
+                <div style="font-weight:800;font-size:12px;">${active ? '✓ ' : ''}${escapeHtml(x.name)}</div>
+                <div style="font-size:10.5px;opacity:.75;">${escapeHtml(x.desc)}</div>
+              </div>
+              <span class="badge ${x.cat === 'overlay' ? 'badge-blue' : 'badge-amber'}" style="font-size:10px;">${x.cat === 'overlay' ? '主圖' : '副圖'}</span>
+            </button>
+          `;
+        }).join('');
+        box.querySelectorAll('[data-pick-sjind]').forEach(b => {
+          b.addEventListener('click', () => {
+            const id = b.dataset.pickSjind, cat = b.dataset.pickCat;
+            if (cat === 'overlay') {
+              state.ext.sjIndicators[id] = !state.ext.sjIndicators[id];
+              document.querySelectorAll(`[data-sj-ind="${id}"]`).forEach(c => c.classList.toggle('active', Boolean(state.ext.sjIndicators[id])));
+            } else {
+              const sel = document.getElementById('sjSubPaneSelect');
+              if (sel) sel.value = id;
+            }
+            persistState();
+            renderRawPriceChart();
+            renderIndicatorPicker(document.getElementById('sjIndSearchInput')?.value || '');
+          });
+        });
+      }
+
+      function init() {
+        document.getElementById('sjSubPaneSelect')?.addEventListener('change', () => renderRawPriceChart());
+        document.getElementById('btnOpenSjIndPicker')?.addEventListener('click', () => {
+          renderIndicatorPicker('');
+          openModal('sjIndicatorPickerModal');
+        });
+        document.getElementById('sjIndSearchInput')?.addEventListener('input', e => renderIndicatorPicker(e.target.value));
+
+        // Enhance Shioaji Token Save button to also invoke live /api/v1/shioaji/test-token
+        document.getElementById('btnSaveShioajiConfig')?.addEventListener('click', async () => {
+          const apiBase = getApiBase();
+          const apiKey = (document.getElementById('shioajiApiKeyInput')?.value || '').trim();
+          const secretKey = (document.getElementById('shioajiSecretKeyInput')?.value || '').trim();
+          const httpUrl = (document.getElementById('shioajiHttpUrlInput')?.value || 'http://127.0.0.1:8080').trim();
+          if (!apiBase || !apiKey || !secretKey) return;
+          try {
+            const r = await fetch(`${apiBase}/api/v1/shioaji/test-token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ api_key: apiKey, secret_key: secretKey, http_url: httpUrl, simulation: state.envMode !== 'LIVE' })
+            });
+            if (r.ok) {
+              const j = await r.json();
+              showToast(j.ok ? '永豐金 Shioaji 驗證結果' : '永豐金驗證提示', j.message || '已完成連線測試', j.ok ? 'success' : 'warn');
+            }
+          } catch (e) {}
+        });
+
+        window.SHL_EXT.renderCapitalFlow();
+      }
+
+      return { init, TA, INDICATOR_CATALOG, renderIndicatorPicker };
     })();
 
     document.addEventListener('DOMContentLoaded', initApp);

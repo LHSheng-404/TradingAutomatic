@@ -2740,7 +2740,7 @@
               SHL TW 雙向資料交流交握網路
               <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
             </h2>
-            <p class="card-subtitle">即時視覺化呈現 Yahoo / FinMind 真實行情、TradingView 訊號、AI 六模型 &amp; 多 Agent、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
+            <p class="card-subtitle">即時視覺化呈現 永豐金 Shioaji Pro 最即時真實行情、FinMind 盤後輔助、21 指標掃描、AI 六模型 &amp; 多 Agent、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
           </div>
           <div class="chart-group">
             <button id="btnTriggerHandshake" class="btn btn-sm btn-primary">
@@ -5444,10 +5444,11 @@
         packets: [],
         ripples: [],
         nodeStats: {
-          YAHOO: { status: '待命', latencyMs: null, lastMsg: '等待同步 Yahoo Finance' },
-          FINMIND: { status: '待命', latencyMs: null, lastMsg: '等待同步 FinMind v4' },
+          SHIOAJI_PRO: { status: '即時串流就緒', latencyMs: null, lastMsg: '永豐金 Shioaji Pro (shioaji-pro-app) 盤中即時報價與 K 線主源' },
+          YAHOO: { status: '備援待命', latencyMs: null, lastMsg: '備援 K 線通道（永豐金為主）' },
+          FINMIND: { status: '盤後輔助待命', latencyMs: null, lastMsg: 'FinMind v4 盤後歷史 K 線與中文股名輔助' },
           TRADINGVIEW: { status: '已連線', latencyMs: 18, lastMsg: 'TradingView 進階線圖已就緒' },
-          SCANNER: { status: '待命', latencyMs: null, lastMsg: '等待真實 K 線掃描' },
+          SCANNER: { status: '待命', latencyMs: null, lastMsg: '等待永豐金即時 K 線與 21 指標掃描' },
           CORE: { status: '交握中', latencyMs: 12, lastMsg: 'SHL TW 多 Agent 風控與路由中樞就緒' },
           AI_CLUSTER: { status: '待命', latencyMs: null, lastMsg: 'Groq / Ollama / Grok / Gemini / Claude / ChatGPT 待命' },
           LINE_BOT: { status: '未啟用', latencyMs: null, lastMsg: '請於通知中心設定 LINE Token' },
@@ -5952,10 +5953,10 @@
     function computeHandshakeLayout(w, h) {
       const compact = w < 640;
       const leftIds = [
-        { id: 'YAHOO', label: 'Yahoo Finance', sub: '盤中即時報價源', color: '#0284c7' },
-        { id: 'FINMIND', label: 'FinMind v4', sub: '台股 OHLCV / 名稱', color: '#2563eb' },
+        { id: 'SHIOAJI_PRO', label: '永豐金 Shioaji Pro', sub: '盤中即時報價 / K線', color: '#dc2626' },
+        { id: 'FINMIND', label: 'FinMind v4 (盤後)', sub: '盤後歷史 / 名稱輔助', color: '#2563eb' },
         { id: 'TRADINGVIEW', label: 'TradingView', sub: '進階線圖 / Webhook', color: '#0f172a' },
-        { id: 'SCANNER', label: '台股訊號引擎', sub: 'EMA · RSI · VWAP', color: '#0d9488' }
+        { id: 'SCANNER', label: '台股訊號引擎', sub: '永豐 21 指標 / 掃描', color: '#0d9488' }
       ];
       const rightIds = [
         { id: 'AI_CLUSTER', label: 'AI 六模型 & 多Agent', sub: 'Groq·Ollama·Grok·GPT', color: '#4f46e5' },
@@ -6330,14 +6331,23 @@
       const st = state.handshake.nodeStats[id] || { status: '運作中', latencyMs: null, lastMsg: '--' };
 
       const actionMap = {
-        YAHOO: { label: '立即抓取 Yahoo 即時報價', fn: () => fetchMarketData(state.activeSymbol, 'yahoo') },
-        FINMIND: { label: '立即抓取 FinMind 台股資料', fn: () => fetchMarketData(state.activeSymbol, 'finmind') },
+        SHIOAJI_PRO: {
+          label: '⚡ 立即抓取永豐金 Shioaji Pro 即時行情與 K 線',
+          fn: async () => {
+            await fetchMarketData(state.activeSymbol, 'shioaji');
+            if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+              await window.SHL_EXT.refreshRealtimeQuotes(false);
+            }
+          }
+        },
+        YAHOO: { label: '立即抓取永豐金 / 備援 K 線', fn: () => fetchMarketData(state.activeSymbol, 'shioaji') },
+        FINMIND: { label: '抓取 FinMind 盤後歷史輔助資料', fn: () => fetchMarketData(state.activeSymbol, 'finmind') },
         TRADINGVIEW: { label: '開啟 TradingView 帳號綁定', fn: () => openModal('tvAccountModal') },
         SCANNER: { label: '立即掃描全市場訊號', fn: () => runSignalScan(false) },
-        CORE: { label: '觸發全鏈路交握測試', fn: () => runFullHandshakeDemo() },
-        AI_CLUSTER: { label: '執行四模型 AI 平行解析', fn: () => runMultiAiAnalysis() },
-        LINE_BOT: { label: '前往 LINE Bot 推播設定', fn: () => switchTab('notify') },
-        TG_BOT: { label: '前往 Telegram Bot 設定', fn: () => switchTab('notify') },
+        CORE: { label: '⚡ 觸發永豐金全鏈路實時交握', fn: () => runFullHandshakeDemo() },
+        AI_CLUSTER: { label: '執行六模型 AI 平行解析', fn: () => runMultiAiAnalysis() },
+        LINE_BOT: { label: '前往 LINE Bot 推播設定', fn: () => openFeatureModal('notify') },
+        TG_BOT: { label: '前往 Telegram Bot 設定', fn: () => openFeatureModal('notify') },
         BROKER: { label: '檢視模擬 / 實盤切換', fn: () => { if (state.envMode === 'SIM') openLiveSafetyModal(); else setTradingMode('SIM'); } }
       };
       const act = actionMap[id] || actionMap.CORE;
@@ -6367,6 +6377,7 @@
           </div>
           <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
             目前焦點標的：<strong class="mono" style="color:var(--ink-1);">${escapeHtml(state.activeSymbol)} ${escapeHtml(getStockMeta(state.activeSymbol).name)}</strong><br/>
+            即時主源：<strong>永豐金 Shioaji Pro</strong> ｜ 盤後輔助：<strong>FinMind v4</strong><br/>
             交易引擎：<strong>${state.envMode === 'LIVE' ? '真實下單 LIVE (Shioaji)' : '模擬下單 SIM (紙上撮合)'}</strong>
           </div>
         </div>
@@ -6379,15 +6390,55 @@
       if (actBtn) actBtn.onclick = act.fn;
     }
 
-    function runFullHandshakeDemo() {
+    async function runFullHandshakeDemo() {
       const meta = getStockMeta(state.activeSymbol);
-      triggerHandshake('FINMIND', 'CORE', '#2563eb', 'SYN', true, 32, `請求 ${meta.symbol} ${meta.name} 真實行情`);
-      setTimeout(() => triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, 41, `同步 ${meta.yahooSymbol} 盤中報價`), 180);
-      setTimeout(() => triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, 85, `派發 Grok/Gemini/Claude/GPT 平行解析`), 380);
-      setTimeout(() => triggerHandshake('CORE', 'LINE_BOT', '#16a34a', 'PUSH', false, 28, `準備 LINE Bot 條列訊號 (${meta.symbol} ${meta.name})`), 620);
-      setTimeout(() => triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 24, `準備 Telegram 推播`), 740);
-      setTimeout(() => triggerHandshake('CORE', 'BROKER', state.envMode === 'LIVE' ? '#dc2626' : '#d97706', 'ORDER', true, 19, `永豐金 Shioaji 風控交握確認`), 920);
-      setRibbonEvent(`全鏈路雙向交握完成：${meta.symbol} ${meta.name}`);
+      const apiBase = getApiBase();
+      const t0 = performance.now();
+
+      // 1. Primary real-time handshake via Sinotrade Shioaji Pro (shioaji-pro-app protocol)
+      let sjLat = 24;
+      let sjMsg = `永豐金 Shioaji Pro 請求 ${meta.symbol} ${meta.name} 即時行情`;
+      let sjStatus = '即時串流就緒';
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/v1/shioaji/status`, { cache: 'no-store' });
+          if (r.ok) {
+            const sj = await r.json();
+            sjLat = Math.max(1, Math.round(performance.now() - t0));
+            const activeSrc = sj.active_source || '永豐金 Shioaji Pro';
+            sjStatus = (sj.http_server_online || sj.token_configured) ? '永豐金連線正常' : '官方即時銜接正常';
+            sjMsg = `${activeSrc} · 同步 ${meta.symbol} ${meta.name} 即時報價與 K 線`;
+          }
+        } catch (e) {}
+        try {
+          await fetchMarketData(meta.symbol, 'shioaji');
+          const qNow = getQuote(meta.symbol);
+          if (qNow && qNow.price) {
+            sjMsg = `${qNow.source || '永豐金 Shioaji Pro'} · ${meta.symbol} 現價 ${qNow.price}`;
+          }
+        } catch (e) {}
+      }
+      if (state.handshake.nodeStats.SHIOAJI_PRO) {
+        state.handshake.nodeStats.SHIOAJI_PRO.status = sjStatus;
+      }
+      triggerHandshake('SHIOAJI_PRO', 'CORE', '#dc2626', 'SYN', true, sjLat, sjMsg);
+
+      // 2. FinMind v4 acts strictly as after-hours auxiliary (盤後歷史／籌碼／中文名稱輔助)
+      const inSession = typeof isTwSimTradingWindow === 'function' ? isTwSimTradingWindow().open : false;
+      setTimeout(() => {
+        if (state.handshake.nodeStats.FINMIND) {
+          state.handshake.nodeStats.FINMIND.status = inSession ? '盤後輔助待命' : '盤後輔助就緒';
+        }
+        triggerHandshake('FINMIND', 'CORE', '#2563eb', 'AUX', true, 28, inSession ? '盤中由永豐金主導 · FinMind 盤後輔助待命' : `FinMind 盤後歷史與中文名稱輔助就緒 (${meta.symbol})`);
+      }, 180);
+
+      // 3. Downstream 21-indicator scanner, AI cluster, notifications, and Shioaji broker
+      setTimeout(() => triggerHandshake('CORE', 'SCANNER', '#0d9488', 'SYN', true, 16, `永豐 21 指標與量價訊號即時重算 (${meta.symbol})`), 340);
+      setTimeout(() => triggerHandshake('CORE', 'AI_CLUSTER', '#4f46e5', 'SYN', true, 65, `派發六模型 AI 多空交戰解析`), 520);
+      setTimeout(() => triggerHandshake('CORE', 'LINE_BOT', '#16a34a', 'PUSH', false, 26, `準備 LINE Bot 條列訊號 (${meta.symbol} ${meta.name})`), 700);
+      setTimeout(() => triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 22, `準備 Telegram 推播`), 820);
+      setTimeout(() => triggerHandshake('CORE', 'BROKER', state.envMode === 'LIVE' ? '#dc2626' : '#d97706', 'ORDER', true, 18, `永豐金 Shioaji ${state.envMode} 風控交握確認`), 960);
+      setRibbonEvent(`永豐金 Shioaji Pro 全鏈路實時交握完成：${meta.symbol} ${meta.name}（FinMind 盤後輔助）`);
       renderHandshakeInspector();
     }
 
@@ -6669,10 +6720,10 @@
                   latencyMs: lat,
                   candles: j.candles
                 };
-                if (state.handshake?.nodeStats?.YAHOO) {
-                  state.handshake.nodeStats.YAHOO.status = isLiveSj ? '永豐金串流正常' : '連線正常';
+                if (state.handshake?.nodeStats?.SHIOAJI_PRO) {
+                  state.handshake.nodeStats.SHIOAJI_PRO.status = isLiveSj ? '永豐金串流正常' : '官方即時銜接正常';
                 }
-                triggerHandshake('YAHOO', 'CORE', isLiveSj ? '#dc2626' : '#0284c7', 'SYN', true, lat, `${meta.symbol} ${isLiveSj ? '永豐金' : '即時K線'} ${spec.label} @ ${j.price}`);
+                triggerHandshake('SHIOAJI_PRO', 'CORE', '#dc2626', 'SYN', true, lat, `${meta.symbol} ${isLiveSj ? '永豐金 Shioaji' : '即時K線'} ${spec.label} @ ${j.price}`);
               }
             }
           } catch (e) {

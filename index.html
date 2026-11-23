@@ -2782,7 +2782,10 @@
               </p>
             </div>
             <div class="chart-group">
-              <button id="btnSyncFinmind" class="btn btn-sm btn-primary">
+              <button id="btnSyncShioaji" class="btn btn-sm btn-primary" title="優先使用永豐金 Shioaji Pro 即時 K 線與即時報價（未連線時自動銜接官方即時）">
+                <i data-lucide="zap" style="width:13px;height:13px;"></i>抓永豐 K 線
+              </button>
+              <button id="btnSyncFinmind" class="btn btn-sm">
                 <i data-lucide="database" style="width:13px;height:13px;"></i>抓 FinMind
               </button>
               <button id="btnSyncYahoo" class="btn btn-sm">
@@ -2793,7 +2796,7 @@
 
           <div class="chart-controls">
             <div class="chart-group">
-              <button id="btnChartRaw" class="btn btn-sm btn-dark">Yahoo / FinMind 真實數據圖</button>
+              <button id="btnChartRaw" class="btn btn-sm btn-dark">永豐金即時 K 線圖</button>
               <button id="btnChartTv" class="btn btn-sm">TradingView 進階線圖</button>
             </div>
             <div class="chart-group">
@@ -6629,8 +6632,50 @@
       try {
         let result = null;
 
+        // Priority 0 (v3.10.5): Sinotrade Shioaji Pro Real-Time K-Bars (HTTP Server -> Python SDK -> Live-Merged Official Fallback)
+        if ((preferred === 'shioaji' || preferred === 'auto') && apiBase) {
+          try {
+            const resp = await fetch(
+              `${apiBase}/api/v1/shioaji/kbars/${encodeURIComponent(meta.symbol)}?interval=${encodeURIComponent(spec.tv)}&yahoo_symbol=${encodeURIComponent(meta.yahooSymbol || '')}`,
+              { cache: 'no-store' }
+            );
+            if (resp.ok) {
+              const j = await resp.json();
+              if (j && j.price && Array.isArray(j.candles) && j.candles.length > 0) {
+                const lat = Math.max(1, Math.round(performance.now() - t0));
+                const isLiveSj = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
+                result = {
+                  price: j.price,
+                  prevClose: j.prev_close || j.open,
+                  open: j.open,
+                  high: j.high,
+                  low: j.low,
+                  volume: j.volume,
+                  lastDate: j.last_date,
+                  source: j.source || `永豐金 Shioaji Pro 即時 K 線 (${spec.label})`,
+                  sourceType: isLiveSj ? 'shioaji' : 'yahoo',
+                  sourceEngine: j.source_engine || 'shioaji',
+                  isRealtime: isLiveSj,
+                  realtimeTs: isLiveSj ? Date.now() : undefined,
+                  realtimeSource: isLiveSj ? '永豐金 Shioaji 即時' : undefined,
+                  interval: spec.tv,
+                  intervalLabel: spec.label,
+                  latencyMs: lat,
+                  candles: j.candles
+                };
+                if (state.handshake?.nodeStats?.YAHOO) {
+                  state.handshake.nodeStats.YAHOO.status = isLiveSj ? '永豐金串流正常' : '連線正常';
+                }
+                triggerHandshake('YAHOO', 'CORE', isLiveSj ? '#dc2626' : '#0284c7', 'SYN', true, lat, `${meta.symbol} ${isLiveSj ? '永豐金' : '即時K線'} ${spec.label} @ ${j.price}`);
+              }
+            }
+          } catch (e) {
+            if (preferred === 'shioaji') throw e;
+          }
+        }
+
         // Priority 1: Cloud/Local Backend Yahoo Finance (true 5m/15m/60m/1d/1wk, zero CORS)
-        if ((preferred === 'yahoo' || preferred === 'auto') && apiBase) {
+        if (!result && (preferred === 'yahoo' || preferred === 'auto') && apiBase) {
           try {
             const resp = await fetch(
               `${apiBase}/api/v1/market/yahoo/${encodeURIComponent(meta.yahooSymbol)}?interval=${encodeURIComponent(spec.yahooInterval)}&range_str=${encodeURIComponent(spec.yahooRange)}`
@@ -11095,6 +11140,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         inp.value = '';
       });
       document.getElementById('btnSyncAll').addEventListener('click', () => syncAllWatchlist());
+      document.getElementById('btnSyncShioaji')?.addEventListener('click', () => fetchMarketData(state.activeSymbol, 'shioaji'));
       document.getElementById('btnSyncFinmind').addEventListener('click', () => fetchMarketData(state.activeSymbol, 'finmind'));
       document.getElementById('btnSyncYahoo').addEventListener('click', () => fetchMarketData(state.activeSymbol, 'yahoo'));
 
@@ -15776,12 +15822,25 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         try {
           if (apiBase) {
-            const url = `${apiBase}/api/v1/market/realtime?symbols=${encodeURIComponent(syms.join(','))}&indices=t00,o00&_t=${Date.now()}`;
-            const resp = await fetch(url, { cache: 'no-store' });
+            // v3.10.5: Prioritize Sinotrade Shioaji Pro snapshots (seamless fallback to TWSE/TPEx MIS)
+            const sjUrl = `${apiBase}/api/v1/shioaji/snapshots?symbols=${encodeURIComponent(syms.join(','))}&_t=${Date.now()}`;
+            const resp = await fetch(sjUrl, { cache: 'no-store' });
+            let usedShioaji = false;
             if (resp.ok) {
               const j = await resp.json();
+              usedShioaji = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
               Object.values(j.quotes || {}).forEach(row => { if (applyMisRow(row)) updated++; });
-              if (badge) badge.textContent = `TWSE/TPEx 官方即時 (${nowTwTime()})`;
+              if (badge) badge.textContent = usedShioaji ? `永豐金 Shioaji 即時 (${nowTwTime()})` : `TWSE/TPEx 官方即時 (${nowTwTime()})`;
+              // If Shioaji returned stock snapshots without t00/o00 indices, also sync TWSE/TPEx indices
+              if (usedShioaji && (!j.quotes?.t00 || !j.quotes?.o00)) {
+                try {
+                  const ir = await fetch(`${apiBase}/api/v1/market/realtime?symbols=&indices=t00,o00&_t=${Date.now()}`, { cache: 'no-store' });
+                  if (ir.ok) {
+                    const ij = await ir.json();
+                    Object.values(ij.quotes || {}).forEach(row => applyMisRow(row));
+                  }
+                } catch (e) {}
+              }
             }
           } else if (isAndroidApkHost()) {
             const channels = ['tse_t00.tw', 'otc_o00.tw'];
@@ -15810,6 +15869,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         renderMitakeBoard();
         renderLockTickers();
         if (updated > 0) {
+          // v3.10.5: Live-patch the active stock's latest K-line candle with the real-time tick and re-render technical chart + 21 indicators
+          const actQ = state.quotes[state.activeSymbol];
+          if (actQ && actQ.price && Array.isArray(actQ.candles) && actQ.candles.length > 0) {
+            const lastBar = actQ.candles[actQ.candles.length - 1];
+            lastBar.close = Number(actQ.price);
+            lastBar.high = Math.max(Number(lastBar.high || actQ.price), Number(actQ.price));
+            lastBar.low = Math.min(Number(lastBar.low || actQ.price), Number(actQ.price));
+            if (state.chartMode !== 'tv' && typeof renderRawCandlestickChart === 'function') {
+              try { renderRawCandlestickChart(); } catch (e) {}
+            }
+          }
           renderActiveStockHeaderAndOhlcv();
           renderWatchlistPills();
         }

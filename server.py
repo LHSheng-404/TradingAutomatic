@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.4",
+    version="3.10.5",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.4",
+        "version": "3.10.5",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4067,6 +4067,313 @@ async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
         )
     # Automatic seamless fallback to official TWSE/TPEx MIS real-time quotes
     return await twse_realtime_quotes(symbols=",".join(syms), indices="t00,o00")
+
+
+def _resample_shioaji_kbars(raw_bars: list[dict[str, Any]], interval: str) -> list[dict[str, Any]]:
+    """Resample 1-minute Sinotrade Shioaji K-bars into 5m / 15m / 60m / D / W candles in TW_TZ."""
+    if not raw_bars:
+        return []
+    iv = str(interval or "15").upper()
+    buckets: dict[str, dict[str, Any]] = {}
+    order: list[str] = []
+    for b in raw_bars:
+        ts_val = b.get("ts") or b.get("timestamp")
+        if ts_val is None:
+            continue
+        try:
+            ts_num = float(ts_val)
+            # Shioaji SDK timestamps are often nanoseconds; HTTP server may return ns, ms, or seconds
+            if ts_num > 1e15:
+                sec = ts_num / 1e9
+            elif ts_num > 1e12:
+                sec = ts_num / 1e3
+            else:
+                sec = ts_num
+            dt = datetime.fromtimestamp(sec, TW_TZ)
+        except Exception:
+            continue
+
+        o = float(b.get("Open") or b.get("open") or 0)
+        h = float(b.get("High") or b.get("high") or o)
+        l = float(b.get("Low") or b.get("low") or o)
+        c = float(b.get("Close") or b.get("close") or o)
+        v = int(float(b.get("Volume") or b.get("volume") or 0))
+        if c <= 0:
+            continue
+
+        if iv in ("5", "15", "60"):
+            mins = int(iv)
+            floored_min = (dt.minute // mins) * mins
+            b_dt = dt.replace(minute=floored_min, second=0, microsecond=0)
+            key = b_dt.strftime("%Y-%m-%d %H:%M")
+            label = b_dt.strftime("%m-%d %H:%M")
+            date_str = b_dt.strftime("%Y-%m-%d")
+        elif iv == "W":
+            monday = dt - timedelta(days=dt.weekday())
+            key = monday.strftime("%Y-%m-%d")
+            label = monday.strftime("%Y-%m-%d")
+            date_str = key
+        else:
+            key = dt.strftime("%Y-%m-%d")
+            label = dt.strftime("%m-%d")
+            date_str = key
+
+        if key not in buckets:
+            buckets[key] = {
+                "label": label,
+                "date": date_str,
+                "time": int(dt.timestamp()),
+                "open": round(o, 2),
+                "high": round(h, 2),
+                "low": round(l, 2),
+                "close": round(c, 2),
+                "volume": v,
+            }
+            order.append(key)
+        else:
+            cur = buckets[key]
+            cur["high"] = round(max(cur["high"], h), 2)
+            cur["low"] = round(min(cur["low"], l), 2)
+            cur["close"] = round(c, 2)
+            cur["volume"] += v
+
+    return [buckets[k] for k in order][-120:]
+
+
+async def _fetch_shioaji_http_kbars(symbol: str, interval: str) -> Optional[dict[str, Any]]:
+    """Fetch K-bars + live snapshot from Sinotrade Shioaji Pro HTTP Server (`POST /api/v1/data/kbars`)."""
+    http_url = (_SHIOAJI_CFG.get("http_url") or "").strip().rstrip("/")
+    if not http_url:
+        return None
+    iv = str(interval or "15").upper()
+    lookback_days = {"5": 5, "15": 10, "60": 30, "D": 150, "W": 365}.get(iv, 10)
+    end_dt = datetime.now(TW_TZ)
+    start_dt = end_dt - timedelta(days=lookback_days)
+    is_fut = symbol.upper() in ("TXF", "TX", "MXF")
+    contract = (
+        {"security_type": "FUT", "code": "TXF" if symbol.upper() == "TX" else symbol.upper(), "exchange": "TAIFEX"}
+        if is_fut
+        else {"security_type": "STK", "code": symbol.upper(), "exchange": "TSE"}
+    )
+    try:
+        st, body = await http_json(
+            f"{http_url}/api/v1/data/kbars",
+            method="POST",
+            json_body={
+                "contract": contract,
+                "start": start_dt.strftime("%Y-%m-%d"),
+                "end": end_dt.strftime("%Y-%m-%d"),
+            },
+            timeout=5.0,
+        )
+        if st != 200 or not isinstance(body, dict):
+            return None
+        # Support both columnar ({ts:[...], Open:[...], ...}) and row-list ({data:[...]}) responses
+        raw_bars: list[dict[str, Any]] = []
+        if isinstance(body.get("ts"), list):
+            n = len(body["ts"])
+            opens = body.get("Open") or body.get("open") or [0] * n
+            highs = body.get("High") or body.get("high") or [0] * n
+            lows = body.get("Low") or body.get("low") or [0] * n
+            closes = body.get("Close") or body.get("close") or [0] * n
+            vols = body.get("Volume") or body.get("volume") or [0] * n
+            for i in range(n):
+                raw_bars.append({"ts": body["ts"][i], "Open": opens[i], "High": highs[i], "Low": lows[i], "Close": closes[i], "Volume": vols[i]})
+        elif isinstance(body.get("data"), list):
+            raw_bars = body["data"]
+        candles = _resample_shioaji_kbars(raw_bars, iv)
+        if not candles:
+            return None
+        snap = None
+        if not is_fut:
+            snaps = await _fetch_shioaji_http_snapshots([symbol.upper()])
+            snap = (snaps or {}).get(symbol.upper())
+        latest = candles[-1]
+        price = float(snap["price"]) if snap and snap.get("price") else latest["close"]
+        prev_close = float(snap["prev_close"]) if snap and snap.get("prev_close") else (candles[-2]["close"] if len(candles) >= 2 else latest["open"])
+        if snap and snap.get("price"):
+            latest["close"] = round(price, 2)
+            latest["high"] = round(max(latest["high"], price), 2)
+            latest["low"] = round(min(latest["low"], price), 2)
+        return {
+            "ok": True,
+            "symbol": symbol.upper(),
+            "interval": iv,
+            "source_engine": "shioaji_http",
+            "source": f"永豐金 Shioaji Pro 即時 K 線 ({iv})",
+            "price": round(price, 2),
+            "prev_close": round(prev_close, 2),
+            "open": round(float(snap["open"]) if snap and snap.get("open") else latest["open"], 2),
+            "high": round(float(snap["high"]) if snap and snap.get("high") else latest["high"], 2),
+            "low": round(float(snap["low"]) if snap and snap.get("low") else latest["low"], 2),
+            "volume": int((snap.get("volume_lots") or 0) * 1000) if snap else latest["volume"],
+            "last_date": tw_now_str()[:16],
+            "candles": candles,
+        }
+    except Exception:
+        return None
+
+
+async def _fetch_shioaji_sdk_kbars(symbol: str, interval: str) -> Optional[dict[str, Any]]:
+    """Fetch K-bars + live snapshot via Python `shioaji` SDK when API Key & Secret Key are configured."""
+    ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
+    sk = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip()
+    if not (ak and sk):
+        return None
+    iv = str(interval or "15").upper()
+    lookback_days = {"5": 5, "15": 10, "60": 30, "D": 150, "W": 365}.get(iv, 10)
+    end_dt = datetime.now(TW_TZ)
+    start_dt = end_dt - timedelta(days=lookback_days)
+    try:
+        import shioaji as sj  # type: ignore
+    except ImportError:
+        return None
+
+    def _run_sdk():
+        api = sj.Shioaji(simulation=bool(_SHIOAJI_CFG.get("simulation", True)))
+        try:
+            api.login(api_key=ak, secret_key=sk)
+            contract = api.Contracts.Stocks[symbol.upper()]
+            kb = api.kbars(contract=contract, start=start_dt.strftime("%Y-%m-%d"), end=end_dt.strftime("%Y-%m-%d"))
+            snaps = api.snapshots([contract])
+            raw_bars = [
+                {"ts": kb.ts[i], "Open": kb.Open[i], "High": kb.High[i], "Low": kb.Low[i], "Close": kb.Close[i], "Volume": kb.Volume[i]}
+                for i in range(len(kb.ts))
+            ]
+            snap_obj = snaps[0] if snaps else None
+            snap_dict = None
+            if snap_obj:
+                close_px = float(getattr(snap_obj, "close", 0) or 0)
+                chg_px = float(getattr(snap_obj, "change_price", 0) or 0)
+                snap_dict = {
+                    "price": close_px,
+                    "prev_close": round(close_px - chg_px, 2) if close_px else None,
+                    "open": float(getattr(snap_obj, "open", close_px) or close_px),
+                    "high": float(getattr(snap_obj, "high", close_px) or close_px),
+                    "low": float(getattr(snap_obj, "low", close_px) or close_px),
+                    "volume_lots": float(getattr(snap_obj, "total_volume", 0) or 0),
+                }
+            return raw_bars, snap_dict
+        finally:
+            try:
+                api.logout()
+            except Exception:
+                pass
+
+    try:
+        raw_bars, snap = await asyncio.to_thread(_run_sdk)
+        candles = _resample_shioaji_kbars(raw_bars, iv)
+        if not candles:
+            return None
+        latest = candles[-1]
+        price = float(snap["price"]) if snap and snap.get("price") else latest["close"]
+        prev_close = float(snap["prev_close"]) if snap and snap.get("prev_close") else (candles[-2]["close"] if len(candles) >= 2 else latest["open"])
+        if snap and snap.get("price"):
+            latest["close"] = round(price, 2)
+            latest["high"] = round(max(latest["high"], price), 2)
+            latest["low"] = round(min(latest["low"], price), 2)
+        return {
+            "ok": True,
+            "symbol": symbol.upper(),
+            "interval": iv,
+            "source_engine": "shioaji_sdk",
+            "source": f"永豐金 Shioaji SDK 即時 K 線 ({iv})",
+            "price": round(price, 2),
+            "prev_close": round(prev_close, 2),
+            "open": round(float(snap["open"]) if snap and snap.get("open") else latest["open"], 2),
+            "high": round(float(snap["high"]) if snap and snap.get("high") else latest["high"], 2),
+            "low": round(float(snap["low"]) if snap and snap.get("low") else latest["low"], 2),
+            "volume": int((snap.get("volume_lots") or 0) * 1000) if snap else latest["volume"],
+            "last_date": tw_now_str()[:16],
+            "candles": candles,
+        }
+    except Exception:
+        return None
+
+
+@app.get("/api/v1/shioaji/kbars/{symbol}")
+async def shioaji_kbars(symbol: str, interval: str = "15", yahoo_symbol: str = ""):
+    """
+    v3.10.5: Unified Sinotrade Shioaji real-time K-line endpoint for all technical charts.
+    Priority: 1) Shioaji Pro HTTP Server -> 2) Shioaji Python SDK -> 3) Live-merged TWSE/TPEx MIS + Yahoo/FinMind K-lines.
+    """
+    sym = symbol.strip().upper()
+    iv = str(interval or "15").upper()
+
+    # 1. Shioaji Pro HTTP Server
+    res = await _fetch_shioaji_http_kbars(sym, iv)
+    if res:
+        return JSONResponse(res, headers={"Cache-Control": "no-store"})
+
+    # 2. Shioaji Python SDK
+    res = await _fetch_shioaji_sdk_kbars(sym, iv)
+    if res:
+        return JSONResponse(res, headers={"Cache-Control": "no-store"})
+
+    # 3. Seamless live-merged fallback (Yahoo/FinMind K-lines + official TWSE/TPEx MIS live tick)
+    iv_map = {"5": ("5m", "5d"), "15": ("15m", "5d"), "60": ("60m", "1mo"), "D": ("1d", "6mo"), "W": ("1wk", "2y")}
+    y_iv, y_rng = iv_map.get(iv, ("15m", "5d"))
+    yh_sym = yahoo_symbol.strip() or ("^TWII" if sym in ("TXF", "T00") else ("^TWOII" if sym == "O00" else f"{sym}.TW"))
+
+    kline_data: Optional[dict[str, Any]] = None
+    try:
+        kline_data = await get_yahoo_market_data(yh_sym, interval=y_iv, range_str=y_rng)
+    except Exception:
+        if yh_sym.endswith(".TW"):
+            try:
+                kline_data = await get_yahoo_market_data(yh_sym[:-3] + ".TWO", interval=y_iv, range_str=y_rng)
+            except Exception:
+                kline_data = None
+
+    if not kline_data:
+        try:
+            kline_data = await get_finmind_market_data(
+                "TX" if sym == "TXF" else sym,
+                dataset="TaiwanFuturesDaily" if sym == "TXF" else "TaiwanStockPrice",
+                days=120 if iv in ("D", "W") else 60,
+                interval=iv,
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"永豐金待連線且備援 K 線抓取失敗：{exc}")
+
+    # Merge official TWSE/TPEx MIS live tick into the latest forming candle
+    mis_row = None
+    if re.fullmatch(r"[0-9A-Z]{4,6}", sym):
+        try:
+            mis_resp = await twse_realtime_quotes(symbols=sym, indices="")
+            mis_json = json.loads(mis_resp.body.decode("utf-8"))
+            mis_row = (mis_json.get("quotes") or {}).get(sym)
+        except Exception:
+            mis_row = None
+
+    candles = list(kline_data.get("candles") or [])
+    price = float(mis_row["price"]) if (mis_row and mis_row.get("price")) else float(kline_data.get("price") or 0)
+    prev_close = float(mis_row["prev_close"]) if (mis_row and mis_row.get("prev_close")) else float(kline_data.get("prev_close") or price)
+    if candles and mis_row and mis_row.get("price"):
+        last_bar = dict(candles[-1])
+        last_bar["close"] = round(price, 2)
+        last_bar["high"] = round(max(float(last_bar.get("high") or price), price), 2)
+        last_bar["low"] = round(min(float(last_bar.get("low") or price), price), 2)
+        candles[-1] = last_bar
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "symbol": sym,
+            "interval": iv,
+            "source_engine": "twse_mis_fallback",
+            "source": f"永豐金待連線（已自動以 TWSE 即時＋K線銜接 · {iv}）",
+            "price": round(price, 2),
+            "prev_close": round(prev_close, 2),
+            "open": round(float(mis_row["open"]) if (mis_row and mis_row.get("open")) else float(kline_data.get("open") or price), 2),
+            "high": round(float(mis_row["high"]) if (mis_row and mis_row.get("high")) else float(kline_data.get("high") or price), 2),
+            "low": round(float(mis_row["low"]) if (mis_row and mis_row.get("low")) else float(kline_data.get("low") or price), 2),
+            "volume": int((mis_row.get("volume_lots") or 0) * 1000) if (mis_row and mis_row.get("volume_lots")) else int(kline_data.get("volume") or 0),
+            "last_date": tw_now_str()[:16],
+            "candles": candles,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 # ---------------------------------------------------------------------------

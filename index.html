@@ -6519,9 +6519,15 @@
       }
       if (!candles.length) throw new Error('Yahoo 無有效 K 線資料');
       const price = Number(Number(res.meta?.regularMarketPrice || candles[candles.length - 1].close).toFixed(2));
-      const prevClose = (!spec.isIntraday && candles.length >= 2)
+      let prevClose = (!spec.isIntraday && candles.length >= 2)
         ? candles[candles.length - 2].close
-        : Number(res.meta?.chartPreviousClose || res.meta?.previousClose || candles[0].open);
+        : Number(res.meta?.previousClose || res.meta?.regularMarketPreviousClose || 0);
+      if (!prevClose && candles.length >= 2) {
+        const latestDay = String(candles[candles.length - 1].date || '').slice(0, 10);
+        const prevDayC = candles.filter(c => String(c.date || '').slice(0, 10) < latestDay);
+        if (prevDayC.length) prevClose = prevDayC[prevDayC.length - 1].close;
+      }
+      if (!prevClose) prevClose = Number(res.meta?.chartPreviousClose || candles[0].open);
       return {
         price,
         prevClose,
@@ -6717,15 +6723,16 @@
 
         if (!result) throw new Error('未能取得真實報價');
 
-        // Preserve fresher live TWSE/TPEx MIS or Fugle real-time tick (never overwrite intraday live price with EOD FinMind!)
+        // v3.10.4: Preserve fresher live TWSE/TPEx MIS or Fugle real-time tick (never overwrite official intraday price/prevClose with K-line fetch!)
         const prevQ = state.quotes[symbol];
-        if (prevQ && prevQ.isRealtime && prevQ.realtimeTs && (Date.now() - prevQ.realtimeTs) < 120000 && result.sourceType === 'finmind') {
+        if (prevQ && prevQ.isRealtime && prevQ.realtimeTs && (Date.now() - prevQ.realtimeTs) < 120000 && (result.sourceType === 'finmind' || result.sourceType === 'yahoo')) {
           result.price = prevQ.price;
           result.prevClose = prevQ.prevClose ?? result.prevClose;
           result.open = prevQ.open ?? result.open;
           result.high = prevQ.high ?? result.high;
           result.low = prevQ.low ?? result.low;
           result.volume = prevQ.volume ?? result.volume;
+          result.volumeLots = prevQ.volumeLots ?? result.volumeLots;
           result.tickVolume = prevQ.tickVolume;
           result.bids = prevQ.bids;
           result.bidSizes = prevQ.bidSizes;

@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.3",
+    version="3.10.4",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.3",
+        "version": "3.10.4",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -617,9 +617,18 @@ async def get_yahoo_market_data(
     if latest_price is None:
         raise HTTPException(status_code=502, detail="Yahoo 回傳無有效價格")
 
-    prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
+    # v3.10.4: ALWAYS prefer true yesterday's previousClose over chartPreviousClose
+    # (Yahoo's chartPreviousClose on 5d/15m charts is the close from 5 trading days ago, causing wrong +/- signs!)
+    prev_close = meta.get("previousClose") or meta.get("regularMarketPreviousClose")
     if interval in ("1d", "1wk", "1mo") and len(candles) >= 2:
         prev_close = candles[-2]["close"]
+    elif prev_close is None and candles:
+        latest_day = str(candles[-1].get("date", ""))[:10]
+        prev_day_candles = [c for c in candles if str(c.get("date", ""))[:10] < latest_day]
+        if prev_day_candles:
+            prev_close = prev_day_candles[-1]["close"]
+    if prev_close is None:
+        prev_close = meta.get("chartPreviousClose")
     market_ts = meta.get("regularMarketTime")
     last_date = (
         datetime.fromtimestamp(market_ts, TW_TZ).strftime("%Y-%m-%d %H:%M")
@@ -2413,7 +2422,7 @@ async def orchestrate_multi_agent(req: MultiAgentRequest):
                     })
                 if candles:
                     live_p = round(float(meta.get("regularMarketPrice") or candles[-1]["close"]), 2)
-                    prev_c = float(meta.get("chartPreviousClose") or candles[0]["open"])
+                    prev_c = float(meta.get("previousClose") or meta.get("regularMarketPreviousClose") or meta.get("chartPreviousClose") or candles[0]["open"])
                     mkt_tag = "TPEx上櫃" if yh_sym.endswith(".TWO") else "TWSE上市"
                     live_data = {
                         "price": live_p,
@@ -3910,7 +3919,7 @@ async def global_indices_realtime():
             if st == 200 and isinstance(body, dict):
                 meta = ((body.get("chart") or {}).get("result") or [{}])[0].get("meta") or {}
                 price = meta.get("regularMarketPrice")
-                prev = meta.get("chartPreviousClose") or meta.get("previousClose") or price
+                prev = meta.get("previousClose") or meta.get("regularMarketPreviousClose") or meta.get("chartPreviousClose") or price
                 if price is not None and prev:
                     chg = round(float(price) - float(prev), 2)
                     pct = round((chg / float(prev)) * 100, 2)

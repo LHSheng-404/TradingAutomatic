@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.11.0",
+    version="3.11.1",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.11.0",
+        "version": "3.11.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3845,6 +3845,8 @@ async def device_unlink(request: Request, device_id: str = ""):
 # 未填永豐金 Token 時自動降級至官方 TWSE/TPEx MIS + TAIFEX，確保行情不中斷。
 # ---------------------------------------------------------------------------
 _SHIOAJI_CFG: dict[str, Any] = {
+    "sim_api_key": os.getenv("SHIOAJI_SIM_API_KEY", "").strip(),
+    "sim_secret_key": os.getenv("SHIOAJI_SIM_SECRET_KEY", "").strip(),
     "api_key": os.getenv("SHIOAJI_API_KEY", "").strip(),
     "secret_key": os.getenv("SHIOAJI_SECRET_KEY", "").strip(),
     "http_url": os.getenv("SHIOAJI_HTTP_URL", "http://127.0.0.1:8080").strip().rstrip("/"),
@@ -3854,17 +3856,40 @@ _SHIOAJI_CFG: dict[str, Any] = {
 
 
 class ShioajiConfigRequest(BaseModel):
+    sim_api_key: str = ""
+    sim_secret_key: str = ""
     api_key: str = ""
     secret_key: str = ""
     http_url: str = "http://127.0.0.1:8080"
     simulation: bool = True
 
 
+def _shioaji_has_sim_token() -> bool:
+    return bool(
+        (_SHIOAJI_CFG.get("sim_api_key") or os.getenv("SHIOAJI_SIM_API_KEY", "").strip())
+        and (_SHIOAJI_CFG.get("sim_secret_key") or os.getenv("SHIOAJI_SIM_SECRET_KEY", "").strip())
+    )
+
+
 def _shioaji_has_token() -> bool:
+    """True only when LIVE Shioaji API Token is configured (SIM token never unlocks LIVE orders)."""
     return bool(
         (_SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip())
         and (_SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip())
     )
+
+
+def _shioaji_market_creds() -> tuple[str, str]:
+    """Return credentials for real-time market data & K-bars (prefer SIM token when in SIM mode, else LIVE token)."""
+    sim_ak = _SHIOAJI_CFG.get("sim_api_key") or os.getenv("SHIOAJI_SIM_API_KEY", "").strip()
+    sim_sk = _SHIOAJI_CFG.get("sim_secret_key") or os.getenv("SHIOAJI_SIM_SECRET_KEY", "").strip()
+    live_ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
+    live_sk = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip()
+    if _SHIOAJI_CFG.get("simulation", True) and sim_ak and sim_sk:
+        return sim_ak, sim_sk
+    if live_ak and live_sk:
+        return live_ak, live_sk
+    return sim_ak, sim_sk
 
 
 @app.get("/api/v1/shioaji/status")
@@ -3883,21 +3908,30 @@ async def shioaji_status():
     except Exception:
         sdk_installed = False
     ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
+    sim_ak = _SHIOAJI_CFG.get("sim_api_key") or os.getenv("SHIOAJI_SIM_API_KEY", "").strip()
     masked = (ak[:4] + "••••" + ak[-4:]) if len(ak) >= 8 else ("****" if ak else "")
+    sim_masked = (sim_ak[:4] + "••••" + sim_ak[-4:]) if len(sim_ak) >= 8 else ("****" if sim_ak else "")
+    any_token = _shioaji_has_sim_token() or _shioaji_has_token()
     return {
         "ok": True,
+        "sim_token_configured": _shioaji_has_sim_token(),
+        "sim_api_key_masked": sim_masked,
         "token_configured": _shioaji_has_token(),
         "api_key_masked": masked,
         "http_url": http_url,
         "http_server_online": http_ok,
         "sdk_installed": sdk_installed,
         "simulation": bool(_SHIOAJI_CFG.get("simulation", True)),
-        "active_source": "永豐金 Shioaji Pro HTTP" if http_ok else ("永豐金 Shioaji SDK" if (_shioaji_has_token() and sdk_installed) else "TWSE/TPEx MIS 官方即時（永豐金待連線）"),
+        "active_source": "永豐金 Shioaji Pro HTTP" if http_ok else ("永豐金 Shioaji SDK" if (any_token and sdk_installed) else "TWSE/TPEx MIS 官方秒級即時（永豐金待連線）"),
     }
 
 
 @app.post("/api/v1/shioaji/configure")
 async def shioaji_configure(req: ShioajiConfigRequest):
+    if req.sim_api_key.strip():
+        _SHIOAJI_CFG["sim_api_key"] = req.sim_api_key.strip()
+    if req.sim_secret_key.strip():
+        _SHIOAJI_CFG["sim_secret_key"] = req.sim_secret_key.strip()
     if req.api_key.strip():
         _SHIOAJI_CFG["api_key"] = req.api_key.strip()
     if req.secret_key.strip():
@@ -4058,7 +4092,11 @@ async def _fetch_shioaji_http_snapshots(symbols: list[str]) -> Optional[dict[str
 
 @app.post("/api/v1/shioaji/test-token")
 async def shioaji_test_token(req: ShioajiConfigRequest):
-    """Test Sinotrade Shioaji HTTP Server and/or Python shioaji SDK with user API Token."""
+    """Test Sinotrade Shioaji HTTP Server and/or Python shioaji SDK with user SIM or LIVE API Token."""
+    if req.sim_api_key.strip():
+        _SHIOAJI_CFG["sim_api_key"] = req.sim_api_key.strip()
+    if req.sim_secret_key.strip():
+        _SHIOAJI_CFG["sim_secret_key"] = req.sim_secret_key.strip()
     if req.api_key.strip():
         _SHIOAJI_CFG["api_key"] = req.api_key.strip()
     if req.secret_key.strip():
@@ -4076,14 +4114,17 @@ async def shioaji_test_token(req: ShioajiConfigRequest):
             "status": await shioaji_status(),
         }
 
-    ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
-    sk = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip()
+    is_sim_test = bool(req.simulation) and bool(req.sim_api_key.strip() and req.sim_secret_key.strip())
+    if is_sim_test:
+        ak, sk = req.sim_api_key.strip(), req.sim_secret_key.strip()
+    else:
+        ak, sk = _shioaji_market_creds()
     if ak and sk:
         try:
             import shioaji as sj  # type: ignore
 
             def _try_sdk():
-                api = sj.Shioaji(simulation=bool(_SHIOAJI_CFG.get("simulation", True)))
+                api = sj.Shioaji(simulation=bool(req.simulation))
                 api.login(api_key=ak, secret_key=sk)
                 c = api.Contracts.Stocks["2330"]
                 snaps = api.snapshots([c])
@@ -4280,9 +4321,8 @@ async def _fetch_shioaji_http_kbars(symbol: str, interval: str) -> Optional[dict
 
 
 async def _fetch_shioaji_sdk_kbars(symbol: str, interval: str) -> Optional[dict[str, Any]]:
-    """Fetch K-bars + live snapshot via Python `shioaji` SDK when API Key & Secret Key are configured."""
-    ak = _SHIOAJI_CFG.get("api_key") or os.getenv("SHIOAJI_API_KEY", "").strip()
-    sk = _SHIOAJI_CFG.get("secret_key") or os.getenv("SHIOAJI_SECRET_KEY", "").strip()
+    """Fetch K-bars + live snapshot via Python `shioaji` SDK when SIM or LIVE API Key & Secret Key are configured."""
+    ak, sk = _shioaji_market_creds()
     if not (ak and sk):
         return None
     iv = str(interval or "15").upper()

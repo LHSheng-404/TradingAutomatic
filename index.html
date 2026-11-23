@@ -2695,6 +2695,8 @@
           </button>
           <select id="realtimeRefreshSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="盤中即時自動刷新頻率">
             <option value="0">手動刷新</option>
+            <option value="1">盤中 1 秒即時（秒級極速）</option>
+            <option value="3">盤中 3 秒即時</option>
             <option value="5">盤中 5 秒即時</option>
             <option value="15">盤中 15 秒即時</option>
             <option value="30">盤中 30 秒即時</option>
@@ -5220,24 +5222,43 @@
         <button class="btn btn-sm" data-close-modal="liveSafetyModal">關閉</button>
       </div>
       <div id="liveCheckStatusBox" style="padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#991b1b;line-height:1.6;"></div>
-      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-        <div style="font-size:12.5px;font-weight:800;color:#0f172a;">🔑 永豐金 Shioaji API Token 與本機 Shioaji Pro 伺服器</div>
+      <!-- v3.11.1: Separate SIM Market/Sim API Token vs LIVE Production Order API Token -->
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:12.5px;font-weight:800;color:#166534;">🟢 SIM 模擬環境專用 API（秒級即時數據 ＋ 模擬下單 · 與正式單完全隔離）</div>
         <div class="form-grid-2">
           <div>
-            <label class="field-label" for="shioajiApiKeyInput">Shioaji API Key</label>
-            <input id="shioajiApiKeyInput" type="password" class="input mono" placeholder="貼上永豐金 API Key" autocomplete="off" />
+            <label class="field-label" for="shioajiSimApiKeyInput">SIM API Key（行情／模擬專用）</label>
+            <input id="shioajiSimApiKeyInput" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM API Key" autocomplete="off" />
           </div>
           <div>
-            <label class="field-label" for="shioajiSecretKeyInput">Shioaji Secret Key</label>
-            <input id="shioajiSecretKeyInput" type="password" class="input mono" placeholder="貼上永豐金 Secret Key" autocomplete="off" />
+            <label class="field-label" for="shioajiSimSecretKeyInput">SIM Secret Key（行情／模擬專用）</label>
+            <input id="shioajiSimSecretKeyInput" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM Secret Key" autocomplete="off" />
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input id="shioajiHttpUrlInput" type="url" class="input mono" style="flex:1;min-width:180px;" value="http://127.0.0.1:8080" placeholder="Shioaji Pro HTTP 網址（預設 http://127.0.0.1:8080）" />
-          <button type="button" id="btnSaveShioajiConfig" class="btn btn-sm btn-primary">儲存並連線永豐金</button>
+          <button type="button" id="btnSaveShioajiSimConfig" class="btn btn-sm btn-teal">儲存並測試 SIM 秒級行情</button>
         </div>
-        <div style="font-size:11px;color:var(--ink-3);">
-          參考 <a href="https://github.com/Sinotrade/shioaji-pro-app" target="_blank" rel="noopener noreferrer">Sinotrade/shioaji-pro-app</a>：執行 <code class="mono">shioaji server start</code> 即可提供毫秒級即時行情；未填入 Token 時僅允許模擬盤 (SIM)。
+        <div style="font-size:11px;color:#166534;line-height:1.45;">
+          💡 在 <strong>SIM 模擬模式</strong> 下：未填 Token 仍可免費抓取 TWSE/TPEx 官方秒級即時行情（支援 1 秒／3 秒刷新）；填入永豐金 SIM Token 或啟動 <code class="mono">shioaji server start</code> 即可啟用永豐金專屬毫秒級串流，且 <strong>絕不會解鎖正式實盤下單</strong>。
+        </div>
+      </div>
+
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:12.5px;font-weight:800;color:#991b1b;">🔴 LIVE 正式單專用 API（真實券商委託 · 必須與 SIM 分開設定）</div>
+        <div class="form-grid-2">
+          <div>
+            <label class="field-label" for="shioajiApiKeyInput">LIVE 正式單 API Key</label>
+            <input id="shioajiApiKeyInput" type="password" class="input mono" placeholder="貼上永豐金正式單 API Key" autocomplete="off" />
+          </div>
+          <div>
+            <label class="field-label" for="shioajiSecretKeyInput">LIVE 正式單 Secret Key</label>
+            <input id="shioajiSecretKeyInput" type="password" class="input mono" placeholder="貼上永豐金正式單 Secret Key" autocomplete="off" />
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#991b1b;">需搭配正式單 API Token ＋ CA 憑證（<code class="mono">Sinopac.pfx</code>）方可切換實盤。</span>
+          <button type="button" id="btnSaveShioajiConfig" class="btn btn-sm btn-primary">儲存並驗證 LIVE 正式單 Token</button>
         </div>
       </div>
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
@@ -10245,20 +10266,26 @@
     function openLiveSafetyModal() {
       const box = document.getElementById('liveCheckStatusBox');
       const sj = state.ext?.shioaji || {};
+      const simAkIn = document.getElementById('shioajiSimApiKeyInput');
+      const simSkIn = document.getElementById('shioajiSimSecretKeyInput');
       const akIn = document.getElementById('shioajiApiKeyInput');
       const skIn = document.getElementById('shioajiSecretKeyInput');
       const urlIn = document.getElementById('shioajiHttpUrlInput');
+      if (simAkIn && sj.simApiKey && !simAkIn.value) simAkIn.value = sj.simApiKey;
+      if (simSkIn && sj.simSecretKey && !simSkIn.value) simSkIn.value = sj.simSecretKey;
       if (akIn && sj.apiKey && !akIn.value) akIn.value = sj.apiKey;
       if (skIn && sj.secretKey && !skIn.value) skIn.value = sj.secretKey;
       if (urlIn && sj.httpUrl) urlIn.value = sj.httpUrl;
       if (box) {
         const backendOk = state.backendDetected;
+        const simOk = Boolean((sj.simApiKey || '').trim() && (sj.simSecretKey || '').trim());
         const sjOk = hasValidShioajiToken();
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
         box.innerHTML = `
           <div>1. 雲端後端連線：<strong>${backendOk ? '✓ 已連線' : '✗ 尚未連線（請先啟動 server.py）'}</strong></div>
-          <div>2. 永豐金 Shioaji API Token（必要）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 API Token' : '✗ 尚未設定（無 API Token 嚴禁切換實盤 LIVE）'}</strong></div>
-          <div>3. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
+          <div>2. SIM 模擬行情 Token（選填）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設免費使用 TWSE/TPEx 官方秒級即時）'}</strong></div>
+          <div>3. LIVE 正式單 API Token（必要）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 LIVE 正式單 Token' : '✗ 尚未設定（無正式單 Token 嚴禁切換 LIVE）'}</strong></div>
+          <div>4. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
         `;
       }
       const c1 = document.getElementById('liveConfirm1');
@@ -18403,7 +18430,37 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
         document.getElementById('sjIndSearchInput')?.addEventListener('input', e => renderIndicatorPicker(e.target.value));
 
-        // Enhance Shioaji Token Save button to also invoke live /api/v1/shioaji/test-token
+        // v3.11.1: Separate SIM Market/Sim API Token save & live test (never unlocks LIVE orders)
+        document.getElementById('btnSaveShioajiSimConfig')?.addEventListener('click', async () => {
+          const apiBase = getApiBase();
+          const simApiKey = (document.getElementById('shioajiSimApiKeyInput')?.value || '').trim();
+          const simSecretKey = (document.getElementById('shioajiSimSecretKeyInput')?.value || '').trim();
+          const httpUrl = (document.getElementById('shioajiHttpUrlInput')?.value || 'http://127.0.0.1:8080').trim();
+          if (!state.ext.shioaji) state.ext.shioaji = { simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl, simulation: true };
+          state.ext.shioaji.simApiKey = simApiKey;
+          state.ext.shioaji.simSecretKey = simSecretKey;
+          state.ext.shioaji.httpUrl = httpUrl;
+          persistState();
+          if (!apiBase) {
+            showToast('已儲存 SIM 模擬行情設定（本機）', '啟動後端 server.py 或 shioaji server start 即可啟用永豐金秒級串流。', 'success');
+            openLiveSafetyModal();
+            return;
+          }
+          try {
+            const r = await fetch(`${apiBase}/api/v1/shioaji/test-token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sim_api_key: simApiKey, sim_secret_key: simSecretKey, http_url: httpUrl, simulation: true })
+            });
+            if (r.ok) {
+              const j = await r.json();
+              showToast(j.ok ? 'SIM 秒級行情連線驗證完成' : 'SIM 行情提示', j.message || '已儲存 SIM 模擬行情 Token（與正式單完全隔離）。', j.ok ? 'success' : 'info');
+            }
+          } catch (e) {}
+          openLiveSafetyModal();
+        });
+
+        // Enhance Shioaji LIVE Token Save button to also invoke live /api/v1/shioaji/test-token
         document.getElementById('btnSaveShioajiConfig')?.addEventListener('click', async () => {
           const apiBase = getApiBase();
           const apiKey = (document.getElementById('shioajiApiKeyInput')?.value || '').trim();
@@ -18418,7 +18475,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             });
             if (r.ok) {
               const j = await r.json();
-              showToast(j.ok ? '永豐金 Shioaji 驗證結果' : '永豐金驗證提示', j.message || '已完成連線測試', j.ok ? 'success' : 'warn');
+              showToast(j.ok ? '永豐金 LIVE 正式單 Token 驗證結果' : '永豐金驗證提示', j.message || '已完成連線測試', j.ok ? 'success' : 'warn');
             }
           } catch (e) {}
         });
@@ -18906,17 +18963,27 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return copied;
       }
 
+      function toUrlSafeBase64(str) {
+        return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      function fromFlexibleBase64(b64) {
+        let s = String(b64 || '').replace(/[^A-Za-z0-9+/_=-]/g, '').replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4 !== 0) s += '=';
+        return decodeURIComponent(escape(atob(s)));
+      }
+
       async function copyMobileQuickCode() {
         const cur = readCfg();
         if (!cur.loggedIn) { showToast('請先登入遠端共享帳號', '登入後即可產生手機快速登入碼。', 'warn'); return; }
-        const code = 'SHLCLOUD1:' + btoa(unescape(encodeURIComponent(JSON.stringify({
+        const code = 'SHLCLOUD1:' + toUrlSafeBase64(JSON.stringify({
           mode: cur.mode,
           accountId: cur.accountId,
           pass: cur.pass,
           gistToken: cur.gistToken || '',
           gistId: cur.gistId || '',
           backendUrl: state.backendUrl || ''
-        }))));
+        }));
         const box = document.getElementById('remoteAcctQuickCodeBox');
         const out = document.getElementById('remoteAcctQuickCodeOutput');
         if (box) box.style.display = 'block';
@@ -18928,23 +18995,38 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const copied = await copyTextSafe(code, out);
         showToast(
           copied ? '已顯示並複製手機快速登入碼' : '已產生手機快速登入碼（請直接按 Ctrl+C 複製）',
-          '登入碼已顯示於下方藍色框內，請傳送到 iPhone 的「手機端快速登入」欄位貼上即可一鍵同步！',
+          '登入碼已顯示於下方藍色框內（LINE／Telegram 傳輸防斷行格式），請貼到 iPhone 的「手機端快速登入」欄位！',
           'success'
         );
       }
 
       async function quickImportMobileCode() {
-        const raw = (document.getElementById('remoteAcctQuickImportInput')?.value || '').trim();
-        if (!raw.startsWith('SHLCLOUD1:')) { showToast('登入碼格式錯誤', '請貼上電腦端複製的 SHLCLOUD1:... 登入碼。', 'warn'); return; }
+        const rawOriginal = String(document.getElementById('remoteAcctQuickImportInput')?.value || '');
+        // v3.11.1: Strip whitespace, line breaks, zero-width chars, and normalize fullwidth colon from LINE/Telegram/iOS copy-paste
+        const compact = rawOriginal
+          .replace(/[\s\u200B-\u200D\uFEFF\u00A0]+/g, '')
+          .replace(/：/g, ':');
+        if (/SHLPAIR1:/i.test(compact)) {
+          showToast('這是裝置配對碼，非雲端登入碼', '請改貼到上方「多裝置匹配」欄位，或回電腦端點「📋 產生／複製手機快速登入碼」取得 SHLCLOUD1:...。', 'warn');
+          return;
+        }
+        const m = compact.match(/SHLCLOUD1:([A-Za-z0-9+/_=-]+)/i);
+        if (!m || !m[1]) {
+          showToast('登入碼格式錯誤', '請確認已完整複製以 SHLCLOUD1: 開頭的登入碼（可整段貼上，系統會自動去除換行與空白）。', 'warn');
+          return;
+        }
         try {
-          const obj = JSON.parse(decodeURIComponent(escape(atob(raw.slice(10)))));
+          const obj = JSON.parse(fromFlexibleBase64(m[1]));
+          if (!obj || !obj.accountId || !obj.pass) {
+            throw new Error('登入碼內缺少帳號或同步密碼');
+          }
           if (obj.backendUrl && !state.backendUrl) state.backendUrl = obj.backendUrl;
           writeCfg({ ...obj, loggedIn: true, lastSyncAt: '' });
           document.getElementById('remoteAcctQuickImportInput').value = '';
           refreshUI();
           await pull();
         } catch (err) {
-          showToast('快速登入碼解析失敗', err.message, 'error');
+          showToast('快速登入碼解析失敗', err.message || '登入碼可能被截斷，請重新於電腦端複製完整 SHLCLOUD1:... 字串。', 'error');
         }
       }
 

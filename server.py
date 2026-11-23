@@ -34,7 +34,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 if getattr(sys, "frozen", False):
@@ -262,6 +262,45 @@ def init_db() -> None:
         )
         """
     )
+    # v3.8.0 — Device Matching / Unified Owner Database (same person, many devices → one owner_id)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS device_owners (
+            owner_id TEXT PRIMARY KEY,
+            owner_label TEXT DEFAULT '',
+            sync_space TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS device_registry (
+            device_id TEXT PRIMARY KEY,
+            owner_id TEXT NOT NULL,
+            device_name TEXT DEFAULT '',
+            platform TEXT DEFAULT '',
+            paired_at TEXT NOT NULL,
+            last_seen TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS device_pair_codes (
+            code_hash TEXT PRIMARY KEY,
+            owner_id TEXT NOT NULL,
+            expires_ts INTEGER NOT NULL,
+            attempts INTEGER DEFAULT 0,
+            used INTEGER DEFAULT 0,
+            created_by TEXT DEFAULT ''
+        )
+        """
+    )
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(trade_orders)").fetchall()]
+    if "owner_id" not in cols:
+        conn.execute("ALTER TABLE trade_orders ADD COLUMN owner_id TEXT DEFAULT ''")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_owner ON trade_orders(owner_id, ts_ms DESC)")
     conn.commit()
     conn.close()
 
@@ -329,6 +368,14 @@ def cache_set(key: str, val: Any) -> None:
     _CACHE[key] = (time.time(), val)
 
 
+def _safe_pct(v: Any) -> Optional[int]:
+    try:
+        n = int(round(float(str(v).replace("%", "").strip())))
+        return max(0, min(100, n))
+    except Exception:
+        return None
+
+
 def tw_now_str() -> str:
     return datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -338,7 +385,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.7.0",
+    version="3.8.0",
 )
 
 app.add_middleware(
@@ -463,8 +510,10 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.7.0",
+        "version": "3.8.0",
         "e2ee_sync_supported": True,
+        "realtime_relay_supported": True,
+        "device_pairing_supported": True,
         "access_password_required": bool(os.getenv("SHL_ACCESS_PASSWORD", "").strip()),
         "server_time": tw_now_str(),
         "trading_mode": SERVER_TRADING_MODE,
@@ -1208,7 +1257,7 @@ def _build_grounded_prompt(
             f"以下為系統即時抓取之「指定分析標的」真實市場數據（共 {len(targets)} 檔，請嚴格針對這 {len(targets)} 檔進行整合比較，切勿分析未列出的其他股票，亦嚴禁捏造未提供的價格或財報數據）：\n"
             f"{table_txt}\n\n"
             f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
-            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"220字內整合比較研判（須涵蓋每檔強弱排序與核心差異）","key_levels":"各標的關鍵支撐壓力或首選順序","risk_note":"60字內共同風險與倉位提醒"}}'
+            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"bull_pct":多方勝率0-100整數,"bear_pct":空方勝率0-100整數(兩者相加=100),"summary":"220字內整合比較研判（須涵蓋每檔強弱排序與核心差異）","key_levels":"各標的關鍵支撐壓力或首選順序","risk_note":"60字內共同風險與倉位提醒"}}'
         )
 
     if resolved_mode == "CUSTOM_FOCUS":
@@ -1225,7 +1274,7 @@ def _build_grounded_prompt(
             f"使用者自訂分析焦點：{focus}\n"
             f"{ref_line}\n"
             f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
-            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"200字內針對自訂焦點之深度整合分析","key_levels":"關鍵觀察指標、位階或篩選條件","risk_note":"60字內風控與執行紀律提醒"}}'
+            f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"bull_pct":多方勝率0-100整數,"bear_pct":空方勝率0-100整數(兩者相加=100),"summary":"200字內針對自訂焦點之深度整合分析","key_levels":"關鍵觀察指標、位階或篩選條件","risk_note":"60字內風控與執行紀律提醒"}}'
         )
 
     # Single target mode (either extracted single custom stock OR active stock)
@@ -1244,7 +1293,7 @@ def _build_grounded_prompt(
         f"- 技術指標：EMA5={s.get('ema5')}, EMA12={s.get('ema12')}, MACD_OSC={s.get('macd_osc', '--')}, K/D={s.get('kd', '--')}, RSI(14)={s.get('rsi')}, VWAP乖離={s.get('vwap_diff')}%\n"
         f"{('使用者自訂分析焦點（請優先回答）：' + focus) if focus else ''}\n\n"
         f"請以繁體中文回覆純 JSON（勿加 Markdown 圍欄），格式如下：\n"
-        f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"summary":"120字內核心研判","key_levels":"支撐與壓力價位","risk_note":"50字內風控提醒"}}'
+        f'{{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100整數,"bull_pct":多方勝率0-100整數,"bear_pct":空方勝率0-100整數(兩者相加=100),"summary":"120字內核心研判","key_levels":"支撐與壓力價位","risk_note":"50字內風控提醒"}}'
     )
 
 
@@ -1465,6 +1514,8 @@ async def _call_single_ai(
             "latency_ms": round((time.perf_counter() - t0) * 1000),
             "verdict": str(parsed.get("verdict", "NEUTRAL")).upper(),
             "confidence": int(parsed.get("confidence", 60)),
+            "bull_pct": _safe_pct(parsed.get("bull_pct")),
+            "bear_pct": _safe_pct(parsed.get("bear_pct")),
             "summary": str(parsed.get("summary", "")),
             "key_levels": str(parsed.get("key_levels", "--")),
             "risk_note": str(parsed.get("risk_note", "")),
@@ -3082,8 +3133,19 @@ class PlaceOrderRequest(BaseModel):
     source: str = "WEB_UI"
 
 
+def _owner_from_request(request: Optional[Request]) -> str:
+    """Resolve unified owner_id (Device Matching) from X-SHL-Owner-Id header; validated format only."""
+    if request is None:
+        return ""
+    raw = (request.headers.get("x-shl-owner-id") or "").strip()
+    if raw and re.fullmatch(r"own_[A-Za-z0-9_-]{16,64}", raw):
+        return raw
+    return ""
+
+
 @app.post("/api/v1/orders/place")
-async def place_order(req: PlaceOrderRequest):
+async def place_order(req: PlaceOrderRequest, request: Request):
+    owner_id = _owner_from_request(request)
     if KILL_SWITCH_ACTIVE:
         raise HTTPException(status_code=503, detail="系統已啟動緊急熔斷，禁止任何下單")
     if req.price <= 0 or req.qty <= 0:
@@ -3154,8 +3216,8 @@ async def place_order(req: PlaceOrderRequest):
     conn.execute(
         """
         INSERT INTO trade_orders
-        (ts_ms, iso_time, order_id, env_mode, symbol, stock_name, side, order_type, tif, qty, unit, price, fee_twd, tax_twd, status, broker_msg, source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (ts_ms, iso_time, order_id, env_mode, symbol, stock_name, side, order_type, tif, qty, unit, price, fee_twd, tax_twd, status, broker_msg, source, owner_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             ts_ms,
@@ -3175,6 +3237,7 @@ async def place_order(req: PlaceOrderRequest):
             final_status,
             broker_msg,
             req.source,
+            owner_id,
         ),
     )
     conn.commit()
@@ -3182,6 +3245,7 @@ async def place_order(req: PlaceOrderRequest):
 
     return {
         "ok": True,
+        "owner_id": owner_id,
         "order_id": order_id,
         "env_mode": mode,
         "symbol": req.symbol,
@@ -3199,15 +3263,24 @@ async def place_order(req: PlaceOrderRequest):
 
 
 @app.get("/api/v1/orders/history")
-async def get_order_history(limit: int = 50):
+async def get_order_history(request: Request, limit: int = 50):
+    owner_id = _owner_from_request(request)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT * FROM trade_orders ORDER BY ts_ms DESC LIMIT ?",
-        (max(1, min(limit, 200)),),
-    ).fetchall()
+    if owner_id:
+        # Unified owner database: every paired device of the same person sees the same rows
+        # (legacy rows created before pairing, owner_id = '', remain visible to the server owner).
+        rows = conn.execute(
+            "SELECT * FROM trade_orders WHERE owner_id = ? OR owner_id = '' OR owner_id IS NULL ORDER BY ts_ms DESC LIMIT ?",
+            (owner_id, max(1, min(limit, 200))),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM trade_orders WHERE owner_id = '' OR owner_id IS NULL ORDER BY ts_ms DESC LIMIT ?",
+            (max(1, min(limit, 200)),),
+        ).fetchall()
     conn.close()
-    return {"orders": [dict(r) for r in rows]}
+    return {"owner_id": owner_id, "orders": [dict(r) for r in rows]}
 
 
 # ---------------------------------------------------------------------------
@@ -3400,6 +3473,307 @@ async def vault_e2ee_meta(req: VaultPullRequest):
         "updated_at": str(row["updated_at"]),
         "updated_ts_ms": int(row["updated_ts_ms"]),
     }
+
+
+# ---------------------------------------------------------------------------
+# v3.8.0 — Real-Time Public Quote Relay (TWSE/TPEx MIS 五檔即時 · TAIFEX 台指期 · Yahoo)
+# 僅允許公開行情主機，回應一律 no-store，盤中「全標的同步真實行情」永不回傳隔日 / 快取舊價。
+# ---------------------------------------------------------------------------
+PUBLIC_RELAY_HOSTS = {
+    "mis.twse.com.tw",
+    "mis.taifex.com.tw",
+    "query1.finance.yahoo.com",
+    "query2.finance.yahoo.com",
+}
+
+
+def _sync_relay_request(url: str, method: str, body: Optional[bytes], content_type: str) -> tuple[int, bytes, str]:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) SHL-TW/3.8",
+        "Accept": "application/json, text/plain, */*",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+    host = (urllib.parse.urlparse(url).hostname or "").lower()
+    if host == "mis.twse.com.tw":
+        headers["Referer"] = "https://mis.twse.com.tw/stock/index.jsp"
+    if host == "mis.taifex.com.tw":
+        headers["Referer"] = "https://mis.taifex.com.tw/futures/"
+    if body is not None:
+        headers["Content-Type"] = content_type or "application/json"
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status, resp.read(), resp.headers.get("Content-Type", "application/json")
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read(), "application/json"
+
+
+@app.api_route("/api/v1/relay/public", methods=["GET", "POST"])
+async def public_quote_relay(request: Request, url: str = ""):
+    target = (url or "").strip()
+    parsed = urllib.parse.urlparse(target)
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or host not in PUBLIC_RELAY_HOSTS:
+        raise HTTPException(status_code=403, detail="僅允許公開行情主機（TWSE MIS / TAIFEX MIS / Yahoo Finance）")
+    body: Optional[bytes] = None
+    if request.method == "POST":
+        body = (await request.body())[: 64 * 1024]
+    try:
+        status, data, ctype = await asyncio.to_thread(
+            _sync_relay_request, target, request.method, body, request.headers.get("content-type", "")
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"即時行情來源連線失敗：{exc}")
+    return Response(
+        content=data,
+        status_code=status,
+        media_type=(ctype or "application/json").split(";")[0],
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
+
+
+def _parse_mis_float(v: Any) -> Optional[float]:
+    try:
+        if v in (None, "", "-"):
+            return None
+        return float(str(v).split("_")[0])
+    except Exception:
+        return None
+
+
+@app.get("/api/v1/market/realtime")
+async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
+    """
+    盤中即時報價（三竹股市同級官方 TWSE/TPEx MIS 來源）：成交價、漲跌、開高低昨收、總量、單量、五檔。
+    symbols=2330,6488 （自動同時查詢上市 tse 與上櫃 otc 通道）；indices=t00（加權）,o00（櫃買）。
+    """
+    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:60]
+    idx = [x.strip().lower() for x in indices.split(",") if x.strip().lower() in ("t00", "o00", "t13", "t17")]
+    channels: list[str] = []
+    for i in idx:
+        channels.append(f"{'otc' if i.startswith('o') else 'tse'}_{i}.tw")
+    for sy in syms:
+        channels.append(f"tse_{sy}.tw")
+        channels.append(f"otc_{sy}.tw")
+    if not channels:
+        raise HTTPException(status_code=400, detail="請提供 symbols 或 indices")
+    url = (
+        "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch="
+        + urllib.parse.quote("|".join(channels), safe="|_.")
+        + f"&_={int(time.time() * 1000)}"
+    )
+    status, data, _ = await asyncio.to_thread(_sync_relay_request, url, "GET", None, "")
+    if status != 200:
+        raise HTTPException(status_code=502, detail=f"TWSE MIS HTTP {status}")
+    try:
+        payload = json.loads(data.decode("utf-8", errors="replace").strip())
+    except Exception:
+        raise HTTPException(status_code=502, detail="TWSE MIS 回應格式異常")
+    out: dict[str, Any] = {}
+    for m in payload.get("msgArray", []) or []:
+        code = str(m.get("c", "")).strip()
+        if not code:
+            continue
+        last = _parse_mis_float(m.get("z"))
+        bids = [_parse_mis_float(x) for x in str(m.get("b", "")).split("_") if x]
+        asks = [_parse_mis_float(x) for x in str(m.get("a", "")).split("_") if x]
+        if last is None:
+            last = _parse_mis_float(m.get("pz")) or (bids[0] if bids else None) or _parse_mis_float(m.get("y"))
+        prev = _parse_mis_float(m.get("y"))
+        out[code] = {
+            "symbol": code,
+            "name": m.get("n", ""),
+            "exchange": m.get("ex", ""),
+            "price": last,
+            "prev_close": prev,
+            "change": round(last - prev, 4) if (last is not None and prev) else None,
+            "change_pct": round((last - prev) / prev * 100, 2) if (last is not None and prev) else None,
+            "open": _parse_mis_float(m.get("o")),
+            "high": _parse_mis_float(m.get("h")),
+            "low": _parse_mis_float(m.get("l")),
+            "volume_lots": _parse_mis_float(m.get("v")),
+            "tick_volume": _parse_mis_float(m.get("tv")),
+            "bids": bids[:5],
+            "bid_sizes": [_parse_mis_float(x) for x in str(m.get("g", "")).split("_") if x][:5],
+            "asks": asks[:5],
+            "ask_sizes": [_parse_mis_float(x) for x in str(m.get("f", "")).split("_") if x][:5],
+            "date": m.get("d", ""),
+            "time": m.get("t", ""),
+            "tlong": m.get("tlong", ""),
+        }
+    return JSONResponse(
+        {"source": "TWSE/TPEx MIS 官方即時", "server_time": tw_now_str(), "quotes": out},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# v3.8.0 — Device Matching / Pairing → Unified Owner Database
+# 同一人多台裝置（iPhone / iPad / Mac / Windows）以一次性 6 碼配對碼歸屬同一 owner_id，
+# 訂單紀錄 (trade_orders) 依 owner_id 共用；E2EE 保險箱同步空間亦自動對齊。
+# ---------------------------------------------------------------------------
+class DeviceRegisterRequest(BaseModel):
+    device_id: str = Field(..., min_length=6, max_length=80)
+    device_name: str = ""
+    platform: str = ""
+    owner_id: str = ""
+    owner_label: str = ""
+
+
+class DevicePairCreateRequest(BaseModel):
+    owner_id: str
+    device_id: str
+
+
+class DevicePairClaimRequest(BaseModel):
+    code: str
+    device_id: str = Field(..., min_length=6, max_length=80)
+    device_name: str = ""
+    platform: str = ""
+
+
+def _valid_owner(owner_id: str) -> bool:
+    return bool(re.fullmatch(r"own_[A-Za-z0-9_-]{16,64}", owner_id or ""))
+
+
+def _owner_sync_space(owner_id: str) -> str:
+    return "owner-" + hashlib.sha256(owner_id.encode()).hexdigest()[:16]
+
+
+@app.post("/api/v1/device/register")
+async def device_register(req: DeviceRegisterRequest):
+    owner_id = req.owner_id.strip()
+    if owner_id and not _valid_owner(owner_id):
+        raise HTTPException(status_code=400, detail="owner_id 格式錯誤")
+    if not owner_id:
+        owner_id = "own_" + secrets.token_urlsafe(18)
+    now = tw_now_str()
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO device_owners (owner_id, owner_label, sync_space, created_at) VALUES (?, ?, ?, ?)",
+            (owner_id, req.owner_label[:40], _owner_sync_space(owner_id), now),
+        )
+        conn.execute(
+            """
+            INSERT INTO device_registry (device_id, owner_id, device_name, platform, paired_at, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(device_id) DO UPDATE SET owner_id=excluded.owner_id, device_name=excluded.device_name,
+                platform=excluded.platform, last_seen=excluded.last_seen
+            """,
+            (req.device_id[:80], owner_id, req.device_name[:60], req.platform[:40], now, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "owner_id": owner_id, "sync_space": _owner_sync_space(owner_id)}
+
+
+@app.post("/api/v1/device/pair/create")
+async def device_pair_create(req: DevicePairCreateRequest):
+    if not _valid_owner(req.owner_id):
+        raise HTTPException(status_code=400, detail="owner_id 格式錯誤，請先於本機建立 / 註冊裝置")
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    code_hash = hashlib.sha256(f"shl-pair:{code}".encode()).hexdigest()
+    expires = int(time.time()) + 600
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute("DELETE FROM device_pair_codes WHERE expires_ts < ? OR used = 1", (int(time.time()),))
+        conn.execute(
+            "INSERT OR IGNORE INTO device_owners (owner_id, owner_label, sync_space, created_at) VALUES (?, '', ?, ?)",
+            (req.owner_id, _owner_sync_space(req.owner_id), tw_now_str()),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO device_pair_codes (code_hash, owner_id, expires_ts, attempts, used, created_by) VALUES (?, ?, ?, 0, 0, ?)",
+            (code_hash, req.owner_id, expires, req.device_id[:80]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "code": code, "expires_in_sec": 600, "sync_space": _owner_sync_space(req.owner_id)}
+
+
+_PAIR_FAILS: dict[str, list[float]] = {}
+
+
+@app.post("/api/v1/device/pair/claim")
+async def device_pair_claim(req: DevicePairClaimRequest, request: Request):
+    client = request.client.host if request.client else "?"
+    now_ts = time.time()
+    fails = [t for t in _PAIR_FAILS.get(client, []) if now_ts - t < 600]
+    if len(fails) >= 8:
+        raise HTTPException(status_code=429, detail="配對嘗試過多，請 10 分鐘後再試")
+    code = re.sub(r"\D", "", req.code or "")
+    if len(code) != 6:
+        raise HTTPException(status_code=400, detail="請輸入 6 位數配對碼")
+    code_hash = hashlib.sha256(f"shl-pair:{code}".encode()).hexdigest()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT owner_id, expires_ts, used FROM device_pair_codes WHERE code_hash = ?", (code_hash,)
+        ).fetchone()
+        if row is None or int(row["used"]) == 1 or int(row["expires_ts"]) < int(now_ts):
+            fails.append(now_ts)
+            _PAIR_FAILS[client] = fails
+            raise HTTPException(status_code=404, detail="配對碼無效或已過期（有效 10 分鐘、僅能使用一次）")
+        owner_id = str(row["owner_id"])
+        now = tw_now_str()
+        conn.execute("UPDATE device_pair_codes SET used = 1 WHERE code_hash = ?", (code_hash,))
+        conn.execute(
+            """
+            INSERT INTO device_registry (device_id, owner_id, device_name, platform, paired_at, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(device_id) DO UPDATE SET owner_id=excluded.owner_id, device_name=excluded.device_name,
+                platform=excluded.platform, paired_at=excluded.paired_at, last_seen=excluded.last_seen
+            """,
+            (req.device_id[:80], owner_id, req.device_name[:60], req.platform[:40], now, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "owner_id": owner_id, "sync_space": _owner_sync_space(owner_id)}
+
+
+@app.get("/api/v1/device/list")
+async def device_list(request: Request):
+    owner_id = _owner_from_request(request)
+    if not owner_id:
+        raise HTTPException(status_code=400, detail="缺少 X-SHL-Owner-Id")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT device_id, device_name, platform, paired_at, last_seen FROM device_registry WHERE owner_id = ? ORDER BY last_seen DESC",
+            (owner_id,),
+        ).fetchall()
+        n_orders = conn.execute(
+            "SELECT COUNT(*) FROM trade_orders WHERE owner_id = ?", (owner_id,)
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    return {
+        "ok": True,
+        "owner_id": owner_id,
+        "sync_space": _owner_sync_space(owner_id),
+        "devices": [dict(r) for r in rows],
+        "owner_order_count": int(n_orders),
+    }
+
+
+@app.post("/api/v1/device/unlink")
+async def device_unlink(request: Request, device_id: str = ""):
+    owner_id = _owner_from_request(request)
+    if not owner_id or not device_id:
+        raise HTTPException(status_code=400, detail="缺少 owner 或 device_id")
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute("DELETE FROM device_registry WHERE owner_id = ? AND device_id = ?", (owner_id, device_id[:80]))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True}
 
 
 if __name__ == "__main__":

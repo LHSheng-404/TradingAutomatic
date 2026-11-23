@@ -36,7 +36,11 @@ public final class LocalAssetServer {
             "api.anthropic.com",
             "api.finmindtrade.com",
             "query1.finance.yahoo.com",
-            "query2.finance.yahoo.com"
+            "query2.finance.yahoo.com",
+            "mis.twse.com.tw",
+            "mis.taifex.com.tw",
+            "api.telegram.org",
+            "api.fugle.tw"
     ));
 
     private final AssetManager assets;

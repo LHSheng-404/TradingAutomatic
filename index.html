@@ -2389,6 +2389,64 @@
     .shl-disclaimer-footer strong {
       color: #0f172a;
     }
+    /* === v3.8.0 Mitake Live Board, Lock-Screen Ticker, Bull/Bear Battle & Device Pairing === */
+    .mitake-board { background:#0b111d; color:#f1f5f9; border-radius:14px; border:1px solid #1e293b; overflow:hidden; margin-bottom:14px; }
+    .mitake-topbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; background:#111827; border-bottom:1px solid #1f2937; flex-wrap:wrap; }
+    .mitake-group-bar { display:flex; align-items:center; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; max-width:100%; }
+    .mitake-group-bar::-webkit-scrollbar { display:none; }
+    .mitake-group-pill { background:#1e293b; color:#cbd5e1; border:1px solid #334155; border-radius:999px; padding:4px 11px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .mitake-group-pill.active { background:#0284c7; color:#fff; border-color:#38bdf8; }
+    .mitake-index-strip { display:flex; align-items:center; gap:10px; padding:6px 12px; background:#090e18; border-bottom:1px solid #1e293b; font-size:12px; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+    .mitake-idx-tag { display:inline-flex; align-items:center; gap:5px; }
+    .mitake-idx-badge { display:inline-block; padding:1px 4px; border-radius:4px; border:1px solid #475569; font-size:10px; font-weight:800; color:#cbd5e1; }
+    .mitake-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1px; background:#1e293b; }
+    @media (max-width: 960px) { .mitake-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+    .mitake-tile { background:#0d1320; padding:10px 11px; cursor:pointer; transition:background .15s; display:flex; flex-direction:column; gap:5px; text-align:left; border:none; color:inherit; width:100%; }
+    .mitake-tile:hover { background:#151f33; }
+    .mitake-tile.active { box-shadow:inset 0 0 0 1.5px #38bdf8; background:#111d32; }
+    .mitake-tile.limit-up { background:linear-gradient(180deg,#5b0b11 0%,#3b090d 100%); }
+    .mitake-tile.limit-down { background:linear-gradient(180deg,#083d1f 0%,#062915 100%); }
+    .mitake-tile-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
+    .mitake-tile-name { font-size:14px; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mitake-tile-code { font-size:11px; color:#94a3b8; font-weight:700; }
+    .mitake-tile-mid { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+    .mitake-tile-price { font-size:21px; font-weight:900; letter-spacing:-0.02em; line-height:1.1; }
+    .mitake-tile-chg { text-align:right; font-size:12px; font-weight:800; line-height:1.25; }
+    .mitake-tile-foot { display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; border-top:1px solid rgba(148,163,184,0.12); padding-top:4px; }
+    .mitake-up { color:#ff4d4f !important; }
+    .mitake-down { color:#22c55e !important; }
+    .mitake-flat { color:#e2e8f0 !important; }
+    .mitake-orderbook { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px 12px; background:#090e18; border-top:1px solid #1e293b; font-size:11.5px; }
+    .mitake-ob-row { display:flex; justify-content:space-between; padding:2px 6px; border-radius:4px; }
+    .mitake-ob-bid { background:rgba(239,68,68,0.08); }
+    .mitake-ob-ask { background:rgba(34,197,94,0.08); }
+
+    /* Lock-Screen Live Market Widget (modeled after iOS Lock Screen Live Activity) */
+    .lock-ticker-widget { width:100%; max-width:410px; background:rgba(15,23,42,0.88); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(148,163,184,0.22); border-radius:20px; padding:12px 14px; color:#f8fafc; box-shadow:0 16px 40px rgba(0,0,0,0.45); text-align:left; }
+    .lock-ticker-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:9px; font-size:12px; }
+    .lock-ticker-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:7px; }
+    .lock-ticker-cell { background:rgba(30,41,59,0.72); border:1px solid rgba(148,163,184,0.14); border-radius:12px; padding:8px 8px; min-width:0; }
+    .lock-ticker-lbl { font-size:10.5px; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px; }
+    .lock-ticker-val { font-size:16px; font-weight:900; margin-top:3px; letter-spacing:-0.02em; }
+    .lock-ticker-chg { font-size:10px; font-weight:700; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lock-ticker-foot { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:9px; padding-top:7px; border-top:1px solid rgba(148,163,184,0.14); font-size:11px; color:#fbbf24; }
+    .standby-lock-overlay { position:fixed; inset:0; z-index:10050; background:radial-gradient(circle at 50% 18%, #1e293b 0%, #020617 75%); color:#f8fafc; display:none; flex-direction:column; align-items:center; justify-content:space-between; padding:max(28px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); overflow-y:auto; }
+    .standby-lock-overlay.active { display:flex; }
+    .standby-clock-time { font-size:64px; font-weight:800; letter-spacing:-0.03em; line-height:1; color:rgba(248,250,252,0.92); text-shadow:0 4px 20px rgba(0,0,0,0.4); }
+
+    /* AI Bull / Bear % Live Battle Bar */
+    .battle-panel { background:linear-gradient(135deg,#0f172a 0%,#172554 100%); color:#f8fafc; border-radius:14px; padding:14px; margin-bottom:14px; border:1px solid #1e3a8a; }
+    .battle-bar-track { height:24px; border-radius:999px; overflow:hidden; display:flex; background:#1e293b; border:1px solid rgba(255,255,255,0.15); margin:10px 0; }
+    .battle-bar-bull { background:linear-gradient(90deg,#dc2626,#ef4444); display:flex; align-items:center; justify-content:flex-start; padding-left:10px; font-size:11.5px; font-weight:800; color:#fff; transition:width .35s ease; white-space:nowrap; overflow:hidden; }
+    .battle-bar-bear { background:linear-gradient(90deg,#16a34a,#22c55e); display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:11.5px; font-weight:800; color:#fff; transition:width .35s ease; white-space:nowrap; overflow:hidden; }
+    .battle-chip-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .battle-chip { background:rgba(15,23,42,0.7); border:1px solid rgba(148,163,184,0.25); border-radius:8px; padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px; }
+
+    /* Screenshot Analysis & Group Modal */
+    .shot-dropzone { border:2px dashed #94a3b8; border-radius:12px; padding:16px; text-align:center; background:#f8fafc; cursor:pointer; transition:all .15s; }
+    .shot-dropzone:hover { border-color:#0284c7; background:#f0f9ff; }
+    .shot-preview-img { max-width:100%; max-height:240px; border-radius:10px; border:1px solid var(--border); margin-top:8px; object-fit:contain; }
+    .pair-code-box { font-size:30px; font-weight:900; letter-spacing:0.22em; text-align:center; padding:12px; border-radius:12px; background:#0f172a; color:#38bdf8; border:1px solid #1e3a8a; }
   </style>
 </head>
 <body>
@@ -2561,8 +2619,43 @@
           <button type="button" id="btnSyncAll" class="btn btn-teal btn-sm">
             <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>全標的同步真實行情
           </button>
+          <select id="realtimeRefreshSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="盤中即時自動刷新頻率">
+            <option value="0">手動刷新</option>
+            <option value="5">盤中 5 秒即時</option>
+            <option value="15">盤中 15 秒即時</option>
+            <option value="30">盤中 30 秒即時</option>
+          </select>
+          <button type="button" id="btnOpenScreenshotModal" class="btn btn-sm btn-primary" title="上傳或貼上截圖，AI 解析並建立群組">
+            <i data-lucide="camera" style="width:13px;height:13px;"></i>截圖匯入群組
+          </button>
+          <button type="button" id="btnOpenStandbyLock" class="btn btn-sm btn-dark" title="鎖屏即時大盤/自訂個股看盤模式">
+            <i data-lucide="lock" style="width:13px;height:13px;"></i>鎖屏看盤
+          </button>
         </form>
       </div>
+
+      <!-- 1.5 Mitake (三竹股市)-Style Real-Time Group Board & 5-Level Orderbook -->
+      <section id="mitakeLiveBoard" class="mitake-board" aria-label="三竹風格即時行情看板">
+        <div class="mitake-topbar">
+          <div id="mitakeGroupTabs" class="mitake-group-bar"></div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span id="mitakeFeedBadge" class="badge badge-blue mono" style="font-size:10.5px;">TWSE/TPEx 即時待命</span>
+            <button type="button" id="btnMitakeNewGroup" class="mitake-group-pill" style="background:#1e3a8a;border-color:#3b82f6;color:#fff;">＋ 新增群組</button>
+            <button type="button" id="btnMitakeToggle" class="mitake-group-pill">收合看板</button>
+          </div>
+        </div>
+        <div id="mitakeIndexStrip" class="mitake-index-strip mono">
+          <span class="mitake-idx-tag"><span class="mitake-idx-badge">市</span><span id="mitakeIdxTwii">加權 --</span></span>
+          <span class="mitake-idx-tag"><span class="mitake-idx-badge">櫃</span><span id="mitakeIdxOtc">櫃買 --</span></span>
+          <span class="mitake-idx-tag"><span class="mitake-idx-badge">期</span><span id="mitakeIdxTxf">台指近全 --</span></span>
+          <span id="mitakeUpdateClock" style="margin-left:auto;color:#94a3b8;font-size:11px;">尚未更新</span>
+        </div>
+        <div id="mitakeBoardCollapsible">
+          <div id="mitakeGroupNoteBar" style="display:none;padding:7px 12px;background:#111c33;border-bottom:1px solid #1e293b;font-size:11.5px;color:#cbd5e1;line-height:1.5;"></div>
+          <div id="mitakeQuoteGrid" class="mitake-grid"></div>
+          <div id="mitakeOrderbookBox" class="mitake-orderbook" style="display:none;"></div>
+        </div>
+      </section>
 
       <!-- 2. Centerpiece: SYNAPSE Bidirectional Data Handshake Topology -->
       <article class="card">
@@ -4028,6 +4121,61 @@
                   </div>
                 </div>
               </div>
+              <!-- v3.8.0: AI Multi-Model % Bull/Bear Live Battle & Virtual Auto-Trading (SIM) -->
+              <div id="aiBullBearBattlePanel" class="battle-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <div>
+                    <div style="font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px;">
+                      ⚔️ AI 多空即時交戰百分比對決 &amp; 自動下單引擎
+                      <span id="battleExecModeBadge" class="badge badge-amber" style="font-size:10.5px;">虛擬買賣 SIM（不真實下單）</span>
+                    </div>
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">
+                      彙整各選定 AI 模型「多方勝率% vs 空方勝率%」，搭配即時行情自動觸發虛擬買賣（實盤時可於上方切換 LIVE 券商替換）
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button type="button" id="btnRunLiveBattleNow" class="btn btn-sm btn-primary">⚡ 抓即時價＋多空交戰</button>
+                    <button type="button" id="btnAiOpenScreenshot" class="btn btn-sm" style="background:#1e293b;color:#f8fafc;border-color:#334155;">📷 截圖分析匯入群組</button>
+                  </div>
+                </div>
+                <div class="battle-bar-track" aria-label="AI 多空交戰比例條">
+                  <div id="battleBarBull" class="battle-bar-bull mono" style="width:50%;">多方 50%</div>
+                  <div id="battleBarBear" class="battle-bar-bear mono" style="width:50%;">空方 50%</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:#cbd5e1;">
+                  <span id="battleConsensusText">尚未執行 AI 多空交戰：點擊「⚡ 抓即時價＋多空交戰」或「執行深度解析」即自動計算各模型百分比。</span>
+                  <span id="battleLastDecision" class="mono" style="color:#38bdf8;">待命中</span>
+                </div>
+                <div id="battleModelChips" class="battle-chip-row"></div>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.2);display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;align-items:end;">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;color:#f8fafc;">
+                    <input id="chkBattleAutoTrade" type="checkbox" />
+                    啟用虛擬自動下單
+                  </label>
+                  <div>
+                    <label style="display:block;font-size:10.5px;color:#94a3b8;margin-bottom:2px;">多方觸發買進門檻 (%)</label>
+                    <input id="battleBullThreshold" type="number" min="51" max="95" value="65" class="input mono" style="padding:5px 8px;font-size:12px;background:#0b1220;color:#fff;border-color:#334155;" />
+                  </div>
+                  <div>
+                    <label style="display:block;font-size:10.5px;color:#94a3b8;margin-bottom:2px;">空方觸發賣出門檻 (%)</label>
+                    <input id="battleBearThreshold" type="number" min="51" max="95" value="65" class="input mono" style="padding:5px 8px;font-size:12px;background:#0b1220;color:#fff;border-color:#334155;" />
+                  </div>
+                  <div>
+                    <label style="display:block;font-size:10.5px;color:#94a3b8;margin-bottom:2px;">單次下單量 (張)</label>
+                    <input id="battleAutoQty" type="number" min="1" max="50" value="1" class="input mono" style="padding:5px 8px;font-size:12px;background:#0b1220;color:#fff;border-color:#334155;" />
+                  </div>
+                  <div>
+                    <label style="display:block;font-size:10.5px;color:#94a3b8;margin-bottom:2px;">自動巡檢間隔</label>
+                    <select id="battlePollInterval" class="select" style="padding:5px 8px;font-size:12px;background:#0b1220;color:#fff;border-color:#334155;">
+                      <option value="0">手動觸發</option>
+                      <option value="30">每 30 秒</option>
+                      <option value="60" selected>每 60 秒</option>
+                      <option value="180">每 3 分鐘</option>
+                    </select>
+                  </div>
+                  <button type="button" id="btnBattleExecOnce" class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;font-weight:800;">依目前比例模擬下單</button>
+                </div>
+              </div>
               <div id="aiStudioContextBar" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);font-size:12px;color:var(--ink-2);line-height:1.55;"></div>
               <div id="aiStudioResults" class="grid-ai-3"></div>
             </div>
@@ -4505,6 +4653,67 @@
               </div>
             </article>
           </div>
+
+          <!-- v3.8.0: Device Matching (Unified Owner DB) + Lock-Screen Ticker Customizer -->
+          <div class="grid-2" style="margin-top:14px;">
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">🔗 裝置匹配 · 同帳號統一資料庫歸屬</h2>
+                  <p class="card-subtitle">同一人在 iPhone / iPad / 電腦多裝置配對後，所有交易紀錄與保險箱自動歸屬同一資料庫</p>
+                </div>
+                <span id="deviceOwnerBadge" class="badge badge-blue mono">待配對</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <div style="font-size:11.5px;color:var(--ink-2);background:var(--bg-subtle);border:1px solid var(--border);border-radius:10px;padding:9px 11px;line-height:1.6;">
+                  <div>本機裝置 ID：<code id="deviceSelfIdText" class="mono">--</code></div>
+                  <div>統一歸屬帳號 (Owner ID)：<code id="deviceOwnerIdText" class="mono">--</code></div>
+                  <div>同步空間對齊：<code id="deviceOwnerSpaceText" class="mono">--</code></div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button type="button" id="btnGenPairCode" class="btn btn-sm btn-primary">產生 6 碼裝置配對碼</button>
+                  <button type="button" id="btnCopyOfflinePair" class="btn btn-sm btn-dark">複製離線配對金鑰</button>
+                  <button type="button" id="btnRefreshDevices" class="btn btn-sm">重整已配對裝置</button>
+                </div>
+                <div id="devicePairCodeWrap" style="display:none;flex-direction:column;gap:6px;">
+                  <div id="devicePairCodeBox" class="pair-code-box mono">------</div>
+                  <div id="devicePairCodeHint" style="font-size:11px;color:var(--ink-3);text-align:center;">請於 10 分鐘內在另一台裝置輸入此 6 碼完成歸屬綁定</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <input id="devicePairClaimInput" type="text" class="input mono" style="flex:1;min-width:160px;" placeholder="輸入 6 碼配對碼 或貼上 SHLPAIR1:..." />
+                  <button type="button" id="btnClaimPairCode" class="btn btn-sm btn-teal">配對歸屬同一資料庫</button>
+                </div>
+                <div id="pairedDevicesList" style="font-size:11.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px;"></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">📱 鎖屏大盤即時看板自訂（可選指數或個股）</h2>
+                  <p class="card-subtitle">鎖定畫面或待機看盤模式即時顯示您挑選的大盤指數與個股（僅公開報價，不曝光私密金鑰）</p>
+                </div>
+                <button type="button" id="btnPreviewStandbyFromVault" class="btn btn-sm btn-dark">立即開啟鎖屏看盤</button>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <div style="font-size:12px;color:var(--ink-2);">
+                  點選下方按鈕切換鎖屏顯示標的（建議選 3～6 檔，首 3 檔顯示於鎖屏主列）：
+                </div>
+                <div id="lockTickerChoicePills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                  <input id="lockTickerCustomInput" type="text" class="input mono" style="flex:1;min-width:150px;" placeholder="自訂加入代號（如 2330、2368、0050）" maxlength="8" />
+                  <button type="button" id="btnAddLockTickerCustom" class="btn btn-sm btn-primary">加入鎖屏清單</button>
+                </div>
+                <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">
+                  💡 支援指數：<span class="mono">t00</span>（加權指數）、<span class="mono">o00</span>（櫃買指數）、<span class="mono">TXF</span>（台指電子盤/近全）及任意自選台股代號；亦可於設定中填入免費 Fugle API Key 以在純 Safari 網頁獲得毫秒盤中即時推播。
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                  <input id="fugleApiKeyInput" type="password" class="input mono" style="flex:1;min-width:170px;" placeholder="選填：富果 Fugle 即時行情 API Key（純網頁盤中直連）" />
+                  <button type="button" id="btnSaveFugleKey" class="btn btn-sm btn-dark">儲存</button>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
 
         <!-- Universal Bottom Disclaimer Footer (Shown at bottom of EVERY Studio Page) -->
@@ -4518,6 +4727,9 @@
 
   <!-- Full-Screen Device Sandbox Vault Lock Screen (Face ID / Touch ID / Phone Passcode / Vault Password) -->
   <div id="shlVaultLockOverlay" class="vault-lock-overlay" role="dialog" aria-modal="true" aria-labelledby="vaultLockTitle">
+    <!-- Live Public Market Ticker Visible Even While Vault Is Locked -->
+    <div id="vaultLockLiveTicker" class="lock-ticker-widget" style="margin-bottom:14px;"></div>
+
     <div class="vault-lock-card">
       <div class="vault-lock-shield">
         <i data-lucide="shield-check" style="width:30px;height:30px;"></i>
@@ -4544,6 +4756,82 @@
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding-top:4px;border-top:1px solid rgba(148,163,184,0.15);">
         <span id="vaultLockDeviceBadge">本機沙盒隔離中</span>
         <button id="btnVaultEmergencyReset" type="button" style="background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;text-decoration:underline;">忘記密碼？重置本機保險箱</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.8.0: Standalone Full-Screen Lock-Screen Live Market Ticker (Standby Mode) -->
+  <div id="shlStandbyLockOverlay" class="standby-lock-overlay" role="dialog" aria-modal="true" aria-label="鎖屏大盤即時看盤">
+    <div style="text-align:center;margin-top:8px;">
+      <div id="standbyDateLine" style="font-size:14px;color:#cbd5e1;font-weight:600;margin-bottom:4px;">--</div>
+      <div id="standbyClockLine" class="standby-clock-time mono">--:--</div>
+    </div>
+    <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;margin:16px 0;">
+      <div id="standbyTickerWidget" class="lock-ticker-widget"></div>
+      <div id="standbyExtraGrid" class="lock-ticker-grid" style="max-width:420px;"></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;">
+      <button type="button" id="btnStandbyRefreshNow" class="btn btn-sm btn-primary">↻ 立即刷新即時報價</button>
+      <button type="button" id="btnStandbyCustomize" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;">🔒 自訂指數 / 個股</button>
+      <button type="button" id="btnStandbyClose" class="btn btn-sm" style="background:rgba(148,163,184,0.2);color:#fff;border-color:rgba(148,163,184,0.35);">返回交易桌面</button>
+    </div>
+  </div>
+
+  <!-- v3.8.0: Screenshot Analysis & Add-to-Group Modal -->
+  <div id="screenshotGroupModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="shotModalTitle">
+    <div class="modal-card" style="max-width:680px;width:94vw;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-blue">SHL TW</span>
+          <h3 id="shotModalTitle" style="margin:0;font-size:16px;font-weight:800;">📷 截圖 AI 分析 → 自動新增群組內容</h3>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="screenshotGroupModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:12px;color:var(--ink-2);line-height:1.55;">
+          上傳或直接貼上（<span class="mono">Ctrl+V</span> / iPhone 相簿）三竹股市自選截圖、券商庫存截圖或 K 線圖，AI 視覺模型將自動辨識群組名稱、股票代號與盤面重點，一鍵建立自選群組並同步即時報價。
+        </div>
+        <label id="shotDropzone" class="shot-dropzone" for="shotFileInput">
+          <div style="font-size:13px;font-weight:800;color:var(--ink-1);">點擊選擇圖片 / 拍照上傳，或直接按 Ctrl+V 貼上截圖</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">支援 PNG / JPG / WebP（自動壓縮加速辨識，圖片僅送往您選定的 AI API）</div>
+          <input id="shotFileInput" type="file" accept="image/*" style="display:none;" />
+          <img id="shotPreviewImg" class="shot-preview-img" alt="截圖預覽" style="display:none;" />
+        </label>
+        <div class="form-grid-2">
+          <div>
+            <label class="field-label" for="shotVisionProvider">視覺分析模型（Vision AI）</label>
+            <select id="shotVisionProvider" class="select">
+              <option value="auto">自動選擇已填金鑰的視覺模型（Gemini / ChatGPT / Claude / Grok）</option>
+              <option value="gemini">Gemini Vision (Google)</option>
+              <option value="chatgpt">ChatGPT Vision (OpenAI)</option>
+              <option value="claude">Claude Vision (Anthropic)</option>
+              <option value="grok">Grok Vision (xAI)</option>
+              <option value="ollama">Ollama 地端視覺模型</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="shotGroupNameInput">目標群組名稱（留空則由截圖標題自動命名）</label>
+            <input id="shotGroupNameInput" type="text" class="input" placeholder="例如：AI 相關當沖、半導體觀察" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" id="btnRunShotAnalysis" class="btn btn-primary btn-sm">🔍 執行截圖 AI 解析</button>
+          <span id="shotStatusText" style="font-size:11.5px;color:var(--ink-3);">請先上傳或貼上截圖</span>
+        </div>
+        <div id="shotResultPanel" style="display:none;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;flex-direction:column;gap:8px;">
+          <div style="font-size:12.5px;font-weight:800;color:var(--ink-1);">解析結果（可微調後一鍵匯入群組）：</div>
+          <div>
+            <label class="field-label" for="shotExtractedCodes">辨識出的台股代號（逗號或空白分隔，可手動增刪）</label>
+            <input id="shotExtractedCodes" type="text" class="input mono" placeholder="2327, 3026, 2368, 8046, 3037, 3189" />
+          </div>
+          <div>
+            <label class="field-label" for="shotExtractedSummary">截圖分析重點筆記（將存入該群組說明）</label>
+            <textarea id="shotExtractedSummary" rows="3" class="textarea"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" id="btnCommitShotToGroup" class="btn btn-teal btn-sm">✓ 新增至群組並同步即時報價</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4842,6 +5130,37 @@
       }
     };
     state.backendAccessToken = '';
+    state.ext = {
+      groups: [
+        { id: 'all', name: '全部自選', symbols: [], note: '系統全部監控標的', builtIn: true }
+      ],
+      activeGroupId: 'all',
+      lockTickerSymbols: ['t00', 'o00', 'TXF'],
+      realtimeRefreshSec: 0,
+      fugleApiKey: '',
+      battleAuto: {
+        enabled: false,
+        bullThreshold: 65,
+        bearThreshold: 65,
+        qty: 1,
+        pollSec: 60,
+        lastAutoAt: 0,
+        lastResult: null
+      },
+      device: {
+        deviceId: '',
+        ownerId: '',
+        syncSpace: '',
+        pairedDevices: []
+      },
+      indices: {} // t00, o00, TXF live snapshots
+    };
+    state.notifier.tgToken = '';
+    state.notifier.tgChatId = '';
+    state.notifier.tgOwnerLabel = '';
+    state.notifier.tgBotUsername = '';
+    state.notifier.tgBotName = '';
+    state.notifier.tgLastUpdateId = 0;
 
     // Automatically attach X-SHL-Access-Token on calls to our private FastAPI backend when configured
     (function installShlBackendAuthFetch() {
@@ -4855,11 +5174,17 @@
             url.includes('/api/v1/') &&
             (url.startsWith('/') || url.startsWith(window.location.origin) || (backendBase && url.startsWith(backendBase)))
           );
-          if (token && isApiCall) {
+          const ownerId = (state.ext && state.ext.device && state.ext.device.ownerId) || '';
+          const deviceId = (state.ext && state.ext.device && state.ext.device.deviceId) || '';
+          if ((token || ownerId) && isApiCall) {
             const nextInit = Object.assign({}, init || {});
             const headers = new Headers(nextInit.headers || (typeof input !== 'string' && input && input.headers ? input.headers : undefined));
-            if (!headers.has('X-SHL-Access-Token')) {
+            if (token && !headers.has('X-SHL-Access-Token')) {
               headers.set('X-SHL-Access-Token', token);
+            }
+            if (ownerId && !headers.has('X-SHL-Owner-Id')) {
+              headers.set('X-SHL-Owner-Id', ownerId);
+              if (deviceId) headers.set('X-SHL-Device-Id', deviceId);
             }
             nextInit.headers = headers;
             return origFetch(input, nextInit);
@@ -4906,7 +5231,22 @@
           lineToken: state.notifier.lineToken,
           lineTargetId: state.notifier.lineTargetId,
           tgEnabled: state.notifier.tgEnabled,
+          tgToken: state.notifier.tgToken || '',
+          tgChatId: state.notifier.tgChatId || '',
+          tgOwnerLabel: state.notifier.tgOwnerLabel || '',
+          tgBotUsername: state.notifier.tgBotUsername || '',
+          tgBotName: state.notifier.tgBotName || '',
+          tgLastUpdateId: state.notifier.tgLastUpdateId || 0,
           logs: state.notifier.logs.slice(0, 30)
+        },
+        ext: {
+          groups: state.ext.groups,
+          activeGroupId: state.ext.activeGroupId,
+          lockTickerSymbols: state.ext.lockTickerSymbols,
+          realtimeRefreshSec: state.ext.realtimeRefreshSec,
+          fugleApiKey: state.ext.fugleApiKey || '',
+          battleAuto: state.ext.battleAuto,
+          device: state.ext.device
         },
         activeSymbol: state.activeSymbol,
         qlab
@@ -4953,7 +5293,24 @@
         state.notifier.lineToken = String(saved.notifier.lineToken || '');
         state.notifier.lineTargetId = String(saved.notifier.lineTargetId || '');
         state.notifier.tgEnabled = Boolean(saved.notifier.tgEnabled);
+        state.notifier.tgToken = String(saved.notifier.tgToken || '');
+        state.notifier.tgChatId = String(saved.notifier.tgChatId || '');
+        state.notifier.tgOwnerLabel = String(saved.notifier.tgOwnerLabel || '');
+        state.notifier.tgBotUsername = String(saved.notifier.tgBotUsername || '');
+        state.notifier.tgBotName = String(saved.notifier.tgBotName || '');
+        state.notifier.tgLastUpdateId = Number(saved.notifier.tgLastUpdateId || 0);
         state.notifier.logs = Array.isArray(saved.notifier.logs) ? saved.notifier.logs : [];
+      }
+      if (saved.ext && typeof saved.ext === 'object') {
+        if (Array.isArray(saved.ext.groups) && saved.ext.groups.length > 0) state.ext.groups = saved.ext.groups;
+        if (saved.ext.activeGroupId) state.ext.activeGroupId = saved.ext.activeGroupId;
+        if (Array.isArray(saved.ext.lockTickerSymbols) && saved.ext.lockTickerSymbols.length > 0) {
+          state.ext.lockTickerSymbols = saved.ext.lockTickerSymbols;
+        }
+        if (typeof saved.ext.realtimeRefreshSec === 'number') state.ext.realtimeRefreshSec = saved.ext.realtimeRefreshSec;
+        if (typeof saved.ext.fugleApiKey === 'string') state.ext.fugleApiKey = saved.ext.fugleApiKey;
+        if (saved.ext.battleAuto && typeof saved.ext.battleAuto === 'object') Object.assign(state.ext.battleAuto, saved.ext.battleAuto);
+        if (saved.ext.device && typeof saved.ext.device === 'object') Object.assign(state.ext.device, saved.ext.device);
       }
       if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
       if (saved.qlab && typeof saved.qlab === 'object') {
@@ -6032,6 +6389,32 @@
 
         if (!result) throw new Error('未能取得真實報價');
 
+        // Preserve fresher live TWSE/TPEx MIS or Fugle real-time tick (never overwrite intraday live price with EOD FinMind!)
+        const prevQ = state.quotes[symbol];
+        if (prevQ && prevQ.isRealtime && prevQ.realtimeTs && (Date.now() - prevQ.realtimeTs) < 120000 && result.sourceType === 'finmind') {
+          result.price = prevQ.price;
+          result.prevClose = prevQ.prevClose ?? result.prevClose;
+          result.open = prevQ.open ?? result.open;
+          result.high = prevQ.high ?? result.high;
+          result.low = prevQ.low ?? result.low;
+          result.volume = prevQ.volume ?? result.volume;
+          result.tickVolume = prevQ.tickVolume;
+          result.bids = prevQ.bids;
+          result.bidSizes = prevQ.bidSizes;
+          result.asks = prevQ.asks;
+          result.askSizes = prevQ.askSizes;
+          result.lastDate = prevQ.lastDate;
+          result.isRealtime = true;
+          result.realtimeTs = prevQ.realtimeTs;
+          result.source = `${prevQ.realtimeSource || 'TWSE/TPEx 即時'} ＋ ${result.intervalLabel || spec.label} K線`;
+        } else if (prevQ && prevQ.bids && prevQ.bids.length) {
+          result.bids = prevQ.bids;
+          result.bidSizes = prevQ.bidSizes;
+          result.asks = prevQ.asks;
+          result.askSizes = prevQ.askSizes;
+          result.tickVolume = prevQ.tickVolume;
+        }
+
         state.quotes[symbol] = result;
         setRibbonEvent(`同步真實行情成功：${meta.symbol} ${meta.name} [${result.intervalLabel || spec.label}] @ ${result.price}`);
         renderAllViews();
@@ -6056,16 +6439,29 @@
     async function syncAllWatchlist() {
       const btn = document.getElementById('btnSyncAll');
       if (btn) btn.disabled = true;
-      showToast('開始同步真實台股行情', `正在從 Yahoo / FinMind 抓取 ${state.watchlist.length} 檔標的...`, 'info');
+      showToast('開始即時同步台股行情', `正在抓取 TWSE/TPEx 盤中即時報價、大盤指數與 ${state.watchlist.length} 檔 K 線...`, 'info');
+      let rtCount = 0;
+      if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+        try {
+          const rtRes = await window.SHL_EXT.refreshRealtimeQuotes(false);
+          rtCount = rtRes?.updated || 0;
+        } catch (e) {}
+      }
       let okCount = 0;
       for (const item of state.watchlist) {
         const ok = await fetchMarketData(item.symbol, 'auto');
         if (ok) okCount++;
       }
       if (btn) btn.disabled = false;
-      state.handshake.nodeStats.SCANNER.status = okCount > 0 ? '掃描就緒' : '等待行情';
-      triggerHandshake('CORE', 'SCANNER', '#0d9488', 'SYN', true, 16, `已完成 ${okCount}/${state.watchlist.length} 檔真實報價同步`);
-      showToast('真實行情同步完成', `成功取得 ${okCount}/${state.watchlist.length} 檔真實台股資訊。`, okCount > 0 ? 'success' : 'warn');
+      state.handshake.nodeStats.SCANNER.status = (okCount > 0 || rtCount > 0) ? '即時同步完成' : '等待行情';
+      triggerHandshake('CORE', 'SCANNER', '#0d9488', 'SYN', true, 16, `即時報價 ${rtCount} 檔 · K線 ${okCount}/${state.watchlist.length} 檔`);
+      showToast(
+        '台股即時行情同步完成',
+        rtCount > 0
+          ? `已取得 ${rtCount} 檔盤中官方即時報價（含五檔與大盤），並同步 ${okCount}/${state.watchlist.length} 檔 K 線。`
+          : `已同步 ${okCount}/${state.watchlist.length} 檔台股資料（連線後端 / 原生 App 或填入 Fugle Key 可升級盤中毫秒即時報價）。`,
+        (okCount > 0 || rtCount > 0) ? 'success' : 'warn'
+      );
       renderAllViews();
     }
 
@@ -6752,6 +7148,24 @@
       };
     }
 
+    function normalizeBullBearPct(verdict, confidence, rawBull, rawBear) {
+      const bNum = Number(rawBull);
+      const rNum = Number(rawBear);
+      if (Number.isFinite(bNum) && Number.isFinite(rNum) && (bNum + rNum) > 0) {
+        const bull = Math.max(0, Math.min(100, Math.round((bNum / (bNum + rNum)) * 100)));
+        return { bull_pct: bull, bear_pct: 100 - bull };
+      }
+      if (Number.isFinite(bNum) && bNum >= 0 && bNum <= 100) {
+        const bull = Math.round(bNum);
+        return { bull_pct: bull, bear_pct: 100 - bull };
+      }
+      const conf = Math.max(50, Math.min(95, Number(confidence) || 60));
+      const v = String(verdict || 'NEUTRAL').toUpperCase();
+      if (v === 'BULL') return { bull_pct: Math.round(conf), bear_pct: 100 - Math.round(conf) };
+      if (v === 'BEAR') return { bull_pct: 100 - Math.round(conf), bear_pct: Math.round(conf) };
+      return { bull_pct: 50, bear_pct: 50 };
+    }
+
     function parseLooseAiJson(text) {
       let cleaned = String(text || '').trim();
       if (cleaned.includes('<think>') && cleaned.includes('</think>')) {
@@ -6867,14 +7281,19 @@
         throw new Error('不支援的模型引擎');
       }
       const parsed = parseLooseAiJson(text);
+      const verdictNorm = String(parsed.verdict || 'NEUTRAL').toUpperCase();
+      const confNorm = Math.max(0, Math.min(100, Number(parsed.confidence || 65)));
+      const bp = normalizeBullBearPct(verdictNorm, confNorm, parsed.bull_pct, parsed.bear_pct);
       return {
         model: def.id,
         model_name: usedModel,
         connected: true,
         modeLabel: def.id === 'ollama' ? `地端 Ollama (${usedModel})` : `直連 API (${usedModel})`,
         latency_ms: Math.round(performance.now() - t0),
-        verdict: String(parsed.verdict || 'NEUTRAL').toUpperCase(),
-        confidence: Number(parsed.confidence || 65),
+        verdict: verdictNorm,
+        confidence: confNorm,
+        bull_pct: bp.bull_pct,
+        bear_pct: bp.bear_pct,
         summary: String(parsed.summary || ''),
         key_levels: String(parsed.key_levels || '--'),
         risk_note: String(parsed.risk_note || '')
@@ -7136,10 +7555,10 @@
           if (!hasCred) return buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean);
           try {
             const directPrompt = analyzedTargets.length >= 2
-              ? `你是嚴謹台股量化分析師(${def.label} - ${def.role})。自訂焦點：${promptClean || '比較下列標的強弱與操作順序'}。真實數據：\n${multiTxt}\n嚴禁分析未列出的股票或捏造價格。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"200字內整合比較研判","key_levels":"強弱排序或關鍵價位","risk_note":"50字內風控提醒"}`
+              ? `你是嚴謹台股量化分析師(${def.label} - ${def.role})。自訂焦點：${promptClean || '比較下列標的強弱與操作順序'}。真實數據：\n${multiTxt}\n嚴禁分析未列出的股票或捏造價格。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"200字內整合比較研判","key_levels":"強弱排序或關鍵價位","risk_note":"50字內風控提醒"}`
               : (analyzedTargets.length === 1
-                ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控"}`
-                : `你是嚴謹台股量化策略師(${def.label} - ${def.role})。請完全聚焦以下主題回答，勿離題討論未提及個股：${promptClean}。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"summary":"200字內整合分析","key_levels":"關鍵觀察指標或條件","risk_note":"50字內風控提醒"}`);
+                ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控"}`
+                : `你是嚴謹台股量化策略師(${def.label} - ${def.role})。請完全聚焦以下主題回答，勿離題討論未提及個股：${promptClean}。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"200字內整合分析","key_levels":"關鍵觀察指標或條件","risk_note":"50字內風控提醒"}`);
             return await callSingleModelDirectBrowser(def, directPrompt, effectiveKeys, effectiveOpts);
           } catch (err) {
             return {
@@ -7783,6 +8202,7 @@
 
         const vCls = res.verdict === 'BULL' ? 'badge-up' : (res.verdict === 'BEAR' ? 'badge-down' : 'badge-amber');
         const vLbl = res.verdict === 'BULL' ? '看多 BULL' : (res.verdict === 'BEAR' ? '看空 BEAR' : '觀望 NEUTRAL');
+        const bp = normalizeBullBearPct(res.verdict, res.confidence, res.bull_pct, res.bear_pct);
         return `
           <div class="ai-card">
             <div class="ai-card-head">
@@ -7790,7 +8210,11 @@
                 <span class="ai-avatar" style="background:${def.color};">${def.short}</span>
                 <span>${def.label}</span>
               </div>
-              <span class="badge ${vCls}">${vLbl} · ${res.confidence}%</span>
+              <span class="badge ${vCls}">${vLbl} · 多${bp.bull_pct}% / 空${bp.bear_pct}%</span>
+            </div>
+            <div style="height:6px;border-radius:999px;overflow:hidden;display:flex;background:#e2e8f0;margin-bottom:6px;">
+              <div style="width:${bp.bull_pct}%;background:#ef4444;"></div>
+              <div style="width:${bp.bear_pct}%;background:#22c55e;"></div>
             </div>
             <p class="ai-summary-text">${escapeHtml(res.summary)}</p>
             <div class="ai-meta-line">
@@ -7820,6 +8244,9 @@
       renderAiModelPickerBar();
       if (quickGrid) quickGrid.innerHTML = buildAiCardsHtml(quickPack, false);
       if (studioGrid) studioGrid.innerHTML = buildAiCardsHtml(studioPack, true);
+      if (window.SHL_EXT && typeof window.SHL_EXT.renderBullBearBattle === 'function') {
+        window.SHL_EXT.renderBullBearBattle(studioPack || quickPack);
+      }
 
       if (ctxBar) {
         if (studioPack && (studioPack.analyzed_targets?.length || studioPack.focus_prompt)) {
@@ -8623,10 +9050,62 @@
       }
     }
 
+    function maskTgTokenClient(tok) {
+      const s = String(tok || '').trim();
+      if (!s) return '';
+      if (s.length <= 12) return '****';
+      return `${s.slice(0, 6)}••••••${s.slice(-4)}`;
+    }
+
+    function escapeTgHtmlClient(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    async function callTelegramApiDirect(token, method, body = null) {
+      const url = `https://api.telegram.org/bot${encodeURIComponent(token)}/${method}`;
+      const opts = body
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+        : { method: 'GET' };
+      const resp = await androidProxyFetch(url, opts);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.description || `Telegram HTTP ${resp.status}`);
+      }
+      return data.result;
+    }
+
+    function buildClientTgStatePayload() {
+      const hasTok = Boolean((state.notifier.tgToken || '').trim());
+      const hasChat = Boolean((state.notifier.tgChatId || '').trim());
+      const code = state.tgBinding.setup_code || '';
+      const botUser = state.notifier.tgBotUsername || state.tgBinding.bot_username || '';
+      const status = !hasTok ? 'unconfigured' : (hasChat ? 'bound' : 'awaiting_start');
+      return {
+        configured: hasTok,
+        bound: hasTok && hasChat,
+        status,
+        status_text: status === 'bound' ? '已綁定通知目標（手機直連）' : (status === 'awaiting_start' ? '等待建立者對 Bot 傳送 /start' : '尚未設定 Bot Token'),
+        token_masked: maskTgTokenClient(state.notifier.tgToken),
+        bot_username: botUser,
+        bot_name: state.notifier.tgBotName || state.tgBinding.bot_name || '',
+        owner_label: state.notifier.tgOwnerLabel || state.tgBinding.owner_label || '',
+        setup_code: code,
+        setup_command: code ? `/start ${code}` : '',
+        setup_deep_link: (botUser && code) ? `https://t.me/${botUser}?start=${code}` : ''
+      };
+    }
+
     async function refreshTelegramBindingStatus() {
       const apiBase = getApiBase();
       if (!apiBase) {
-        renderTelegramBindingUI();
+        if (state.notifier.tgToken) {
+          applyTelegramBindingState(buildClientTgStatePayload(), false);
+        } else {
+          renderTelegramBindingUI();
+        }
         return;
       }
       try {
@@ -8635,7 +9114,9 @@
           const data = await r.json();
           applyTelegramBindingState(data, false);
         }
-      } catch (e) {}
+      } catch (e) {
+        if (state.notifier.tgToken) applyTelegramBindingState(buildClientTgStatePayload(), false);
+      }
     }
 
     async function saveTelegramBotToken() {
@@ -8647,30 +9128,57 @@
         showToast('請輸入 Bot Token', '請貼上 @BotFather 提供的 Telegram Bot Token（僅需 Token，免填 Chat ID）。', 'warn');
         return;
       }
-      if (!apiBase) {
-        showToast('需要連線後端服務', '為確保 Bot Token 加密儲存且不曝光明文，請透過本系統 server.py 或單檔執行檔操作 Telegram 綁定。', 'error');
+      if (!/^\d{5,15}:[A-Za-z0-9_-]{20,}$/.test(rawToken)) {
+        showToast('Token 格式不符', '請確認為 @BotFather 核發的完整 Token（格式如 123456789:AAH...）。', 'warn');
         return;
       }
 
       if (btn) btn.disabled = true;
       try {
-        const resp = await fetch(`${apiBase}/api/v1/telegram/save-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bot_token: rawToken })
-        });
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          showToast('Bot Token 驗證失敗', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'error');
+        if (apiBase) {
+          const resp = await fetch(`${apiBase}/api/v1/telegram/save-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_token: rawToken })
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            showToast('Bot Token 驗證失敗', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'error');
+            return;
+          }
+          if (input) input.value = '';
+          applyTelegramBindingState(data, false);
+          pushNotifyLog('TELEGRAM', 'Bot Token 已驗證並加密儲存', data.status === 'bound' ? '保留既有已綁定通知目標' : `等待建立者傳送 ${data.setup_command}`);
+          showToast('Bot Token 驗證成功', data.message || '請開啟 Bot 傳送一次性 /start 指令完成綁定。', 'success');
           return;
         }
-        // Immediately wipe plaintext token from DOM input
+
+        // Direct Mobile / PWA / iOS / Android mode (no server.py required!)
+        const me = await callTelegramApiDirect(rawToken, 'getMe');
+        const sameToken = state.notifier.tgToken === rawToken && Boolean(state.notifier.tgChatId);
+        state.notifier.tgToken = rawToken;
+        state.notifier.tgBotUsername = me.username || '';
+        state.notifier.tgBotName = me.first_name || 'SHL Bot';
+        state.notifier.tgEnabled = true;
+        if (!sameToken) {
+          state.notifier.tgChatId = '';
+          state.notifier.tgOwnerLabel = '';
+          const randArr = new Uint8Array(4);
+          (window.crypto || {}).getRandomValues ? crypto.getRandomValues(randArr) : randArr.fill(42);
+          const hex = Array.from(randArr).map(b => b.toString(16).padStart(2, '0')).join('');
+          state.tgBinding.setup_code = `shl_${hex}`;
+        }
         if (input) input.value = '';
-        applyTelegramBindingState(data, false);
-        pushNotifyLog('TELEGRAM', 'Bot Token 已驗證並加密儲存', data.status === 'bound' ? '保留既有已綁定通知目標' : `等待建立者傳送 ${data.setup_command}`);
-        showToast('Bot Token 驗證成功', data.message || '請開啟 Bot 傳送一次性 /start 指令完成綁定。', 'success');
+        persistState();
+        const payload = buildClientTgStatePayload();
+        applyTelegramBindingState(payload, false);
+        const vaultHint = (window.SHL_VAULT && window.SHL_VAULT.isEnabled())
+          ? '已以本機 AES-256 沙盒加密儲存'
+          : '已存於本機（建議於安全保險箱開啟加密鎖）';
+        pushNotifyLog('TELEGRAM', `手機直連驗證成功 (@${me.username || 'Bot'})`, payload.bound ? '沿用已綁定目標' : `請對 Bot 傳送 ${payload.setup_command}`);
+        showToast('Telegram Bot 驗證成功', payload.bound ? `${vaultHint}，可直接推播！` : `${vaultHint}！請點下方連結開啟 Bot 傳送 ${payload.setup_command}。`, 'success');
       } catch (err) {
-        showToast('連線異常', redactUiSecrets(err.message), 'error');
+        showToast('Bot Token 驗證失敗', redactUiSecrets(err.message), 'error');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -8678,44 +9186,111 @@
 
     async function pollTelegramBindingOnce(silent = false) {
       const apiBase = getApiBase();
-      if (!apiBase) return;
+      if (apiBase) {
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/telegram/poll-bind`, { method: 'POST' });
+          if (!resp.ok) return;
+          const data = await resp.json();
+          applyTelegramBindingState(data, true);
+          if (data.newly_bound) {
+            pushNotifyLog('TELEGRAM', '已綁定通知目標 (getUpdates)', `建立者 ${data.owner_label} 驗證成功，一次性設定碼已失效`);
+          } else if (!silent) {
+            showToast(
+              data.bound ? '已完成綁定' : '尚未偵測到 /start 指令',
+              data.bound
+                ? `目前綁定目標：${data.owner_label}`
+                : `請確認已私訊 @${data.bot_username || 'Bot'} 並傳送完整指令：${data.setup_command}`,
+              data.bound ? 'success' : 'info'
+            );
+          }
+        } catch (e) {}
+        return;
+      }
+
+      // Direct Mobile / PWA getUpdates polling
+      const tok = (state.notifier.tgToken || '').trim();
+      if (!tok) return;
       try {
-        const resp = await fetch(`${apiBase}/api/v1/telegram/poll-bind`, { method: 'POST' });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        applyTelegramBindingState(data, true);
-        if (data.newly_bound) {
-          pushNotifyLog('TELEGRAM', '已綁定通知目標 (getUpdates)', `建立者 ${data.owner_label} 驗證成功，一次性設定碼已失效`);
+        const offset = state.notifier.tgLastUpdateId ? `?offset=${state.notifier.tgLastUpdateId + 1}&limit=20` : '?limit=20';
+        const updates = await callTelegramApiDirect(tok, `getUpdates${offset}`);
+        const expectedCode = (state.tgBinding.setup_code || '').trim();
+        let matched = null;
+        if (Array.isArray(updates)) {
+          for (const upd of updates) {
+            if (typeof upd.update_id === 'number' && upd.update_id > (state.notifier.tgLastUpdateId || 0)) {
+              state.notifier.tgLastUpdateId = upd.update_id;
+            }
+            const msg = upd.message || upd.edited_message;
+            const txt = String(msg?.text || '').trim();
+            if (!msg || !msg.chat || !txt) continue;
+            if (expectedCode && (txt.includes(expectedCode) || txt === `/start ${expectedCode}`)) {
+              matched = msg;
+            } else if (!expectedCode && txt.startsWith('/start')) {
+              matched = msg;
+            }
+          }
+        }
+        if (matched) {
+          const c = matched.chat;
+          state.notifier.tgChatId = String(c.id);
+          const uname = c.username ? `@${c.username}` : '';
+          const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
+          state.notifier.tgOwnerLabel = [fullName, uname].filter(Boolean).join(' ') || `Chat ${c.id}`;
+          state.tgBinding.setup_code = '';
+          persistState();
+          const payload = buildClientTgStatePayload();
+          applyTelegramBindingState(payload, true);
+          pushNotifyLog('TELEGRAM', '手機直連已綁定通知目標', `建立者 ${state.notifier.tgOwnerLabel} 驗證成功`);
+          // Send welcome confirmation
+          callTelegramApiDirect(tok, 'sendMessage', {
+            chat_id: state.notifier.tgChatId,
+            parse_mode: 'HTML',
+            text: `<b>✅ SHL TW 手機端 Telegram 綁定成功</b>\n目標：${escapeTgHtmlClient(state.notifier.tgOwnerLabel)}\n時間：${nowTwDateTime()} (UTC+8)`
+          }).catch(() => {});
         } else if (!silent) {
+          const payload = buildClientTgStatePayload();
           showToast(
-            data.bound ? '已完成綁定' : '尚未偵測到 /start 指令',
-            data.bound
-              ? `目前綁定目標：${data.owner_label}`
-              : `請確認已私訊 @${data.bot_username || 'Bot'} 並傳送完整指令：${data.setup_command}`,
-            data.bound ? 'success' : 'info'
+            payload.bound ? '已完成綁定' : '尚未偵測到 /start 指令',
+            payload.bound ? `目前綁定目標：${payload.owner_label}` : `請開啟 @${payload.bot_username || 'Bot'} 並傳送：${payload.setup_command}`,
+            payload.bound ? 'success' : 'info'
           );
         }
-      } catch (e) {}
+      } catch (e) {
+        if (!silent) showToast('輪詢異常', redactUiSecrets(e.message), 'warn');
+      }
     }
 
     async function rebindTelegramOwner() {
       const apiBase = getApiBase();
-      if (!apiBase) {
-        showToast('需要連線後端服務', '請連線後端 server.py 後再執行重新綁定。', 'warn');
-        return;
-      }
       const btn = document.getElementById('btnRebindTg');
       if (btn) btn.disabled = true;
       try {
-        const resp = await fetch(`${apiBase}/api/v1/telegram/rebind`, { method: 'POST' });
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          showToast('無法重新綁定', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'warn');
+        if (apiBase) {
+          const resp = await fetch(`${apiBase}/api/v1/telegram/rebind`, { method: 'POST' });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            showToast('無法重新綁定', redactUiSecrets(data.detail || `HTTP ${resp.status}`), 'warn');
+            return;
+          }
+          applyTelegramBindingState(data, false);
+          pushNotifyLog('TELEGRAM', '已清除原綁定目標', `重新等待建立者傳送 ${data.setup_command}`);
+          showToast('已重設通知目標', `請開啟 Bot 傳送新一次性指令：${data.setup_command}`, 'info');
           return;
         }
-        applyTelegramBindingState(data, false);
-        pushNotifyLog('TELEGRAM', '已清除原綁定目標', `重新等待建立者傳送 ${data.setup_command}`);
-        showToast('已重設通知目標', `請開啟 Bot 傳送新一次性指令：${data.setup_command}`, 'info');
+        if (!state.notifier.tgToken) {
+          showToast('尚未設定 Bot Token', '請先貼上 Bot Token 並儲存驗證。', 'warn');
+          return;
+        }
+        state.notifier.tgChatId = '';
+        state.notifier.tgOwnerLabel = '';
+        const randArr = new Uint8Array(4);
+        crypto.getRandomValues(randArr);
+        state.tgBinding.setup_code = `shl_${Array.from(randArr).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+        persistState();
+        const payload = buildClientTgStatePayload();
+        applyTelegramBindingState(payload, false);
+        pushNotifyLog('TELEGRAM', '已重設手機直連綁定目標', `請傳送 ${payload.setup_command}`);
+        showToast('已重設通知目標', `請開啟 Bot 傳送新指令：${payload.setup_command}`, 'info');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -8723,15 +9298,11 @@
 
     async function sendTelegramTestAlert() {
       const apiBase = getApiBase();
-      if (!apiBase) {
-        showToast('需要連線後端服務', '請連線後端 server.py 後再發送 Telegram 測試通知。', 'warn');
-        return;
-      }
-      if (!state.tgBinding.configured) {
+      if (!state.tgBinding.configured && !state.notifier.tgToken) {
         showToast('尚未設定 Bot Token', '請先於上方貼上 Bot Token 並點擊「儲存並驗證 Bot Token」。', 'warn');
         return;
       }
-      if (!state.tgBinding.bound) {
+      if (!state.tgBinding.bound && !state.notifier.tgChatId) {
         showToast(
           '請先完成 /start 綁定',
           `尚未綁定通知目標！請先開啟 Bot 傳送：${state.tgBinding.setup_command || '/start'}`,
@@ -8744,17 +9315,38 @@
       const btn = document.getElementById('btnTestTg');
       if (btn) btn.disabled = true;
       try {
-        const resp = await fetch(`${apiBase}/api/v1/telegram/test`, { method: 'POST' });
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          const msg = redactUiSecrets(data.detail || `HTTP ${resp.status}`);
-          pushNotifyLog('TELEGRAM', `測試失敗：${msg}`, '測試通知未送出');
-          showToast('測試通知發送失敗', msg, 'error');
+        if (apiBase) {
+          const resp = await fetch(`${apiBase}/api/v1/telegram/test`, { method: 'POST' });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = redactUiSecrets(data.detail || `HTTP ${resp.status}`);
+            pushNotifyLog('TELEGRAM', `測試失敗：${msg}`, '測試通知未送出');
+            showToast('測試通知發送失敗', msg, 'error');
+            return;
+          }
+          pushNotifyLog('TELEGRAM', '測試通知發送成功 (HTML)', `已送達建立者：${data.owner_label || '已綁定目標'}`);
+          triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 28, 'Telegram 測試通知已送達');
+          showToast('測試通知已送出', data.message || '請於您的 Telegram 確認測試訊息。', 'success');
           return;
         }
-        pushNotifyLog('TELEGRAM', '測試通知發送成功 (HTML)', `已送達建立者：${data.owner_label || '已綁定目標'}`);
-        triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 28, 'Telegram 測試通知已送達');
-        showToast('測試通知已送出', data.message || '請於您的 Telegram 確認測試訊息。', 'success');
+        const testMsg = [
+          '<b>🔔 SHL TW 手機直連 Telegram 測試通知</b>',
+          `時間：${nowTwDateTime()} (UTC+8)`,
+          `目標：${escapeTgHtmlClient(state.notifier.tgOwnerLabel || state.notifier.tgChatId)}`,
+          '狀態：手機端無須開啟電腦後端即可直接收發交易訊號！'
+        ].join('\n');
+        await callTelegramApiDirect(state.notifier.tgToken, 'sendMessage', {
+          chat_id: state.notifier.tgChatId,
+          parse_mode: 'HTML',
+          text: testMsg
+        });
+        pushNotifyLog('TELEGRAM', '手機直連測試成功 (HTML)', `已送達：${state.notifier.tgOwnerLabel}`);
+        triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 26, 'Telegram 手機直連推播成功');
+        showToast('測試通知已送出', '請於您的 Telegram 確認測試訊息！', 'success');
+      } catch (err) {
+        const msg = redactUiSecrets(err.message);
+        pushNotifyLog('TELEGRAM', `測試失敗：${msg}`, '測試通知未送出');
+        showToast('測試通知發送失敗', msg, 'error');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -8813,8 +9405,26 @@
       }
 
       if (channels.includes('telegram')) {
-        pushNotifyLog('TELEGRAM', '未連線後端服務（加密 Token 與綁定目標由後端保護，前端不儲存明文 Token）', text);
-        showToast('Telegram 需要後端服務', '請透過 server.py 或單檔執行檔開啟系統以啟用加密 Telegram 自動推播。', 'warn');
+        if (state.notifier.tgToken && state.notifier.tgChatId) {
+          try {
+            await callTelegramApiDirect(state.notifier.tgToken, 'sendMessage', {
+              chat_id: state.notifier.tgChatId,
+              parse_mode: 'HTML',
+              text: escapeTgHtmlClient(text)
+            });
+            state.handshake.nodeStats.TG_BOT.status = '推播成功';
+            triggerHandshake('CORE', 'TG_BOT', '#0284c7', 'PUSH', false, 26, 'Telegram 手機直連推播成功');
+            pushNotifyLog('TELEGRAM', '手機直連發送成功 (HTML)', text);
+            showToast('Telegram 推播已送出', '交易通知已透過手機直連送達您的 Telegram。', 'success');
+          } catch (err) {
+            const msg = redactUiSecrets(err.message);
+            pushNotifyLog('TELEGRAM', `發送失敗：${msg}`, text);
+            showToast('Telegram 推播失敗', msg, 'error');
+          }
+        } else {
+          pushNotifyLog('TELEGRAM', '尚未完成 Bot Token 儲存或 /start 綁定', text);
+          showToast('請先完成 Telegram 綁定', '請至「LINE / TG 通知」貼上 Bot Token 並完成 /start 綁定。', 'warn');
+        }
       }
 
       if (channels.includes('line')) {
@@ -9346,6 +9956,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       renderNotifyCenter();
       renderHandshakeInspector();
       renderTopRibbon();
+      if (window.SHL_EXT) {
+        try { window.SHL_EXT.renderMitakeBoard(); } catch (e) {}
+        try { window.SHL_EXT.renderLockTickers(); } catch (e) {}
+      }
     }
 
     function runSignalScan(notify = false) {
@@ -13428,7 +14042,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         state.backendAccessToken = '';
         state.notifier.lineToken = '';
         state.notifier.lineTargetId = '';
-        ['keyGroq', 'keyGrok', 'keyGemini', 'keyClaude', 'keyChatgpt', 'finmindTokenInput', 'lineTokenInput', 'vaultBackendAccessInput'].forEach(id => {
+        state.notifier.tgToken = '';
+        state.notifier.tgChatId = '';
+        if (state.ext) state.ext.fugleApiKey = '';
+        ['keyGroq', 'keyGrok', 'keyGemini', 'keyClaude', 'keyChatgpt', 'finmindTokenInput', 'lineTokenInput', 'cfgTgToken', 'fugleApiKeyInput', 'vaultBackendAccessInput'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
@@ -13601,6 +14218,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (bioTxt) bioTxt.textContent = `使用 ${bioCaps.label || 'Face ID / 手機解鎖密碼'} 解鎖`;
 
         ov.classList.add('active');
+        if (window.SHL_EXT && typeof window.SHL_EXT.renderLockTickers === 'function') {
+          window.SHL_EXT.renderLockTickers();
+          window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {});
+        }
         if (window.lucide && typeof window.lucide.createIcons === 'function') {
           window.lucide.createIcons();
         }
@@ -14204,6 +14825,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
       await detectBackend();
       if (window.SHL_VAULT) window.SHL_VAULT.refreshUI();
+      if (window.SHL_EXT) window.SHL_EXT.init();
 
       // Automatically detect available AI models if user has saved tokens or backend .env keys
       const hasAnyConfiguredToken = Object.values(state.aiKeys).some(v => Boolean((v || '').trim())) ||
@@ -14212,6 +14834,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         testAllAiModels(true).catch(() => {});
       }
 
+      if (window.SHL_EXT) {
+        window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {});
+      }
       await fetchMarketData(state.activeSymbol, 'auto');
       // Sync top 4 benchmark stocks automatically in background
       for (const sym of ['2317', '2454', '0050', '3037']) {
@@ -14220,6 +14845,1199 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
     }
+
+    // =========================================================================
+    // v3.8.0 EXTENSION MODULE (window.SHL_EXT)
+    // - TWSE/TPEx MIS + TAIFEX + Fugle Intraday Real-Time Engine & Mitake Board
+    // - Customizable Watchlist Groups & Screenshot Vision AI -> Group Import
+    // - Lock-Screen Live Market Ticker & Standby Watch Mode
+    // - AI Multi-Model % Bull/Bear Live Battle & Virtual Auto-Trading (SIM/LIVE)
+    // - Device Matching / Pairing -> Unified Owner Database
+    // =========================================================================
+    window.SHL_EXT = (function () {
+      let rtTimer = null;
+      let standbyClockTimer = null;
+      let battleTimer = null;
+      let boardCollapsed = false;
+      let currentShotDataUrl = '';
+      let lastBattleSummary = null;
+
+      const INDEX_META = {
+        t00: { code: 't00', name: '加權指數', short: '市', dot: '#ef4444' },
+        o00: { code: 'o00', name: '櫃買指數', short: '櫃', dot: '#38bdf8' },
+        TXF: { code: 'TXF', name: '台指電子盤', short: '期', dot: '#f59e0b' }
+      };
+
+      function parseNum(v) {
+        if (v === null || v === undefined || v === '' || v === '-') return null;
+        const n = Number(String(v).split('_')[0]);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function ensureDeviceIdentity() {
+        const d = state.ext.device;
+        if (!d.deviceId) {
+          const rnd = new Uint8Array(8);
+          try { crypto.getRandomValues(rnd); } catch (e) { rnd.fill(7); }
+          d.deviceId = 'dev_' + Array.from(rnd).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        if (!d.ownerId) {
+          const rnd = new Uint8Array(14);
+          try { crypto.getRandomValues(rnd); } catch (e) { rnd.fill(9); }
+          d.ownerId = 'own_' + Array.from(rnd).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        if (!d.syncSpace) {
+          d.syncSpace = 'owner-' + d.ownerId.slice(4, 16);
+        }
+        persistState();
+        return d;
+      }
+
+      // --- 1. REAL-TIME TWSE/TPEx MIS + TAIFEX + FUGLE ENGINE ---
+      function applyMisRow(m) {
+        const code = String(m.c || m.symbol || '').trim();
+        if (!code) return false;
+        const bids = Array.isArray(m.bids)
+          ? m.bids
+          : String(m.b || '').split('_').map(parseNum).filter(x => x !== null).slice(0, 5);
+        const asks = Array.isArray(m.asks)
+          ? m.asks
+          : String(m.a || '').split('_').map(parseNum).filter(x => x !== null).slice(0, 5);
+        const bidSizes = Array.isArray(m.bid_sizes)
+          ? m.bid_sizes
+          : String(m.g || '').split('_').map(parseNum).filter(x => x !== null).slice(0, 5);
+        const askSizes = Array.isArray(m.ask_sizes)
+          ? m.ask_sizes
+          : String(m.f || '').split('_').map(parseNum).filter(x => x !== null).slice(0, 5);
+        const prevClose = parseNum(m.prev_close ?? m.y);
+        let price = parseNum(m.price ?? m.z);
+        if (price === null) price = parseNum(m.pz) ?? (bids[0] ?? null) ?? prevClose;
+        if (price === null) return false;
+        const open = parseNum(m.open ?? m.o) ?? price;
+        const high = parseNum(m.high ?? m.h) ?? price;
+        const low = parseNum(m.low ?? m.l) ?? price;
+        const volumeLots = parseNum(m.volume_lots ?? m.v) ?? 0;
+        const tickVol = parseNum(m.tick_volume ?? m.tv) ?? 0;
+        const dateStr = String(m.date || m.d || '').replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3');
+        const timeStr = String(m.time || m.t || nowTwTime());
+        const stamp = dateStr ? `${dateStr} ${timeStr}` : timeStr;
+
+        if (code === 't00' || code === 'o00') {
+          const chg = prevClose ? Number((price - prevClose).toFixed(2)) : 0;
+          const chgPct = prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : 0;
+          state.ext.indices[code] = {
+            code,
+            name: INDEX_META[code]?.name || m.name || m.n || code,
+            price,
+            prevClose,
+            change: chg,
+            changePct: chgPct,
+            open, high, low,
+            time: timeStr,
+            stamp
+          };
+          return true;
+        }
+
+        const existing = state.quotes[code] || {};
+        state.quotes[code] = {
+          ...existing,
+          price,
+          prevClose: prevClose ?? existing.prevClose ?? open,
+          open,
+          high,
+          low,
+          volume: volumeLots * 1000,
+          volumeLots,
+          tickVolume: tickVol,
+          bids,
+          bidSizes,
+          asks,
+          askSizes,
+          lastDate: stamp,
+          isRealtime: true,
+          realtimeTs: Date.now(),
+          realtimeSource: 'TWSE/TPEx MIS 即時',
+          source: existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : 'TWSE/TPEx MIS 官方即時',
+          sourceType: existing.sourceType || 'twse_mis'
+        };
+        return true;
+      }
+
+      async function fetchTaifexRealtime() {
+        const apiBase = getApiBase();
+        const url = 'https://mis.taifex.com.tw/futures/api/getQuoteList';
+        const payloads = [
+          { MarketType: '1', SymbolType: 'F', KindID: '1', CID: 'TXF', ExpireMonth: '', RowSize: '全部', PageNo: '', SortColumn: '', AscDesc: 'A' },
+          { MarketType: '0', SymbolType: 'F', KindID: '1', CID: 'TXF', ExpireMonth: '', RowSize: '全部', PageNo: '', SortColumn: '', AscDesc: 'A' }
+        ];
+        for (const body of payloads) {
+          try {
+            let resp = null;
+            if (apiBase) {
+              resp = await fetch(`${apiBase}/api/v1/relay/public?url=${encodeURIComponent(url)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+            } else if (isAndroidApkHost()) {
+              resp = await androidProxyFetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+            } else {
+              return false;
+            }
+            if (!resp || !resp.ok) continue;
+            const j = await resp.json();
+            const list = j?.RtData?.QuoteList || [];
+            const near = list.find(x => x.SymbolID && !x.SymbolID.endsWith('-S') && !x.SymbolID.endsWith('-P') && parseNum(x.CLastPrice));
+            if (near) {
+              const price = parseNum(near.CLastPrice);
+              const ref = parseNum(near.CRefPrice) || price;
+              const chg = parseNum(near.CDiff) ?? Number((price - ref).toFixed(2));
+              const pct = parseNum(near.CDiffRate) ?? (ref ? Number(((price - ref) / ref * 100).toFixed(2)) : 0);
+              const tRaw = String(near.CTime || '');
+              const tFmt = tRaw.length === 6 ? `${tRaw.slice(0,2)}:${tRaw.slice(2,4)}:${tRaw.slice(4,6)}` : nowTwTime();
+              state.ext.indices.TXF = {
+                code: 'TXF',
+                name: body.MarketType === '1' ? '台指電子盤' : '台指近全',
+                price,
+                prevClose: ref,
+                change: chg,
+                changePct: pct,
+                volumeLots: parseNum(near.CTotalVolume) || 0,
+                time: tFmt,
+                stamp: `${near.CDate || ''} ${tFmt}`
+              };
+              return true;
+            }
+          } catch (e) {}
+        }
+        return false;
+      }
+
+      async function fetchFugleRealtime(symbols) {
+        const key = (state.ext.fugleApiKey || '').trim();
+        if (!key) return 0;
+        let ok = 0;
+        for (const sym of symbols.slice(0, 12)) {
+          try {
+            const r = await fetch(`https://api.fugle.tw/marketdata/v1.0/stock/intraday/quote/${encodeURIComponent(sym)}`, {
+              headers: { 'X-API-KEY': key }
+            });
+            if (!r.ok) continue;
+            const j = await r.json();
+            const price = parseNum(j.lastPrice ?? j.closePrice ?? j.avgPrice);
+            if (price === null) continue;
+            const prev = parseNum(j.previousClose) ?? price;
+            const existing = state.quotes[sym] || {};
+            state.quotes[sym] = {
+              ...existing,
+              price,
+              prevClose: prev,
+              open: parseNum(j.openPrice) ?? price,
+              high: parseNum(j.highPrice) ?? price,
+              low: parseNum(j.lowPrice) ?? price,
+              volume: (parseNum(j.total?.tradeVolume) || 0) * 1000,
+              volumeLots: parseNum(j.total?.tradeVolume) || 0,
+              tickVolume: parseNum(j.lastTrade?.size) || 0,
+              bids: (j.bids || []).slice(0, 5).map(x => Number(x.price)),
+              bidSizes: (j.bids || []).slice(0, 5).map(x => Number(x.size)),
+              asks: (j.asks || []).slice(0, 5).map(x => Number(x.price)),
+              askSizes: (j.asks || []).slice(0, 5).map(x => Number(x.size)),
+              lastDate: `${j.date || ''} ${nowTwTime()}`,
+              isRealtime: true,
+              realtimeTs: Date.now(),
+              realtimeSource: 'Fugle 富果盤中即時',
+              source: 'Fugle 富果官方即時'
+            };
+            ok++;
+          } catch (e) {}
+        }
+        return ok;
+      }
+
+      async function refreshRealtimeQuotes(silent = true) {
+        const syms = Array.from(new Set([
+          ...state.watchlist.map(w => w.symbol),
+          ...state.ext.lockTickerSymbols.filter(s => !['t00', 'o00', 'TXF'].includes(s))
+        ])).filter(s => /^[0-9A-Z]{4,6}$/.test(s));
+
+        const apiBase = getApiBase();
+        const badge = document.getElementById('mitakeFeedBadge');
+        let updated = 0;
+
+        try {
+          if (apiBase) {
+            const url = `${apiBase}/api/v1/market/realtime?symbols=${encodeURIComponent(syms.join(','))}&indices=t00,o00&_t=${Date.now()}`;
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) {
+              const j = await resp.json();
+              Object.values(j.quotes || {}).forEach(row => { if (applyMisRow(row)) updated++; });
+              if (badge) badge.textContent = `TWSE/TPEx 官方即時 (${nowTwTime()})`;
+            }
+          } else if (isAndroidApkHost()) {
+            const channels = ['tse_t00.tw', 'otc_o00.tw'];
+            syms.slice(0, 35).forEach(s => { channels.push(`tse_${s}.tw`, `otc_${s}.tw`); });
+            const misUrl = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${encodeURIComponent(channels.join('|'))}&_=${Date.now()}`;
+            const resp = await androidProxyFetch(misUrl);
+            if (resp.ok) {
+              const j = await resp.json();
+              (j.msgArray || []).forEach(row => { if (applyMisRow(row)) updated++; });
+              if (badge) badge.textContent = `App 直連 TWSE 即時 (${nowTwTime()})`;
+            }
+          } else if (state.ext.fugleApiKey) {
+            updated += await fetchFugleRealtime(syms);
+            if (badge && updated > 0) badge.textContent = `Fugle 富果即時 (${nowTwTime()})`;
+          } else {
+            if (badge) badge.textContent = `靜態模式（連線後端/App/Fugle 啟用盤中即時）`;
+          }
+
+          await fetchTaifexRealtime();
+        } catch (e) {
+          if (!silent) showToast('即時報價連線異常', e.message || '無法連線即時行情', 'warn');
+        }
+
+        const clk = document.getElementById('mitakeUpdateClock');
+        if (clk) clk.textContent = `${nowTwTime()} 更新`;
+        renderMitakeBoard();
+        renderLockTickers();
+        if (updated > 0) {
+          renderActiveStockHeaderAndOhlcv();
+          renderWatchlistPills();
+        }
+        return { updated };
+      }
+
+      function setRealtimeRefreshSec(sec) {
+        const s = Math.max(0, Number(sec) || 0);
+        state.ext.realtimeRefreshSec = s;
+        if (rtTimer) { clearInterval(rtTimer); rtTimer = null; }
+        if (s > 0) {
+          refreshRealtimeQuotes(true).catch(() => {});
+          rtTimer = setInterval(() => {
+            if (!document.hidden) refreshRealtimeQuotes(true).catch(() => {});
+          }, s * 1000);
+          showToast('盤中自動即時刷新已啟動', `每 ${s} 秒自動更新 TWSE/TPEx 即時報價與五檔。`, 'success');
+        }
+        persistState();
+      }
+
+      // --- 2. WATCHLIST GROUPS & MITAKE (三竹股市) LIVE BOARD ---
+      function getActiveGroup() {
+        return state.ext.groups.find(g => g.id === state.ext.activeGroupId) || state.ext.groups[0];
+      }
+
+      function getVisibleGroupSymbols() {
+        const grp = getActiveGroup();
+        if (!grp || grp.builtIn || grp.id === 'all') {
+          return state.watchlist.map(w => w.symbol);
+        }
+        return grp.symbols || [];
+      }
+
+      function createGroup(name, symbols = [], note = '') {
+        const cleanName = String(name || '').trim();
+        if (!cleanName) return null;
+        const cleanSyms = Array.from(new Set(symbols.map(s => String(s).trim().toUpperCase()).filter(s => /^[0-9A-Z]{4,6}$/.test(s))));
+        const existing = state.ext.groups.find(g => !g.builtIn && g.name === cleanName);
+        if (existing) {
+          existing.symbols = Array.from(new Set([...(existing.symbols || []), ...cleanSyms]));
+          if (note) existing.note = note;
+          state.ext.activeGroupId = existing.id;
+          persistState();
+          renderMitakeBoard();
+          return existing;
+        }
+        const grp = {
+          id: 'grp_' + Date.now().toString(36),
+          name: cleanName,
+          symbols: cleanSyms,
+          note: String(note || ''),
+          createdAt: nowTwDateTime()
+        };
+        state.ext.groups.push(grp);
+        state.ext.activeGroupId = grp.id;
+        persistState();
+        renderMitakeBoard();
+        return grp;
+      }
+
+      function renderIndexTag(elId, idx, fallbackLabel) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (!idx || idx.price === null || idx.price === undefined) {
+          el.textContent = `${fallbackLabel} --`;
+          el.className = 'mitake-flat';
+          return;
+        }
+        const up = (idx.change || 0) >= 0;
+        const arrow = (idx.change || 0) > 0 ? '▲' : ((idx.change || 0) < 0 ? '▼' : '');
+        el.className = (idx.change || 0) > 0 ? 'mitake-up' : ((idx.change || 0) < 0 ? 'mitake-down' : 'mitake-flat');
+        el.textContent = `${fmtNum(idx.price, idx.code === 'TXF' ? 0 : 2)} ${arrow}${Math.abs(idx.change || 0).toFixed(idx.code === 'TXF' ? 0 : 2)}(${up ? '+' : ''}${(idx.changePct || 0).toFixed(2)}%)`;
+      }
+
+      function renderMitakeBoard() {
+        const tabsEl = document.getElementById('mitakeGroupTabs');
+        const gridEl = document.getElementById('mitakeQuoteGrid');
+        const noteEl = document.getElementById('mitakeGroupNoteBar');
+        const obEl = document.getElementById('mitakeOrderbookBox');
+        if (!tabsEl || !gridEl) return;
+
+        renderIndexTag('mitakeIdxTwii', state.ext.indices.t00, '加權');
+        renderIndexTag('mitakeIdxOtc', state.ext.indices.o00, '櫃買');
+        renderIndexTag('mitakeIdxTxf', state.ext.indices.TXF, '台指近全');
+
+        tabsEl.innerHTML = state.ext.groups.map(g => {
+          const active = g.id === state.ext.activeGroupId;
+          const cnt = g.builtIn ? state.watchlist.length : (g.symbols?.length || 0);
+          return `<button type="button" class="mitake-group-pill ${active ? 'active' : ''}" data-grp-id="${escapeHtml(g.id)}">${escapeHtml(g.name)} (${cnt})</button>`;
+        }).join('');
+
+        tabsEl.querySelectorAll('[data-grp-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.ext.activeGroupId = btn.dataset.grpId;
+            persistState();
+            renderMitakeBoard();
+          });
+        });
+
+        const grp = getActiveGroup();
+        if (noteEl) {
+          if (grp && !grp.builtIn && grp.note) {
+            noteEl.style.display = 'block';
+            noteEl.innerHTML = `<strong style="color:#38bdf8;">📌 群組分析筆記：</strong>${escapeHtml(grp.note)}`;
+          } else {
+            noteEl.style.display = 'none';
+          }
+        }
+
+        const syms = getVisibleGroupSymbols();
+        if (!syms.length) {
+          gridEl.innerHTML = `<div style="grid-column:1/-1;padding:18px;text-align:center;color:#94a3b8;font-size:12px;">此群組尚無標的，點擊上方「📷 截圖匯入群組」或「查詢加入」新增台股。</div>`;
+        } else {
+          gridEl.innerHTML = syms.map(sym => {
+            const meta = getStockMeta(sym);
+            const q = getQuote(sym);
+            const hasP = q && q.price !== null && q.price !== undefined;
+            const prev = hasP ? (q.prevClose || q.open || q.price) : null;
+            const diff = hasP && prev ? Number((q.price - prev).toFixed(2)) : 0;
+            const pct = hasP && prev ? Number(((diff / prev) * 100).toFixed(2)) : 0;
+            const colorCls = !hasP ? 'mitake-flat' : (diff > 0 ? 'mitake-up' : (diff < 0 ? 'mitake-down' : 'mitake-flat'));
+            const limitCls = pct >= 9.5 ? 'limit-up' : (pct <= -9.5 ? 'limit-down' : '');
+            const actCls = sym === state.activeSymbol ? 'active' : '';
+            const tickV = q?.tickVolume ? fmtInt(q.tickVolume) : '--';
+            const totLots = q?.volumeLots ? fmtInt(q.volumeLots) : (q?.volume ? fmtInt(Math.round(q.volume / 1000)) : '--');
+            return `
+              <button type="button" class="mitake-tile ${limitCls} ${actCls}" data-mitake-sym="${escapeHtml(sym)}">
+                <div class="mitake-tile-head">
+                  <span class="mitake-tile-name">${escapeHtml(meta.name || sym)}</span>
+                  <span class="mitake-tile-code mono">${escapeHtml(sym)}</span>
+                </div>
+                <div class="mitake-tile-mid">
+                  <span class="mitake-tile-price mono ${colorCls}">${hasP ? fmtNum(q.price, 2) : '--'}</span>
+                  <span class="mitake-tile-chg mono ${colorCls}">
+                    ${hasP ? `${diff >= 0 ? '+' : ''}${fmtNum(diff, 2)}<br/>${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '待同步'}
+                  </span>
+                </div>
+                <div class="mitake-tile-foot mono">
+                  <span>單 <strong style="color:#e2e8f0;">${tickV}</strong></span>
+                  <span>總 <strong style="color:#fbbf24;">${totLots}</strong></span>
+                </div>
+              </button>
+            `;
+          }).join('');
+
+          gridEl.querySelectorAll('[data-mitake-sym]').forEach(el => {
+            el.addEventListener('click', () => selectStock(el.dataset.mitakeSym));
+          });
+        }
+
+        // Active Stock 5-Level Bid/Ask Orderbook (三竹五檔報價)
+        const aq = getQuote(state.activeSymbol);
+        if (obEl) {
+          if (aq && ((aq.bids && aq.bids.length) || (aq.asks && aq.asks.length))) {
+            obEl.style.display = 'grid';
+            const bidRows = (aq.bids || []).slice(0, 5).map((p, i) =>
+              `<div class="mitake-ob-row mitake-ob-bid mono"><span style="color:#94a3b8;">買${i + 1}</span><span class="mitake-up" style="font-weight:800;">${fmtNum(p, 2)}</span><span style="color:#f8fafc;">${fmtInt(aq.bidSizes?.[i] || 0)}</span></div>`
+            ).join('');
+            const askRows = (aq.asks || []).slice(0, 5).map((p, i) =>
+              `<div class="mitake-ob-row mitake-ob-ask mono"><span style="color:#94a3b8;">賣${i + 1}</span><span class="mitake-down" style="font-weight:800;">${fmtNum(p, 2)}</span><span style="color:#f8fafc;">${fmtInt(aq.askSizes?.[i] || 0)}</span></div>`
+            ).join('');
+            obEl.innerHTML = `
+              <div><div style="font-weight:800;color:#fca5a5;margin-bottom:4px;">${escapeHtml(state.activeSymbol)} 委買五檔 (張)</div>${bidRows || '<div style="color:#64748b;">--</div>'}</div>
+              <div><div style="font-weight:800;color:#86efac;margin-bottom:4px;">${escapeHtml(state.activeSymbol)} 委賣五檔 (張)</div>${askRows || '<div style="color:#64748b;">--</div>'}</div>
+            `;
+          } else {
+            obEl.style.display = 'none';
+          }
+        }
+      }
+
+      // --- 3. MOBILE LOCK-SCREEN LIVE MARKET TICKER (CUSTOMIZABLE) ---
+      function resolveTickerItem(code) {
+        if (state.ext.indices[code]) {
+          const x = state.ext.indices[code];
+          return { code, name: x.name, price: x.price, change: x.change, changePct: x.changePct, dot: INDEX_META[code]?.dot || '#ef4444', decimals: code === 'TXF' ? 0 : 2 };
+        }
+        if (INDEX_META[code]) {
+          return { code, name: INDEX_META[code].name, price: null, change: 0, changePct: 0, dot: INDEX_META[code].dot, decimals: code === 'TXF' ? 0 : 2 };
+        }
+        const meta = getStockMeta(code);
+        const q = getQuote(code);
+        if (q && q.price !== null && q.price !== undefined) {
+          const prev = q.prevClose || q.open || q.price;
+          const chg = Number((q.price - prev).toFixed(2));
+          const pct = prev ? Number(((chg / prev) * 100).toFixed(2)) : 0;
+          return { code, name: meta.name || code, price: q.price, change: chg, changePct: pct, dot: '#38bdf8', decimals: 2 };
+        }
+        return { code, name: meta.name || code, price: null, change: 0, changePct: 0, dot: '#38bdf8', decimals: 2 };
+      }
+
+      function buildLockTickerHtml(items) {
+        const upCount = items.filter(x => x.price !== null && x.change > 0).length;
+        const dnCount = items.filter(x => x.price !== null && x.change < 0).length;
+        const mood = upCount > dnCount ? '指數全面走揚，買盤氣盛' : (dnCount > upCount ? '盤面偏弱震盪，留意風控' : '多空拉鋸整理，即時監控中');
+        const cells = items.slice(0, 3).map(it => {
+          const has = it.price !== null;
+          const cls = !has ? 'mitake-flat' : (it.change > 0 ? 'mitake-up' : (it.change < 0 ? 'mitake-down' : 'mitake-flat'));
+          const arrow = it.change > 0 ? '▲' : (it.change < 0 ? '▼' : '');
+          return `
+            <div class="lock-ticker-cell">
+              <div class="lock-ticker-lbl"><span style="width:6px;height:6px;border-radius:999px;background:${it.dot};display:inline-block;flex-shrink:0;"></span>${escapeHtml(it.name)}</div>
+              <div class="lock-ticker-val mono ${cls}">${has ? fmtNum(it.price, it.decimals) : '--'}</div>
+              <div class="lock-ticker-chg mono ${cls}">${has ? `${arrow}${Math.abs(it.change).toFixed(it.decimals)} (${it.changePct >= 0 ? '+' : ''}${it.changePct.toFixed(2)}%)` : '待同步'}</div>
+            </div>
+          `;
+        }).join('');
+        return `
+          <div class="lock-ticker-head">
+            <div><strong style="font-size:13px;">📈 大盤即時</strong> <span style="color:#94a3b8;font-size:11px;margin-left:4px;">${mood}</span></div>
+            <span class="mono" style="color:#94a3b8;font-size:11px;">${nowTwTime().slice(0, 5)} 更新</span>
+          </div>
+          <div class="lock-ticker-grid">${cells}</div>
+          <div class="lock-ticker-foot">
+            <span>✨ 自訂 ${state.ext.lockTickerSymbols.length} 檔指數／個股 · 即時監看</span>
+            <span style="color:#94a3b8;font-size:10.5px;">SHL TW 公開行情</span>
+          </div>
+        `;
+      }
+
+      function renderLockTickers() {
+        const items = state.ext.lockTickerSymbols.map(resolveTickerItem);
+        const html = buildLockTickerHtml(items);
+        const vEl = document.getElementById('vaultLockLiveTicker');
+        const sEl = document.getElementById('standbyTickerWidget');
+        const extraEl = document.getElementById('standbyExtraGrid');
+        if (vEl) vEl.innerHTML = html;
+        if (sEl) sEl.innerHTML = html;
+        if (extraEl) {
+          const extras = items.slice(3, 9);
+          extraEl.innerHTML = extras.map(it => {
+            const has = it.price !== null;
+            const cls = !has ? 'mitake-flat' : (it.change > 0 ? 'mitake-up' : (it.change < 0 ? 'mitake-down' : 'mitake-flat'));
+            return `
+              <div class="lock-ticker-cell">
+                <div class="lock-ticker-lbl">${escapeHtml(it.name)} <span class="mono" style="opacity:.6;">${escapeHtml(it.code)}</span></div>
+                <div class="lock-ticker-val mono ${cls}">${has ? fmtNum(it.price, it.decimals) : '--'}</div>
+                <div class="lock-ticker-chg mono ${cls}">${has ? `${it.changePct >= 0 ? '+' : ''}${it.changePct.toFixed(2)}%` : '--'}</div>
+              </div>
+            `;
+          }).join('');
+        }
+        renderLockTickerCustomizer();
+      }
+
+      function renderLockTickerCustomizer() {
+        const box = document.getElementById('lockTickerChoicePills');
+        if (!box) return;
+        const candidates = [
+          { code: 't00', label: '加權指數 (t00)' },
+          { code: 'o00', label: '櫃買指數 (o00)' },
+          { code: 'TXF', label: '台指電子盤 (TXF)' },
+          ...state.watchlist.slice(0, 12).map(w => ({ code: w.symbol, label: `${w.symbol} ${w.name}` }))
+        ];
+        state.ext.lockTickerSymbols.forEach(c => {
+          if (!candidates.some(x => x.code === c)) candidates.push({ code: c, label: c });
+        });
+        box.innerHTML = candidates.map(c => {
+          const on = state.ext.lockTickerSymbols.includes(c.code);
+          return `<button type="button" class="btn btn-sm ${on ? 'btn-primary' : ''}" data-lock-pick="${escapeHtml(c.code)}">${on ? '✓ ' : '＋ '}${escapeHtml(c.label)}</button>`;
+        }).join('');
+        box.querySelectorAll('[data-lock-pick]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const code = btn.dataset.lockPick;
+            const list = state.ext.lockTickerSymbols;
+            if (list.includes(code)) {
+              if (list.length <= 1) { showToast('至少保留 1 檔', '鎖屏看板至少需保留 1 檔標的。', 'warn'); return; }
+              state.ext.lockTickerSymbols = list.filter(x => x !== code);
+            } else {
+              state.ext.lockTickerSymbols = [...list, code].slice(0, 9);
+            }
+            persistState();
+            renderLockTickers();
+          });
+        });
+      }
+
+      function updateStandbyClock() {
+        const now = new Date();
+        const dEl = document.getElementById('standbyDateLine');
+        const tEl = document.getElementById('standbyClockLine');
+        if (dEl) {
+          dEl.textContent = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', month: 'long', day: 'numeric', weekday: 'long' }).format(now);
+        }
+        if (tEl) {
+          tEl.textContent = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, hour: '2-digit', minute: '2-digit' }).format(now);
+        }
+      }
+
+      function openStandbyLock() {
+        const ov = document.getElementById('shlStandbyLockOverlay');
+        if (!ov) return;
+        ov.classList.add('active');
+        updateStandbyClock();
+        renderLockTickers();
+        refreshRealtimeQuotes(true).catch(() => {});
+        if (standbyClockTimer) clearInterval(standbyClockTimer);
+        standbyClockTimer = setInterval(() => {
+          updateStandbyClock();
+          refreshRealtimeQuotes(true).catch(() => {});
+        }, 15000);
+      }
+
+      function closeStandbyLock() {
+        document.getElementById('shlStandbyLockOverlay')?.classList.remove('active');
+        if (standbyClockTimer) { clearInterval(standbyClockTimer); standbyClockTimer = null; }
+      }
+
+      // --- 4. SCREENSHOT VISION AI ANALYSIS -> ADD TO GROUP ---
+      function openScreenshotModal() {
+        openModal('screenshotGroupModal');
+      }
+
+      function handleScreenshotFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxW = 1280;
+            const scale = Math.min(1, maxW / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            currentShotDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const prev = document.getElementById('shotPreviewImg');
+            if (prev) { prev.src = currentShotDataUrl; prev.style.display = 'inline-block'; }
+            const st = document.getElementById('shotStatusText');
+            if (st) st.textContent = `已載入截圖 (${canvas.width}×${canvas.height})，請點「執行截圖 AI 解析」`;
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function callVisionAi(provider, dataUrl, prompt) {
+        const base64 = dataUrl.split(',')[1] || '';
+        const mime = (dataUrl.match(/^data:(image\/[a-z+]+);base64,/i) || [])[1] || 'image/jpeg';
+        const liveCreds = readAiKeysFromInputs();
+        const keys = { ...state.aiKeys, ...liveCreds.apiKeys };
+        const opts = { ...state.modelOptions, ...liveCreds.modelOptions };
+
+        let chosen = provider;
+        if (chosen === 'auto') {
+          if (keys.gemini) chosen = 'gemini';
+          else if (keys.chatgpt) chosen = 'chatgpt';
+          else if (keys.claude) chosen = 'claude';
+          else if (keys.grok) chosen = 'grok';
+          else if (opts.ollama_url) chosen = 'ollama';
+          else throw new Error('尚未填寫任何支援視覺的 AI API Token（Gemini / ChatGPT / Claude / Grok），請先至「AI 六模型」填入 Token，或直接於下方手動輸入代號。');
+        }
+
+        if (chosen === 'gemini') {
+          const key = (keys.gemini || '').trim();
+          if (!key) throw new Error('尚未填寫 Gemini API Key');
+          const model = (opts.gemini_model || 'gemini-2.5-flash').trim().replace(/^models\//, '');
+          const r = await androidProxyFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: base64 } }] }],
+              generationConfig: { temperature: 0.1 }
+            })
+          });
+          if (!r.ok) throw new Error(`Gemini Vision HTTP ${r.status}`);
+          const j = await r.json();
+          const parts = j.candidates?.[0]?.content?.parts || [];
+          return parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n');
+        }
+        if (chosen === 'chatgpt' || chosen === 'grok') {
+          const isGrok = chosen === 'grok';
+          const key = (isGrok ? keys.grok : keys.chatgpt || '').trim();
+          if (!key) throw new Error(`尚未填寫 ${isGrok ? 'xAI' : 'OpenAI'} API Key`);
+          const url = isGrok ? 'https://api.x.ai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
+          const model = isGrok ? (opts.grok_model || 'grok-2-vision-1212') : (opts.chatgpt_model || 'gpt-4o-mini');
+          const r = await androidProxyFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: dataUrl } }] }]
+            })
+          });
+          if (!r.ok) throw new Error(`${chosen} Vision HTTP ${r.status}`);
+          const j = await r.json();
+          return j.choices?.[0]?.message?.content || '';
+        }
+        if (chosen === 'claude') {
+          const key = (keys.claude || '').trim();
+          if (!key) throw new Error('尚未填寫 Claude API Key');
+          const model = (opts.claude_model || 'claude-sonnet-4-20250514').trim();
+          const r = await androidProxyFetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model,
+              max_tokens: 900,
+              messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mime, data: base64 } }, { type: 'text', text: prompt }] }]
+            })
+          });
+          if (!r.ok) throw new Error(`Claude Vision HTTP ${r.status}`);
+          const j = await r.json();
+          return j.content?.[0]?.text || '';
+        }
+        if (chosen === 'ollama') {
+          const base = (opts.ollama_url || '').trim().replace(/\/+$/, '');
+          if (!base) throw new Error('尚未設定 Ollama 網址');
+          const r = await fetch(`${base}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: opts.ollama_model || 'llama3.2-vision', stream: false, messages: [{ role: 'user', content: prompt, images: [base64] }] })
+          });
+          if (!r.ok) throw new Error(`Ollama Vision HTTP ${r.status}`);
+          const j = await r.json();
+          return j.message?.content || '';
+        }
+        throw new Error('不支援的視覺模型');
+      }
+
+      async function runScreenshotVisionAnalysis() {
+        const st = document.getElementById('shotStatusText');
+        const resPanel = document.getElementById('shotResultPanel');
+        const codesIn = document.getElementById('shotExtractedCodes');
+        const sumIn = document.getElementById('shotExtractedSummary');
+        const grpIn = document.getElementById('shotGroupNameInput');
+        if (!currentShotDataUrl) {
+          showToast('請先選擇或貼上截圖', '點擊虛線框選擇相簿截圖，或直接按 Ctrl+V 貼上。', 'warn');
+          return;
+        }
+        const provider = document.getElementById('shotVisionProvider')?.value || 'auto';
+        const btn = document.getElementById('btnRunShotAnalysis');
+        if (btn) btn.disabled = true;
+        if (st) st.textContent = 'AI 視覺模型正在辨識截圖中的台股代號、群組名稱與盤面強弱...';
+        try {
+          const prompt = '你是專業台股看盤截圖辨識助理。請仔細辨識這張股市截圖（可能是三竹股市自選清單、券商庫存或 K 線圖），擷取所有可見的 4~6 碼台股代號與名稱、截圖標題群組名稱，並整理 120 字內盤面強弱與觀察重點。請回覆純 JSON：{"group_name":"群組名稱(如AI相關當沖)","symbols":["2327","3026","2368"],"summary":"盤面強弱與操作重點分析"}';
+          const rawText = await callVisionAi(provider, currentShotDataUrl, prompt);
+          const parsed = parseLooseAiJson(rawText);
+          const syms = Array.isArray(parsed.symbols) && parsed.symbols.length
+            ? parsed.symbols.map(s => String(s).trim().toUpperCase()).filter(s => /^[0-9A-Z]{4,6}$/.test(s))
+            : extractTwSymbolsFromPrompt(rawText, 24);
+          if (resPanel) resPanel.style.display = 'flex';
+          if (codesIn) codesIn.value = syms.join(', ');
+          if (sumIn) sumIn.value = parsed.summary || rawText.slice(0, 260);
+          if (grpIn && !grpIn.value.trim() && parsed.group_name) grpIn.value = parsed.group_name;
+          if (st) st.textContent = `✓ 解析完成，共辨識出 ${syms.length} 檔台股代號！`;
+        } catch (err) {
+          if (resPanel) resPanel.style.display = 'flex';
+          if (st) st.textContent = `⚠ ${err.message}（您仍可直接於下方輸入代號與筆記建立群組）`;
+          showToast('截圖解析提示', err.message, 'warn');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      async function commitScreenshotToGroup() {
+        const grpName = (document.getElementById('shotGroupNameInput')?.value || '').trim() || `截圖群組 ${nowTwTime().slice(0, 5)}`;
+        const rawCodes = document.getElementById('shotExtractedCodes')?.value || '';
+        const summary = (document.getElementById('shotExtractedSummary')?.value || '').trim();
+        const codes = Array.from(new Set(rawCodes.toUpperCase().split(/[\s,、;；]+/).map(s => s.replace(/\.TWO?$/i, '')).filter(s => /^[0-9A-Z]{4,6}$/.test(s))));
+        if (!codes.length) {
+          showToast('請輸入至少一檔台股代號', '例如 2327, 3026, 2368, 8046, 3037, 3189。', 'warn');
+          return;
+        }
+        codes.forEach(code => {
+          if (!state.watchlist.some(w => w.symbol === code)) {
+            state.watchlist.push({
+              symbol: code, name: code, industry: '截圖匯入', marketType: 'twse',
+              tvSymbol: `TWSE:${code}`, yahooSymbol: `${code}.TW`,
+              dataset: 'TaiwanStockPrice', finmindId: code
+            });
+          }
+        });
+        createGroup(grpName, codes, summary);
+        closeModal('screenshotGroupModal');
+        showToast('已建立群組並開始同步即時報價', `群組「${grpName}」已加入 ${codes.length} 檔標的！`, 'success');
+        await refreshRealtimeQuotes(false);
+        // Resolve official stock names from TWSE MIS or FinMind in background
+        codes.forEach(c => {
+          const q = state.quotes[c];
+          const w = state.watchlist.find(x => x.symbol === c);
+          if (w && w.name === c && q && q.name) w.name = q.name;
+        });
+        persistState();
+        renderAllViews();
+      }
+
+      // --- 5. AI MULTI-MODEL % BULL/BEAR LIVE BATTLE & VIRTUAL AUTO-TRADING (SIM/LIVE) ---
+      function computeBattleStats(pack) {
+        if (!pack || !Array.isArray(pack.models) || !pack.models.length) return null;
+        let bullSum = 0;
+        let bearSum = 0;
+        const perModel = pack.models.map(m => {
+          const bp = normalizeBullBearPct(m.verdict, m.confidence, m.bull_pct, m.bear_pct);
+          bullSum += bp.bull_pct;
+          bearSum += bp.bear_pct;
+          const def = AI_MODELS.find(d => d.id === m.model);
+          return {
+            id: m.model,
+            short: def?.short || m.model.slice(0, 2).toUpperCase(),
+            label: def?.label || m.model,
+            color: def?.color || '#38bdf8',
+            bull_pct: bp.bull_pct,
+            bear_pct: bp.bear_pct,
+            connected: Boolean(m.connected)
+          };
+        });
+        const avgBull = Math.round(bullSum / perModel.length);
+        const avgBear = 100 - avgBull;
+        const targetSym = (pack.analyzed_targets && pack.analyzed_targets.length === 1)
+          ? pack.analyzed_targets[0].symbol
+          : state.activeSymbol;
+        return { bullPct: avgBull, bearPct: avgBear, spread: avgBull - avgBear, perModel, targetSym, timestamp: pack.timestamp };
+      }
+
+      function renderBullBearBattle(pack) {
+        const stats = computeBattleStats(pack);
+        lastBattleSummary = stats;
+        const bullBar = document.getElementById('battleBarBull');
+        const bearBar = document.getElementById('battleBarBear');
+        const txtEl = document.getElementById('battleConsensusText');
+        const decEl = document.getElementById('battleLastDecision');
+        const chipsEl = document.getElementById('battleModelChips');
+        const modeBadge = document.getElementById('battleExecModeBadge');
+        if (modeBadge) {
+          modeBadge.textContent = state.envMode === 'LIVE' ? '實盤模式 LIVE（真實券商）' : '虛擬買賣 SIM（不真實下單）';
+          modeBadge.className = state.envMode === 'LIVE' ? 'badge badge-up' : 'badge badge-amber';
+        }
+        if (!stats) return;
+        if (bullBar) { bullBar.style.width = `${stats.bullPct}%`; bullBar.textContent = `多方 ${stats.bullPct}%`; }
+        if (bearBar) { bearBar.style.width = `${stats.bearPct}%`; bearBar.textContent = `空方 ${stats.bearPct}%`; }
+        const bullTh = Number(document.getElementById('battleBullThreshold')?.value || state.ext.battleAuto.bullThreshold || 65);
+        const bearTh = Number(document.getElementById('battleBearThreshold')?.value || state.ext.battleAuto.bearThreshold || 65);
+        let actionTxt = '多空拉鋸觀望 (HOLD)';
+        if (stats.bullPct >= bullTh) actionTxt = `🔴 多方勝出 (${stats.bullPct}% ≥ ${bullTh}%) → 建議買進`;
+        else if (stats.bearPct >= bearTh) actionTxt = `🟢 空方勝出 (${stats.bearPct}% ≥ ${bearTh}%) → 建議賣出`;
+        if (txtEl) txtEl.textContent = `標的 ${stats.targetSym} · ${stats.perModel.length} 模型即時交戰（差值 ${stats.spread >= 0 ? '+' : ''}${stats.spread}%）`;
+        if (decEl) decEl.textContent = actionTxt;
+        if (chipsEl) {
+          chipsEl.innerHTML = stats.perModel.map(m => `
+            <span class="battle-chip mono">
+              <span style="width:7px;height:7px;border-radius:999px;background:${m.color};display:inline-block;"></span>
+              <strong>${escapeHtml(m.short)}</strong>
+              <span class="mitake-up">多${m.bull_pct}%</span>/<span class="mitake-down">空${m.bear_pct}%</span>
+            </span>
+          `).join('');
+        }
+      }
+
+      async function evaluateAndMaybeAutoOrder(forceManual = false) {
+        const stats = lastBattleSummary;
+        if (!stats) {
+          if (forceManual) showToast('尚未執行多空交戰', '請先點「⚡ 抓即時價＋多空交戰」計算模型百分比。', 'warn');
+          return;
+        }
+        const cfg = state.ext.battleAuto;
+        const bullTh = Math.max(51, Math.min(95, Number(document.getElementById('battleBullThreshold')?.value || cfg.bullThreshold || 65)));
+        const bearTh = Math.max(51, Math.min(95, Number(document.getElementById('battleBearThreshold')?.value || cfg.bearThreshold || 65)));
+        const qty = Math.max(1, Math.min(50, Number(document.getElementById('battleAutoQty')?.value || cfg.qty || 1)));
+        cfg.bullThreshold = bullTh;
+        cfg.bearThreshold = bearTh;
+        cfg.qty = qty;
+        persistState();
+
+        let side = null;
+        if (stats.bullPct >= bullTh) side = 'BUY';
+        else if (stats.bearPct >= bearTh) side = 'SELL';
+        if (!side) {
+          if (forceManual) showToast('未達自動下單門檻', `目前多方 ${stats.bullPct}% / 空方 ${stats.bearPct}%，皆未達設定門檻 (${bullTh}%/${bearTh}%)。`, 'info');
+          return;
+        }
+        if (!forceManual && (Date.now() - (cfg.lastAutoAt || 0)) < 25000) return;
+
+        const q = getQuote(stats.targetSym);
+        if (!q || !q.price) {
+          if (forceManual) showToast('缺少即時價格', `請先同步 ${stats.targetSym} 真實報價。`, 'warn');
+          return;
+        }
+        // Safety: for automated triggers, default strictly to SIM unless user explicitly switched global envMode to LIVE
+        const pos = state.positions.find(p => p.symbol === stats.targetSym);
+        if (side === 'SELL' && state.envMode === 'SIM' && (!pos || pos.shares < qty * 1000)) {
+          if (forceManual) showToast('模擬盤無足夠持股可賣', `${stats.targetSym} 目前持有 ${pos ? pos.shares : 0} 股，本次空方訊號僅記錄警示。`, 'warn');
+          return;
+        }
+        cfg.lastAutoAt = Date.now();
+        await executeOrder({
+          symbol: stats.targetSym,
+          side,
+          qty,
+          unit: '張',
+          price: q.price,
+          orderType: 'LMT',
+          tif: 'ROD',
+          source: `AI_BATTLE_${stats.bullPct}B_${stats.bearPct}S`
+        });
+      }
+
+      async function runLiveBattleNow(autoTrigger = false) {
+        await refreshRealtimeQuotes(true);
+        await fetchMarketData(state.activeSymbol, 'auto');
+        await runMultiAiAnalysis('', { forceActive: true });
+        const pack = state.aiResults[state.activeSymbol];
+        renderBullBearBattle(pack);
+        if (autoTrigger && state.ext.battleAuto.enabled) {
+          await evaluateAndMaybeAutoOrder(false);
+        }
+      }
+
+      function startBattleAutoLoop() {
+        if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+        const enabled = Boolean(document.getElementById('chkBattleAutoTrade')?.checked);
+        const pollSec = Number(document.getElementById('battlePollInterval')?.value || 60);
+        state.ext.battleAuto.enabled = enabled;
+        state.ext.battleAuto.pollSec = pollSec;
+        persistState();
+        if (enabled && pollSec > 0) {
+          battleTimer = setInterval(() => {
+            if (!document.hidden && !state.killSwitch) {
+              runLiveBattleNow(true).catch(() => {});
+            }
+          }, pollSec * 1000);
+          showToast('AI 多空自動虛擬下單已啟動', `每 ${pollSec} 秒抓取即時行情並進行多空 % 交戰（目前為 ${state.envMode} 模式）。`, 'success');
+        }
+      }
+
+      // --- 6. DEVICE MATCHING / PAIRING -> UNIFIED OWNER DATABASE ---
+      async function registerSelfDeviceBackend() {
+        const d = ensureDeviceIdentity();
+        const apiBase = getApiBase();
+        if (!apiBase) return;
+        try {
+          const r = await fetch(`${apiBase}/api/v1/device/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              device_id: d.deviceId,
+              device_name: (document.getElementById('vaultDeviceNameInput')?.value || navigator.platform || 'SHL Device').slice(0, 50),
+              platform: /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'iOS' : (/Android/i.test(navigator.userAgent) ? 'Android' : 'Desktop'),
+              owner_id: d.ownerId
+            })
+          });
+          if (r.ok) {
+            const j = await r.json();
+            if (j.sync_space) d.syncSpace = j.sync_space;
+            persistState();
+          }
+        } catch (e) {}
+      }
+
+      async function createPairCode() {
+        const d = ensureDeviceIdentity();
+        const apiBase = getApiBase();
+        const wrap = document.getElementById('devicePairCodeWrap');
+        const box = document.getElementById('devicePairCodeBox');
+        const hint = document.getElementById('devicePairCodeHint');
+        if (!apiBase) {
+          showToast('離線模式配對提示', '未連線雲端後端時，請點「複製離線配對金鑰」透過 AirDrop / iCloud 貼到另一台裝置完成同帳號歸屬。', 'info');
+          copyOfflinePairToken();
+          return;
+        }
+        await registerSelfDeviceBackend();
+        try {
+          const r = await fetch(`${apiBase}/api/v1/device/pair/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner_id: d.ownerId, device_id: d.deviceId })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+          if (wrap) wrap.style.display = 'flex';
+          if (box) box.textContent = j.code;
+          if (hint) hint.textContent = `有效 10 分鐘（僅限一次）· 另一台裝置輸入此 6 碼即可歸屬同一資料庫 (${j.sync_space})`;
+          showToast('已產生裝置配對碼', `配對碼：${j.code}（10 分鐘內有效）`, 'success');
+        } catch (err) {
+          showToast('產生配對碼失敗', err.message, 'error');
+        }
+      }
+
+      async function copyOfflinePairToken() {
+        const d = ensureDeviceIdentity();
+        const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+          v: 1,
+          ownerId: d.ownerId,
+          syncSpace: d.syncSpace,
+          backendUrl: state.backendUrl || ''
+        }))));
+        const token = `SHLPAIR1:${payload}`;
+        try { await navigator.clipboard.writeText(token); } catch (e) {}
+        const wrap = document.getElementById('devicePairCodeWrap');
+        const box = document.getElementById('devicePairCodeBox');
+        const hint = document.getElementById('devicePairCodeHint');
+        if (wrap) wrap.style.display = 'flex';
+        if (box) { box.style.fontSize = '12px'; box.style.letterSpacing = '0.02em'; box.textContent = token; }
+        if (hint) hint.textContent = '已複製離線配對金鑰，請貼到另一台裝置的「輸入配對碼」欄位完成同一資料庫歸屬。';
+        showToast('已複製離線配對金鑰', '請於另一台裝置貼上即可歸屬同一個 Owner ID 與同步空間。', 'success');
+      }
+
+      async function claimPairCode() {
+        const d = ensureDeviceIdentity();
+        const raw = (document.getElementById('devicePairClaimInput')?.value || '').trim();
+        if (!raw) { showToast('請輸入配對碼', '請輸入 6 碼配對碼或貼上 SHLPAIR1:... 金鑰。', 'warn'); return; }
+
+        if (raw.startsWith('SHLPAIR1:')) {
+          try {
+            const parsed = JSON.parse(decodeURIComponent(escape(atob(raw.slice(9)))));
+            if (!parsed.ownerId || !/^own_[A-Za-z0-9_-]{12,}$/.test(parsed.ownerId)) throw new Error('無效的離線配對金鑰');
+            d.ownerId = parsed.ownerId;
+            d.syncSpace = parsed.syncSpace || ('owner-' + d.ownerId.slice(4, 16));
+            if (parsed.backendUrl && !state.backendUrl) state.backendUrl = parsed.backendUrl;
+            const spaceIn = document.getElementById('vaultSyncSpaceInput');
+            if (spaceIn) spaceIn.value = d.syncSpace;
+            persistState();
+            await registerSelfDeviceBackend();
+            await refreshPairedDevices();
+            showToast('離線裝置匹配成功', `本機已歸屬統一帳號 ${d.ownerId.slice(0, 12)}...，同步空間已對齊為 ${d.syncSpace}！`, 'success');
+            return;
+          } catch (err) {
+            showToast('配對金鑰格式錯誤', err.message, 'error');
+            return;
+          }
+        }
+
+        const apiBase = getApiBase();
+        if (!apiBase) {
+          showToast('需連線後端或使用離線配對金鑰', '6 碼即時配對需連線同一個後端 server.py；純網頁模式請改用「離線配對金鑰」。', 'warn');
+          return;
+        }
+        try {
+          const r = await fetch(`${apiBase}/api/v1/device/pair/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: raw,
+              device_id: d.deviceId,
+              device_name: (document.getElementById('vaultDeviceNameInput')?.value || navigator.platform || 'SHL Device').slice(0, 50),
+              platform: /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'iOS' : (/Android/i.test(navigator.userAgent) ? 'Android' : 'Desktop')
+            })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+          d.ownerId = j.owner_id;
+          d.syncSpace = j.sync_space;
+          const spaceIn = document.getElementById('vaultSyncSpaceInput');
+          if (spaceIn) spaceIn.value = d.syncSpace;
+          persistState();
+          document.getElementById('devicePairClaimInput').value = '';
+          await refreshPairedDevices();
+          // Pull unified order history from the matched owner database!
+          try {
+            const hr = await fetch(`${apiBase}/api/v1/orders/history?limit=100`);
+            if (hr.ok) {
+              const hj = await hr.json();
+              if (Array.isArray(hj.orders) && hj.orders.length) {
+                state.orders = hj.orders;
+                persistState();
+                renderPositionsAndOrders();
+              }
+            }
+          } catch (e) {}
+          showToast('裝置匹配成功！', `已歸屬統一資料庫 (${d.syncSpace})，所有交易紀錄與同步空間已自動對齊！`, 'success');
+        } catch (err) {
+          showToast('裝置配對失敗', err.message, 'error');
+        }
+      }
+
+      async function refreshPairedDevices() {
+        const d = ensureDeviceIdentity();
+        const selfEl = document.getElementById('deviceSelfIdText');
+        const ownerEl = document.getElementById('deviceOwnerIdText');
+        const spaceEl = document.getElementById('deviceOwnerSpaceText');
+        const badgeEl = document.getElementById('deviceOwnerBadge');
+        const listEl = document.getElementById('pairedDevicesList');
+        if (selfEl) selfEl.textContent = d.deviceId;
+        if (ownerEl) ownerEl.textContent = d.ownerId;
+        if (spaceEl) spaceEl.textContent = d.syncSpace;
+
+        const apiBase = getApiBase();
+        if (!apiBase) {
+          if (badgeEl) badgeEl.textContent = '本機獨立（支援離線配對）';
+          if (listEl) listEl.innerHTML = `<div style="color:var(--ink-3);">連線至同一個後端 server.py 後，將自動列出所有歸屬此帳號的手機與電腦裝置。</div>`;
+          return;
+        }
+        try {
+          await registerSelfDeviceBackend();
+          const r = await fetch(`${apiBase}/api/v1/device/list`);
+          if (!r.ok) return;
+          const j = await r.json();
+          d.pairedDevices = j.devices || [];
+          if (badgeEl) badgeEl.textContent = `已歸屬 ${d.pairedDevices.length} 台裝置 · ${j.owner_order_count || 0} 筆訂單`;
+          if (listEl) {
+            listEl.innerHTML = d.pairedDevices.map(dev => `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+                <div>
+                  <strong>${escapeHtml(dev.device_name || dev.device_id)}</strong>
+                  <span class="badge badge-slate" style="font-size:10px;margin-left:4px;">${escapeHtml(dev.platform || 'Web')}</span>
+                  ${dev.device_id === d.deviceId ? '<span class="badge badge-down" style="font-size:10px;margin-left:4px;">本機</span>' : ''}
+                  <div class="mono" style="font-size:10px;color:var(--ink-3);">最近連線：${escapeHtml(dev.last_seen || '')}</div>
+                </div>
+                ${dev.device_id !== d.deviceId ? `<button type="button" class="btn btn-sm" data-unlink-dev="${escapeHtml(dev.device_id)}">移除</button>` : ''}
+              </div>
+            `).join('');
+            listEl.querySelectorAll('[data-unlink-dev]').forEach(btn => {
+              btn.addEventListener('click', async () => {
+                await fetch(`${apiBase}/api/v1/device/unlink?device_id=${encodeURIComponent(btn.dataset.unlinkDev)}`, { method: 'POST' });
+                refreshPairedDevices();
+              });
+            });
+          }
+        } catch (e) {}
+      }
+
+      function init() {
+        ensureDeviceIdentity();
+        // Hydrate controls
+        const rtSel = document.getElementById('realtimeRefreshSelect');
+        if (rtSel) {
+          rtSel.value = String(state.ext.realtimeRefreshSec || 0);
+          rtSel.addEventListener('change', () => setRealtimeRefreshSec(Number(rtSel.value)));
+          if (state.ext.realtimeRefreshSec > 0) setRealtimeRefreshSec(state.ext.realtimeRefreshSec);
+        }
+        const fugleIn = document.getElementById('fugleApiKeyInput');
+        if (fugleIn && state.ext.fugleApiKey) fugleIn.value = state.ext.fugleApiKey;
+        document.getElementById('btnSaveFugleKey')?.addEventListener('click', () => {
+          state.ext.fugleApiKey = (document.getElementById('fugleApiKeyInput')?.value || '').trim();
+          persistState();
+          showToast('已儲存 Fugle API Key', '現在點擊「全標的同步真實行情」將優先直連富果盤中即時行情！', 'success');
+        });
+
+        // Mitake board buttons
+        document.getElementById('btnMitakeNewGroup')?.addEventListener('click', () => {
+          const name = prompt('請輸入新自選群組名稱（例如：AI 相關當沖、高股息核心）：');
+          if (!name || !name.trim()) return;
+          const codes = prompt('可選填初始股票代號（以逗號分隔，例如 2327, 2368, 3037；留空稍後再加）：') || '';
+          const syms = codes.toUpperCase().split(/[\s,、;]+/).filter(s => /^[0-9A-Z]{4,6}$/.test(s));
+          syms.forEach(code => {
+            if (!state.watchlist.some(w => w.symbol === code)) {
+              state.watchlist.push({ symbol: code, name: code, industry: '台股', marketType: 'twse', tvSymbol: `TWSE:${code}`, yahooSymbol: `${code}.TW`, dataset: 'TaiwanStockPrice', finmindId: code });
+            }
+          });
+          createGroup(name.trim(), syms, '');
+          if (syms.length) refreshRealtimeQuotes(true).catch(() => {});
+        });
+        document.getElementById('btnMitakeToggle')?.addEventListener('click', () => {
+          boardCollapsed = !boardCollapsed;
+          const c = document.getElementById('mitakeBoardCollapsible');
+          const b = document.getElementById('btnMitakeToggle');
+          if (c) c.style.display = boardCollapsed ? 'none' : 'block';
+          if (b) b.textContent = boardCollapsed ? '展開看板' : '收合看板';
+        });
+
+        // Lock-screen standby buttons
+        document.getElementById('btnOpenStandbyLock')?.addEventListener('click', openStandbyLock);
+        document.getElementById('btnPreviewStandbyFromVault')?.addEventListener('click', () => { closeModal('featureStudioModal'); openStandbyLock(); });
+        document.getElementById('btnStandbyClose')?.addEventListener('click', closeStandbyLock);
+        document.getElementById('btnStandbyRefreshNow')?.addEventListener('click', () => refreshRealtimeQuotes(false));
+        document.getElementById('btnStandbyCustomize')?.addEventListener('click', () => { closeStandbyLock(); openFeatureModal('vault'); });
+        document.getElementById('btnAddLockTickerCustom')?.addEventListener('click', () => {
+          const inp = document.getElementById('lockTickerCustomInput');
+          const raw = (inp?.value || '').trim();
+          if (!raw) return;
+          const code = ['t00', 'o00'].includes(raw.toLowerCase()) ? raw.toLowerCase() : raw.toUpperCase();
+          if (!state.ext.lockTickerSymbols.includes(code)) {
+            state.ext.lockTickerSymbols.push(code);
+            persistState();
+            renderLockTickers();
+            refreshRealtimeQuotes(true).catch(() => {});
+          }
+          if (inp) inp.value = '';
+        });
+
+        // Screenshot-to-Group modal & paste listener
+        document.getElementById('btnOpenScreenshotModal')?.addEventListener('click', openScreenshotModal);
+        document.getElementById('btnAiOpenScreenshot')?.addEventListener('click', openScreenshotModal);
+        document.getElementById('shotFileInput')?.addEventListener('change', e => handleScreenshotFile(e.target.files?.[0]));
+        document.getElementById('btnRunShotAnalysis')?.addEventListener('click', runScreenshotVisionAnalysis);
+        document.getElementById('btnCommitShotToGroup')?.addEventListener('click', commitScreenshotToGroup);
+        document.addEventListener('paste', e => {
+          const modal = document.getElementById('screenshotGroupModal');
+          if (!modal || !modal.classList.contains('open')) return;
+          const items = e.clipboardData?.items || [];
+          for (const it of items) {
+            if (it.type && it.type.startsWith('image/')) {
+              handleScreenshotFile(it.getAsFile());
+              break;
+            }
+          }
+        });
+
+        // AI Bull/Bear Battle & Virtual Auto-Trading
+        const bAuto = state.ext.battleAuto;
+        const chkB = document.getElementById('chkBattleAutoTrade');
+        const bullIn = document.getElementById('battleBullThreshold');
+        const bearIn = document.getElementById('battleBearThreshold');
+        const qtyIn = document.getElementById('battleAutoQty');
+        const pollIn = document.getElementById('battlePollInterval');
+        if (chkB) { chkB.checked = Boolean(bAuto.enabled); chkB.addEventListener('change', startBattleAutoLoop); }
+        if (bullIn) bullIn.value = bAuto.bullThreshold || 65;
+        if (bearIn) bearIn.value = bAuto.bearThreshold || 65;
+        if (qtyIn) qtyIn.value = bAuto.qty || 1;
+        if (pollIn) { pollIn.value = String(bAuto.pollSec ?? 60); pollIn.addEventListener('change', startBattleAutoLoop); }
+        document.getElementById('btnRunLiveBattleNow')?.addEventListener('click', () => runLiveBattleNow(true));
+        document.getElementById('btnBattleExecOnce')?.addEventListener('click', () => evaluateAndMaybeAutoOrder(true));
+
+        // Device Matching buttons
+        document.getElementById('btnGenPairCode')?.addEventListener('click', createPairCode);
+        document.getElementById('btnCopyOfflinePair')?.addEventListener('click', copyOfflinePairToken);
+        document.getElementById('btnClaimPairCode')?.addEventListener('click', claimPairCode);
+        document.getElementById('btnRefreshDevices')?.addEventListener('click', refreshPairedDevices);
+
+        // Restore mobile direct Telegram binding UI on startup when no backend
+        if (!getApiBase() && state.notifier.tgToken) {
+          applyTelegramBindingState(buildClientTgStatePayload(), false);
+        }
+
+        renderMitakeBoard();
+        renderLockTickers();
+        refreshPairedDevices();
+      }
+
+      return {
+        init,
+        refreshRealtimeQuotes,
+        renderMitakeBoard,
+        renderLockTickers,
+        renderBullBearBattle,
+        openStandbyLock,
+        closeStandbyLock,
+        openScreenshotModal,
+        createGroup,
+        runLiveBattleNow,
+        refreshPairedDevices
+      };
+    })();
 
     document.addEventListener('DOMContentLoaded', initApp);
   </script>

@@ -12,7 +12,11 @@ final class LocalAssetServer {
         "api.anthropic.com",
         "api.finmindtrade.com",
         "query1.finance.yahoo.com",
-        "query2.finance.yahoo.com"
+        "query2.finance.yahoo.com",
+        "mis.twse.com.tw",
+        "mis.taifex.com.tw",
+        "api.telegram.org",
+        "api.fugle.tw"
     ]
 
     private let assetsRoot: URL
@@ -193,7 +197,7 @@ final class LocalAssetServer {
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) SynapseTW/3.5", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        for k in ["authorization", "content-type", "x-api-key", "anthropic-version"] {
+        for k in ["authorization", "content-type", "x-api-key", "anthropic-version", "x-goog-api-key"] {
             if let v = reqHeaders[k], !v.isEmpty {
                 request.setValue(v, forHTTPHeaderField: k)
             }

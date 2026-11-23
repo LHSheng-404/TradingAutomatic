@@ -5610,18 +5610,19 @@
         agentLogs: state.agentLogs.slice(0, 40),
         linkedQuantStrategy: state.linkedQuantStrategy,
         notifier: {
-          lineEnabled: state.notifier.lineEnabled,
-          lineToken: state.notifier.lineToken,
-          lineTargetId: state.notifier.lineTargetId,
-          tgEnabled: state.notifier.tgEnabled,
-          tgToken: state.notifier.tgToken || '',
-          tgChatId: state.notifier.tgChatId || '',
-          tgOwnerLabel: state.notifier.tgOwnerLabel || '',
-          tgBotUsername: state.notifier.tgBotUsername || '',
-          tgBotName: state.notifier.tgBotName || '',
+          lineEnabled: Boolean(document.getElementById('cfgLineEnabled')?.checked ?? state.notifier.lineEnabled),
+          lineToken: (document.getElementById('cfgLineToken')?.value || '').trim() || state.notifier.lineToken || '',
+          lineTargetId: (document.getElementById('cfgLineTarget')?.value || '').trim() || state.notifier.lineTargetId || '',
+          tgEnabled: Boolean(document.getElementById('cfgTgEnabled')?.checked ?? state.notifier.tgEnabled),
+          tgToken: (document.getElementById('cfgTgToken')?.value || '').trim() || state.notifier.tgToken || '',
+          tgChatId: state.notifier.tgChatId || (state.tgBinding?.chat_id || ''),
+          tgOwnerLabel: state.notifier.tgOwnerLabel || (state.tgBinding?.owner_label || ''),
+          tgBotUsername: state.notifier.tgBotUsername || (state.tgBinding?.bot_username || ''),
+          tgBotName: state.notifier.tgBotName || (state.tgBinding?.bot_name || ''),
           tgLastUpdateId: state.notifier.tgLastUpdateId || 0,
-          logs: state.notifier.logs.slice(0, 30)
+          logs: (state.notifier.logs || []).slice(0, 50)
         },
+        tgBinding: state.tgBinding ? { ...state.tgBinding } : null,
         ext: {
           groups: state.ext.groups,
           activeGroupId: state.ext.activeGroupId,
@@ -5634,8 +5635,25 @@
           liveActivityHoldings: state.ext.liveActivityHoldings,
           signalHistory: (state.ext.signalHistory || []).slice(0, 100),
           shioaji: state.ext.shioaji,
-          sjIndicators: state.ext.sjIndicators
+          sjIndicators: state.ext.sjIndicators,
+          tabMemory: state.ext.tabMemory || {},
+          aiFocusPrompt: state.ext.aiFocusPrompt || '',
+          aiFocusMode: state.ext.aiFocusMode || 'AUTO'
         },
+        sharedQuotes: Object.fromEntries(
+          Object.entries(state.quotes || {}).slice(0, 60).map(([k, q]) => [k, {
+            price: q?.price ?? null,
+            prevClose: q?.prevClose ?? null,
+            open: q?.open ?? null,
+            high: q?.high ?? null,
+            low: q?.low ?? null,
+            volume: q?.volume ?? 0,
+            volumeLots: q?.volumeLots ?? 0,
+            lastDate: q?.lastDate || '',
+            source: q?.source || '遠端共享即時快照'
+          }])
+        ),
+        sharedIndices: state.ext?.indices ? { ...state.ext.indices } : {},
         activeSymbol: state.activeSymbol,
         qlab
       };
@@ -5689,6 +5707,9 @@
         state.notifier.tgLastUpdateId = Number(saved.notifier.tgLastUpdateId || 0);
         state.notifier.logs = Array.isArray(saved.notifier.logs) ? saved.notifier.logs : [];
       }
+      if (saved.tgBinding && typeof saved.tgBinding === 'object') {
+        state.tgBinding = Object.assign({}, state.tgBinding || {}, saved.tgBinding);
+      }
       if (saved.ext && typeof saved.ext === 'object') {
         if (Array.isArray(saved.ext.groups) && saved.ext.groups.length > 0) state.ext.groups = saved.ext.groups;
         if (saved.ext.activeGroupId) state.ext.activeGroupId = saved.ext.activeGroupId;
@@ -5702,8 +5723,26 @@
         if (typeof saved.ext.liveActivityEnabled === 'boolean') state.ext.liveActivityEnabled = saved.ext.liveActivityEnabled;
         if (typeof saved.ext.liveActivityHoldings === 'boolean') state.ext.liveActivityHoldings = saved.ext.liveActivityHoldings;
         if (Array.isArray(saved.ext.signalHistory)) state.ext.signalHistory = saved.ext.signalHistory.slice(0, 100);
-        if (saved.ext.shioaji && typeof saved.ext.shioaji === 'object') state.ext.shioaji = Object.assign({ apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true }, saved.ext.shioaji);
+        if (saved.ext.shioaji && typeof saved.ext.shioaji === 'object') state.ext.shioaji = Object.assign({ simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true }, saved.ext.shioaji);
         if (saved.ext.sjIndicators && typeof saved.ext.sjIndicators === 'object') state.ext.sjIndicators = Object.assign({ ema: true, ma20: true, bb: false, vwap: true, signals: true }, saved.ext.sjIndicators);
+        if (saved.ext.tabMemory && typeof saved.ext.tabMemory === 'object') {
+          state.ext.tabMemory = saved.ext.tabMemory;
+          try { localStorage.setItem('synapse_tw_tab_memory_v1', JSON.stringify(saved.ext.tabMemory)); } catch (e) {}
+        }
+        if (typeof saved.ext.aiFocusPrompt === 'string') state.ext.aiFocusPrompt = saved.ext.aiFocusPrompt;
+        if (typeof saved.ext.aiFocusMode === 'string') state.ext.aiFocusMode = saved.ext.aiFocusMode;
+      }
+      if (saved.sharedQuotes && typeof saved.sharedQuotes === 'object') {
+        Object.entries(saved.sharedQuotes).forEach(([sym, sq]) => {
+          if (!sq || sq.price === null || sq.price === undefined) return;
+          const existing = state.quotes[sym] || {};
+          if (!existing.isRealtime) {
+            state.quotes[sym] = Object.assign({}, existing, sq, { source: sq.source || '遠端共享真實報價' });
+          }
+        });
+      }
+      if (saved.sharedIndices && typeof saved.sharedIndices === 'object') {
+        state.ext.indices = Object.assign({}, state.ext.indices || {}, saved.sharedIndices);
       }
       if (saved.activeSymbol) state.activeSymbol = saved.activeSymbol;
       if (saved.qlab && typeof saved.qlab === 'object') {
@@ -10302,12 +10341,24 @@
       if (urlIn && sj.httpUrl) urlIn.value = sj.httpUrl;
       if (box) {
         const backendOk = state.backendDetected;
+        let remoteLoggedIn = false;
+        let remoteAcctName = '';
+        try {
+          const rc = JSON.parse(localStorage.getItem('synapse_tw_remote_acct_v1') || '{}');
+          remoteLoggedIn = Boolean(rc && rc.loggedIn && rc.accountId);
+          remoteAcctName = rc?.accountId || '';
+        } catch (e) {}
         const simOk = Boolean((sj.simApiKey || '').trim() && (sj.simSecretKey || '').trim());
         const sjOk = hasValidShioajiToken();
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
+        const connHtml = backendOk
+          ? '<strong style="color:#15803d;">✓ 已連線本機／雲端 server.py（完整即時串流）</strong>'
+          : (remoteLoggedIn
+              ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)} · 免架站 Private Gist，手機 4G/5G 獨立模式）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">手機獨立網路下 K 線直連 FinMind 官方真實數據，並自動同步電腦端最新報價與推播設定；僅送出「正式實盤 LIVE 單」時才需要公開 HTTPS server.py。</div>`
+              : '<strong>✗ 尚未連線 server.py（若手機與電腦不同網路，建議使用「遠端共享帳號」免架站同步）</strong>');
         box.innerHTML = `
-          <div>1. 雲端後端連線：<strong>${backendOk ? '✓ 已連線' : '✗ 尚未連線（請先啟動 server.py）'}</strong></div>
-          <div>2. SIM 模擬行情 Token（選填）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設免費使用 TWSE/TPEx 官方秒級即時）'}</strong></div>
+          <div>1. 雲端／後端連線：${connHtml}</div>
+          <div>2. SIM 模擬行情 Token（選填）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設使用官方真實數據與遠端共享報價）'}</strong></div>
           <div>3. LIVE 正式單 API Token（必要）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 LIVE 正式單 Token' : '✗ 尚未設定（無正式單 Token 嚴禁切換 LIVE）'}</strong></div>
           <div>4. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
         `;
@@ -18961,11 +19012,21 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           applyPersistedSnapshot(decrypted);
           persistState();
           populateSettingsInputs();
+          // v3.11.3: Hydrate LINE / Telegram push notification bindings & direct mobile TG mode immediately after pull
+          if (!getApiBase() && state.notifier.tgToken && typeof applyTelegramBindingState === 'function' && typeof buildClientTgStatePayload === 'function') {
+            applyTelegramBindingState(buildClientTgStatePayload(), false);
+          } else if (typeof renderTelegramBindingUI === 'function') {
+            renderTelegramBindingUI();
+          }
+          if (typeof renderNotifyCenter === 'function') renderNotifyCenter();
+          if (window.SHL_TAB_MEMORY && typeof window.SHL_TAB_MEMORY.restoreAll === 'function') window.SHL_TAB_MEMORY.restoreAll();
+          if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
+          if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
           renderAllViews();
           cur.lastSyncAt = nowTwDateTime();
           writeCfg(cur);
           refreshUI();
-          showToast('遠端共享帳號拉取同步成功！', '自選群組、AI 金鑰、Telegram 設定、策略與訂單皆已同步至本機！', 'success');
+          showToast('遠端共享帳號拉取同步成功！', '自選群組、最新報價快照、AI 金鑰、LINE／Telegram 推播資訊、策略與訂單皆已同步至本機！', 'success');
         } catch (err) {
           showToast('遠端拉取解密失敗', err.message || '請確認遠端共享密碼與另一台裝置相同。', 'error');
         }
@@ -19268,8 +19329,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.11.2';
+      const CURRENT_VERSION = 'v3.11.3';
       const HISTORY = [
+        {
+          ver: 'v3.11.3',
+          items: [
+            '修正手機 4G/5G 獨立網路下已登入遠端共享帳號卻仍顯示「雲端後端尚未連線」問題，改為清楚顯示「遠端共享帳號已連線（手機獨立 4G/5G 模式）」',
+            '遠端共享帳號上傳／拉取同步全面納入完整 LINE／Telegram 推播設定、綁定狀態（tgBinding）、推播紀錄、各分頁記憶、AI 自訂焦點與電腦端最新即時報價快照，手機拉取後即刻生效'
+          ]
+        },
         {
           ver: 'v3.11.2',
           items: [

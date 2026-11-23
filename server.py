@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.6",
+    version="3.10.7",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.6",
+        "version": "3.10.7",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -1117,8 +1117,8 @@ _TW_SYM_RE = re.compile(r"(?<![0-9A-Za-z])(00\d{2,4}[A-Z]?|[1-9]\d{3})(?![0-9A-Z
 _ACTIVE_HINT_RE = re.compile(r"(目前標的|這檔|本檔|此檔|現價|目前價位|這支|這隻)")
 
 
-def _extract_tw_symbols_from_prompt(text: str, limit: int = 8) -> list[str]:
-    """Extract unique Taiwan stock/ETF codes from user custom focus prompt while skipping calendar years."""
+def _extract_tw_symbols_from_prompt(text: str, limit: int = 0) -> list[str]:
+    """Extract unique Taiwan stock/ETF codes from user custom focus prompt while skipping calendar years (unlimited by default)."""
     if not text:
         return []
     found: list[str] = []
@@ -1131,7 +1131,7 @@ def _extract_tw_symbols_from_prompt(text: str, limit: int = 8) -> list[str]:
             continue
         if sym not in found:
             found.append(sym)
-            if len(found) >= limit:
+            if limit > 0 and len(found) >= limit:
                 break
     return found
 
@@ -1865,9 +1865,9 @@ async def test_all_ai_endpoints(req: AITestAllRequest):
 async def analyze_multi_ai(req: AIAnalyzeRequest):
     mode_in = (req.focus_mode or "AUTO").strip().upper()
     focus = (req.custom_prompt or "").strip()
-    extracted_from_prompt = _extract_tw_symbols_from_prompt(focus, limit=8)
+    extracted_from_prompt = _extract_tw_symbols_from_prompt(focus, limit=0)
 
-    # Deduplicate explicit target_symbols + prompt-extracted symbols
+    # Deduplicate explicit target_symbols + prompt-extracted symbols (v3.10.7: unlimited focus items!)
     explicit_targets: list[str] = []
     for raw_s in (req.target_symbols or []):
         s = str(raw_s).strip().upper()
@@ -1876,7 +1876,6 @@ async def analyze_multi_ai(req: AIAnalyzeRequest):
     for s in extracted_from_prompt:
         if s not in explicit_targets:
             explicit_targets.append(s)
-    explicit_targets = explicit_targets[:8]
 
     # Map any pre-supplied snapshots by symbol
     pre_map: dict[str, dict[str, Any]] = {}
@@ -1894,13 +1893,15 @@ async def analyze_multi_ai(req: AIAnalyzeRequest):
 
     async def _resolve_symbols(syms: list[str]) -> list[dict[str, Any]]:
         use_uniform_daily = len(syms) >= 2
-        tasks = []
-        for s in syms:
+        sem = asyncio.Semaphore(10)
+
+        async def _one(s: str):
             if not use_uniform_daily and s in pre_map:
-                tasks.append(asyncio.sleep(0, result=pre_map[s]))
-            else:
-                tasks.append(_fetch_live_snapshot_for_ai(s))
-        fetched = await asyncio.gather(*tasks)
+                return pre_map[s]
+            async with sem:
+                return await _fetch_live_snapshot_for_ai(s)
+
+        fetched = await asyncio.gather(*[_one(s) for s in syms])
         out = []
         for s, x in zip(syms, fetched):
             if isinstance(x, dict) and x.get("price") is not None:
@@ -1921,7 +1922,7 @@ async def analyze_multi_ai(req: AIAnalyzeRequest):
         wl_syms = explicit_targets or list(pre_map.keys())
         if not wl_syms:
             raise HTTPException(status_code=400, detail="自選股清單尚無有效標的")
-        resolved_targets = await _resolve_symbols(wl_syms[:8])
+        resolved_targets = await _resolve_symbols(wl_syms)
         if not resolved_targets:
             raise HTTPException(status_code=400, detail="無法取得自選股真實報價")
         resolved_mode = "MULTI_TARGETS" if len(resolved_targets) >= 2 else "SINGLE"

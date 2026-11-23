@@ -7914,7 +7914,9 @@
       };
     }
 
-    function extractTwSymbolsFromPrompt(text, limit = 8) {
+    const AI_FOCUS_MEM_KEY = 'synapse_tw_ai_focus_v1';
+
+    function extractTwSymbolsFromPrompt(text, limit = 0) {
       if (!text) return [];
       const upper = String(text).toUpperCase();
       const re = /(?:^|[^0-9A-Z])(00\d{2,4}[A-Z]?|[1-9]\d{3})(?=$|[^0-9A-Z])/g;
@@ -7928,42 +7930,66 @@
         }
         if (!out.includes(sym)) {
           out.push(sym);
-          if (out.length >= limit) break;
+          if (limit > 0 && out.length >= limit) break;
         }
       }
       return out;
     }
 
+    function saveAiFocusMemory(prompt, mode) {
+      try {
+        localStorage.setItem(AI_FOCUS_MEM_KEY, JSON.stringify({ prompt: String(prompt || ''), mode: String(mode || 'AUTO'), savedAt: Date.now() }));
+      } catch (e) {}
+      if (!state.ext) state.ext = {};
+      state.ext.aiFocusPrompt = String(prompt || '');
+      state.ext.aiFocusMode = String(mode || 'AUTO');
+      try { persistState(); } catch (e) {}
+    }
+
+    function restoreAiFocusMemory() {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(AI_FOCUS_MEM_KEY) || 'null'); } catch (e) {}
+      if (!saved && state.ext && (state.ext.aiFocusPrompt || state.ext.aiFocusMode)) {
+        saved = { prompt: state.ext.aiFocusPrompt || '', mode: state.ext.aiFocusMode || 'AUTO' };
+      }
+      if (!saved) return;
+      const pEl = document.getElementById('aiStudioPrompt');
+      const mEl = document.getElementById('aiFocusModeSelect');
+      if (pEl && saved.prompt && !pEl.value) pEl.value = saved.prompt;
+      if (mEl && saved.mode) mEl.value = saved.mode;
+    }
+
     function updateAiFocusHint() {
       const hint = document.getElementById('aiFocusDetectedHint');
-      if (!hint) return;
       const mode = document.getElementById('aiFocusModeSelect')?.value || 'AUTO';
       const prompt = (document.getElementById('aiStudioPrompt')?.value || '').trim();
-      const syms = extractTwSymbolsFromPrompt(prompt, 8);
+      saveAiFocusMemory(prompt, mode);
+      if (!hint) return;
+      const syms = extractTwSymbolsFromPrompt(prompt, 0);
       const activeMeta = getStockMeta(state.activeSymbol);
       const activeHintRe = /(目前標的|這檔|本檔|此檔|現價|目前價位|這支|這隻)/;
 
       if (mode === 'ACTIVE') {
         hint.innerHTML = `📌 鎖定主畫面標的：<strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>${prompt ? ' ＋ 結合自訂分析焦點' : ''}`;
       } else if (mode === 'WATCHLIST') {
-        const wl = state.watchlist.slice(0, 8).map(w => w.symbol).join(' · ');
-        hint.innerHTML = `📋 將整合分析全自選股組合（<span class="mono">${escapeHtml(wl)}</span>）${prompt ? ' ＋ 結合自訂分析焦點' : ''}`;
+        const wl = state.watchlist.map(w => w.symbol).join(' · ');
+        hint.innerHTML = `📋 將整合分析全自選股組合（共 ${state.watchlist.length} 檔：<span class="mono">${escapeHtml(wl)}</span>）${prompt ? ' ＋ 結合自訂分析焦點' : ''}`;
       } else if (mode === 'CUSTOM_ONLY') {
         if (syms.length) {
-          hint.innerHTML = `🎯 純自訂焦點（偵測到 <strong class="mono">${syms.join(' · ')}</strong>）：即時抓取這 ${syms.length} 檔真實報價進行整合比較，<strong>不帶入 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+          hint.innerHTML = `🎯 純自訂焦點（偵測到 <strong class="mono">${syms.join(' · ')}</strong>）：即時抓取這 <strong>${syms.length}</strong> 檔真實報價進行整合比較（不設上限 · 已自動記憶），<strong>不帶入 ${escapeHtml(activeMeta.symbol)}</strong>。`;
         } else {
-          hint.innerHTML = `🎯 純自訂焦點模式：完全依您輸入的分析焦點進行選定 AI 模型整合解析（不綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+          hint.innerHTML = `🎯 純自訂焦點模式：完全依您輸入的分析焦點進行選定 AI 模型整合解析（已自動記憶，不綁定 ${escapeHtml(activeMeta.symbol)}）。`;
         }
       } else {
         // AUTO mode
         if (syms.length >= 2) {
-          hint.innerHTML = `🎯 自動偵測多檔焦點標的：<strong class="mono" style="color:var(--accent);">${syms.join(' · ')}</strong>（共 ${syms.length} 檔）→ 執行時將即時抓取這批股票的真實報價進行整合比較，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+          hint.innerHTML = `🎯 自動偵測多檔焦點標的：<strong class="mono" style="color:var(--accent);">${syms.join(' · ')}</strong>（共 <strong>${syms.length}</strong> 檔 · 無上限 · 已自動記憶）→ 執行分析與多空交戰將即時抓取全部標的報價進行比較，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
         } else if (syms.length === 1) {
-          hint.innerHTML = `🎯 自動偵測指定標的：<strong class="mono" style="color:var(--accent);">${syms[0]}</strong> → 執行時將即時抓取 <span class="mono">${syms[0]}</span> 真實報價進行深度解析，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
+          hint.innerHTML = `🎯 自動偵測指定標的：<strong class="mono" style="color:var(--accent);">${syms[0]}</strong>（已自動記憶）→ 執行分析與多空交戰將即時抓取 <span class="mono">${syms[0]}</span> 真實報價進行深度解析，<strong>不鎖定 ${escapeHtml(activeMeta.symbol)}</strong>。`;
         } else if (prompt && !activeHintRe.test(prompt)) {
-          hint.innerHTML = `🎯 自動進入「自訂焦點整合模式」：直接依您的提問進行選定 AI 模型整合分析（附即時大盤基準，不強制綁定 ${escapeHtml(activeMeta.symbol)}）。`;
+          hint.innerHTML = `🎯 自動進入「自訂焦點整合模式」（已自動記憶）：直接依您的提問進行選定 AI 模型整合分析（附即時大盤基準，不強制綁定 ${escapeHtml(activeMeta.symbol)}）。`;
         } else {
-          hint.innerHTML = `💡 目前焦點留空（或指向本檔）→ 預設解析主畫面標的 <strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>；直接輸入代號如 <span class="mono">6213、2368、3037、3189</span> 即可即時整合多檔分析。`;
+          hint.innerHTML = `💡 目前焦點留空（或指向本檔）→ 預設解析主畫面標的 <strong>${escapeHtml(activeMeta.symbol)} ${escapeHtml(activeMeta.name)}</strong>；直接輸入多檔代號（不限檔數，自動記憶）即可即時整合分析與多空交戰。`;
         }
       }
     }
@@ -8037,10 +8063,10 @@
       const selectedModelIds = getSelectedAiProviderIds();
       const selectedDefs = AI_MODELS.filter(m => selectedModelIds.includes(m.id));
 
-      const extractedSyms = forceActive ? [] : extractTwSymbolsFromPrompt(promptClean, 8);
+      const extractedSyms = forceActive ? [] : extractTwSymbolsFromPrompt(promptClean, 0);
       let targetSymbols = [];
       if (focusMode === 'WATCHLIST') {
-        targetSymbols = state.watchlist.map(w => w.symbol).filter(Boolean).slice(0, 8);
+        targetSymbols = state.watchlist.map(w => w.symbol).filter(Boolean);
       } else if (focusMode === 'ACTIVE') {
         targetSymbols = [state.activeSymbol];
       } else if (extractedSyms.length > 0) {
@@ -15816,10 +15842,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return ok;
       }
 
-      async function refreshRealtimeQuotes(silent = true) {
+      async function refreshRealtimeQuotes(silent = true, extraSymbols = []) {
         const syms = Array.from(new Set([
           ...state.watchlist.map(w => w.symbol),
-          ...state.ext.lockTickerSymbols.filter(s => !['t00', 'o00', 'TXF'].includes(s))
+          ...state.ext.lockTickerSymbols.filter(s => !['t00', 'o00', 'TXF'].includes(s)),
+          ...(Array.isArray(extraSymbols) ? extraSymbols : [])
         ])).filter(s => /^[0-9A-Z]{4,6}$/.test(s));
 
         const apiBase = getApiBase();
@@ -16397,10 +16424,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
         const avgBull = Math.round(bullSum / perModel.length);
         const avgBear = 100 - avgBull;
-        const targetSym = (pack.analyzed_targets && pack.analyzed_targets.length === 1)
-          ? pack.analyzed_targets[0].symbol
-          : state.activeSymbol;
-        return { bullPct: avgBull, bearPct: avgBear, spread: avgBull - avgBear, perModel, targetSym, timestamp: pack.timestamp };
+        const targets = Array.isArray(pack.analyzed_targets) ? pack.analyzed_targets : [];
+        const targetSym = targets.length >= 1 ? targets[0].symbol : state.activeSymbol;
+        return { bullPct: avgBull, bearPct: avgBear, spread: avgBull - avgBear, perModel, targetSym, targets, timestamp: pack.timestamp };
       }
 
       function renderBullBearBattle(pack) {
@@ -16424,16 +16450,37 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         let actionTxt = '多空拉鋸觀望 (HOLD)';
         if (stats.bullPct >= bullTh) actionTxt = `🔴 多方勝出 (${stats.bullPct}% ≥ ${bullTh}%) → 建議買進`;
         else if (stats.bearPct >= bearTh) actionTxt = `🟢 空方勝出 (${stats.bearPct}% ≥ ${bearTh}%) → 建議賣出`;
-        if (txtEl) txtEl.textContent = `標的 ${stats.targetSym} · ${stats.perModel.length} 模型即時交戰（差值 ${stats.spread >= 0 ? '+' : ''}${stats.spread}%）`;
+        const isMulti = stats.targets && stats.targets.length >= 2;
+        if (txtEl) {
+          if (isMulti) {
+            const preview = stats.targets.slice(0, 6).map(t => t.symbol).join('·') + (stats.targets.length > 6 ? `…` : '');
+            txtEl.textContent = `焦點 ${stats.targets.length} 檔（${preview}）· ${stats.perModel.length} 模型即時交戰（差值 ${stats.spread >= 0 ? '+' : ''}${stats.spread}%）`;
+          } else {
+            txtEl.textContent = `標的 ${stats.targetSym} · ${stats.perModel.length} 模型即時交戰（差值 ${stats.spread >= 0 ? '+' : ''}${stats.spread}%）`;
+          }
+        }
         if (decEl) decEl.textContent = actionTxt;
         if (chipsEl) {
-          chipsEl.innerHTML = stats.perModel.map(m => `
+          const modelHtml = stats.perModel.map(m => `
             <span class="battle-chip mono">
               <span style="width:7px;height:7px;border-radius:999px;background:${m.color};display:inline-block;"></span>
               <strong>${escapeHtml(m.short)}</strong>
               <span class="mitake-up">多${m.bull_pct}%</span>/<span class="mitake-down">空${m.bear_pct}%</span>
             </span>
           `).join('');
+          let focusStripHtml = '';
+          if (isMulti) {
+            const focusPills = stats.targets.map(t => {
+              const chg = Number(t.change_pct || 0);
+              const rsi = Number(t.rsi ?? 50);
+              const bullEst = Math.max(15, Math.min(85, Math.round(50 + chg * 4 + (rsi - 50) * 0.35)));
+              const bearEst = 100 - bullEst;
+              const cls = chg > 0 ? 'mitake-up' : (chg < 0 ? 'mitake-down' : 'mitake-flat');
+              return `<span class="battle-chip mono" style="border-color:rgba(148,163,184,0.28);background:rgba(15,23,42,0.55);font-size:11px;"><strong>${escapeHtml(t.symbol)}</strong> ${escapeHtml(t.stock_name || '')} <span class="${cls}">${t.price} (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%)</span> · <span class="mitake-up">多${bullEst}%</span>/<span class="mitake-down">空${bearEst}%</span></span>`;
+            }).join('');
+            focusStripHtml = `<div style="width:100%;display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(148,163,184,0.25);">${focusPills}</div>`;
+          }
+          chipsEl.innerHTML = modelHtml + focusStripHtml;
         }
       }
 
@@ -16486,11 +16533,28 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
 
       async function runLiveBattleNow(autoTrigger = false) {
-        await refreshRealtimeQuotes(true);
-        await fetchMarketData(state.activeSymbol, 'auto');
-        await runMultiAiAnalysis('', { forceActive: true });
-        const pack = state.aiResults[state.activeSymbol];
-        renderBullBearBattle(pack);
+        const customPrompt = (document.getElementById('aiStudioPrompt')?.value || '').trim();
+        const focusMode = document.getElementById('aiFocusModeSelect')?.value || 'AUTO';
+        const focusSyms = (focusMode !== 'ACTIVE' && typeof extractTwSymbolsFromPrompt === 'function')
+          ? extractTwSymbolsFromPrompt(customPrompt, 0)
+          : [];
+
+        if (focusMode !== 'ACTIVE' && (focusSyms.length > 0 || customPrompt)) {
+          // v3.10.7: Fetch live quotes for ALL custom focus symbols (no cap) and run focus Bull/Bear Battle
+          await refreshRealtimeQuotes(true, focusSyms);
+          await runMultiAiAnalysis(customPrompt, { forceActive: false });
+          const pack = state.lastAiStudioPack
+            || (focusSyms[0] ? state.aiResults[focusSyms[0]] : null)
+            || state.aiResults[state.activeSymbol];
+          if (pack) renderBullBearBattle(pack);
+        } else {
+          await refreshRealtimeQuotes(true);
+          await fetchMarketData(state.activeSymbol, 'auto');
+          await runMultiAiAnalysis('', { forceActive: true });
+          const pack = state.aiResults[state.activeSymbol];
+          if (pack) renderBullBearBattle(pack);
+        }
+
         if (autoTrigger && state.ext.battleAuto.enabled) {
           await evaluateAndMaybeAutoOrder(false);
         }
@@ -18944,10 +19008,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     })();
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
+      if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
+      document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
+        if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
+      });
       if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.init();
       initApp().finally(() => {
         if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
         if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
+        if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
+        if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       });
     });
   </script>

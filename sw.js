@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synapse-tw-shell-v3.10.9';
+const CACHE_NAME = 'synapse-tw-shell-v3.11.0';
 const APP_SHELL = [
   './',
   './index.html',

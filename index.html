@@ -10145,8 +10145,50 @@
     // =========================================================================
     // 9. SIMULATED VS LIVE ORDER EXECUTION ENGINE
     // =========================================================================
-    function setTradingMode(mode) {
-      state.envMode = mode;
+    async function syncTradingModeApi(mode, silent = false) {
+      const apiBase = getApiBase();
+      if (!apiBase) return { ok: true, localOnly: true };
+      const sj = state.ext?.shioaji || {};
+      try {
+        const resp = await fetch(`${apiBase}/api/v1/shioaji/mode`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode,
+            confirm_live: mode === 'LIVE',
+            api_key: (sj.apiKey || '').trim(),
+            secret_key: (sj.secretKey || '').trim(),
+            http_url: (sj.httpUrl || '').trim()
+          })
+        });
+        const j = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          if (!silent) showToast('API 模式切換受阻', j.detail || `無法切換至 ${mode}（HTTP ${resp.status}）`, 'error');
+          return { ok: false, detail: j.detail || `HTTP ${resp.status}` };
+        }
+        if (state.ext?.shioaji) state.ext.shioaji.simulation = Boolean(j.simulation);
+        triggerHandshake(
+          'CORE',
+          'BROKER',
+          mode === 'LIVE' ? '#dc2626' : '#0d9488',
+          'MODE_API',
+          true,
+          15,
+          `API 已切換至 ${mode}（${j.order_engine || mode}）`
+        );
+        if (!silent && j.message) {
+          showToast(`雙環境 API 已切換：${mode}`, j.message, mode === 'LIVE' ? 'warn' : 'success');
+        }
+        return { ok: true, data: j };
+      } catch (e) {
+        return { ok: true, offlineFallback: true };
+      }
+    }
+
+    function setTradingMode(mode, opts = {}) {
+      const targetMode = mode === 'LIVE' ? 'LIVE' : 'SIM';
+      state.envMode = targetMode;
+      if (state.ext?.shioaji) state.ext.shioaji.simulation = (targetMode !== 'LIVE');
       const btnSim = document.getElementById('btnModeSim');
       const btnLive = document.getElementById('btnModeLive');
       const banner = document.getElementById('globalBanner');
@@ -10154,10 +10196,10 @@
       const tBadge = document.getElementById('ticketModeBadge');
       const submitLbl = document.getElementById('submitOrderLabel');
 
-      if (btnSim) btnSim.className = mode === 'SIM' ? 'env-pill active-sim' : 'env-pill';
-      if (btnLive) btnLive.className = mode === 'LIVE' ? 'env-pill active-live' : 'env-pill';
+      if (btnSim) btnSim.className = targetMode === 'SIM' ? 'env-pill active-sim' : 'env-pill';
+      if (btnLive) btnLive.className = targetMode === 'LIVE' ? 'env-pill active-live' : 'env-pill';
 
-      if (mode === 'LIVE') {
+      if (targetMode === 'LIVE') {
         if (hTag) { hTag.className = 'badge badge-up'; hTag.textContent = 'LIVE 真實下單模式'; }
         if (tBadge) { tBadge.className = 'badge badge-up'; tBadge.textContent = '真實下單 LIVE'; }
         if (submitLbl) submitLbl.textContent = '送出真實下單 (LIVE · Shioaji)';
@@ -10173,7 +10215,7 @@
         if (state.killSwitch) {
           banner.className = 'global-banner show banner-halted';
           banner.textContent = '🚨 系統已啟動緊急熔斷（KILL SWITCH）— 所有模擬與實盤自動下單皆已鎖定';
-        } else if (mode === 'LIVE') {
+        } else if (targetMode === 'LIVE') {
           banner.className = 'global-banner show banner-live';
           banner.textContent = '⚠️ 目前處於「真實下單 LIVE」模式：所有委託將送往雲端永豐金 Shioaji 實盤接口，請審慎確認價格與數量';
         } else {
@@ -10183,6 +10225,14 @@
 
       renderHandshakeInspector();
       renderNotifyCenter();
+
+      if (!opts.skipApi) {
+        syncTradingModeApi(targetMode, Boolean(opts.silent)).then(res => {
+          if (res && res.ok === false && targetMode === 'LIVE') {
+            setTradingMode('SIM', { skipApi: true, silent: true });
+          }
+        });
+      }
     }
 
     function hasValidShioajiToken() {

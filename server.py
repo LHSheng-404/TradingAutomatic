@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.9",
+    version="3.11.0",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.9",
+        "version": "3.11.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3908,6 +3908,70 @@ async def shioaji_configure(req: ShioajiConfigRequest):
     return await shioaji_status()
 
 
+class ShioajiModeSwitchRequest(BaseModel):
+    mode: str = Field("SIM", description="SIM or LIVE")
+    confirm_live: bool = False
+    api_key: str = ""
+    secret_key: str = ""
+    http_url: str = ""
+
+
+@app.get("/api/v1/shioaji/mode")
+async def get_shioaji_mode():
+    """Return current Shioaji dual-environment execution mode (defaults strictly to SIM)."""
+    st = await shioaji_status()
+    is_sim = bool(_SHIOAJI_CFG.get("simulation", True))
+    ca_path = os.getenv("SHIOAJI_CA_PATH", "").strip()
+    ca_ready = bool(ca_path and Path(ca_path).exists())
+    return {
+        "ok": True,
+        "mode": "SIM" if is_sim else "LIVE",
+        "simulation": is_sim,
+        "token_configured": bool(st.get("token_configured")),
+        "ca_ready": ca_ready,
+        "market_data_engine": st.get("active_source"),
+        "order_engine": "永豐金 Shioaji 實盤下單 (LIVE)" if not is_sim else "永豐金模擬單 / 紙上撮合 (SIM)",
+        "server_time": tw_now_str(),
+    }
+
+
+@app.post("/api/v1/shioaji/mode")
+async def switch_shioaji_mode(req: ShioajiModeSwitchRequest):
+    """
+    v3.11.0 Dual-Environment API Mode Switch (SIM <-> LIVE).
+    - Default is always SIM.
+    - Switching to LIVE requires explicit confirm_live=True and configured Shioaji API Token.
+    - Market data & K-line analysis remain real-time regardless of SIM/LIVE order mode.
+    """
+    target = (req.mode or "SIM").strip().upper()
+    if target not in ("SIM", "LIVE"):
+        raise HTTPException(status_code=400, detail="mode 僅接受 SIM 或 LIVE")
+
+    if req.api_key.strip():
+        _SHIOAJI_CFG["api_key"] = req.api_key.strip()
+    if req.secret_key.strip():
+        _SHIOAJI_CFG["secret_key"] = req.secret_key.strip()
+    if req.http_url.strip():
+        _SHIOAJI_CFG["http_url"] = req.http_url.strip().rstrip("/")
+
+    if target == "LIVE":
+        if not req.confirm_live:
+            raise HTTPException(status_code=412, detail="切換至正式實盤 LIVE 需明確確認 (confirm_live=true)")
+        if not _shioaji_has_token():
+            raise HTTPException(status_code=412, detail="尚未設定永豐金 Shioaji API Key / Secret Key，禁止切換至正式實盤 LIVE")
+        _SHIOAJI_CFG["simulation"] = False
+    else:
+        _SHIOAJI_CFG["simulation"] = True
+
+    res = await get_shioaji_mode()
+    res["message"] = (
+        "已透過 API 切換至正式實盤 LIVE 模式（請審慎控管部位與 CA 憑證）"
+        if target == "LIVE"
+        else "已透過 API 安全切換回預設模擬單 SIM 模式（K 線仍維持真實數據分析）"
+    )
+    return res
+
+
 @app.get("/api/v1/market/global-indices")
 async def global_indices_realtime():
     """Fetch live NQ=F (小那期貨) and ^SOX (費半指數) for Lock-Screen Live Activity (up to 5 items)."""
@@ -4231,9 +4295,22 @@ async def _fetch_shioaji_sdk_kbars(symbol: str, interval: str) -> Optional[dict[
         return None
 
     def _run_sdk():
-        api = sj.Shioaji(simulation=bool(_SHIOAJI_CFG.get("simulation", True)))
+        # v3.11.0: Decouple market-data K-bars from order execution mode —
+        # always prefer real production market data (simulation=False) when API Token is configured,
+        # falling back to simulation=True only if the token is restricted to SIM.
+        api = None
+        last_err = None
+        for sim_flag in (False, True):
+            try:
+                api = sj.Shioaji(simulation=sim_flag)
+                api.login(api_key=ak, secret_key=sk)
+                break
+            except Exception as e:
+                last_err = e
+                api = None
+        if api is None:
+            raise last_err or RuntimeError("Shioaji SDK login failed")
         try:
-            api.login(api_key=ak, secret_key=sk)
             contract = api.Contracts.Stocks[symbol.upper()]
             kb = api.kbars(contract=contract, start=start_dt.strftime("%Y-%m-%d"), end=end_dt.strftime("%Y-%m-%d"))
             snaps = api.snapshots([contract])

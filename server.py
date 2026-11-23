@@ -301,6 +301,19 @@ def init_db() -> None:
     if "owner_id" not in cols:
         conn.execute("ALTER TABLE trade_orders ADD COLUMN owner_id TEXT DEFAULT ''")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_owner ON trade_orders(owner_id, ts_ms DESC)")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS remote_accounts (
+            account_id TEXT PRIMARY KEY,
+            pass_hash TEXT NOT NULL,
+            owner_id TEXT NOT NULL,
+            payload_json TEXT DEFAULT '',
+            revision INTEGER NOT NULL DEFAULT 0,
+            last_device TEXT DEFAULT '',
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -385,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.10.1",
+    version="3.10.2",
 )
 
 app.add_middleware(
@@ -508,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.10.1",
+        "version": "3.10.2",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4045,6 +4058,112 @@ async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
         )
     # Automatic seamless fallback to official TWSE/TPEx MIS real-time quotes
     return await twse_realtime_quotes(symbols=",".join(syms), indices="t00,o00")
+
+
+# ---------------------------------------------------------------------------
+# v3.10.2 — Remote Shared Account (手機與電腦跨裝置同步共用帳號)
+# 帳號密碼於前端先經 PBKDF2/SHA-256 雜湊驗證，同步資料本身亦為 E2EE AES-256-GCM 密文。
+# ---------------------------------------------------------------------------
+class RemoteAccountAuthRequest(BaseModel):
+    account_id: str = Field(..., min_length=3, max_length=64)
+    pass_hash: str = Field(..., min_length=32, max_length=128)
+    device_name: str = ""
+
+
+class RemoteAccountPushRequest(RemoteAccountAuthRequest):
+    payload_json: str = Field(..., max_length=4_500_000)
+
+
+def _norm_account_id(raw: str) -> str:
+    clean = re.sub(r"[^a-zA-Z0-9_.-]", "", (raw or "").strip().lower())
+    if len(clean) < 3:
+        raise HTTPException(status_code=400, detail="遠端共享帳號名稱至少需 3 碼英數字")
+    return clean
+
+
+@app.post("/api/v1/account/login")
+async def remote_account_login(req: RemoteAccountAuthRequest):
+    aid = _norm_account_id(req.account_id)
+    now = tw_now_str()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute("SELECT * FROM remote_accounts WHERE account_id = ?", (aid,)).fetchone()
+        if row is None:
+            owner_id = "own_" + hashlib.sha256(f"shl-acct:{aid}:{req.pass_hash[:16]}".encode()).hexdigest()[:24]
+            conn.execute(
+                "INSERT INTO remote_accounts (account_id, pass_hash, owner_id, payload_json, revision, last_device, updated_at) VALUES (?, ?, ?, '', 0, ?, ?)",
+                (aid, req.pass_hash, owner_id, req.device_name[:60], now),
+            )
+            conn.execute(
+                "INSERT OR IGNORE INTO device_owners (owner_id, owner_label, sync_space, created_at) VALUES (?, ?, ?, ?)",
+                (owner_id, aid, _owner_sync_space(owner_id), now),
+            )
+            conn.commit()
+            return {"ok": True, "created": True, "account_id": aid, "owner_id": owner_id, "sync_space": _owner_sync_space(owner_id), "revision": 0, "has_payload": False}
+        if not hmac.compare_digest(str(row["pass_hash"]), req.pass_hash):
+            raise HTTPException(status_code=403, detail="遠端共享帳號密碼錯誤")
+        return {
+            "ok": True,
+            "created": False,
+            "account_id": aid,
+            "owner_id": str(row["owner_id"]),
+            "sync_space": _owner_sync_space(str(row["owner_id"])),
+            "revision": int(row["revision"]),
+            "has_payload": bool(row["payload_json"]),
+            "last_device": str(row["last_device"] or ""),
+            "updated_at": str(row["updated_at"]),
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/v1/account/sync/push")
+async def remote_account_push(req: RemoteAccountPushRequest):
+    aid = _norm_account_id(req.account_id)
+    now = tw_now_str()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute("SELECT pass_hash, owner_id, revision FROM remote_accounts WHERE account_id = ?", (aid,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="請先登入或建立遠端共享帳號")
+        if not hmac.compare_digest(str(row["pass_hash"]), req.pass_hash):
+            raise HTTPException(status_code=403, detail="遠端共享帳號密碼錯誤")
+        new_rev = int(row["revision"]) + 1
+        conn.execute(
+            "UPDATE remote_accounts SET payload_json = ?, revision = ?, last_device = ?, updated_at = ? WHERE account_id = ?",
+            (req.payload_json, new_rev, req.device_name[:60], now, aid),
+        )
+        conn.commit()
+        return {"ok": True, "account_id": aid, "owner_id": str(row["owner_id"]), "revision": new_rev, "updated_at": now}
+    finally:
+        conn.close()
+
+
+@app.post("/api/v1/account/sync/pull")
+async def remote_account_pull(req: RemoteAccountAuthRequest):
+    aid = _norm_account_id(req.account_id)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute("SELECT * FROM remote_accounts WHERE account_id = ?", (aid,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="查無此遠端共享帳號")
+        if not hmac.compare_digest(str(row["pass_hash"]), req.pass_hash):
+            raise HTTPException(status_code=403, detail="遠端共享帳號密碼錯誤")
+        return {
+            "ok": True,
+            "account_id": aid,
+            "owner_id": str(row["owner_id"]),
+            "sync_space": _owner_sync_space(str(row["owner_id"])),
+            "revision": int(row["revision"]),
+            "payload_json": str(row["payload_json"] or ""),
+            "last_device": str(row["last_device"] or ""),
+            "updated_at": str(row["updated_at"]),
+        }
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

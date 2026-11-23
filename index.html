@@ -4840,6 +4840,56 @@
             </article>
           </div>
 
+          <!-- v3.10.2: Remote Shared Account (Phone 4G/5G <-> Desktop E2EE Sync) -->
+          <article id="remoteSharedAccountCard" class="card" style="margin-top:14px;border:1.5px solid #93c5fd;">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">☁️ 遠端共享帳號（手機 4G/5G 與電腦同步共用）</h2>
+                <p class="card-subtitle">手機與電腦登入同一組遠端共享帳號即可自動加密同步自選群組、AI 金鑰、Telegram 設定、策略與訂單（全端對端 AES-256-GCM 加密）</p>
+              </div>
+              <span id="remoteAcctStatusBadge" class="badge badge-slate mono">未登入遠端帳號</span>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="remoteAcctModeSelect">遠端同步引擎</label>
+                  <select id="remoteAcctModeSelect" class="select">
+                    <option value="gist" selected>免架站雲端（GitHub Private Gist · 手機 4G/5G 與電腦皆可用）</option>
+                    <option value="server">自架雲端後端（server.py 遠端帳號資料庫）</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="remoteAcctNameInput">遠端共享帳號名稱（手機與電腦填相同名稱）</label>
+                  <input id="remoteAcctNameInput" type="text" class="input mono" placeholder="例如：sheng_main 或 my-shl-01" />
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="remoteAcctPassInput">遠端共享密碼（端對端加密金鑰，僅您持有）</label>
+                  <input id="remoteAcctPassInput" type="password" class="input mono" placeholder="至少 6 碼同步加密密碼" autocomplete="current-password" />
+                </div>
+                <div id="remoteAcctGistTokenWrap">
+                  <label class="field-label" for="remoteAcctGistTokenInput">GitHub Gist Token（免架站必填 · 僅勾選 gist 權限）</label>
+                  <input id="remoteAcctGistTokenInput" type="password" class="input mono" placeholder="ghp_... 或 github_pat_...（僅存本機）" autocomplete="off" />
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button type="button" id="btnRemoteAcctLogin" class="btn btn-sm btn-primary">🔐 登入／建立遠端共享帳號</button>
+                <button type="button" id="btnRemoteAcctPush" class="btn btn-sm btn-dark">⬆️ 上傳同步至遠端</button>
+                <button type="button" id="btnRemoteAcctPull" class="btn btn-sm btn-teal">⬇️ 從遠端拉取同步</button>
+                <button type="button" id="btnRemoteAcctCopyMobile" class="btn btn-sm">📋 複製手機快速登入碼</button>
+                <button type="button" id="btnRemoteAcctLogout" class="btn btn-sm" style="color:#b91c1c;">登出</button>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <input id="remoteAcctQuickImportInput" type="text" class="input mono" style="flex:1;min-width:190px;" placeholder="手機端快速登入：貼上電腦複製的 SHLCLOUD1:... 登入碼" />
+                <button type="button" id="btnRemoteAcctQuickImport" class="btn btn-sm btn-teal">一鍵套用並拉取同步</button>
+              </div>
+              <div id="remoteAcctMetaLine" class="mono" style="font-size:11px;color:var(--ink-3);">
+                狀態：尚未登入遠端共享帳號（設定一次後複製登入碼到 iPhone，即可與電腦即時共用所有設定與資料）
+              </div>
+            </div>
+          </article>
+
           <!-- v3.8.0: Device Matching (Unified Owner DB) + Lock-Screen Ticker Customizer -->
           <div class="grid-2" style="margin-top:14px;">
             <article class="card">
@@ -6037,7 +6087,7 @@
         ctx.stroke();
 
         // Subtle animated data flow dash showing continuous keep-alive handshake
-        if (state.animRunning && !state.killSwitch) {
+        if (state.animRunning && !state.killSwitch && (typeof isTwSimTradingWindow !== 'function' || isTwSimTradingWindow().open)) {
           ctx.save();
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
@@ -9066,6 +9116,10 @@
       const ms = Math.max(15, Number(state.agentConfig.pollSec || 60)) * 1000;
       agentAutoTimer = setInterval(async () => {
         if (!state.agentConfig.autoTradeEnabled || state.killSwitch) return;
+        if (typeof isTwSimTradingWindow === 'function' && !isTwSimTradingWindow().open) {
+          setRibbonEvent('休市待命中（自動偵測僅於週一～五 09:00:00~13:20:00 執行，避免過度偵測）');
+          return;
+        }
         const targets = state.agentConfig.scope === 'WATCHLIST'
           ? state.watchlist.map(w => w.symbol)
           : [state.activeSymbol];
@@ -15487,7 +15541,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (s > 0) {
           refreshRealtimeQuotes(true).catch(() => {});
           rtTimer = setInterval(() => {
-            if (!document.hidden) refreshRealtimeQuotes(true).catch(() => {});
+            if (!document.hidden && (typeof isTwSimTradingWindow !== 'function' || isTwSimTradingWindow().open)) refreshRealtimeQuotes(true).catch(() => {});
           }, s * 1000);
           showToast('盤中自動即時刷新已啟動', `每 ${s} 秒自動更新 TWSE/TPEx 即時報價與五檔。`, 'success');
         }
@@ -15773,7 +15827,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (standbyClockTimer) clearInterval(standbyClockTimer);
         standbyClockTimer = setInterval(() => {
           updateStandbyClock();
-          refreshRealtimeQuotes(true).catch(() => {});
+          if (typeof isTwSimTradingWindow !== 'function' || isTwSimTradingWindow().open) {
+            refreshRealtimeQuotes(true).catch(() => {});
+          }
         }, 15000);
       }
 
@@ -16091,8 +16147,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         persistState();
         if (enabled && pollSec > 0) {
           battleTimer = setInterval(() => {
-            if (!document.hidden && !state.killSwitch) {
+            if (!document.hidden && !state.killSwitch && (typeof isTwSimTradingWindow !== 'function' || isTwSimTradingWindow().open)) {
               runLiveBattleNow(true).catch(() => {});
+            } else if (typeof isTwSimTradingWindow === 'function' && !isTwSimTradingWindow().open) {
+              setRibbonEvent('休市待命中（自動偵測僅於週一～五 09:00:00~13:20:00 執行，避免過度偵測）');
             }
           }, pollSec * 1000);
           showToast('AI 多空自動虛擬下單已啟動', `每 ${pollSec} 秒抓取即時行情並進行多空 % 交戰（目前為 ${state.envMode} 模式）。`, 'success');
@@ -17897,7 +17955,314 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, TA, INDICATOR_CATALOG, renderIndicatorPicker, runBullBearStrategyBacktest, updateSimSessionBadge };
     })();
 
-    document.addEventListener('DOMContentLoaded', initApp);
+    // =========================================================================
+    // v3.10.2 REMOTE SHARED ACCOUNT (window.SHL_REMOTE_ACCOUNT)
+    // Phone (4G/5G PWA/iOS/Android) <-> Desktop E2EE Shared Account Sync
+    // Supports: (1) Serverless GitHub Private Gist E2EE  (2) server.py Cloud Account
+    // =========================================================================
+    window.SHL_REMOTE_ACCOUNT = (function () {
+      const REMOTE_KEY = 'shl_remote_account_v1';
+
+      function readCfg() {
+        try { return JSON.parse(localStorage.getItem(REMOTE_KEY) || '{}') || {}; } catch (e) { return {}; }
+      }
+      function writeCfg(obj) {
+        try { localStorage.setItem(REMOTE_KEY, JSON.stringify(obj)); } catch (e) {}
+      }
+
+      async function sha256Hex(str) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      async function deriveAesKey(pass, saltBytes) {
+        const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: saltBytes, iterations: 120000, hash: 'SHA-256' },
+          km,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      }
+
+      function toB64(u8) { let s = ''; u8.forEach(b => s += String.fromCharCode(b)); return btoa(s); }
+      function fromB64(b64) { const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return u8; }
+
+      async function encryptSnapshot(snapshotObj, pass) {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await deriveAesKey(pass, salt);
+        const pt = new TextEncoder().encode(JSON.stringify(snapshotObj));
+        const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, pt));
+        return JSON.stringify({ v: 1, alg: 'AES-256-GCM', salt: toB64(salt), iv: toB64(iv), ct: toB64(ct), updatedAt: nowTwDateTime() });
+      }
+
+      async function decryptSnapshot(payloadJson, pass) {
+        const env = JSON.parse(payloadJson);
+        const key = await deriveAesKey(pass, fromB64(env.salt));
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(env.iv) }, key, fromB64(env.ct));
+        return JSON.parse(new TextDecoder().decode(pt));
+      }
+
+      function refreshUI() {
+        const cfg = readCfg();
+        const badge = document.getElementById('remoteAcctStatusBadge');
+        const meta = document.getElementById('remoteAcctMetaLine');
+        const modeSel = document.getElementById('remoteAcctModeSelect');
+        const nameIn = document.getElementById('remoteAcctNameInput');
+        const passIn = document.getElementById('remoteAcctPassInput');
+        const gistIn = document.getElementById('remoteAcctGistTokenInput');
+        const gistWrap = document.getElementById('remoteAcctGistTokenWrap');
+        if (modeSel && cfg.mode) modeSel.value = cfg.mode;
+        if (gistWrap && modeSel) gistWrap.style.display = modeSel.value === 'gist' ? 'block' : 'none';
+        if (nameIn && cfg.accountId && !nameIn.value) nameIn.value = cfg.accountId;
+        if (passIn && cfg.pass && !passIn.value) passIn.value = cfg.pass;
+        if (gistIn && cfg.gistToken && !gistIn.value) gistIn.value = cfg.gistToken;
+        if (badge) {
+          if (cfg.loggedIn && cfg.accountId) {
+            badge.className = 'badge badge-down mono';
+            badge.textContent = `已登入：${cfg.accountId} (${cfg.mode === 'gist' ? '雲端 Gist' : 'Server'})`;
+          } else {
+            badge.className = 'badge badge-slate mono';
+            badge.textContent = '未登入遠端帳號';
+          }
+        }
+        if (meta) {
+          meta.textContent = cfg.loggedIn
+            ? `已連線遠端共享帳號「${cfg.accountId}」· 模式：${cfg.mode === 'gist' ? '免架站 Private Gist' : 'server.py'} · 最後同步：${cfg.lastSyncAt || '尚未同步'} (rev #${cfg.revision || 0})`
+            : '狀態：尚未登入遠端共享帳號（設定一次後複製登入碼到 iPhone，即可與電腦即時共用所有設定與資料）';
+        }
+      }
+
+      function collectFormCreds() {
+        const cfg = readCfg();
+        return {
+          mode: document.getElementById('remoteAcctModeSelect')?.value || cfg.mode || 'gist',
+          accountId: (document.getElementById('remoteAcctNameInput')?.value || cfg.accountId || '').trim().toLowerCase(),
+          pass: (document.getElementById('remoteAcctPassInput')?.value || cfg.pass || '').trim(),
+          gistToken: (document.getElementById('remoteAcctGistTokenInput')?.value || cfg.gistToken || '').trim(),
+          gistId: cfg.gistId || ''
+        };
+      }
+
+      async function findOrCreateGist(accountId, gistToken, existingGistId) {
+        const fname = `shl-tw-remote-${accountId}.enc.json`;
+        const headers = { 'Authorization': `Bearer ${gistToken}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
+        if (existingGistId) {
+          const chk = await androidProxyFetch(`https://api.github.com/gists/${encodeURIComponent(existingGistId)}`, { headers });
+          if (chk.ok) return await chk.json();
+        }
+        const listR = await androidProxyFetch('https://api.github.com/gists?per_page=50', { headers });
+        if (!listR.ok) throw new Error(`GitHub Gist 認證失敗 (HTTP ${listR.status})，請確認 Token 已勾選 gist 權限`);
+        const gists = await listR.json();
+        const found = (Array.isArray(gists) ? gists : []).find(g => g.files && g.files[fname]);
+        if (found) {
+          const fullR = await androidProxyFetch(`https://api.github.com/gists/${encodeURIComponent(found.id)}`, { headers });
+          if (fullR.ok) return await fullR.json();
+          return found;
+        }
+        const createR = await androidProxyFetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            description: `SHL TW Encrypted Remote Shared Account (${accountId})`,
+            public: false,
+            files: { [fname]: { content: JSON.stringify({ empty: true, createdAt: nowTwDateTime() }) } }
+          })
+        });
+        if (!createR.ok) throw new Error(`建立 Private Gist 失敗 (HTTP ${createR.status})`);
+        return await createR.json();
+      }
+
+      async function login() {
+        const c = collectFormCreds();
+        if (c.accountId.length < 3) { showToast('請輸入遠端共享帳號名稱', '至少 3 碼英數字（手機與電腦填相同名稱）。', 'warn'); return; }
+        if (c.pass.length < 6) { showToast('同步密碼過短', '請設定至少 6 碼遠端共享加密密碼。', 'warn'); return; }
+
+        try {
+          if (c.mode === 'gist') {
+            if (!c.gistToken) { showToast('請填入 GitHub Gist Token', '免架站模式需填入勾選 gist 權限的 GitHub Token。', 'warn'); return; }
+            const gist = await findOrCreateGist(c.accountId, c.gistToken, c.gistId);
+            const saved = { ...c, gistId: gist.id, loggedIn: true, lastSyncAt: readCfg().lastSyncAt || '', revision: readCfg().revision || 0 };
+            writeCfg(saved);
+            refreshUI();
+            showToast('遠端共享帳號已登入 (Private Gist)', `已連線加密共享帳號「${c.accountId}」，點擊「上傳」或「拉取」即可與手機同步！`, 'success');
+            return;
+          }
+          const apiBase = getApiBase();
+          if (!apiBase) { showToast('尚未連線 server.py', '自架後端模式需連線 server.py；若想免架站同步，請將上方切換為「免架站雲端 (GitHub Private Gist)」。', 'warn'); return; }
+          const passHash = await sha256Hex(`shl-remote:${c.accountId}:${c.pass}`);
+          const r = await fetch(`${apiBase}/api/v1/account/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_id: c.accountId, pass_hash: passHash, device_name: navigator.platform || 'SHL Device' })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+          if (j.owner_id && state.ext?.device) {
+            state.ext.device.ownerId = j.owner_id;
+            state.ext.device.syncSpace = j.sync_space || state.ext.device.syncSpace;
+            persistState();
+          }
+          writeCfg({ ...c, loggedIn: true, ownerId: j.owner_id, revision: j.revision || 0, lastSyncAt: j.updated_at || '' });
+          refreshUI();
+          showToast(j.created ? '已建立遠端共享帳號' : '已登入遠端共享帳號', `帳號「${c.accountId}」已歸屬統一資料庫，手機與電腦皆可同步！`, 'success');
+        } catch (err) {
+          showToast('遠端帳號登入失敗', err.message, 'error');
+        }
+      }
+
+      async function push() {
+        const cfg = readCfg();
+        const c = collectFormCreds();
+        if (!cfg.loggedIn) { await login(); if (!readCfg().loggedIn) return; }
+        const active = readCfg();
+        try {
+          const payloadJson = await encryptSnapshot(collectPersistableSnapshot(), c.pass || active.pass);
+          if (active.mode === 'gist') {
+            const fname = `shl-tw-remote-${active.accountId}.enc.json`;
+            const r = await androidProxyFetch(`https://api.github.com/gists/${encodeURIComponent(active.gistId)}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${active.gistToken}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ files: { [fname]: { content: payloadJson } } })
+            });
+            if (!r.ok) throw new Error(`Gist 上傳失敗 (HTTP ${r.status})`);
+            active.revision = (active.revision || 0) + 1;
+            active.lastSyncAt = nowTwDateTime();
+            writeCfg(active);
+            refreshUI();
+            showToast('已加密上傳至遠端共享帳號', `手機端點擊「從遠端拉取同步」即可立即取得最新設定與資料！`, 'success');
+            return;
+          }
+          const apiBase = getApiBase();
+          const passHash = await sha256Hex(`shl-remote:${active.accountId}:${c.pass || active.pass}`);
+          const r = await fetch(`${apiBase}/api/v1/account/sync/push`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_id: active.accountId, pass_hash: passHash, device_name: navigator.platform || 'SHL Device', payload_json: payloadJson })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+          active.revision = j.revision;
+          active.lastSyncAt = j.updated_at;
+          writeCfg(active);
+          refreshUI();
+          showToast('已加密上傳至雲端後端帳號', `版本 rev #${j.revision} 已同步。`, 'success');
+        } catch (err) {
+          showToast('遠端上傳失敗', err.message, 'error');
+        }
+      }
+
+      async function pull() {
+        const active = readCfg();
+        const c = collectFormCreds();
+        if (!active.loggedIn) { await login(); if (!readCfg().loggedIn) return; }
+        const cur = readCfg();
+        try {
+          let payloadJson = '';
+          if (cur.mode === 'gist') {
+            const fname = `shl-tw-remote-${cur.accountId}.enc.json`;
+            const r = await androidProxyFetch(`https://api.github.com/gists/${encodeURIComponent(cur.gistId)}`, {
+              headers: { 'Authorization': `Bearer ${cur.gistToken}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (!r.ok) throw new Error(`Gist 拉取失敗 (HTTP ${r.status})`);
+            const g = await r.json();
+            payloadJson = g.files?.[fname]?.content || '';
+          } else {
+            const apiBase = getApiBase();
+            const passHash = await sha256Hex(`shl-remote:${cur.accountId}:${c.pass || cur.pass}`);
+            const r = await fetch(`${apiBase}/api/v1/account/sync/pull`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ account_id: cur.accountId, pass_hash: passHash })
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+            payloadJson = j.payload_json || '';
+            cur.revision = j.revision || cur.revision;
+          }
+          if (!payloadJson || JSON.parse(payloadJson).empty) {
+            showToast('遠端尚無同步資料', '請先在另一台裝置點擊「⬆️ 上傳同步至遠端」。', 'info');
+            return;
+          }
+          const decrypted = await decryptSnapshot(payloadJson, c.pass || cur.pass);
+          applyPersistedSnapshot(decrypted);
+          persistState();
+          populateSettingsInputs();
+          renderAllViews();
+          cur.lastSyncAt = nowTwDateTime();
+          writeCfg(cur);
+          refreshUI();
+          showToast('遠端共享帳號拉取同步成功！', '自選群組、AI 金鑰、Telegram 設定、策略與訂單皆已同步至本機！', 'success');
+        } catch (err) {
+          showToast('遠端拉取解密失敗', err.message || '請確認遠端共享密碼與另一台裝置相同。', 'error');
+        }
+      }
+
+      async function copyMobileQuickCode() {
+        const cur = readCfg();
+        if (!cur.loggedIn) { showToast('請先登入遠端共享帳號', '登入後即可產生手機快速登入碼。', 'warn'); return; }
+        const code = 'SHLCLOUD1:' + btoa(unescape(encodeURIComponent(JSON.stringify({
+          mode: cur.mode,
+          accountId: cur.accountId,
+          pass: cur.pass,
+          gistToken: cur.gistToken || '',
+          gistId: cur.gistId || '',
+          backendUrl: state.backendUrl || ''
+        }))));
+        try { await navigator.clipboard.writeText(code); } catch (e) {}
+        showToast('已複製手機快速登入碼', '請在 iPhone 的「遠端共享帳號 → 手機端快速登入」欄位貼上即可一鍵同步！', 'success');
+      }
+
+      async function quickImportMobileCode() {
+        const raw = (document.getElementById('remoteAcctQuickImportInput')?.value || '').trim();
+        if (!raw.startsWith('SHLCLOUD1:')) { showToast('登入碼格式錯誤', '請貼上電腦端複製的 SHLCLOUD1:... 登入碼。', 'warn'); return; }
+        try {
+          const obj = JSON.parse(decodeURIComponent(escape(atob(raw.slice(10)))));
+          if (obj.backendUrl && !state.backendUrl) state.backendUrl = obj.backendUrl;
+          writeCfg({ ...obj, loggedIn: true, lastSyncAt: '' });
+          document.getElementById('remoteAcctQuickImportInput').value = '';
+          refreshUI();
+          await pull();
+        } catch (err) {
+          showToast('快速登入碼解析失敗', err.message, 'error');
+        }
+      }
+
+      function init() {
+        document.getElementById('remoteAcctModeSelect')?.addEventListener('change', () => {
+          const w = document.getElementById('remoteAcctGistTokenWrap');
+          const m = document.getElementById('remoteAcctModeSelect')?.value;
+          if (w) w.style.display = m === 'gist' ? 'block' : 'none';
+        });
+        document.getElementById('btnRemoteAcctLogin')?.addEventListener('click', login);
+        document.getElementById('btnRemoteAcctPush')?.addEventListener('click', push);
+        document.getElementById('btnRemoteAcctPull')?.addEventListener('click', pull);
+        document.getElementById('btnRemoteAcctCopyMobile')?.addEventListener('click', copyMobileQuickCode);
+        document.getElementById('btnRemoteAcctQuickImport')?.addEventListener('click', quickImportMobileCode);
+        document.getElementById('btnRemoteAcctLogout')?.addEventListener('click', () => {
+          localStorage.removeItem(REMOTE_KEY);
+          ['remoteAcctNameInput', 'remoteAcctPassInput', 'remoteAcctGistTokenInput'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+          });
+          refreshUI();
+          showToast('已登出遠端共享帳號', '本機已解除遠端共享連線。', 'info');
+        });
+        refreshUI();
+        if (typeof isTwSimTradingWindow === 'function' && !isTwSimTradingWindow().open) {
+          setRibbonEvent('休市待命中（自動偵測僅於週一～五 09:00:00~13:20:00 執行，避免過度偵測）');
+        }
+      }
+
+      return { init, login, push, pull, refreshUI };
+    })();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp().finally(() => {
+        if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
+      });
+    });
   </script>
 </body>
 </html>

@@ -16,7 +16,8 @@ final class LocalAssetServer {
         "mis.twse.com.tw",
         "mis.taifex.com.tw",
         "api.telegram.org",
-        "api.fugle.tw"
+        "api.fugle.tw",
+        "api.github.com"
     ]
 
     private let assetsRoot: URL

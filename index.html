@@ -2503,11 +2503,14 @@
       <div class="brand">
         <div class="brand-mark">TW</div>
         <div class="brand-text">
-          <h1 class="brand-title">
+          <h1 class="brand-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
+            <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
+              v3.11.2 · 版本說明
+            </button>
           </h1>
-          <p class="brand-sub">TradingView × Yahoo / FinMind 真實行情 × 六模型 AI (Groq / Ollama) × 多 Agent 自動買賣</p>
+          <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
         </div>
       </div>
 
@@ -5035,6 +5038,27 @@
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding-top:4px;border-top:1px solid rgba(148,163,184,0.15);">
         <span id="vaultLockDeviceBadge">本機沙盒隔離中</span>
         <button id="btnVaultEmergencyReset" type="button" style="background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;text-decoration:underline;">忘記密碼？重置本機保險箱</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.11.2: Current Version & Full Changelog History Modal -->
+  <div id="changelogModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="changelogModalTitle">
+    <div class="modal-card" style="max-width:740px;width:94vw;max-height:88vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-blue">SHL TW</span>
+          <span id="changelogCurrentVerBadge" class="badge mono" style="background:#0f172a;color:#fde68a;font-weight:800;">v3.11.2</span>
+          <h3 id="changelogModalTitle" style="margin:0;font-size:16px;font-weight:800;">版本說明與歷史修改紀錄清單</h3>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="changelogModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-bottom:18px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:10px 12px;">
+          <input id="changelogFilterInput" type="text" class="input" style="flex:1;min-width:180px;" placeholder="搜尋版本號或修改項目（如：永豐、鎖屏、回測、Telegram、v3.11）" />
+          <a href="https://github.com/LHSheng-404/TradingAutomatic/releases" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap;">📦 前往 GitHub Releases 下載</a>
+        </div>
+        <div id="changelogListContainer" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
   </div>
@@ -19240,7 +19264,211 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, savePane, restorePane, restoreAll, updateBadge };
     })();
 
+    // =========================================================================
+    // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
+    // =========================================================================
+    window.SHL_CHANGELOG = (function createChangelogViewer() {
+      const CURRENT_VERSION = 'v3.11.2';
+      const HISTORY = [
+        {
+          ver: 'v3.11.2',
+          items: [
+            '畫面左上角新增當前版本號與「版本說明」按鈕，點擊即可於網頁內直接查看完整歷史修改與新增項目清單',
+            '版本說明視窗支援即時關鍵字／版本號篩選（如輸入「永豐」、「鎖屏」、「回測」、「v3.11」）與一鍵前往 GitHub Releases'
+          ]
+        },
+        {
+          ver: 'v3.11.1',
+          items: [
+            '修正手機端貼上 SHLCLOUD1:... 快速登入碼顯示「格式錯誤」：改用 URL-Safe Base64 防 LINE／Telegram 斷行，並自動容錯空白、換行、零寬字元與全形冒號',
+            '新增「🟢 SIM 模擬環境專用 API Token」獨立輸入選單，與「🔴 LIVE 正式單專用 API Token」前後端完全隔離（僅填 SIM Token 絕不解鎖實盤）',
+            '新增「盤中 1 秒即時（秒級極速）」與「盤中 3 秒即時」自動刷新頻率選項'
+          ]
+        },
+        {
+          ver: 'v3.11.0',
+          items: [
+            '新增永豐金 Shioaji 雙環境切換 API（GET / POST /api/v1/shioaji/mode），系統預設嚴格鎖定為模擬單 SIM',
+            '切換正式單 LIVE 時由後端 API 強制驗證 confirm_live 與有效 API Token（未通過回傳 HTTP 412 並自動退回 SIM）',
+            '行情／K 線與下單環境解耦：設定 API Token 後，K 線優先抓取永豐金真實生產市場數據'
+          ]
+        },
+        {
+          ver: 'v3.10.9',
+          items: [
+            '修正電腦端點擊「產生／複製手機快速登入碼」未顯示登入碼問題，改為立即展開藍色可視框並自動全選',
+            '內建 navigator.clipboard ＋ execCommand("copy") 雙重複製相容機制（支援非 HTTPS 本機與區網環境）'
+          ]
+        },
+        {
+          ver: 'v3.10.8',
+          items: [
+            '雙向資料交流交握網路主源更換為「永豐金 Shioaji Pro」（Sinotrade/shioaji-pro-app 協議），取代原 Yahoo Finance 主節點',
+            'FinMind v4 調整為「盤後歷史／名稱輔助」，全鏈路交握測試改為真實量測永豐金延遲與即時價'
+          ]
+        },
+        {
+          ver: 'v3.10.7',
+          items: [
+            '修正「⚡ 抓即時價+多空交戰」：自動讀取「自訂分析焦點」全部標的進行批次即時對決，並顯示每檔焦點個股的多空 % 明細',
+            '解除前後端自訂分析焦點 8 檔上限限制（支援一次分析 12、20、30+ 檔標的）',
+            '自訂分析焦點內容與模式於每次輸入時即時自動記憶，重整或重開免手動儲存即可自動還原'
+          ]
+        },
+        {
+          ver: 'v3.10.6',
+          items: [
+            '功能工作區全部 9 個分頁頂部新增「💾 儲存此分頁」按鈕與「✓ 已記憶 HH:MM:SS」狀態徽章',
+            '自動記憶並還原各分頁所有輸入欄位、開關與下拉選項（排除保險箱解鎖 PIN 等敏感密碼）'
+          ]
+        },
+        {
+          ver: 'v3.10.5',
+          items: [
+            '新增 GET /api/v1/shioaji/kbars/{symbol} 永豐金即時 K 線 API，支援 1 分 K 重採樣為 5/15/60/D/W 週期',
+            '技術 K 線圖表全面優先使用永豐金即時數據，盤中每次刷新自動更新最後一根 K 棒並重算 21 種技術指標'
+          ]
+        },
+        {
+          ver: 'v3.10.4',
+          items: [
+            '修正個股與產業資金流漲跌幅 +/- 正負號異常：Yahoo 分 K 改優先取用真實昨收 previousClose（取代 5 日前收盤價 chartPreviousClose）',
+            '同步 K 線時全面保留官方 TWSE/TPEx MIS 即時成交價與真實昨收，確保所有看板數據 100% 一致'
+          ]
+        },
+        {
+          ver: 'v3.10.3',
+          items: [
+            '股票代號輸入支援中文股名（如 台積電、台泥、長榮）與「台指電子盤」（TXF）／指數查詢',
+            '修正 TAIFEX 主力近月單式合約篩選邏輯（排除跨月價差與選擇權）',
+            '鎖屏畫面「🔒 自訂指數 / 個股」改為原地展開自由組合面板（最多 5 組，支援 ▲/▼ 排序、✕ 移除與中文搜尋加入）'
+          ]
+        },
+        {
+          ver: 'v3.10.2',
+          items: [
+            '全系統背景自動偵測與交握事件限縮於週一～五 09:00:00~13:20:00（UTC+8）避免過度偵測',
+            '新增「遠端共享帳號」（免架站 GitHub Private Gist 端對端加密同步 ＋ 後端同步）與手機快速登入碼'
+          ]
+        },
+        {
+          ver: 'v3.10.1',
+          items: [
+            '虛擬模擬單下單時間限縮為台股交易日 09:00~13:20（前後端雙重驗證）',
+            '新增「多空交戰策略總收益損益回測」查看面板（累計報酬、勝率、最大回撤與逐筆明細）'
+          ]
+        },
+        {
+          ver: 'v3.10.0',
+          items: [
+            '完整復刻永豐金 Shioaji Pro：內建 21 種技術指標（9 種主圖疊加 ＋ 12 種同步副圖震盪指標）',
+            '實作 Binary-Split 比例面積演算法 12 大產業資金鏈熱力圖、排行、輪動與泡泡／通道持股全景'
+          ]
+        },
+        {
+          ver: 'v3.9.0',
+          items: [
+            '鎖屏即時動態新增開關與自由組合（最多 5 組，預設含台指近全）；電腦版鼠標拖移與手機觸控分離',
+            '交易紀錄升級秒級成交時間與當沖標註；訊號掃描新增歷史紀錄與清空；修正 LINE 推播 HTTP 400'
+          ]
+        },
+        {
+          ver: 'v3.8.0',
+          items: [
+            '手機端免 Python 直連 Telegram Bot 儲存與推播；接入 TWSE/TPEx MIS 與 TAIFEX 即時行情＋三竹風格五檔看板',
+            '新增獨立鎖屏看盤、截圖 AI 視覺匯入群組、AI 多空 % 交戰虛擬自動下單與多裝置匹配統一資料庫'
+          ]
+        },
+        {
+          ver: 'v3.7.0',
+          items: [
+            '修正 iPhone 選單裁切與關閉按鈕重疊；台股真實回測支援單筆／多階段定投與國際重大金融事件標註',
+            '首頁改版條列式軟體說明、應用方式與資料來源，並於每頁底部加入免責聲明'
+          ]
+        },
+        {
+          ver: 'v3.6.0',
+          items: [
+            '新增本機裝置沙盒 AES-256-GCM 加密保險箱、iPhone Face ID / 解鎖密碼驗證與多設備端對端加密連動'
+          ]
+        },
+        {
+          ver: 'v3.5.0 ~ v3.5.2',
+          items: [
+            '品牌更名為 SHL TW；修正 Yahoo/FinMind 切換 K 線即時刷新；新增 iOS 原生 IPA 與 Safari PWA 支援'
+          ]
+        },
+        {
+          ver: 'v3.0.0 ~ v3.4.0',
+          items: [
+            '整合六大 AI 模型（Groq / Ollama / Grok / Gemini / Claude / ChatGPT）、30 支量化策略實驗室、10 大台股開關、Telegram 加密自動綁定與 Android APK'
+          ]
+        },
+        {
+          ver: 'v1.0.0 ~ v2.0.0',
+          items: [
+            '首版發布跨平台免安裝執行檔（Windows / macOS / Linux），內建手續費折數自訂、對帳單復盤與台股定投回測'
+          ]
+        }
+      ];
+
+      function render(filterText = '') {
+        const container = document.getElementById('changelogListContainer');
+        if (!container) return;
+        const q = String(filterText || '').trim().toLowerCase();
+        const filtered = q
+          ? HISTORY.filter(h =>
+              h.ver.toLowerCase().includes(q) ||
+              h.items.some(it => it.toLowerCase().includes(q))
+            )
+          : HISTORY;
+
+        if (!filtered.length) {
+          container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--ink-3);font-size:13px;">找不到符合「${escapeHtml(filterText)}」的版本修改紀錄。</div>`;
+          return;
+        }
+
+        container.innerHTML = filtered.map((h, idx) => {
+          const isLatest = h.ver === CURRENT_VERSION;
+          const liHtml = h.items.map(it => `<li style="margin-bottom:4px;line-height:1.55;">${escapeHtml(it)}</li>`).join('');
+          return `
+            <div style="border:1px solid ${isLatest ? '#93c5fd' : 'var(--border)'};background:${isLatest ? '#eff6ff' : '#ffffff'};border-radius:12px;padding:12px 14px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span class="badge mono" style="background:${isLatest ? '#1d4ed8' : '#0f172a'};color:#ffffff;font-weight:800;">${escapeHtml(h.ver)}</span>
+                ${isLatest ? '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:800;">當前最新版本</span>' : ''}
+              </div>
+              <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--ink-2);">${liHtml}</ul>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function init() {
+        const btn = document.getElementById('btnOpenChangelog');
+        const badge = document.getElementById('changelogCurrentVerBadge');
+        if (btn) btn.textContent = `${CURRENT_VERSION} · 版本說明`;
+        if (badge) badge.textContent = CURRENT_VERSION;
+        if (btn && !btn._v3112Bound) {
+          btn._v3112Bound = true;
+          btn.addEventListener('click', () => {
+            const inp = document.getElementById('changelogFilterInput');
+            if (inp) inp.value = '';
+            render('');
+            openModal('changelogModal');
+          });
+        }
+        const inp = document.getElementById('changelogFilterInput');
+        if (inp && !inp._v3112Bound) {
+          inp._v3112Bound = true;
+          inp.addEventListener('input', e => render(e.target.value));
+        }
+      }
+
+      return { init, render, CURRENT_VERSION, HISTORY };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
+      if (window.SHL_CHANGELOG) window.SHL_CHANGELOG.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {

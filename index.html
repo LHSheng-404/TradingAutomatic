@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.2 · 版本說明
+              v3.13.3 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2805,16 +2805,17 @@
               <button id="btnChartTv" class="btn btn-sm">TradingView 進階線圖</button>
             </div>
             <div class="chart-group">
-              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期（預設當天即時走勢，全級距含 1 分 K）">
+              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期（預設當天即時走勢，全級距含 1m/5m/15m/30m/1h/4h/D/W/M）">
                 <option value="1T" selected>當天即時走勢 (1分)</option>
-                <option value="1">1 分 K</option>
-                <option value="5">5 分 K</option>
-                <option value="15">15 分 K</option>
-                <option value="30">30 分 K</option>
-                <option value="60">60 分 K</option>
-                <option value="D">日線 D</option>
-                <option value="W">週線 W</option>
-                <option value="M">月線 M</option>
+                <option value="1">1 分 K (1m)</option>
+                <option value="5">5 分 K (5m)</option>
+                <option value="15">15 分 K (15m)</option>
+                <option value="30">30 分 K (30m)</option>
+                <option value="60">1 小時 (1h)</option>
+                <option value="240">4 小時 (4h)</option>
+                <option value="D">日線 (1D)</option>
+                <option value="W">週線 (1W)</option>
+                <option value="M">月線 (1M)</option>
               </select>
               <select id="tvStudySelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="技術指標組合">
                 <option value="ema_rsi" selected>EMA + RSI</option>
@@ -2826,6 +2827,25 @@
               <button id="btnTvTheme" class="btn btn-sm" title="切換 TradingView 亮暗主題">主題: 亮</button>
             </div>
           </div>
+
+          <!-- Quick Timeframe Switch Bar (instant sync with chart candles & volume) -->
+          <div id="chartQuickIvBar" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;">
+            <span style="font-weight:800;color:#475569;margin-right:2px;">⏱ 週期：</span>
+            <button type="button" class="sj-ind-chip active" data-quick-iv="1T">當天</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="1">1m</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="5">5m</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="15">15m</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="30">30m</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="60">1h</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="240">4h</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="D">1D</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="W">1W</button>
+            <button type="button" class="sj-ind-chip" data-quick-iv="M">1M</button>
+            <span id="chartCrosshairHint" style="margin-left:auto;color:#64748b;font-size:10.5px;">電腦移動游標／手機長按圖表即時查價</span>
+          </div>
+
+          <!-- Live OHLCV & Volume Crosshair Readout Bar -->
+          <div id="chartCrosshairBar" class="mono" style="padding:6px 14px;background:#0f172a;color:#e2e8f0;font-size:11.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #1e293b;"></div>
 
           <!-- v3.12.0: Active Symbol Entry/Exit Points, Net P&L, Slippage & Monthly Fee Rebate Strip -->
           <div id="chartTradePnlStrip" style="display:none;padding:7px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11.5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"></div>
@@ -6624,8 +6644,9 @@
         '5':  { tv: '5',  yahooInterval: '5m',  yahooRange: '5d',  finmindDays: 35,  finmindLimit: 30, label: '5 分 K',  isIntraday: true },
         '15': { tv: '15', yahooInterval: '15m', yahooRange: '5d',  finmindDays: 45,  finmindLimit: 36, label: '15 分 K', isIntraday: true },
         '30': { tv: '30', yahooInterval: '30m', yahooRange: '5d',  finmindDays: 55,  finmindLimit: 36, label: '30 分 K', isIntraday: true },
-        '60': { tv: '60', yahooInterval: '60m', yahooRange: '1mo', finmindDays: 65,  finmindLimit: 45, label: '60 分 K', isIntraday: true },
-        'D':  { tv: 'D',  yahooInterval: '1d',  yahooRange: '6mo', finmindDays: 150, finmindLimit: 90, label: '日線 D',  isIntraday: false },
+        '60':  { tv: '60',  yahooInterval: '60m', yahooRange: '1mo', finmindDays: 65,  finmindLimit: 45, label: '1 小時 (1h)', isIntraday: true },
+        '240': { tv: '240', yahooInterval: '60m', yahooRange: '3mo', finmindDays: 120, finmindLimit: 60, label: '4 小時 (4h)', isIntraday: true, resample4h: true },
+        'D':   { tv: 'D',   yahooInterval: '1d',  yahooRange: '6mo', finmindDays: 150, finmindLimit: 90, label: '日線 (1D)',  isIntraday: false },
         'W':  { tv: 'W',  yahooInterval: '1wk', yahooRange: '2y',  finmindDays: 380, finmindLimit: 60, label: '週線 W',  isIntraday: false },
         'M':  { tv: 'M',  yahooInterval: '1mo', yahooRange: '5y',  finmindDays: 900, finmindLimit: 60, label: '月線 M',  isIntraday: false }
       };
@@ -6894,6 +6915,91 @@
             triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, result.latencyMs, `${meta.symbol} ${spec.label} @ ${result.price}`);
           } catch (e) {
             if (preferred === 'yahoo') throw e;
+          }
+        }
+
+        // Priority 1.6: Static Web (GitHub Pages without server.py) true intraday & multi-timeframe Yahoo K-lines via public CORS proxy
+        if (!result && (preferred === 'yahoo' || preferred === 'auto') && !apiBase) {
+          const symsToTry = meta.yahooSymbol ? [meta.yahooSymbol] : [`${meta.symbol}.TW`];
+          if (symsToTry[0].endsWith('.TW')) symsToTry.push(symsToTry[0].slice(0, -3) + '.TWO');
+          const proxies = [
+            u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+            u => `https://corsproxy.io/?${encodeURIComponent(u)}`
+          ];
+          for (const ySym of symsToTry) {
+            if (result) break;
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=${encodeURIComponent(spec.yahooInterval)}&range=${encodeURIComponent(spec.yahooRange)}`;
+            for (const makeProxy of proxies) {
+              if (result) break;
+              try {
+                const resp = await fetch(makeProxy(targetUrl), { cache: 'no-store' });
+                if (!resp.ok) continue;
+                const j = await resp.json();
+                const res0 = j?.chart?.result?.[0];
+                const ts = res0?.timestamp || [];
+                const q0 = res0?.indicators?.quote?.[0] || {};
+                if (!ts.length || !Array.isArray(q0.close)) continue;
+                const rawBars = [];
+                const fmtDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' });
+                const fmtTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hour12: false });
+                for (let i = 0; i < ts.length; i++) {
+                  const c = q0.close[i];
+                  if (c == null || Number.isNaN(Number(c))) continue;
+                  const dt = new Date(ts[i] * 1000);
+                  const dStr = fmtDate.format(dt);
+                  const hm = fmtTime.format(dt);
+                  rawBars.push({
+                    time: ts[i],
+                    date: dStr,
+                    label: spec.isIntraday ? `${dStr.slice(5)} ${hm}` : dStr.slice(5),
+                    open: Number((q0.open?.[i] ?? c).toFixed(2)),
+                    high: Number((q0.high?.[i] ?? c).toFixed(2)),
+                    low: Number((q0.low?.[i] ?? c).toFixed(2)),
+                    close: Number(Number(c).toFixed(2)),
+                    volume: Number(q0.volume?.[i] || 0)
+                  });
+                }
+                let candles = rawBars;
+                if (spec.resample4h && rawBars.length) {
+                  const buckets = new Map();
+                  rawBars.forEach(b => {
+                    const hr = Math.floor(Number(String(b.label).slice(-5, -3) || 0) / 4) * 4;
+                    const key = `${b.date} ${String(hr).padStart(2, '0')}:00`;
+                    if (!buckets.has(key)) buckets.set(key, { time: b.time, date: b.date, label: `${b.date.slice(5)} ${String(hr).padStart(2, '0')}:00`, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume });
+                    else {
+                      const cur = buckets.get(key);
+                      cur.high = Math.max(cur.high, b.high);
+                      cur.low = Math.min(cur.low, b.low);
+                      cur.close = b.close;
+                      cur.volume += b.volume;
+                    }
+                  });
+                  candles = Array.from(buckets.values());
+                }
+                if (candles.length) {
+                  const lastB = candles[candles.length - 1];
+                  const prevClose = Number(res0?.meta?.chartPreviousClose || res0?.meta?.previousClose || (candles.length >= 2 ? candles[candles.length - 2].close : lastB.open));
+                  const lat = Math.max(1, Math.round(performance.now() - t0));
+                  result = {
+                    price: Number(res0?.meta?.regularMarketPrice || lastB.close),
+                    prevClose,
+                    open: lastB.open,
+                    high: lastB.high,
+                    low: lastB.low,
+                    volume: lastB.volume,
+                    lastDate: lastB.date,
+                    source: `Yahoo 即時分K/K線 (${ySym} · ${spec.label})`,
+                    sourceType: 'yahoo',
+                    interval: spec.tv,
+                    intervalLabel: spec.label,
+                    latencyMs: lat,
+                    candles
+                  };
+                  state.handshake.nodeStats.YAHOO.status = '靜態分K連線正常';
+                  triggerHandshake('YAHOO', 'CORE', '#0284c7', 'SYN', true, lat, `${meta.symbol} ${spec.label} @ ${result.price}`);
+                }
+              } catch (e) {}
+            }
           }
         }
 
@@ -7757,28 +7863,79 @@
       const trendBg = (spec.intradayToday && prevCloseRef > 0)
         ? (lastClose >= prevCloseRef ? 'rgba(220, 38, 38, 0.10)' : 'rgba(5, 150, 105, 0.10)')
         : (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(37, 99, 235, 0.08)');
+      // Sync quick interval bar active chip
+      document.querySelectorAll('#chartQuickIvBar [data-quick-iv]').forEach(btn => {
+        btn.classList.toggle('active', String(btn.dataset.quickIv).toUpperCase() === curIv);
+      });
+
+      const isCandlestickMode = !spec.intradayToday && candles.length >= 2;
+      const vols = candles.map(c => Number(c.volume || 0));
+      const maxVol = Math.max(1, ...vols);
+      const volColors = candles.map(c => (Number(c.close) >= Number(c.open) ? 'rgba(239, 68, 68, 0.55)' : 'rgba(16, 185, 129, 0.55)'));
+      const volMa20 = vols.map((_, i) => {
+        const s = Math.max(0, i - 19);
+        const sl = vols.slice(s, i + 1);
+        return Math.round(sl.reduce((a, b) => a + b, 0) / sl.length);
+      });
+      const lows = candles.map(c => Number(c.low || c.close)).filter(Number.isFinite);
+      const highs = candles.map(c => Number(c.high || c.close)).filter(Number.isFinite);
+      const minLow = lows.length ? Math.min(...lows) : 0;
+      const maxHigh = highs.length ? Math.max(...highs) : 100;
+      const priceSpan = Math.max(0.5, maxHigh - minLow);
+      const yMinPad = Math.max(0, Number((minLow - priceSpan * 0.36).toFixed(2)));
+      const yMaxPad = Number((maxHigh + priceSpan * 0.08).toFixed(2));
+
       const datasets = [
         {
+          type: 'bar',
+          label: '成交量 (多紅/空綠)',
+          data: vols,
+          yAxisID: 'yVol',
+          backgroundColor: volColors,
+          borderWidth: 0,
+          barPercentage: 0.72,
+          categoryPercentage: 0.85,
+          order: 90
+        },
+        {
+          type: 'line',
+          label: '量均線 (Vol MA20)',
+          data: volMa20,
+          yAxisID: 'yVol',
+          borderColor: '#a855f7',
+          borderWidth: 1.2,
+          fill: false,
+          pointRadius: 0,
+          tension: 0.2,
+          order: 85
+        },
+        {
+          type: 'line',
           label: `${meta.symbol} ${meta.name} [${ivText}] 真實成交價`,
           data: closes,
-          borderColor: trendColor,
-          backgroundColor: trendBg,
-          borderWidth: 2.2,
-          fill: true,
-          tension: 0.18,
-          pointRadius: candles.length > 45 ? 1.2 : 2.2
+          yAxisID: 'y',
+          borderColor: isCandlestickMode ? 'rgba(0,0,0,0)' : trendColor,
+          backgroundColor: isCandlestickMode ? 'rgba(0,0,0,0)' : trendBg,
+          borderWidth: isCandlestickMode ? 0 : 2.2,
+          fill: !isCandlestickMode,
+          tension: 0.16,
+          pointRadius: isCandlestickMode ? 0 : (candles.length > 45 ? 1.2 : 2.2),
+          order: 10
         }
       ];
 
       if (spec.intradayToday && prevCloseRef > 0 && closes.length > 0) {
         datasets.push({
+          type: 'line',
           label: `昨收參考價 (${prevCloseRef})`,
           data: closes.map(() => prevCloseRef),
+          yAxisID: 'y',
           borderColor: '#94a3b8',
           borderDash: [4, 4],
           borderWidth: 1.2,
           fill: false,
-          pointRadius: 0
+          pointRadius: 0,
+          order: 20
         });
       }
 
@@ -7787,13 +7944,19 @@
           window.SHL_EXT.augmentChartIndicators(datasets, candles, closes, vwap, meta);
         }
       }
+      datasets.forEach(ds => {
+        if (!ds.type) ds.type = 'line';
+        if (!ds.yAxisID) ds.yAxisID = 'y';
+      });
 
       if (matchedEvents.length > 0) {
         const eventData = labels.map(() => null);
         matchedEvents.forEach(m => { eventData[m.index] = closes[m.index]; });
         datasets.push({
+          type: 'line',
           label: '⚡ 國際重大金融事件（點擊看說明）',
           data: eventData,
+          yAxisID: 'y',
           _isMacroEvents: true,
           showLine: false,
           borderColor: '#ffffff',
@@ -7811,18 +7974,148 @@
         return `${meta.symbol} ${meta.name} 當期真實價：${fmtNum(px, 2)}（${m.matchedDate}）`;
       });
 
+      const crosshairState = { active: false, x: 0, y: 0, idx: Math.max(0, candles.length - 1), price: lastClose };
+      const updateCrosshairBar = (idx, cursorPx = null) => {
+        const barEl = document.getElementById('chartCrosshairBar');
+        if (!barEl) return;
+        const c = candles[idx] || candles[candles.length - 1];
+        if (!c) { barEl.textContent = '等待同步真實 K 線與成交量...'; return; }
+        const o = Number(c.open || c.close), h = Number(c.high || c.close), l = Number(c.low || c.close), cl = Number(c.close);
+        const prevRef = idx > 0 ? Number(candles[idx - 1].close || o) : (prevCloseRef || o);
+        const chg = cl - prevRef;
+        const chgPct = prevRef > 0 ? (chg / prevRef * 100) : 0;
+        const isBull = cl >= o;
+        const clr = isBull ? '#f87171' : '#34d399';
+        const volNum = Number(c.volume || 0);
+        const volStr = volNum >= 1000000 ? `${(volNum / 1000000).toFixed(2)}M` : (volNum >= 1000 ? `${(volNum / 1000).toFixed(1)}K` : String(Math.round(volNum)));
+        barEl.innerHTML =
+          `<span style="font-weight:800;color:#fbbf24;">${escapeHtml(meta.symbol)} ${escapeHtml(meta.name)} · ${escapeHtml(ivText)}</span>` +
+          `<span style="color:#94a3b8;">${escapeHtml(c.label || c.date || '')}</span>` +
+          `<span>開 <b style="color:${clr}">${fmtNum(o, 2)}</b></span>` +
+          `<span>高 <b style="color:${clr}">${fmtNum(h, 2)}</b></span>` +
+          `<span>低 <b style="color:${clr}">${fmtNum(l, 2)}</b></span>` +
+          `<span>收 <b style="color:${clr}">${fmtNum(cl, 2)}</b></span>` +
+          `<span style="color:${clr};font-weight:800;">${chg >= 0 ? '+' : ''}${fmtNum(chg, 2)} (${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}%)</span>` +
+          `<span>成交量 <b style="color:${clr}">${volStr}</b> <span style="font-size:10.5px;opacity:.85;">(${isBull ? '多單紅量' : '空單綠量'})</span></span>` +
+          (cursorPx !== null ? `<span style="margin-left:auto;background:#1e293b;color:#38bdf8;padding:1px 7px;border-radius:4px;font-weight:800;">游標價 ${fmtNum(cursorPx, 2)}</span>` : '');
+      };
+      updateCrosshairBar(Math.max(0, candles.length - 1), null);
+
+      const shlCandlestickAndCrosshairPlugin = {
+        id: 'shlCandlestickAndCrosshair',
+        beforeDatasetsDraw(chart) {
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return;
+          // Watermark: Symbol + Interval (TradingView style)
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const cx = (chartArea.left + chartArea.right) / 2;
+          const cy = (chartArea.top + chartArea.bottom) / 2 - 12;
+          ctx.fillStyle = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(100,116,139,0.11)';
+          ctx.font = '800 34px ui-monospace, SFMono-Regular, Menlo, monospace';
+          ctx.fillText(`${meta.symbol}, ${curIv === '1T' ? '即時' : curIv}`, cx, cy);
+          ctx.font = '700 18px sans-serif';
+          ctx.fillText(meta.name || '', cx, cy + 28);
+          ctx.restore();
+        },
+        afterDatasetsDraw(chart) {
+          const { ctx, chartArea, scales } = chart;
+          const xScale = scales.x, yScale = scales.y;
+          if (!chartArea || !xScale || !yScale) return;
+
+          // 1. Draw true OHLC candlesticks (red bullish / green bearish)
+          if (isCandlestickMode && candles.length > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+            ctx.clip();
+            const stepPx = candles.length > 1 ? Math.abs(xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) : 12;
+            const bodyW = Math.max(2.5, Math.min(14, stepPx * 0.64));
+            for (let i = 0; i < candles.length; i++) {
+              const c = candles[i];
+              const x = xScale.getPixelForValue(i);
+              const yO = yScale.getPixelForValue(Number(c.open || c.close));
+              const yC = yScale.getPixelForValue(Number(c.close));
+              const yH = yScale.getPixelForValue(Number(c.high || c.close));
+              const yL = yScale.getPixelForValue(Number(c.low || c.close));
+              const isUp = Number(c.close) >= Number(c.open || c.close);
+              const color = isUp ? '#ef4444' : '#10b981';
+              // Wick
+              ctx.strokeStyle = color;
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(x, yH);
+              ctx.lineTo(x, yL);
+              ctx.stroke();
+              // Body
+              const top = Math.min(yO, yC);
+              const h = Math.max(1.5, Math.abs(yC - yO));
+              ctx.fillStyle = color;
+              ctx.fillRect(x - bodyW / 2, top, bodyW, h);
+            }
+            ctx.restore();
+          }
+
+          // 2. Draw interactive Crosshair (Desktop mousemove + Mobile long-press)
+          if (crosshairState.active && crosshairState.x >= chartArea.left && crosshairState.x <= chartArea.right && crosshairState.y >= chartArea.top && crosshairState.y <= chartArea.bottom) {
+            ctx.save();
+            ctx.strokeStyle = isDark ? 'rgba(226,232,240,0.55)' : 'rgba(15,23,42,0.45)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            // Vertical line
+            ctx.beginPath();
+            ctx.moveTo(crosshairState.x, chartArea.top);
+            ctx.lineTo(crosshairState.x, chartArea.bottom);
+            ctx.stroke();
+            // Horizontal line
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, crosshairState.y);
+            ctx.lineTo(chartArea.right, crosshairState.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Price pill on right Y-axis
+            const pxText = fmtNum(crosshairState.price, 2);
+            ctx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+            const pw = ctx.measureText(pxText).width + 12;
+            const pxX = chartArea.right + 2;
+            const pxY = Math.max(chartArea.top + 10, Math.min(chartArea.bottom - 10, crosshairState.y));
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(pxX, pxY - 10, pw, 20);
+            ctx.fillStyle = '#38bdf8';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(pxText, pxX + 6, pxY);
+
+            // Time pill on bottom X-axis
+            const lbl = String(candles[crosshairState.idx]?.label || '');
+            if (lbl) {
+              const tw = ctx.measureText(lbl).width + 12;
+              const tx = Math.max(chartArea.left, Math.min(chartArea.right - tw, crosshairState.x - tw / 2));
+              ctx.fillStyle = '#0f172a';
+              ctx.fillRect(tx, chartArea.bottom + 2, tw, 18);
+              ctx.fillStyle = '#fde68a';
+              ctx.textAlign = 'center';
+              ctx.fillText(lbl, tx + tw / 2, chartArea.bottom + 11);
+            }
+            ctx.restore();
+          }
+        }
+      };
+
       rawChartInstance = new Chart(canvas.getContext('2d'), {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: labels.length ? labels : ['等待同步真實資料'],
           datasets
         },
-        plugins: [buildMacroEventChartPlugin(matchedEvents, isDark)],
+        plugins: [shlCandlestickAndCrosshairPlugin, buildMacroEventChartPlugin(matchedEvents, isDark)],
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: { duration: 220 },
-          interaction: { mode: 'nearest', intersect: false },
+          animation: { duration: 150 },
+          interaction: { mode: 'index', intersect: false },
           onClick: (evt, elements, chart) => {
             if (!matchedEvents.length) return;
             const macroHit = elements.find(el => chart.data.datasets[el.datasetIndex]?._isMacroEvents);
@@ -7838,13 +8131,30 @@
               position: 'top',
               align: 'end',
               labels: {
-                boxWidth: 12,
-                font: { size: 11 },
-                color: isDark ? '#e2e8f0' : '#334155'
+                boxWidth: 11,
+                font: { size: 10.5 },
+                color: isDark ? '#e2e8f0' : '#334155',
+                filter: (item) => !String(item.text || '').includes('量均線')
               }
             },
             tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false,
               callbacks: {
+                label: (ctxItem) => {
+                  const dsLbl = ctxItem.dataset.label || '';
+                  if (ctxItem.dataset.yAxisID === 'yVol') {
+                    const c = candles[ctxItem.dataIndex];
+                    const sideTag = c && Number(c.close) >= Number(c.open) ? '多單紅量' : '空單綠量';
+                    return `${dsLbl}: ${fmtInt(ctxItem.parsed.y)} (${sideTag})`;
+                  }
+                  if (ctxItem.datasetIndex === 2 && candles[ctxItem.dataIndex]) {
+                    const c = candles[ctxItem.dataIndex];
+                    return `K線 開 ${fmtNum(c.open, 2)} 高 ${fmtNum(c.high, 2)} 低 ${fmtNum(c.low, 2)} 收 ${fmtNum(c.close, 2)}`;
+                  }
+                  return `${dsLbl}: ${fmtNum(ctxItem.parsed.y, 2)}`;
+                },
                 afterBody: (items) => {
                   const idx = items?.[0]?.dataIndex;
                   const found = matchedEvents.find(m => m.index === idx);
@@ -7855,16 +8165,88 @@
           },
           scales: {
             x: {
-              grid: { display: false },
+              grid: { color: isDark ? 'rgba(148,163,184,0.08)' : 'rgba(148,163,184,0.12)' },
               ticks: { maxTicksLimit: 10, font: { size: 10.5 }, color: isDark ? '#94a3b8' : '#64748b' }
             },
             y: {
+              position: 'right',
+              min: yMinPad,
+              max: yMaxPad,
               grid: { color: isDark ? 'rgba(148,163,184,0.14)' : '#f1f5f9' },
               ticks: { font: { size: 10.5 }, color: isDark ? '#94a3b8' : '#64748b' }
+            },
+            yVol: {
+              display: false,
+              position: 'left',
+              min: 0,
+              max: maxVol * 4.2,
+              grid: { display: false }
             }
           }
         }
       });
+
+      // Bind Desktop mousemove + Mobile long-press crosshair inspector
+      const updateFromClientXY = (clientX, clientY) => {
+        if (!rawChartInstance || !rawChartInstance.chartArea) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const area = rawChartInstance.chartArea;
+        if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
+          crosshairState.active = false;
+          updateCrosshairBar(Math.max(0, candles.length - 1), null);
+          rawChartInstance.draw();
+          return;
+        }
+        const xScale = rawChartInstance.scales.x;
+        const yScale = rawChartInstance.scales.y;
+        const rawIdx = Math.round(xScale.getValueForPixel(x));
+        const idx = Math.max(0, Math.min(candles.length - 1, rawIdx));
+        const px = Number(yScale.getValueForPixel(y));
+        crosshairState.active = true;
+        crosshairState.x = xScale.getPixelForValue(idx);
+        crosshairState.y = y;
+        crosshairState.idx = idx;
+        crosshairState.price = px;
+        updateCrosshairBar(idx, px);
+        rawChartInstance.draw();
+      };
+      canvas.onmousemove = (e) => updateFromClientXY(e.clientX, e.clientY);
+      canvas.onmouseleave = () => {
+        crosshairState.active = false;
+        updateCrosshairBar(Math.max(0, candles.length - 1), null);
+        if (rawChartInstance) rawChartInstance.draw();
+      };
+      let longPressTimer = null;
+      let touchInspecting = false;
+      canvas.ontouchstart = (e) => {
+        if (!e.touches || !e.touches[0]) return;
+        const t = e.touches[0];
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+          touchInspecting = true;
+          updateFromClientXY(t.clientX, t.clientY);
+        }, 180);
+      };
+      canvas.ontouchmove = (e) => {
+        if (!e.touches || !e.touches[0]) return;
+        if (touchInspecting) {
+          e.preventDefault();
+          updateFromClientXY(e.touches[0].clientX, e.touches[0].clientY);
+        } else {
+          clearTimeout(longPressTimer);
+        }
+      };
+      canvas.ontouchend = canvas.ontouchcancel = () => {
+        clearTimeout(longPressTimer);
+        if (touchInspecting) {
+          touchInspecting = false;
+          crosshairState.active = false;
+          updateCrosshairBar(Math.max(0, candles.length - 1), null);
+          if (rawChartInstance) rawChartInstance.draw();
+        }
+      };
     }
 
     // =========================================================================
@@ -11560,31 +11942,30 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           renderRawPriceChart();
         }
       });
-      document.getElementById('tvIntervalSelect').addEventListener('change', async e => {
-        const nextIv = e.target.value;
+      const applyChartIntervalChange = async (nextIv) => {
         state.tvInterval = nextIv;
+        const sel = document.getElementById('tvIntervalSelect');
+        if (sel && sel.value !== nextIv) sel.value = nextIv;
+        document.querySelectorAll('#chartQuickIvBar [data-quick-iv]').forEach(btn => {
+          btn.classList.toggle('active', String(btn.dataset.quickIv).toUpperCase() === String(nextIv).toUpperCase());
+        });
         const spec = getChartTimeframeSpec(nextIv);
         renderTradingViewChart();
-        const curQ = getQuote(state.activeSymbol);
-        const pref = curQ?.sourceType === 'yahoo'
-          ? 'yahoo'
-          : (curQ?.sourceType === 'finmind' ? 'finmind' : 'auto');
         const srcEl = document.getElementById('activeStockSource');
-        if (srcEl) srcEl.textContent = `切換至 ${spec.label}，正在刷新真實 K 線...`;
-        const ok = await fetchMarketData(state.activeSymbol, pref, nextIv);
+        if (srcEl) srcEl.textContent = `切換至 ${spec.label}，正在刷新真實 K 線與成交量...`;
+        // Always use 'auto' so switching to intraday intervals never gets stuck on FinMind daily
+        const ok = await fetchMarketData(state.activeSymbol, 'auto', nextIv);
         if (state.chartMode === 'raw') renderRawPriceChart();
         if (ok) {
           const latestQ = getQuote(state.activeSymbol);
-          if (latestQ?.sourceType === 'finmind' && spec.isIntraday) {
-            showToast(
-              `已刷新至 ${latestQ.intervalLabel}`,
-              'FinMind 免費源提供日線／週線資料（已縮放近期明細）；若需真實 5/15/60 分 K 請改點「抓 Yahoo」（需後端或手機獨立 App）。',
-              'info'
-            );
-          } else {
-            showToast('K 線級距已刷新', `${getStockMeta(state.activeSymbol).symbol} 已切換至 ${latestQ?.intervalLabel || spec.label}（共 ${(latestQ?.candles || []).length} 根真實 K 棒）。`, 'success');
-          }
+          showToast('K 線週期已即時刷新', `${getStockMeta(state.activeSymbol).symbol} 已切換至 ${latestQ?.intervalLabel || spec.label}（共 ${(latestQ?.candles || []).length} 根真實 K 線與成交量）。`, 'success');
         }
+      };
+      document.getElementById('tvIntervalSelect').addEventListener('change', async e => {
+        await applyChartIntervalChange(e.target.value);
+      });
+      document.querySelectorAll('#chartQuickIvBar [data-quick-iv]').forEach(btn => {
+        btn.addEventListener('click', () => applyChartIntervalChange(btn.dataset.quickIv));
       });
       document.getElementById('tvStudySelect').addEventListener('change', e => {
         state.tvStudy = e.target.value;
@@ -19664,8 +20045,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.2';
+      const CURRENT_VERSION = 'v3.13.3';
       const HISTORY = [
+        {
+          ver: 'v3.13.3',
+          items: [
+            '修正 K 線級距與圖表顯示不一致問題：週期切換不再鎖死 FinMind 日線，新增 4 小時 (4h) 級距與一鍵快捷週期列（當天／1m／5m／15m／30m／1h／4h／1D／1W／1M），靜態網頁模式亦透過 CORS 代理取得真實分 K 並即時刷新',
+            '主圖升級為專業陰陽 K 線（紅K多單實體／綠K空單實體＋上下影線）＋ 同軸底部多空分色成交量柱狀圖（多單紅量／空單綠量＋紫色量均線 Vol MA20）＋ 浮水印代號與週期',
+            '新增雙端即時十字準線查價：電腦版滑鼠移動即時顯示十字準線、右側精確價格標籤、底部時間標籤與頂部 OHLCV 成交量讀數；手機版長按（180ms）拖曳即可即時查價，放開自動恢復'
+          ]
+        },
         {
           ver: 'v3.13.2',
           items: [

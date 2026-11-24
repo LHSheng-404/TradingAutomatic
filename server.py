@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.2",
+    version="3.13.3",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.2",
+        "version": "3.13.3",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3708,7 +3708,7 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.2: Full-market bull / bear Top-N + breadth for market-trend detection.
+    v3.13.3: Full-market bull / bear Top-N + breadth for market-trend detection.
     Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
     universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
@@ -4505,6 +4505,12 @@ def _resample_shioaji_kbars(raw_bars: list[dict[str, Any]], interval: str) -> li
             key = b_dt.strftime("%Y-%m-%d %H:%M")
             label = b_dt.strftime("%m-%d %H:%M")
             date_str = b_dt.strftime("%Y-%m-%d")
+        elif iv == "240":
+            floored_hr = (dt.hour // 4) * 4
+            b_dt = dt.replace(hour=floored_hr, minute=0, second=0, microsecond=0)
+            key = b_dt.strftime("%Y-%m-%d %H:%M")
+            label = b_dt.strftime("%m-%d %H:%M")
+            date_str = b_dt.strftime("%Y-%m-%d")
         elif iv == "W":
             monday = dt - timedelta(days=dt.weekday())
             key = monday.strftime("%Y-%m-%d")
@@ -4724,7 +4730,7 @@ async def shioaji_kbars(symbol: str, interval: str = "15", yahoo_symbol: str = "
         return JSONResponse(res, headers={"Cache-Control": "no-store"})
 
     # 3. Seamless live-merged fallback (Yahoo/FinMind K-lines + official TWSE/TPEx MIS live tick)
-    iv_map = {"1": ("1m", "1d"), "5": ("5m", "5d"), "15": ("15m", "5d"), "30": ("30m", "5d"), "60": ("60m", "1mo"), "D": ("1d", "6mo"), "W": ("1wk", "2y"), "M": ("1mo", "5y")}
+    iv_map = {"1": ("1m", "1d"), "5": ("5m", "5d"), "15": ("15m", "5d"), "30": ("30m", "5d"), "60": ("60m", "1mo"), "240": ("60m", "3mo"), "D": ("1d", "6mo"), "W": ("1wk", "2y"), "M": ("1mo", "5y")}
     y_iv, y_rng = iv_map.get(iv, ("15m", "5d"))
     yh_sym = yahoo_symbol.strip() or ("^TWII" if sym in ("TXF", "T00") else ("^TWOII" if sym == "O00" else f"{sym}.TW"))
 
@@ -4737,6 +4743,14 @@ async def shioaji_kbars(symbol: str, interval: str = "15", yahoo_symbol: str = "
                 kline_data = await get_yahoo_market_data(yh_sym[:-3] + ".TWO", interval=y_iv, range_str=y_rng)
             except Exception:
                 kline_data = None
+
+    if kline_data and iv == "240" and isinstance(kline_data.get("candles"), list):
+        agg_raw = [
+            {"ts": c.get("time"), "Open": c.get("open"), "High": c.get("high"), "Low": c.get("low"), "Close": c.get("close"), "Volume": c.get("volume", 0)}
+            for c in kline_data["candles"] if c.get("time")
+        ]
+        if agg_raw:
+            kline_data["candles"] = _resample_shioaji_kbars(agg_raw, "240")
 
     if not kline_data:
         try:

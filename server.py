@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.1",
+    version="3.13.2",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.1",
+        "version": "3.13.2",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3708,7 +3708,7 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.1: Full-market bull / bear Top-N + breadth for market-trend detection.
+    v3.13.2: Full-market bull / bear Top-N + breadth for market-trend detection.
     Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
     universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """

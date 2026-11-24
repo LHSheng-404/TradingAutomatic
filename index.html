@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.1 · 版本說明
+              v3.13.2 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2805,10 +2805,11 @@
               <button id="btnChartTv" class="btn btn-sm">TradingView 進階線圖</button>
             </div>
             <div class="chart-group">
-              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期（全級距含 1 分 K）">
+              <select id="tvIntervalSelect" class="select" style="width:auto;padding:4px 8px;font-size:11.5px;" title="K線週期（預設當天即時走勢，全級距含 1 分 K）">
+                <option value="1T" selected>當天即時走勢 (1分)</option>
                 <option value="1">1 分 K</option>
                 <option value="5">5 分 K</option>
-                <option value="15" selected>15 分 K</option>
+                <option value="15">15 分 K</option>
                 <option value="30">30 分 K</option>
                 <option value="60">60 分 K</option>
                 <option value="D">日線 D</option>
@@ -2831,14 +2832,18 @@
 
           <!-- v3.10.0: Shioaji Pro 21-Indicator Suite Bar & Live Legend -->
           <div id="sjIndicatorBar" class="sj-ind-bar">
-            <span style="font-weight:800;color:#0f172a;">📊 永豐 21 指標：</span>
+            <span style="font-weight:800;color:#0f172a;">📊 動態技術線：</span>
             <button type="button" class="sj-ind-chip active" data-sj-ind="ema">EMA5/12</button>
             <button type="button" class="sj-ind-chip active" data-sj-ind="ma20">SMA20</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="wma">WMA20</button>
             <button type="button" class="sj-ind-chip" data-sj-ind="bb">布林</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="keltner">Keltner</button>
+            <button type="button" class="sj-ind-chip" data-sj-ind="donchian">Donchian</button>
             <button type="button" class="sj-ind-chip" data-sj-ind="supertrend">SuperTrend</button>
             <button type="button" class="sj-ind-chip" data-sj-ind="sar">SAR</button>
             <button type="button" class="sj-ind-chip active" data-sj-ind="vwap">VWAP</button>
             <button type="button" class="sj-ind-chip active" data-sj-ind="signals">量化訊號</button>
+            <button type="button" class="sj-ind-chip active" data-sj-ind="fvg">SMC/FVG</button>
             <select id="sjSubPaneSelect" class="select" style="width:auto;padding:2px 7px;font-size:11px;font-weight:700;" title="副圖震盪指標">
               <option value="macd" selected>副圖: MACD (12,26,9)</option>
               <option value="rsi">副圖: RSI (14)</option>
@@ -5376,7 +5381,7 @@
       animRunning: true,
       activeSymbol: '2330',
       chartMode: 'raw', // tv | raw
-      tvInterval: '15',
+      tvInterval: '1T',
       tvStudy: 'ema_rsi',
       tvDrawTools: true,
       tvTheme: 'light',
@@ -6612,8 +6617,9 @@
     }
 
     function getChartTimeframeSpec(tvInterval = state.tvInterval) {
-      const iv = String(tvInterval || '15').toUpperCase();
+      const iv = String(tvInterval || '1T').toUpperCase();
       const map = {
+        '1T': { tv: '1',  yahooInterval: '1m',  yahooRange: '1d',  finmindDays: 10,  finmindLimit: 60, label: '當天即時走勢 (1分)', isIntraday: true, intradayToday: true },
         '1':  { tv: '1',  yahooInterval: '1m',  yahooRange: '1d',  finmindDays: 10,  finmindLimit: 60, label: '1 分 K',  isIntraday: true },
         '5':  { tv: '5',  yahooInterval: '5m',  yahooRange: '5d',  finmindDays: 35,  finmindLimit: 30, label: '5 分 K',  isIntraday: true },
         '15': { tv: '15', yahooInterval: '15m', yahooRange: '5d',  finmindDays: 45,  finmindLimit: 36, label: '15 分 K', isIntraday: true },
@@ -6623,7 +6629,7 @@
         'W':  { tv: 'W',  yahooInterval: '1wk', yahooRange: '2y',  finmindDays: 380, finmindLimit: 60, label: '週線 W',  isIntraday: false },
         'M':  { tv: 'M',  yahooInterval: '1mo', yahooRange: '5y',  finmindDays: 900, finmindLimit: 60, label: '月線 M',  isIntraday: false }
       };
-      return map[iv] || map['15'];
+      return map[iv] || map['1T'];
     }
 
     function getIsoWeekKey(dateStr) {
@@ -7680,10 +7686,53 @@
       const mount = document.getElementById('rawChartMount');
       const meta = getStockMeta(state.activeSymbol);
       const q = getQuote(state.activeSymbol);
-      const candles = q?.candles || [];
-      const spec = getChartTimeframeSpec(q?.interval || state.tvInterval);
-      const ivText = q?.intervalLabel || spec.label;
+      const rawCandles = Array.isArray(q?.candles) ? q.candles : [];
+      const curIv = String(state.tvInterval || q?.interval || '1T').toUpperCase();
+      const spec = getChartTimeframeSpec(curIv);
+      const ivText = spec.intradayToday ? spec.label : (q?.intervalLabel || spec.label);
       const isDark = state.tvTheme === 'dark';
+
+      // Today real-time intraday trend filtering + live tick merge
+      let candles = rawCandles.slice();
+      if (spec.intradayToday && candles.length > 0) {
+        const lastDay = String(candles[candles.length - 1]?.date || '').slice(0, 10);
+        if (lastDay) {
+          const sameDay = candles.filter(c => String(c.date || '').slice(0, 10) === lastDay);
+          if (sameDay.length >= 2) candles = sameDay;
+        }
+      }
+      if (q && Number(q.price) > 0 && candles.length > 0) {
+        const livePx = Number(q.price);
+        const lastBar = candles[candles.length - 1];
+        const liveTime = String(q.realtimeTime || nowTwTime()).slice(0, 5);
+        const todayDate = nowTwDateTime().slice(0, 10);
+        if (spec.intradayToday && lastBar && String(lastBar.label || '').slice(-5) !== liveTime && String(lastBar.date || '').slice(0, 10) === todayDate) {
+          candles.push({
+            label: liveTime,
+            date: todayDate,
+            time: Math.floor(Date.now() / 1000),
+            open: Number(lastBar.close || livePx),
+            high: Math.max(Number(lastBar.close || livePx), livePx),
+            low: Math.min(Number(lastBar.close || livePx), livePx),
+            close: livePx,
+            volume: Number(q.tickVolume || 0)
+          });
+        } else if (lastBar) {
+          candles[candles.length - 1] = Object.assign({}, lastBar, {
+            close: livePx,
+            high: Math.max(Number(lastBar.high || livePx), livePx),
+            low: Math.min(Number(lastBar.low || livePx), livePx)
+          });
+        }
+      } else if (q && Number(q.price) > 0 && candles.length === 0) {
+        const px = Number(q.price);
+        const pc = Number(q.prevClose || px);
+        const todayDate = nowTwDateTime().slice(0, 10);
+        candles = [
+          { label: '開盤', date: todayDate, open: Number(q.open || pc), high: Number(q.high || px), low: Number(q.low || px), close: Number(q.open || pc), volume: 0 },
+          { label: String(q.realtimeTime || nowTwTime()).slice(0, 5), date: todayDate, open: Number(q.open || pc), high: Number(q.high || px), low: Number(q.low || px), close: px, volume: Number(q.volume || 0) }
+        ];
+      }
 
       if (mount) {
         mount.style.background = isDark ? '#0f172a' : '#ffffff';
@@ -7700,81 +7749,42 @@
       const candleIsoDates = candles.map(extractIsoDateFromCandle);
       const matchedEvents = matchMacroEventsToDates(candleIsoDates);
       const vwap = candles.length ? calcVwapSeries(candles) : [];
+      const prevCloseRef = Number(q?.prevClose || 0);
+      const lastClose = closes.length ? Number(closes[closes.length - 1]) : 0;
+      const trendColor = (spec.intradayToday && prevCloseRef > 0)
+        ? (lastClose >= prevCloseRef ? '#dc2626' : '#059669')
+        : (isDark ? '#38bdf8' : '#2563eb');
+      const trendBg = (spec.intradayToday && prevCloseRef > 0)
+        ? (lastClose >= prevCloseRef ? 'rgba(220, 38, 38, 0.10)' : 'rgba(5, 150, 105, 0.10)')
+        : (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(37, 99, 235, 0.08)');
       const datasets = [
         {
           label: `${meta.symbol} ${meta.name} [${ivText}] 真實成交價`,
           data: closes,
-          borderColor: isDark ? '#38bdf8' : '#2563eb',
-          backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+          borderColor: trendColor,
+          backgroundColor: trendBg,
           borderWidth: 2.2,
           fill: true,
-          tension: 0.2,
-          pointRadius: candles.length > 45 ? 1.5 : 2.5
-        },
-        {
-          label: 'VWAP 加權均價',
-          data: vwap,
-          borderColor: '#0d9488',
-          borderDash: [5, 4],
-          borderWidth: 1.7,
-          fill: false,
-          tension: 0.25,
-          pointRadius: 0
+          tension: 0.18,
+          pointRadius: candles.length > 45 ? 1.2 : 2.2
         }
       ];
 
-      if (closes.length >= 5) {
+      if (spec.intradayToday && prevCloseRef > 0 && closes.length > 0) {
+        datasets.push({
+          label: `昨收參考價 (${prevCloseRef})`,
+          data: closes.map(() => prevCloseRef),
+          borderColor: '#94a3b8',
+          borderDash: [4, 4],
+          borderWidth: 1.2,
+          fill: false,
+          pointRadius: 0
+        });
+      }
+
+      if (closes.length >= 2) {
         if (window.SHL_EXT && typeof window.SHL_EXT.augmentChartIndicators === 'function') {
           window.SHL_EXT.augmentChartIndicators(datasets, candles, closes, vwap, meta);
-        }
-        if (state.tvStudy === 'ema_rsi') {
-          datasets.push({
-            label: 'EMA 5',
-            data: calcEmaArr(closes, 5).map(v => Number(v.toFixed(2))),
-            borderColor: '#f59e0b',
-            borderWidth: 1.4,
-            fill: false,
-            tension: 0.2,
-            pointRadius: 0
-          });
-          datasets.push({
-            label: 'EMA 12',
-            data: calcEmaArr(closes, 12).map(v => Number(v.toFixed(2))),
-            borderColor: '#ec4899',
-            borderWidth: 1.4,
-            fill: false,
-            tension: 0.2,
-            pointRadius: 0
-          });
-        } else if (state.tvStudy === 'macd_bb' && closes.length >= 10) {
-          const win = Math.min(20, closes.length);
-          const bbUp = [], bbLo = [];
-          for (let i = 0; i < closes.length; i++) {
-            const s = Math.max(0, i - win + 1);
-            const slice = closes.slice(s, i + 1);
-            const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
-            const std = Math.sqrt(slice.reduce((a, b) => a + (b - mean) ** 2, 0) / slice.length);
-            bbUp.push(Number((mean + 2 * std).toFixed(2)));
-            bbLo.push(Number((mean - 2 * std).toFixed(2)));
-          }
-          datasets.push({
-            label: '布林上軌 (+2σ)',
-            data: bbUp,
-            borderColor: 'rgba(239, 68, 68, 0.72)',
-            borderDash: [3, 3],
-            borderWidth: 1.3,
-            fill: false,
-            pointRadius: 0
-          });
-          datasets.push({
-            label: '布林下軌 (-2σ)',
-            data: bbLo,
-            borderColor: 'rgba(16, 185, 129, 0.72)',
-            borderDash: [3, 3],
-            borderWidth: 1.3,
-            fill: false,
-            pointRadius: 0
-          });
         }
       }
 
@@ -10547,7 +10557,46 @@
       let realizedPnlTwd = null;
       let entryAvgBeforeSell = null;
 
-      // LIVE MODE: Strictly require Shioaji API Token + Cloud Backend
+      const applyFillToPositions = (fillPx, isSim) => {
+        const fillNotional = Math.round(shares * fillPx);
+        if (side === 'BUY') {
+          if (isSim) {
+            const totalCost = fillNotional + fee;
+            if (totalCost > state.simCashTwd) {
+              showToast('模擬現金不足', `需 ${fmtMoney(totalCost)}，目前可用 ${fmtMoney(state.simCashTwd)}。`, 'warn');
+              return false;
+            }
+            state.simCashTwd -= totalCost;
+          }
+          const pos = state.positions.find(p => p.symbol === symbol);
+          if (pos) {
+            const newShares = pos.shares + shares;
+            pos.avgPrice = Number(((pos.avgPrice * pos.shares + fillNotional) / newShares).toFixed(2));
+            pos.shares = newShares;
+          } else {
+            state.positions.push({ symbol: meta.symbol, name: meta.name, shares, avgPrice: fillPx, entryTime: exactTime, envMode: state.envMode });
+          }
+        } else {
+          const pos = state.positions.find(p => p.symbol === symbol);
+          if (isSim && (!pos || pos.shares < shares)) {
+            showToast('模擬持股不足', `${meta.symbol} ${meta.name} 目前持有 ${pos ? pos.shares : 0} 股，無法賣出 ${shares} 股。`, 'warn');
+            return false;
+          }
+          if (pos) {
+            entryAvgBeforeSell = pos.avgPrice;
+            realizedPnlTwd = Math.round((fillPx - pos.avgPrice) * shares - fee - tax);
+            pos.shares -= shares;
+            if (source === 'AUTO_PROFIT_HEDGE') pos.hedgedAt = exactTime;
+            if (pos.shares <= 0) {
+              state.positions = state.positions.filter(p => p.symbol !== symbol);
+            }
+          }
+          if (isSim) state.simCashTwd += (fillNotional - fee - tax);
+        }
+        return true;
+      };
+
+      // LIVE MODE: Identical order/SL/TP workflow, routed through Sinotrade Shioaji API + CA certificate to the real market
       if (state.envMode === 'LIVE') {
         const apiBase = getApiBase();
         if (!hasValidShioajiToken()) {
@@ -10581,11 +10630,16 @@
           if (!resp.ok) {
             throw new Error(data.detail || `HTTP ${resp.status}`);
           }
+          const liveFillPx = Number(data.price || price);
+          applyFillToPositions(liveFillPx, false);
           data.iso_time = data.iso_time || exactTime;
+          data.price = liveFillPx;
           data.shares = shares;
           data.notional_twd = notional;
           data.net_amount_twd = netAmount;
           data.monthly_rebate_twd = monthlyRebateTwd;
+          data.realized_pnl_twd = realizedPnlTwd;
+          data.entry_avg_price = entryAvgBeforeSell;
           data.slippage_twd = 0;
           data.day_trade = isDayTrade;
           data.fill_confirmed = true;
@@ -10593,43 +10647,14 @@
           state.orders.unshift(data);
           persistState();
           triggerHandshake('CORE', 'BROKER', '#dc2626', 'ORDER', true, 48, `LIVE 委託送出 ${meta.symbol} ${meta.name} ${side} ${qty}${unit}`);
-          showToast('實盤委託已送出', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${price}（${exactTime} · 金額 ${fmtMoney(netAmount)} · 月結折讓 +${fmtMoney(monthlyRebateTwd)}）`, 'success');
+          showToast('實盤委託已送出（永豐 API + 憑證）', `${meta.symbol} ${meta.name} ${side} ${qty}${unit} @ ${liveFillPx}（${exactTime} · 金額 ${fmtMoney(netAmount)} · 月結折讓 +${fmtMoney(monthlyRebateTwd)}）`, 'success');
         } catch (err) {
           showToast('真實下單失敗', err.message, 'error');
           return;
         }
       } else {
-        // SIM MODE: Real-price paper matching with slippage & monthly fee rebate accounting
-        if (side === 'BUY') {
-          const totalCost = notional + fee;
-          if (totalCost > state.simCashTwd) {
-            showToast('模擬現金不足', `需 ${fmtMoney(totalCost)}，目前可用 ${fmtMoney(state.simCashTwd)}。`, 'warn');
-            return;
-          }
-          state.simCashTwd -= totalCost;
-          const pos = state.positions.find(p => p.symbol === symbol);
-          if (pos) {
-            const newShares = pos.shares + shares;
-            pos.avgPrice = Number(((pos.avgPrice * pos.shares + notional) / newShares).toFixed(2));
-            pos.shares = newShares;
-          } else {
-            state.positions.push({ symbol: meta.symbol, name: meta.name, shares, avgPrice: execPrice, entryTime: exactTime });
-          }
-        } else {
-          const pos = state.positions.find(p => p.symbol === symbol);
-          if (!pos || pos.shares < shares) {
-            showToast('模擬持股不足', `${meta.symbol} ${meta.name} 目前持有 ${pos ? pos.shares : 0} 股，無法賣出 ${shares} 股。`, 'warn');
-            return;
-          }
-          entryAvgBeforeSell = pos.avgPrice;
-          realizedPnlTwd = Math.round((execPrice - pos.avgPrice) * shares - fee - tax);
-          state.simCashTwd += (notional - fee - tax);
-          pos.shares -= shares;
-          if (source === 'AUTO_PROFIT_HEDGE') pos.hedgedAt = exactTime;
-          if (pos.shares <= 0) {
-            state.positions = state.positions.filter(p => p.symbol !== symbol);
-          }
-        }
+        // SIM MODE: Same order/SL/TP workflow, matched locally without sending to real market
+        if (!applyFillToPositions(execPrice, true)) return;
         state.ext.monthlyRebateLedger[monthKey] = (state.ext.monthlyRebateLedger[monthKey] || 0) + monthlyRebateTwd;
 
         const rec = {
@@ -16029,12 +16054,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           asks,
           askSizes,
           lastDate: stamp,
+          realtimeTime: timeStr,
           isRealtime: true,
           realtimeTs: Date.now(),
           realtimeSource: m.is_eod_official ? 'TWSE/TPEx 官方收盤' : 'TWSE/TPEx MIS 即時',
           source: existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : (m.is_eod_official ? 'TWSE/TPEx 官方最近交易日' : 'TWSE/TPEx MIS 官方即時'),
           sourceType: existing.sourceType || 'twse_mis'
         };
+        if (code === state.activeSymbol && state.chartMode === 'raw' && typeof renderRawPriceChart === 'function') {
+          const nowMs = Date.now();
+          if (!window._shlLastRtChartMs || (nowMs - window._shlLastRtChartMs) > 1200) {
+            window._shlLastRtChartMs = nowMs;
+            try { renderRawPriceChart(); } catch (e) {}
+          }
+        }
         return true;
       }
 
@@ -17758,6 +17791,38 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const ema5 = calcEmaArr(closes, 5).map(v => Number(v.toFixed(2)));
         const ema12 = calcEmaArr(closes, 12).map(v => Number(v.toFixed(2)));
 
+        if (ind.vwap && Array.isArray(vwap) && vwap.length === n) {
+          datasets.push({
+            label: 'VWAP 加權均價',
+            data: vwap,
+            borderColor: '#0d9488',
+            borderDash: [5, 4],
+            borderWidth: 1.7,
+            fill: false,
+            tension: 0.22,
+            pointRadius: 0
+          });
+        }
+        if (ind.ema && n >= 5) {
+          datasets.push({
+            label: 'EMA 5',
+            data: ema5,
+            borderColor: '#f59e0b',
+            borderWidth: 1.4,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          });
+          datasets.push({
+            label: 'EMA 12',
+            data: ema12,
+            borderColor: '#ec4899',
+            borderWidth: 1.4,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          });
+        }
         if (ind.ma20 && n >= 5) {
           datasets.push({
             label: 'MA20 均線 (量化)',
@@ -18093,6 +18158,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         { id: 'sar', name: 'Parabolic SAR 拋物線轉向', cat: 'overlay', desc: '趨勢追蹤停損轉向點' },
         { id: 'supertrend', name: 'SuperTrend 超級趨勢 (10, 3.0)', cat: 'overlay', desc: 'ATR 動態多空趨勢帶' },
         { id: 'vwap', name: 'VWAP 成交量加權均價', cat: 'overlay', desc: '機構盤中成本線' },
+        { id: 'fvg', name: 'SMC / FVG 區間與進出場訊號', cat: 'overlay', desc: 'Smart Money Concepts 缺口、BOS 進出場與 SL/TP 線' },
         { id: 'macd', name: 'MACD 指數平滑異同移動平均 (12,26,9)', cat: 'pane', desc: 'DIF / DEA / 柱狀動能' },
         { id: 'rsi', name: 'RSI 相對強弱指標 (14)', cat: 'pane', desc: '超買 70 / 超賣 30 強弱濾網' },
         { id: 'stoch', name: 'Stochastic KD 隨機指標 (9,3,3)', cat: 'pane', desc: 'K / D 高低檔交叉' },
@@ -19598,8 +19664,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.1';
+      const CURRENT_VERSION = 'v3.13.2';
       const HISTORY = [
+        {
+          ver: 'v3.13.2',
+          items: [
+            '技術圖表預設改為「當天即時走勢 (1分)」，自動過濾最新交易日當日分鐘 K、即時併入最新成交價與繪製昨收參考價水平虛線，並隨即時報價跳動自動重繪',
+            '所有主圖技術線（EMA5/12、SMA20、WMA20、布林 BB、Keltner、Donchian、SuperTrend、SAR、VWAP、量化訊號、SMC/FVG）改為完全動態控制：點選加入立即畫線、取消立即移除',
+            '統一 SIM 模擬單與 LIVE 正式單流程：掛單、下單、持倉均價、實現損益、止損（SMC／ATR／固定%）與動態止盈（RRR／1R 保本／Fib 0.382／Granville MA50／13:25 強制出場）完全相同，僅差在 LIVE 會經由永豐金 Shioaji API 與憑證送往真實市場交易'
+          ]
+        },
         {
           ver: 'v3.13.1',
           items: [
@@ -20226,9 +20300,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrGran">Granville MA50 反轉出場</label>
               <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrForce">13:25 尾盤強制出場</label>
               <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrOverlay">K 線圖顯示進出場／FVG</label>
-              <label style="flex-direction:row;align-items:center;gap:4px;color:#b91c1c"><input type="checkbox" id="wrAuto">🤖 自選股自動進出場（僅模擬單，每 60 秒）</label>
+              <label style="flex-direction:row;align-items:center;gap:4px;color:#b91c1c"><input type="checkbox" id="wrAuto">🤖 自選股自動進出場（SIM／LIVE 共用止盈止損，每 60 秒）</label>
             </div>
-            <div style="font-size:11px;color:#64748b;margin-top:6px">費用模型：手續費 0.1425%（折讓月結）、當沖證交稅 0.15%／波段 0.3%、現股空單 +0.08%、滑點 1 tick。自動下單僅在 SIM 模式、台股盤中（09:00–13:20）執行；LIVE 一律需手動確認。</div>
+            <div style="font-size:11px;color:#64748b;margin-top:6px">費用模型：手續費 0.1425%（折讓月結）、當沖證交稅 0.15%／波段 0.3%、現股空單 +0.08%、滑點 1 tick。模擬單與正式單的掛單、下單、止盈與止損邏輯完全相同；唯一差異為正式單（LIVE）會透過永豐 API 與憑證送至真實市場交易，模擬單（SIM）僅本地撮合不進市場。</div>
           </div>
           <div class="wr-card"><h3>① 大盤趨勢偵測 <button class="btn btn-dark" id="wrBtnTrend" style="padding:2px 8px;font-size:11px">更新</button></h3><div id="wrTrend" style="font-size:13px">尚未更新</div></div>
           <div class="wr-card"><h3>② 強勢股多空前 50 檔 <button class="btn btn-dark" id="wrBtnRank" style="padding:2px 8px;font-size:11px">更新</button> <span id="wrRankMeta" style="font-size:11px;color:#64748b"></span></h3>
@@ -20236,7 +20310,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           <div class="wr-card"><h3>③ 自選股偵測 <button class="btn btn-dark" id="wrBtnWatch" style="padding:2px 8px;font-size:11px">掃描自選股</button></h3><div class="wr-scroll" id="wrWatch" style="font-size:12px">尚未掃描</div></div>
           <div class="wr-card"><h3>④⑧ 單股偵測：大單流向 + FVG → 進出場</h3>
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input id="wrSym" placeholder="股票代號" style="width:100px"><button class="btn btn-dark" id="wrBtnOne" style="padding:3px 10px">偵測</button>
-            <button class="btn btn-dark" id="wrBtnChart" style="padding:3px 10px">📈 在 K 線圖顯示</button><button class="btn btn-dark" id="wrBtnOrder" style="padding:3px 10px;background:#b91c1c">依訊號下單（模擬）</button></div>
+            <button class="btn btn-dark" id="wrBtnChart" style="padding:3px 10px">📈 在 K 線圖顯示</button><button class="btn btn-dark" id="wrBtnOrder" style="padding:3px 10px;background:#b91c1c">依訊號下單</button></div>
             <div id="wrOne" style="font-size:13px">輸入代號後按「偵測」</div></div>
         </div>`;
         document.body.appendChild(m);
@@ -20259,6 +20333,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         set('wrDataMode', c.dataMode); set('wrIndMode', c.indMode); set('wrUniverse', c.universe); set('wrIv', c.iv); set('wrSlMode', c.slMode);
         set('wrMinVal', c.minValueM); set('wrAtr', c.atrMult); set('wrSlPct', c.slPct); set('wrRrr', c.rrr); set('wrRisk', c.riskPct); set('wrCap', c.capital); set('wrLev', c.maxLev);
         [['wrOf', 'ofFilter'], ['wrVol', 'volFilter'], ['wrBe', 'be'], ['wrFib', 'fib'], ['wrGran', 'granville'], ['wrForce', 'forceExit'], ['wrOverlay', 'chartOverlay'], ['wrAuto', 'autoTrade']].forEach(([id, k]) => { const el = $(id); if (el) el.checked = !!c[k]; });
+        const ob = $('wrBtnOrder');
+        if (ob) ob.textContent = state.envMode === 'LIVE' ? '依訊號下單（永豐實盤）' : '依訊號下單（模擬單）';
         const b = $('wrSrcBadge');
         if (b) { const sm = srcMode(); b.textContent = sm === 'shioaji' ? '永豐 Shioaji 即時' : 'TWSE MIS 估算'; b.style.background = sm === 'shioaji' ? '#fee2e2' : '#fef3c7'; }
       }
@@ -20444,14 +20520,14 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
       async function placeLong(sym, sig, price, tag) {
         const c = cfg();
-        if (state.envMode !== 'SIM') { showToast('作戰室', 'LIVE 模式不自動下單，請手動確認。', 'warn'); return false; }
         if (posOf(sym) || !price) return false;
         const lots = sig.qty;
         if (!lots || lots < 1) return false;
+        // Identical entry + SL/TP registration for both SIM and LIVE; executeOrder routes LIVE via Shioaji API + CA cert
         await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '股', price, source: tag || 'SMC_FVG_WAR', dayTrade: isIntra(c.iv) });
         if (posOf(sym)) {
           const risk = Math.abs(price - sig.sl);
-          c.stops[sym] = { dir: 1, entry: price, sl: sig.sl, sl0: sig.sl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why };
+          c.stops[sym] = { dir: 1, entry: price, sl: sig.sl, sl0: sig.sl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why, envMode: state.envMode };
           save(); return true;
         }
         return false;
@@ -20462,7 +20538,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (nw.dir < 0) { showToast('作戰室', '現股不可直接放空，僅作提示', 'warn'); return; }
         const price = +oneCtx.q?.price || nw.entry;
         const ok = await placeLong(oneCtx.sym, Object.assign({}, nw, { sl: nw.sl }), price, 'SMC_FVG_MANUAL');
-        showToast('作戰室', ok ? `已依訊號買進 ${oneCtx.sym} @${price}（SL ${nw.sl}）` : '下單未成立（可能已持有、時段或熔斷）', ok ? 'info' : 'warn');
+        showToast('作戰室', ok ? `已依訊號買進 ${oneCtx.sym} @${price}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'} · SL ${nw.sl}）` : '下單未成立（可能已持有、時段、缺少永豐 Token 或熔斷）', ok ? 'info' : 'warn');
       }
       async function autoAct(sym, a, q, candles) {
         const c = cfg(); const nw = a.now;
@@ -20472,7 +20548,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const price = +q?.price || 0;
         if (!price) return;
         c.lastAuto[sym] = key;
-        if (await placeLong(sym, nw, price, 'SMC_FVG_AUTO')) showToast('🤖 作戰室自動進場', `${sym} @${price} · ${nw.why}`, 'info');
+        if (await placeLong(sym, nw, price, 'SMC_FVG_AUTO')) showToast('🤖 作戰室自動進場', `${sym} @${price}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${nw.why}`, 'info');
       }
       async function manageStops(quotes) {
         const c = cfg();
@@ -20488,9 +20564,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (px <= st.sl) reason = px >= st.entry ? '移動停利/保本' : '止損';
           else if (!(c.be || c.fib || c.granville) && px >= st.tp) reason = '固定停利';
           else if (c.forceExit && s.open && Number(String(s.timeStr || '').slice(-8, -3).replace(':', '')) >= 1325) reason = '尾盤強制出場';
-          if (reason && state.envMode === 'SIM') {
+          if (reason) {
             await executeOrder({ symbol: sym, side: 'SELL', qty: p.shares, unit: '股', price: px, source: 'SMC_FVG_EXIT', dayTrade: isIntra(c.iv) });
-            if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 作戰室自動出場', `${sym} @${px} · ${reason}`, 'info'); }
+            if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 作戰室自動出場', `${sym} @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
           }
         }
         save();
@@ -20507,7 +20583,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         window.SHL_EXT.augmentChartIndicators = function (datasets, candles, closes, vwap, meta) {
           if (typeof prevAug === 'function') prevAug(datasets, candles, closes, vwap, meta);
           try {
-            const c = cfg(); if (!c.chartOverlay || !candles || candles.length < 30) return;
+            const c = cfg();
+            const fvgEnabled = state.ext?.sjIndicators?.fvg !== false;
+            if ((!c.chartOverlay || !fvgEnabled) || !candles || candles.length < 30) return;
             const iv = String(state.tvInterval || c.iv);
             const a = analyze(candles, c, iv); const n = candles.length;
             const arr = () => new Array(n).fill(null);

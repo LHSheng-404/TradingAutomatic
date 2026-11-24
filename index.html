@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.0 · 版本說明
+              v3.13.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -5644,6 +5644,7 @@
           sjIndicators: state.ext.sjIndicators,
           tabMemory: state.ext.tabMemory || {},
           war: state.ext.war || {},
+          warTrend: state.ext.warTrend || null,
           aiFocusPrompt: state.ext.aiFocusPrompt || '',
           aiFocusMode: state.ext.aiFocusMode || 'AUTO',
           monthlyRebateLedger: state.ext.monthlyRebateLedger || {},
@@ -5734,7 +5735,8 @@
         if (Array.isArray(saved.ext.signalHistory)) state.ext.signalHistory = saved.ext.signalHistory.slice(0, 100);
         if (saved.ext.shioaji && typeof saved.ext.shioaji === 'object') state.ext.shioaji = Object.assign({ simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true }, saved.ext.shioaji);
         if (saved.ext.sjIndicators && typeof saved.ext.sjIndicators === 'object') state.ext.sjIndicators = Object.assign({ ema: true, ma20: true, bb: false, vwap: true, signals: true }, saved.ext.sjIndicators);
-        if (saved.ext.war && typeof saved.ext.war === 'object') state.ext.war = saved.ext.war;
+        if (saved.ext.war && typeof saved.ext.war === 'object') state.ext.war = Object.assign({}, state.ext.war || {}, saved.ext.war);
+        if (saved.ext.warTrend && typeof saved.ext.warTrend === 'object') state.ext.warTrend = saved.ext.warTrend;
         if (saved.ext.tabMemory && typeof saved.ext.tabMemory === 'object') {
           state.ext.tabMemory = saved.ext.tabMemory;
           try { localStorage.setItem('synapse_tw_tab_memory_v1', JSON.stringify(saved.ext.tabMemory)); } catch (e) {}
@@ -19286,6 +19288,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           }
           if (typeof renderNotifyCenter === 'function') renderNotifyCenter();
           if (window.SHL_TAB_MEMORY && typeof window.SHL_TAB_MEMORY.restoreAll === 'function') window.SHL_TAB_MEMORY.restoreAll();
+          if (window.SHL_WAR && typeof window.SHL_WAR.onSyncApplied === 'function') window.SHL_WAR.onSyncApplied();
           if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
           if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
           renderAllViews();
@@ -19595,8 +19598,18 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.0';
+      const CURRENT_VERSION = 'v3.13.1';
       const HISTORY = [
+        {
+          ver: 'v3.13.1',
+          items: [
+            '後端 GET /api/v1/shioaji/snapshots 補齊永豐金 Shioaji Python SDK 即時五檔／逐筆快照路徑（依序：Shioaji HTTP → Shioaji Python SDK → TWSE/TPEx MIS 即時快照）',
+            '盤中作戰室支援靜態／手機 PWA 離線備援（無 server.py 時自動使用已同步 K 線／報價快照與直連 TWSE OpenData 計算多空前 50 檔），強制永豐模式未連線時明確警示',
+            '即時報價自動回寫同步至主畫面 state.quotes，大盤趨勢偵測納入加權(t00)與櫃買(o00)即時漲跌幅',
+            '單股與自選股偵測整合「量化＋AI 技術綜合評分（RSI14／均線排列／VWAP／大單流向／SMC+FVG）」，主畫面 K 線圖同步繪製持倉止損 SL／停利 TP 線',
+            '強化遠端共享帳號跨裝置同步（SHL_WAR.onSyncApplied）：拉取後立即還原作戰室止損設定、訊號模式、大盤趨勢、持倉止損單與自動交易排程'
+          ]
+        },
         {
           ver: 'v3.13.0',
           items: [
@@ -20019,12 +20032,26 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       // ---------------- data fetchers ----------------
       async function fetchBars(sym, iv) {
         const base = getApiBase();
-        if (!base) throw new Error('尚未連線後端（server.py）');
-        const r = await fetch(`${base}/api/v1/shioaji/kbars/${encodeURIComponent(sym)}?interval=${encodeURIComponent(iv)}`, { cache: 'no-store' });
-        if (!r.ok) throw new Error('K 線 HTTP ' + r.status);
-        const j = await r.json();
-        if (!Array.isArray(j.candles) || !j.candles.length) throw new Error('無 K 線資料');
-        return { candles: j.candles, source: j.source || '', engine: j.source_engine || '' };
+        if (base) {
+          const r = await fetch(`${base}/api/v1/shioaji/kbars/${encodeURIComponent(sym)}?interval=${encodeURIComponent(iv)}`, { cache: 'no-store' });
+          if (!r.ok) throw new Error('K 線 HTTP ' + r.status);
+          const j = await r.json();
+          if (!Array.isArray(j.candles) || !j.candles.length) throw new Error('無 K 線資料');
+          return { candles: j.candles, source: j.source || '', engine: j.source_engine || '' };
+        }
+        // Static / mobile PWA fallback: use existing synced candles or fetchQuoteForSymbol
+        const existing = getQuote(sym);
+        if (existing && Array.isArray(existing.candles) && existing.candles.length >= 30) {
+          return { candles: existing.candles, source: existing.source || '已同步 K 線快照', engine: 'synced_snapshot' };
+        }
+        if (typeof fetchQuoteForSymbol === 'function') {
+          const meta = getStockMeta(sym);
+          const q = await fetchQuoteForSymbol(meta, null, iv);
+          if (q && Array.isArray(q.candles) && q.candles.length) {
+            return { candles: q.candles, source: q.source || '靜態官方備援 K 線', engine: q.sourceEngine || 'static' };
+          }
+        }
+        throw new Error('無本機後端且尚無已同步 K 線（請先於電腦端同步或連線 server.py）');
       }
       function srcMode() {
         const m = cfg().dataMode;
@@ -20033,20 +20060,81 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (m === 'mis') return 'mis';
         return tok ? 'shioaji' : 'mis';
       }
+      function syncQuotesToMain(qMap, live, label) {
+        if (!qMap || typeof qMap !== 'object') return;
+        const nowTs = Date.now();
+        Object.entries(qMap).forEach(([code, row]) => {
+          if (!row || !Number(row.price)) return;
+          if (code === 't00' || code === 'o00') {
+            state.ext.indices = state.ext.indices || {};
+            state.ext.indices[code] = Object.assign({}, state.ext.indices[code] || {}, {
+              price: Number(row.price), prevClose: Number(row.prev_close || row.price),
+              change: Number(row.change || 0), changePct: Number(row.change_pct || 0),
+              time: row.time || '', date: row.date || ''
+            });
+            return;
+          }
+          const prev = state.quotes[code] || {};
+          state.quotes[code] = Object.assign({}, prev, {
+            symbol: code,
+            price: Number(row.price),
+            prevClose: Number(row.prev_close || prev.prevClose || row.price),
+            open: Number(row.open || prev.open || row.price),
+            high: Number(row.high || prev.high || row.price),
+            low: Number(row.low || prev.low || row.price),
+            volume: row.volume_lots != null ? Number(row.volume_lots) : (prev.volume || 0),
+            tickVolume: row.tick_volume != null ? Number(row.tick_volume) : (prev.tickVolume || 0),
+            bids: Array.isArray(row.bids) ? row.bids : (prev.bids || []),
+            bidSizes: Array.isArray(row.bid_sizes) ? row.bid_sizes : (prev.bidSizes || []),
+            asks: Array.isArray(row.asks) ? row.asks : (prev.asks || []),
+            askSizes: Array.isArray(row.ask_sizes) ? row.ask_sizes : (prev.askSizes || []),
+            isRealtime: live || !row.is_eod_official,
+            realtimeTs: nowTs,
+            realtimeSource: label
+          });
+        });
+      }
       async function fetchRt(syms) {
         const base = getApiBase();
-        if (!base) throw new Error('尚未連線後端');
+        const arr = [].concat(syms).filter(Boolean);
         const mode = srcMode();
-        const list = [].concat(syms).join(',');
-        const url = mode === 'shioaji'
-          ? `${base}/api/v1/shioaji/snapshots?symbols=${encodeURIComponent(list)}`
-          : `${base}/api/v1/market/realtime?symbols=${encodeURIComponent(list)}&indices=t00,o00`;
-        const r = await fetch(url, { cache: 'no-store' });
-        const j = await r.json();
-        let q = j.quotes || j.stocks || j.data || {};
-        if (Array.isArray(q)) { const m = {}; q.forEach(x => { m[x.symbol] = x; }); q = m; }
-        const live = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
-        return { quotes: q, live, label: live ? '永豐 Shioaji 即時（逐筆／五檔）' : (j.is_eod_official ? 'TWSE/TPEx 官方最近交易日（非盤中）' : 'TWSE MIS 即時快照估算（無 Shioaji Token）') };
+        if (base) {
+          const list = arr.join(',');
+          const url = mode === 'shioaji'
+            ? `${base}/api/v1/shioaji/snapshots?symbols=${encodeURIComponent(list)}`
+            : `${base}/api/v1/market/realtime?symbols=${encodeURIComponent(list)}&indices=t00,o00`;
+          const r = await fetch(url, { cache: 'no-store' });
+          const j = await r.json();
+          let q = j.quotes || j.stocks || j.data || {};
+          if (Array.isArray(q)) { const m = {}; q.forEach(x => { m[x.symbol] = x; }); q = m; }
+          const live = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
+          let label;
+          if (live) {
+            label = j.source_engine === 'shioaji_sdk' ? '永豐 Shioaji Python SDK 即時（逐筆／五檔）' : '永豐 Shioaji Pro HTTP 即時（逐筆／五檔）';
+          } else if (cfg().dataMode === 'shioaji') {
+            label = '⚠️ 永豐 Shioaji 未連線（已暫降 TWSE MIS 估算；請確認 SIM/LIVE Token）';
+          } else if (j.is_eod_official) {
+            label = 'TWSE/TPEx 官方最近交易日（非盤中）';
+          } else {
+            label = 'TWSE MIS 即時快照估算（無 Shioaji Token）';
+          }
+          syncQuotesToMain(q, live, label);
+          return { quotes: q, live, label, serverTime: j.server_time || '' };
+        }
+        // Static / mobile PWA fallback: read synced quotes + TWSE OpenData
+        const out = {};
+        arr.forEach(s => {
+          const sq = getQuote(s);
+          if (sq && Number(sq.price) > 0) {
+            out[s] = {
+              symbol: s, name: getStockMeta(s)?.name || s, price: sq.price, prev_close: sq.prevClose || sq.price,
+              change_pct: sq.prevClose ? ((sq.price - sq.prevClose) / sq.prevClose * 100) : 0,
+              volume_lots: sq.volume || 0, tick_volume: sq.tickVolume || 0,
+              bids: sq.bids || [], bid_sizes: sq.bidSizes || [], asks: sq.asks || [], ask_sizes: sq.askSizes || []
+            };
+          }
+        });
+        return { quotes: out, live: false, label: '已同步報價快照（靜態／手機離線模式）', serverTime: nowTwDateTime() };
       }
 
       function flowOf(q, analysis) {
@@ -20061,6 +20149,36 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         let verdict = '中性';
         if (imb > 0.15 && delta >= 0) verdict = '大單偏多'; else if (imb < -0.15 && delta <= 0) verdict = '大單偏空';
         return { bs, as, imb, tv, side, maxLvl, delta, verdict };
+      }
+
+      // Quant + AI Technical Confluence Score (0~100)
+      function aiTechScore(candles, a, f) {
+        const C = (candles || []).map(b => +b.close).filter(Number.isFinite);
+        const n = C.length;
+        if (n < 15) return { score: 50, bias: '中性', tags: ['樣本不足'] };
+        let score = 50; const tags = [];
+        // RSI14
+        let gains = 0, losses = 0;
+        for (let i = n - 14; i < n; i++) { const d = C[i] - C[i - 1]; if (d > 0) gains += d; else losses -= d; }
+        const rsi = losses === 0 ? 100 : (100 - 100 / (1 + gains / losses));
+        if (rsi >= 55 && rsi <= 75) { score += 10; tags.push(`RSI ${rsi.toFixed(0)} 多方動能`); }
+        else if (rsi < 35) { score += 6; tags.push(`RSI ${rsi.toFixed(0)} 超賣反彈區`); }
+        else if (rsi > 78) { score -= 8; tags.push(`RSI ${rsi.toFixed(0)} 過熱警戒`); }
+        else if (rsi <= 45) { score -= 10; tags.push(`RSI ${rsi.toFixed(0)} 偏弱`); }
+        // MA5 vs MA20
+        const ma5 = C.slice(-5).reduce((s, x) => s + x, 0) / 5;
+        const ma20 = C.slice(-Math.min(20, n)).reduce((s, x) => s + x, 0) / Math.min(20, n);
+        if (C[n - 1] > ma5 && ma5 > ma20) { score += 12; tags.push('短均多頭排列'); }
+        else if (C[n - 1] < ma5 && ma5 < ma20) { score -= 12; tags.push('短均空頭排列'); }
+        // VWAP & SMC/FVG & Order Flow
+        if (a && a.vwap) { if (C[n - 1] >= a.vwap) { score += 8; tags.push('站上 VWAP'); } else { score -= 8; tags.push('跌破 VWAP'); } }
+        if (f?.verdict === '大單偏多') { score += 12; tags.push('大單偏多'); }
+        else if (f?.verdict === '大單偏空') { score -= 12; tags.push('大單偏空'); }
+        if (a?.now?.dir > 0) { score += 15; tags.push(a.now.why); }
+        else if (a?.now?.dir < 0) { score -= 15; tags.push(a.now.why); }
+        score = Math.max(0, Math.min(100, Math.round(score)));
+        const bias = score >= 65 ? '🔴 AI+量化偏多' : (score <= 35 ? '🟢 AI+量化偏空' : '🟡 中性觀望');
+        return { score, bias, rsi: Number(rsi.toFixed(1)), tags };
       }
 
       // ---------------- UI ----------------
@@ -20151,6 +20269,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       async function refreshTrend() {
         const el = $('wrTrend'); el.textContent = '偵測中…';
         let score = 0; const notes = [];
+        // Live t00 & o00 indices via real-time endpoint or synced state
+        try {
+          const rtIdx = await fetchRt(['2330']);
+          const t00 = rtIdx.quotes?.t00 || state.ext?.indices?.t00;
+          const o00 = rtIdx.quotes?.o00 || state.ext?.indices?.o00;
+          if (t00 && Number(t00.price)) {
+            const p = Number(t00.change_pct ?? t00.changePct ?? 0);
+            notes.push(`加權即時 ${fx(t00.price, 2)} (${p > 0 ? '+' : ''}${fx(p, 2)}%)`);
+            score += p > 0.3 ? 1 : (p < -0.3 ? -1 : 0);
+          }
+          if (o00 && Number(o00.price)) {
+            const p = Number(o00.change_pct ?? o00.changePct ?? 0);
+            notes.push(`櫃買即時 ${fx(o00.price, 2)} (${p > 0 ? '+' : ''}${fx(p, 2)}%)`);
+            score += p > 0.3 ? 1 : (p < -0.3 ? -1 : 0);
+          }
+        } catch (e) {}
         try {
           const { candles } = await fetchBars('T00', 'D');
           const cl = candles.map(b => +b.close); const n = cl.length; const last = cl[n - 1];
@@ -20164,22 +20298,54 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         try { const r = await loadRank(); breadth = r.breadth; } catch (e) { notes.push('市場廣度取得失敗'); }
         if (breadth) { notes.push(`上漲 ${breadth.advance} / 下跌 ${breadth.decline} / 平盤 ${breadth.flat}（上漲占比 ${(breadth.adv_ratio * 100).toFixed(1)}%）`); score += breadth.adv_ratio > 0.55 ? 1 : (breadth.adv_ratio < 0.45 ? -1 : 0); }
         const verdict = score >= 3 ? '🔴 偏多（順勢做多）' : (score <= -3 ? '🟢 偏空（防守／減碼）' : '🟡 盤整（區間操作）');
-        el.innerHTML = `<div style="font-size:16px;font-weight:800">${verdict} <span style="font-size:12px;color:#64748b">趨勢分數 ${score}</span></div><div style="color:#475569;margin-top:4px">${notes.join(' · ')}</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">資料：加權指數日 K（永豐／官方）＋ 官方上市櫃漲跌家數</div>`;
-        state.ext.warTrend = { verdict, score, ts: Date.now() };
+        el.innerHTML = `<div style="font-size:16px;font-weight:800">${verdict} <span style="font-size:12px;color:#64748b">趨勢分數 ${score}</span></div><div style="color:#475569;margin-top:4px">${notes.join(' · ')}</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">資料：加權／櫃買即時報價＋日 K 均線（永豐／官方）＋官方上市櫃漲跌家數</div>`;
+        state.ext.warTrend = { verdict, score, summary: notes.join(' · '), ts: Date.now() };
+        try { if (typeof persistState === 'function') persistState(); } catch (e) {}
       }
 
       async function loadRank() {
         const c = cfg(); const base = getApiBase();
-        if (!base) throw new Error('尚未連線後端');
-        let url = `${base}/api/v1/market/rank?limit=50&universe=${c.universe === 'chain' ? 'custom' : c.universe}&min_value_m=${c.minValueM}`;
-        if (c.universe === 'chain') {
-          const set = new Set((state.watchlist || []).map(w => (typeof w === 'string' ? w : w.symbol)));
-          try { (window.SHL_EXT?.FLOW_CHAINS_SYMBOLS || []).forEach(s => set.add(s)); } catch (e) {}
-          try { if (typeof FLOW_CHAIN_SYMBOLS !== 'undefined') [].concat(FLOW_CHAIN_SYMBOLS).forEach(s => set.add(s)); } catch (e) {}
-          url += `&symbols=${encodeURIComponent([...set].join(','))}`;
+        if (base) {
+          let url = `${base}/api/v1/market/rank?limit=50&universe=${c.universe === 'chain' ? 'custom' : c.universe}&min_value_m=${c.minValueM}`;
+          if (c.universe === 'chain') {
+            const set = new Set((state.watchlist || []).map(w => (typeof w === 'string' ? w : w.symbol)));
+            try { (window.SHL_EXT?.FLOW_CHAINS_SYMBOLS || []).forEach(s => set.add(s)); } catch (e) {}
+            try { if (typeof FLOW_CHAIN_SYMBOLS !== 'undefined') [].concat(FLOW_CHAIN_SYMBOLS).forEach(s => set.add(s)); } catch (e) {}
+            url += `&symbols=${encodeURIComponent([...set].join(','))}`;
+          }
+          const r = await fetch(url, { cache: 'no-store' }); const j = await r.json();
+          if (!j.ok) throw new Error('排行取得失敗');
+          lastRank = j; return j;
         }
-        const r = await fetch(url, { cache: 'no-store' }); const j = await r.json();
-        if (!j.ok) throw new Error('排行取得失敗');
+        // Static / mobile PWA fallback: direct official TWSE OpenData STOCK_DAY_ALL
+        const r = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+        const raw = await r.json();
+        const custom = new Set((state.watchlist || []).map(w => (typeof w === 'string' ? w : w.symbol)));
+        try { if (typeof FLOW_CHAIN_SYMBOLS !== 'undefined') [].concat(FLOW_CHAIN_SYMBOLS).forEach(s => custom.add(s)); } catch (e) {}
+        const rows = []; let adv = 0, dec = 0, flat = 0, dt = '';
+        (Array.isArray(raw) ? raw : []).forEach(x => {
+          const code = String(x.Code || '').trim();
+          if (!/^[1-9][0-9]{3}$/.test(code)) return;
+          const px = parseFloat(String(x.ClosingPrice || '').replace(/,/g, ''));
+          const chg = parseFloat(String(x.Change || '').replace(/,/g, '')) || 0;
+          const shares = parseFloat(String(x.TradeVolume || '').replace(/,/g, '')) || 0;
+          if (!px || px <= 0) return;
+          const prev = px - chg; const pct = prev > 0 ? Number(((chg / prev) * 100).toFixed(2)) : 0;
+          const lots = shares / 1000; const valM = Number((px * shares / 1e6).toFixed(1));
+          if (x.Date) dt = String(x.Date);
+          if (pct > 0) adv++; else if (pct < 0) dec++; else flat++;
+          if (c.universe === 'chain' && !custom.has(code)) return;
+          if (c.universe === 'liquid' && valM < c.minValueM) return;
+          if (lots <= 0) return;
+          rows.push({ symbol: code, name: String(x.Name || '').trim(), exchange: 'tse', price: px, change_pct: pct, volume_lots: lots, value_m: valM });
+        });
+        const total = adv + dec + flat;
+        const j = {
+          ok: true, source: 'TWSE STOCK_DAY_ALL（靜態直連官方）', data_date: dt, universe: c.universe, count: rows.length,
+          breadth: { advance: adv, decline: dec, flat, adv_ratio: total ? Number((adv / total).toFixed(4)) : 0 },
+          bulls: rows.slice().sort((a, b) => (b.change_pct - a.change_pct) || (b.value_m - a.value_m)).slice(0, 50),
+          bears: rows.slice().sort((a, b) => (a.change_pct - b.change_pct) || (b.value_m - a.value_m)).slice(0, 50)
+        };
         lastRank = j; return j;
       }
       function rankTable(rows) {
@@ -20212,19 +20378,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           try {
             const candles = r0.candles;
             const a = analyze(candles, c, c.iv);
-            rows.push({ sym, a, q: rt.quotes[sym], candles });
+            const f = flowOf(rt.quotes[sym], a);
+            const ai = aiTechScore(candles, a, f);
+            rows.push({ sym, a, f, ai, q: rt.quotes[sym], candles });
             if (silent && c.autoTrade) await autoAct(sym, a, rt.quotes[sym], candles);
           } catch (e) { rows.push({ sym, err: e.message }); }
         }
         if (silent && c.autoTrade) await manageStops(rt.quotes);
         if (box) {
-          box.innerHTML = `<div style="font-size:11px;color:#64748b;margin-bottom:4px">來源：${esc(rt.label)} · 級距 ${c.iv}</div><table><tr><th>股票</th><th>現價</th><th>訊號</th><th>FVG 區</th><th>回測筆/勝率/淨損益</th><th>持倉模擬</th></tr>${rows.map(r => {
-            if (r.err) return `<tr><td>${esc(r.sym)}</td><td colspan="5">${esc(r.err)}</td></tr>`;
+          box.innerHTML = `<div style="font-size:11px;color:#64748b;margin-bottom:4px">來源：${esc(rt.label)} · 級距 ${c.iv} · 更新 ${esc(rt.serverTime || nowTwDateTime())}</div><table><tr><th>股票</th><th>現價</th><th>AI+量化</th><th>大單流向</th><th>SMC/FVG 訊號</th><th>FVG 區</th><th>回測筆/勝率/淨損益</th><th>持倉止損</th></tr>${rows.map(r => {
+            if (r.err) return `<tr><td>${esc(r.sym)}</td><td colspan="7">${esc(r.err)}</td></tr>`;
             const a = r.a; const nw = a.now;
             const sg = nw ? `<b class="${nw.dir > 0 ? 'wr-up' : 'wr-dn'}">${nw.dir > 0 ? '▲ 多' : '▼ 空'}</b> ${esc(nw.why)}` : '—';
             const z = (a.activeZones || []).map(z => `${z.dir > 0 ? '↑' : '↓'}${fx(z.lo)}–${fx(z.hi)}`).join(' ') || '—';
-            const o = a.open ? `${a.open.dir > 0 ? '多' : '空'} @${fx(a.open.entry)} SL ${fx(a.open.sl)} TP ${fx(a.open.tp)}` : '空手';
-            return `<tr class="wr-row" data-sym="${esc(r.sym)}"><td>${esc(r.sym)} ${esc(getStockMeta(r.sym)?.name || '')}</td><td>${fx(r.q?.price ?? r.candles[r.candles.length - 1].close)}</td><td style="text-align:left">${sg}</td><td style="text-align:left">${z}</td><td>${a.stats.count}/${(a.stats.winRate * 100).toFixed(0)}%/${a.stats.pnl.toLocaleString()}</td><td style="text-align:left">${o}</td></tr>`;
+            const st = c.stops[r.sym];
+            const o = st ? `實持 @${fx(st.entry)} SL ${fx(st.sl)} TP ${fx(st.tp)}` : (a.open ? `模擬 ${a.open.dir > 0 ? '多' : '空'} @${fx(a.open.entry)}` : '空手');
+            return `<tr class="wr-row" data-sym="${esc(r.sym)}"><td>${esc(r.sym)} ${esc(getStockMeta(r.sym)?.name || '')}</td><td>${fx(r.q?.price ?? r.candles[r.candles.length - 1].close)}</td><td style="text-align:left">${r.ai.bias} (${r.ai.score})</td><td>${r.f.verdict}</td><td style="text-align:left">${sg}</td><td style="text-align:left">${z}</td><td>${a.stats.count}/${(a.stats.winRate * 100).toFixed(0)}%/${a.stats.pnl.toLocaleString()}</td><td style="text-align:left">${o}</td></tr>`;
           }).join('')}</table>`;
           box.querySelectorAll('tr.wr-row').forEach(tr => tr.onclick = () => { $('wrSym').value = tr.dataset.sym; analyzeOne(tr.dataset.sym); });
         }
@@ -20238,17 +20407,18 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         try {
           const [bars, rt] = await Promise.all([fetchBars(sym, c.iv), fetchRt(sym).catch(() => ({ quotes: {}, label: '無即時報價', live: false }))]);
           const a = analyze(bars.candles, c, c.iv);
-          const q = rt.quotes[sym]; const f = flowOf(q, a);
+          const q = rt.quotes[sym]; const f = flowOf(q, a); const ai = aiTechScore(bars.candles, a, f);
           const nw = a.now; const conflict = nw && ((nw.dir > 0 && f.verdict === '大單偏空') || (nw.dir < 0 && f.verdict === '大單偏多'));
           let advice = '⏸ 觀望（無新訊號）', cls = '';
           if (nw && !conflict) { advice = `${nw.dir > 0 ? '🔴 進場做多' : '🟢 進場做空（現股僅提示）'}：${nw.why}`; cls = nw.dir > 0 ? 'wr-up' : 'wr-dn'; }
           else if (nw && conflict) advice = '⚠️ 訊號被大單流向否決，等待';
           else if (a.open) advice = `持有模擬部位：${a.open.dir > 0 ? '多' : '空'} @${fx(a.open.entry)} · 目前停損 ${fx(a.open.sl)} · 停利 ${fx(a.open.tp)}`;
-          oneCtx = { sym, a, q, f, rt, candles: bars.candles };
+          oneCtx = { sym, a, q, f, ai, rt, candles: bars.candles };
           lastAnalysis = oneCtx;
           const last = a.trades[a.trades.length - 1];
           box.innerHTML = `
             <div style="font-size:15px;font-weight:800" class="${cls}">${esc(sym)} ${esc(getStockMeta(sym)?.name || q?.name || '')} · ${esc(advice)}</div>
+            <div style="font-size:12px;margin:4px 0;padding:4px 8px;background:#f1f5f9;border-radius:6px"><b>量化＋AI 技術綜合評分：${ai.score}/100（${ai.bias}）</b> · ${esc(ai.tags.join(' / '))}</div>
             <div class="wr-two" style="margin-top:6px"><div>
               <b>大單流向</b>（來源：${esc(rt.label)}）<br>
               委買五檔 ${f.bs.toLocaleString()} ／ 委賣五檔 ${f.as.toLocaleString()} · 失衡 <b class="${pctCls(f.imb)}">${(f.imb * 100).toFixed(1)}%</b><br>
@@ -20360,6 +20530,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               datasets.push({ label: `FVG ${z.dir > 0 ? '多' : '空'}區`, data: hi, borderColor: col, borderWidth: 1, borderDash: [2, 2], fill: false, pointRadius: 0 });
               datasets.push({ label: `FVG ${z.dir > 0 ? '多' : '空'}區下緣`, data: lo, borderColor: col, borderWidth: 1, borderDash: [2, 2], fill: false, pointRadius: 0 });
             });
+            const realStop = c.stops && c.stops[state.activeSymbol];
+            if (realStop && posOf(state.activeSymbol)) {
+              const startIdx = Math.max(0, n - 25);
+              [['持倉止損 SL', realStop.sl, '#15803d'], ['持倉停利 TP', realStop.tp, '#b91c1c']].forEach(([nm, v, col]) => {
+                if (!Number(v)) return;
+                const ln = arr(); for (let i = startIdx; i < n; i++) ln[i] = Number(v);
+                datasets.push({ label: `${nm} ${fx(v)}`, data: ln, borderColor: col, borderDash: [6, 3], borderWidth: 1.8, fill: false, pointRadius: 0 });
+              });
+            }
             const strip = $('chartTradePnlStrip');
             if (strip) {
               let s2 = $('warChartStrip');
@@ -20367,12 +20546,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               const lt = a.trades[a.trades.length - 1];
               s2.textContent = `策略回測（${iv}）：${a.stats.count} 筆 · 勝率 ${(a.stats.winRate * 100).toFixed(0)}% · 淨損益 ${a.stats.pnl.toLocaleString()} 元` +
                 (lt ? ` · 最近：${lt.dir > 0 ? '多' : '空'} ${fx(lt.entry)}→${fx(lt.exit)}（${lt.reason}）${lt.pnl.toLocaleString()}` : '') +
-                (a.open ? ` · 持有中 SL ${fx(a.open.sl)} TP ${fx(a.open.tp)}` : '');
+                (realStop && posOf(state.activeSymbol) ? ` · 持倉風控 SL ${fx(realStop.sl)} / TP ${fx(realStop.tp)}` : (a.open ? ` · 模擬持有 SL ${fx(a.open.sl)} TP ${fx(a.open.tp)}` : ''));
             }
           } catch (e) { /* overlay must never break chart */ }
         };
       }
 
+      function onSyncApplied() {
+        cfg();
+        syncUi();
+        if (state.ext?.warTrend && $('wrTrend')) {
+          const t = state.ext.warTrend;
+          $('wrTrend').innerHTML = `<div style="font-size:16px;font-weight:800">${esc(t.verdict || '')} <span style="font-size:12px;color:#64748b">趨勢分數 ${t.score ?? '--'}</span></div><div style="color:#475569;margin-top:4px">${esc(t.summary || '')}</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">已從遠端共享帳號同步</div>`;
+        }
+        applyAuto();
+        if (typeof renderRawPriceChart === 'function') { try { renderRawPriceChart(); } catch (e) {} }
+      }
       function open() { ensureUi(); syncUi(); $('warRoomModal').classList.add('open'); if (state.activeSymbol && !$('wrSym').value) $('wrSym').value = state.activeSymbol; if (!lastRank) { refreshRank(); refreshTrend(); } }
       function init() {
         cfg();
@@ -20387,7 +20576,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
         if (cfg().autoTrade) applyAuto();
       }
-      return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode };
+      return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode, aiTechScore, placeLong, manageStops, onSyncApplied };
     })();
 
     document.addEventListener('DOMContentLoaded', () => {

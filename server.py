@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.0",
+    version="3.13.1",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.0",
+        "version": "3.13.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3708,7 +3708,7 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.0: Full-market bull / bear Top-N + breadth for market-trend detection.
+    v3.13.1: Full-market bull / bear Top-N + breadth for market-trend detection.
     Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
     universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
@@ -4366,6 +4366,87 @@ async def shioaji_test_token(req: ShioajiConfigRequest):
     }
 
 
+async def _fetch_shioaji_sdk_snapshots(symbols: list[str]) -> Optional[dict[str, Any]]:
+    """Fetch real-time snapshots (bid/ask/volume/tick) via Python `shioaji` SDK when SIM or LIVE credentials exist."""
+    ak, sk = _shioaji_market_creds()
+    if not (ak and sk) or not symbols:
+        return None
+    try:
+        import shioaji as sj  # type: ignore
+    except ImportError:
+        return None
+
+    def _run_sdk():
+        api = None
+        last_err = None
+        for sim_flag in (False, True):
+            try:
+                api = sj.Shioaji(simulation=sim_flag)
+                api.login(api_key=ak, secret_key=sk)
+                break
+            except Exception as e:
+                last_err = e
+                api = None
+        if api is None:
+            raise last_err or RuntimeError("Shioaji SDK login failed")
+        try:
+            contracts = []
+            for s in symbols:
+                c = api.Contracts.Stocks[s] if s in api.Contracts.Stocks else None
+                if c is not None:
+                    contracts.append(c)
+            if not contracts:
+                return None
+            snaps = api.snapshots(contracts)
+            out: dict[str, Any] = {}
+            now_s = tw_now_str()
+            for sn in snaps or []:
+                code = str(getattr(sn, "code", "") or "").strip().upper()
+                close = float(getattr(sn, "close", 0) or 0)
+                if not code or close <= 0:
+                    continue
+                chg = float(getattr(sn, "change_price", 0) or 0)
+                ref = round(close - chg, 4) if close else close
+                bp = float(getattr(sn, "buy_price", 0) or 0)
+                bv = float(getattr(sn, "buy_volume", 0) or 0)
+                sp = float(getattr(sn, "sell_price", 0) or 0)
+                sv = float(getattr(sn, "sell_volume", 0) or 0)
+                out[code] = {
+                    "symbol": code,
+                    "name": code,
+                    "exchange": str(getattr(sn, "exchange", "TSE") or "TSE").lower(),
+                    "price": close,
+                    "prev_close": round(ref, 2) if ref else close,
+                    "change": round(chg, 4),
+                    "change_pct": round(float(getattr(sn, "change_rate", 0) or 0), 2),
+                    "open": float(getattr(sn, "open", 0) or close),
+                    "high": float(getattr(sn, "high", 0) or close),
+                    "low": float(getattr(sn, "low", 0) or close),
+                    "volume_lots": float(getattr(sn, "total_volume", 0) or 0),
+                    "tick_volume": float(getattr(sn, "volume", 0) or 0),
+                    "amount": float(getattr(sn, "total_amount", 0) or 0),
+                    "tick_type": str(getattr(sn, "tick_type", "") or ""),
+                    "bids": [bp] if bp > 0 else [],
+                    "bid_sizes": [bv] if bv > 0 else [],
+                    "asks": [sp] if sp > 0 else [],
+                    "ask_sizes": [sv] if sv > 0 else [],
+                    "date": now_s[:10],
+                    "time": now_s[11:],
+                    "source_engine": "shioaji_sdk",
+                }
+            return out if out else None
+        finally:
+            try:
+                api.logout()
+            except Exception:
+                pass
+
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_run_sdk), timeout=12.0)
+    except Exception:
+        return None
+
+
 @app.get("/api/v1/shioaji/snapshots")
 async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
     syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:80]
@@ -4373,6 +4454,12 @@ async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
     if sj_data:
         return JSONResponse(
             {"ok": True, "source": "永豐金 Shioaji Pro HTTP", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
+            headers={"Cache-Control": "no-store"},
+        )
+    sdk_data = await _fetch_shioaji_sdk_snapshots(syms)
+    if sdk_data:
+        return JSONResponse(
+            {"ok": True, "source": "永豐金 Shioaji Python SDK 即時", "source_engine": "shioaji_sdk", "server_time": tw_now_str(), "quotes": sdk_data},
             headers={"Cache-Control": "no-store"},
         )
     # Automatic seamless fallback to official TWSE/TPEx MIS real-time quotes

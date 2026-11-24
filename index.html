@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.3 · 版本說明
+              v3.13.4 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2766,6 +2766,67 @@
               </div>
             </div>
             <aside id="handshakeInspector" class="inspector-box"></aside>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2.5 Auto-Trading Live/SIM War Room Dashboard (One-Click Auto Quant + Total PnL + Live Trades) -->
+      <article id="autoTradeWarDashboard" class="card" style="border:1.5px solid #cbd5e1;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#0f172a;color:#f8fafc;border-radius:12px 12px 0 0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:15px;font-weight:900;">🤖 自動交易實盤戰情室</span>
+            <span id="atDashEnvBadge" class="badge mono" style="background:#1e3a8a;color:#bfdbfe;border:1px solid #3b82f6;">🟢 SIM 模擬單</span>
+            <span id="atDashEngineBadge" class="badge mono" style="background:#334155;color:#cbd5e1;">待命</span>
+            <span id="atDashUpdateTs" class="mono" style="font-size:11px;color:#94a3b8;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btnAtOneClickAuto" class="btn btn-sm" style="background:#dc2626;color:#fff;border-color:#ef4444;font-weight:900;padding:6px 14px;">▶ 一鍵啟動全自動量化交易</button>
+            <button type="button" id="btnAtScanNow" class="btn btn-sm" style="background:#1e293b;color:#38bdf8;border-color:#334155;">⚡ 立即掃描一輪</button>
+            <button type="button" id="btnAtSwitchEnv" class="btn btn-sm" style="background:#1e293b;color:#fde68a;border-color:#334155;">切換 SIM / LIVE</button>
+            <button type="button" id="btnAtOpenWarModal" class="btn btn-sm" style="background:#7f1d1d;color:#fecaca;border-color:#b91c1c;">⚔️ 策略與止損參數</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:12px 14px;">
+          <!-- 4 Core PnL & Status KPIs -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:12px;">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:700;">總淨損益（已實現 ＋ 未實現）</div>
+              <div id="atKpiTotalPnl" class="mono" style="font-size:20px;font-weight:900;margin-top:2px;">$0</div>
+              <div id="atKpiTotalPnlSub" class="mono" style="font-size:11px;color:#64748b;margin-top:2px;">報酬率 0.00%</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:700;">已實現淨損益 ／ 未實現浮動</div>
+              <div id="atKpiRealUnreal" class="mono" style="font-size:15px;font-weight:800;margin-top:4px;">$0 / $0</div>
+              <div id="atKpiRebateSub" class="mono" style="font-size:11px;color:#0f766e;margin-top:2px;">本月手續費折讓 +$0</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:700;">目前持倉 ／ 市值 ／ 勝率</div>
+              <div id="atKpiPosWin" class="mono" style="font-size:15px;font-weight:800;margin-top:4px;">0 檔 · $0</div>
+              <div id="atKpiWinRateSub" class="mono" style="font-size:11px;color:#64748b;margin-top:2px;">平倉勝率 -- · 總委託 0 筆</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:700;">交易買賣統計（SIM／LIVE 同邏輯）</div>
+              <div id="atKpiBuySellCnt" class="mono" style="font-size:15px;font-weight:800;margin-top:4px;">買 0 筆 · 賣 0 筆</div>
+              <div id="atKpiAutoRuleSub" style="font-size:11px;color:#64748b;margin-top:2px;">SMC+FVG+AI · 動態止盈止損</div>
+            </div>
+          </div>
+
+          <!-- Dual-column Live Positions & Buy/Sell Trade Log -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px;">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;max-height:220px;overflow:auto;">
+              <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px;display:flex;justify-content:space-between;">
+                <span>📌 目前持倉與即時止盈止損追蹤</span>
+                <span style="font-size:10.5px;color:#64748b;font-weight:600;">含一鍵平倉</span>
+              </div>
+              <div id="atDashPositionsBox" style="font-size:12px;color:#64748b;">尚無持倉部位</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;max-height:220px;overflow:auto;">
+              <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:6px;display:flex;justify-content:space-between;">
+                <span>🧾 即時交易買賣紀錄（SIM / LIVE）</span>
+                <span style="font-size:10.5px;color:#64748b;font-weight:600;">最新 15 筆</span>
+              </div>
+              <div id="atDashOrdersBox" style="font-size:12px;color:#64748b;">尚無交易買賣紀錄</div>
+            </div>
           </div>
         </div>
       </article>
@@ -5283,16 +5344,17 @@
         <div class="form-grid-2">
           <div>
             <label class="field-label" for="shioajiSimApiKeyInput">SIM API Key（行情／模擬專用）</label>
-            <input id="shioajiSimApiKeyInput" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM API Key" autocomplete="off" />
+            <input id="shioajiSimApiKeyInput" name="sj_sim_ak_isolated" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM API Key" autocomplete="new-password" data-lpignore="true" />
           </div>
           <div>
             <label class="field-label" for="shioajiSimSecretKeyInput">SIM Secret Key（行情／模擬專用）</label>
-            <input id="shioajiSimSecretKeyInput" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM Secret Key" autocomplete="off" />
+            <input id="shioajiSimSecretKeyInput" name="sj_sim_sk_isolated" type="password" class="input mono" placeholder="選填：貼上永豐金 SIM Secret Key" autocomplete="new-password" data-lpignore="true" />
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <input id="shioajiHttpUrlInput" type="url" class="input mono" style="flex:1;min-width:180px;" value="http://127.0.0.1:8080" placeholder="Shioaji Pro HTTP 網址（預設 http://127.0.0.1:8080）" />
+          <input id="shioajiHttpUrlInput" type="url" class="input mono" style="flex:1;min-width:160px;" value="http://127.0.0.1:8080" placeholder="Shioaji Pro HTTP 網址（預設 http://127.0.0.1:8080）" />
           <button type="button" id="btnSaveShioajiSimConfig" class="btn btn-sm btn-teal">儲存並測試 SIM 秒級行情</button>
+          <button type="button" id="btnClearShioajiSimConfig" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;">🗑️ 清除 SIM Token</button>
         </div>
         <div style="font-size:11px;color:#166534;line-height:1.45;">
           💡 在 <strong>SIM 模擬模式</strong> 下：未填 Token 仍可免費抓取 TWSE/TPEx 官方秒級即時行情（支援 1 秒／3 秒刷新）；填入永豐金 SIM Token 或啟動 <code class="mono">shioaji server start</code> 即可啟用永豐金專屬毫秒級串流，且 <strong>絕不會解鎖正式實盤下單</strong>。
@@ -5304,16 +5366,19 @@
         <div class="form-grid-2">
           <div>
             <label class="field-label" for="shioajiApiKeyInput">LIVE 正式單 API Key</label>
-            <input id="shioajiApiKeyInput" type="password" class="input mono" placeholder="貼上永豐金正式單 API Key" autocomplete="off" />
+            <input id="shioajiApiKeyInput" name="sj_live_ak_isolated" type="password" class="input mono" placeholder="貼上永豐金正式單 API Key" autocomplete="new-password" data-lpignore="true" />
           </div>
           <div>
             <label class="field-label" for="shioajiSecretKeyInput">LIVE 正式單 Secret Key</label>
-            <input id="shioajiSecretKeyInput" type="password" class="input mono" placeholder="貼上永豐金正式單 Secret Key" autocomplete="off" />
+            <input id="shioajiSecretKeyInput" name="sj_live_sk_isolated" type="password" class="input mono" placeholder="貼上永豐金正式單 Secret Key" autocomplete="new-password" data-lpignore="true" />
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
           <span style="font-size:11px;color:#991b1b;">需搭配正式單 API Token ＋ CA 憑證（<code class="mono">Sinopac.pfx</code>）方可切換實盤。</span>
-          <button type="button" id="btnSaveShioajiConfig" class="btn btn-sm btn-primary">儲存並驗證 LIVE 正式單 Token</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btnSaveShioajiConfig" class="btn btn-sm btn-primary">儲存並驗證 LIVE 正式單 Token</button>
+            <button type="button" id="btnClearShioajiLiveConfig" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;">🗑️ 清除 LIVE Token</button>
+          </div>
         </div>
       </div>
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;cursor:pointer;">
@@ -5324,9 +5389,12 @@
         <input id="liveConfirm2" type="checkbox" style="margin-top:3px;" />
         我已設定有效永豐金 Shioaji API Token 與憑證，確認將由「模擬下單 SIM」切換為「真實下單 LIVE」並自負盈虧。
       </label>
-      <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:6px;">
-        <button class="btn" data-close-modal="liveSafetyModal">維持模擬盤 SIM</button>
-        <button id="btnConfirmLiveMode" class="btn btn-danger">確認切換為真實下單 LIVE</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:6px;flex-wrap:wrap;">
+        <button type="button" id="btnClearAllShioajiTokens" class="btn btn-sm" style="background:#1e293b;color:#fca5a5;border-color:#475569;">🧹 一鍵清除全部 Token（含記憶）</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" data-close-modal="liveSafetyModal">維持模擬盤 SIM</button>
+          <button id="btnConfirmLiveMode" class="btn btn-danger">確認切換為真實下單 LIVE</button>
+        </div>
       </div>
     </div>
   </div>
@@ -10781,11 +10849,60 @@
       }
     }
 
+    function hasValidSimToken() {
+      const sj = state.ext?.shioaji || {};
+      const localHas = Boolean((sj.simApiKey || '').trim() && (sj.simSecretKey || '').trim());
+      const serverHas = Boolean(state.backendHealth?.sim_token_configured);
+      return localHas || serverHas;
+    }
+
     function hasValidShioajiToken() {
       const sj = state.ext?.shioaji || {};
       const localHas = Boolean((sj.apiKey || '').trim() && (sj.secretKey || '').trim());
-      const serverHas = Boolean(state.backendHealth?.shioaji_configured);
+      const serverHas = Boolean(state.backendHealth?.live_token_configured ?? state.backendHealth?.shioaji_configured);
       return localHas || serverHas;
+    }
+
+    async function clearShioajiTokens(scope = 'all') {
+      const sc = String(scope || 'all').toLowerCase();
+      if (!state.ext.shioaji) state.ext.shioaji = { simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true };
+      const simAkIn = document.getElementById('shioajiSimApiKeyInput');
+      const simSkIn = document.getElementById('shioajiSimSecretKeyInput');
+      const akIn = document.getElementById('shioajiApiKeyInput');
+      const skIn = document.getElementById('shioajiSecretKeyInput');
+      if (sc === 'sim' || sc === 'all') {
+        state.ext.shioaji.simApiKey = '';
+        state.ext.shioaji.simSecretKey = '';
+        if (simAkIn) simAkIn.value = '';
+        if (simSkIn) simSkIn.value = '';
+        if (state.backendHealth) state.backendHealth.sim_token_configured = false;
+      }
+      if (sc === 'live' || sc === 'all') {
+        state.ext.shioaji.apiKey = '';
+        state.ext.shioaji.secretKey = '';
+        state.ext.shioaji.simulation = true;
+        if (akIn) akIn.value = '';
+        if (skIn) skIn.value = '';
+        if (state.backendHealth) {
+          state.backendHealth.live_token_configured = false;
+          state.backendHealth.shioaji_configured = false;
+        }
+        if (state.envMode === 'LIVE') setTradingMode('SIM');
+      }
+      persistState();
+      const apiBase = getApiBase();
+      if (apiBase) {
+        try {
+          await fetch(`${apiBase}/api/v1/shioaji/clear`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scope: sc })
+          });
+        } catch (e) {}
+      }
+      const lbl = sc === 'sim' ? 'SIM 模擬 Token' : (sc === 'live' ? 'LIVE 正式單 Token' : '全部 SIM／LIVE Token');
+      showToast('Token 已徹底清除', `已消除 ${lbl}（含輸入框、本機記憶與後端快取），避免憑證流出。`, 'success');
+      openLiveSafetyModal();
     }
 
     function openLiveSafetyModal() {
@@ -10796,11 +10913,12 @@
       const akIn = document.getElementById('shioajiApiKeyInput');
       const skIn = document.getElementById('shioajiSecretKeyInput');
       const urlIn = document.getElementById('shioajiHttpUrlInput');
-      if (simAkIn && sj.simApiKey && !simAkIn.value) simAkIn.value = sj.simApiKey;
-      if (simSkIn && sj.simSecretKey && !simSkIn.value) simSkIn.value = sj.simSecretKey;
-      if (akIn && sj.apiKey && !akIn.value) akIn.value = sj.apiKey;
-      if (skIn && sj.secretKey && !skIn.value) skIn.value = sj.secretKey;
-      if (urlIn && sj.httpUrl) urlIn.value = sj.httpUrl;
+      // Always sync inputs strictly from isolated state fields (prevent browser autofill mix-up)
+      if (simAkIn) simAkIn.value = sj.simApiKey || '';
+      if (simSkIn) simSkIn.value = sj.simSecretKey || '';
+      if (akIn) akIn.value = sj.apiKey || '';
+      if (skIn) skIn.value = sj.secretKey || '';
+      if (urlIn) urlIn.value = sj.httpUrl || 'http://127.0.0.1:8080';
       if (box) {
         const backendOk = state.backendDetected;
         let remoteLoggedIn = false;
@@ -10810,19 +10928,21 @@
           remoteLoggedIn = Boolean(rc && rc.loggedIn && rc.accountId);
           remoteAcctName = rc?.accountId || '';
         } catch (e) {}
-        const simOk = Boolean((sj.simApiKey || '').trim() && (sj.simSecretKey || '').trim());
+        const simOk = hasValidSimToken();
         const sjOk = hasValidShioajiToken();
+        const sameKeyWarn = Boolean((sj.simApiKey || '').trim() && (sj.apiKey || '').trim() && sj.simApiKey.trim() === sj.apiKey.trim());
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
         const connHtml = backendOk
           ? '<strong style="color:#15803d;">✓ 已連線本機／雲端 server.py（完整即時串流）</strong>'
           : (remoteLoggedIn
-              ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)} · 免架站 Private Gist，手機 4G/5G 獨立模式）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">手機獨立網路下 K 線直連 FinMind 官方真實數據，並自動同步電腦端最新報價與推播設定；僅送出「正式實盤 LIVE 單」時才需要公開 HTTPS server.py。</div>`
+              ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)} · 免架站 Private Gist，手機 4G/5G 獨立模式）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">手機獨立網路下 K 線直連官方真實數據，並自動同步電腦端最新報價與推播設定；僅送出「正式實盤 LIVE 單」時才需要公開 HTTPS server.py。</div>`
               : '<strong>✗ 尚未連線 server.py（若手機與電腦不同網路，建議使用「遠端共享帳號」免架站同步）</strong>');
         box.innerHTML = `
           <div>1. 雲端／後端連線：${connHtml}</div>
-          <div>2. SIM 模擬行情 Token（選填）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設使用官方真實數據與遠端共享報價）'}</strong></div>
-          <div>3. LIVE 正式單 API Token（必要）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 LIVE 正式單 Token' : '✗ 尚未設定（無正式單 Token 嚴禁切換 LIVE）'}</strong></div>
+          <div>2. SIM 模擬行情 Token（選填·獨立）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設使用官方真實數據與遠端共享報價）'}</strong></div>
+          <div>3. LIVE 正式單 API Token（必要·獨立）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 LIVE 正式單 Token' : '✗ 尚未設定（無正式單 Token 嚴禁切換 LIVE）'}</strong></div>
           <div>4. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
+          ${sameKeyWarn ? '<div style="margin-top:4px;color:#b45309;font-weight:800;">⚠️ 偵測到 SIM 與 LIVE 填入了相同的 API Key，建議分開管理或點下方清除！</div>' : ''}
         `;
       }
       const c1 = document.getElementById('liveConfirm1');
@@ -11120,6 +11240,26 @@
       }
     }
 
+    function removeStockFromWatchlist(symbol) {
+      const sym = String(symbol || '').trim().toUpperCase();
+      if (!sym) return;
+      state.watchlist = (state.watchlist || []).filter(w => w.symbol !== sym);
+      (state.ext?.groups || []).forEach(g => {
+        if (!g.builtIn && Array.isArray(g.symbols)) {
+          g.symbols = g.symbols.filter(s => s !== sym);
+        }
+      });
+      if (state.activeSymbol === sym && state.watchlist.length > 0) {
+        state.activeSymbol = state.watchlist[0].symbol;
+      }
+      persistState();
+      renderWatchlistPills();
+      if (window.SHL_EXT && typeof window.SHL_EXT.renderMitakeBoard === 'function') window.SHL_EXT.renderMitakeBoard();
+      renderActiveStockHeaderAndOhlcv();
+      if (state.chartMode === 'raw') renderRawPriceChart();
+      showToast('已移出自選股', `${sym} 已從自選清單移除並同步記憶。`, 'info');
+    }
+
     function renderWatchlistPills() {
       const container = document.getElementById('watchlistPills');
       if (!container) return;
@@ -11130,16 +11270,26 @@
           ? `<span class="pill-chg mono ${sig.changePct >= 0 ? 'text-up' : 'text-down'}">${sig.changePct >= 0 ? '+' : ''}${sig.changePct}%</span>`
           : `<span class="pill-chg mono" style="opacity:0.55;">--</span>`;
         return `
-          <button type="button" class="stock-pill ${active ? 'active' : ''}" data-select-symbol="${escapeHtml(w.symbol)}">
+          <span class="stock-pill ${active ? 'active' : ''}" data-select-symbol="${escapeHtml(w.symbol)}" style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
             <span class="mono" style="font-weight:800;">${escapeHtml(w.symbol)}</span>
             <span>${escapeHtml(w.name)}</span>
             ${active ? '' : chgHtml}
-          </button>
+            <button type="button" data-remove-symbol="${escapeHtml(w.symbol)}" title="移出自選股 ${escapeHtml(w.symbol)}" style="border:none;background:transparent;color:inherit;opacity:0.65;cursor:pointer;padding:0 2px;font-size:13px;line-height:1;font-weight:900;">×</button>
+          </span>
         `;
       }).join('');
 
       container.querySelectorAll('[data-select-symbol]').forEach(btn => {
-        btn.addEventListener('click', () => selectStock(btn.dataset.selectSymbol));
+        btn.addEventListener('click', (e) => {
+          if (e.target.closest('[data-remove-symbol]')) return;
+          selectStock(btn.dataset.selectSymbol);
+        });
+      });
+      container.querySelectorAll('[data-remove-symbol]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeStockFromWatchlist(btn.dataset.removeSymbol);
+        });
       });
     }
 
@@ -16783,15 +16933,55 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         tabsEl.innerHTML = state.ext.groups.map(g => {
           const active = g.id === state.ext.activeGroupId;
           const cnt = g.builtIn ? state.watchlist.length : (g.symbols?.length || 0);
-          return `<button type="button" class="mitake-group-pill ${active ? 'active' : ''}" data-grp-id="${escapeHtml(g.id)}">${escapeHtml(g.name)} (${cnt})</button>`;
-        }).join('');
+          const delHtml = g.builtIn ? '' : ` <span data-del-grp="${escapeHtml(g.id)}" title="刪除此群組" style="margin-left:4px;opacity:0.75;font-weight:900;">×</span>`;
+          return `<button type="button" class="mitake-group-pill ${active ? 'active' : ''}" data-grp-id="${escapeHtml(g.id)}">${escapeHtml(g.name)} (${cnt})${delHtml}</button>`;
+        }).join('') + `<button type="button" id="btnMitakeAddStockToGrp" class="mitake-group-pill" style="background:#065f46;border-color:#10b981;color:#ecfdf5;">＋ 加股到本組</button>`;
 
         tabsEl.querySelectorAll('[data-grp-id]').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', (e) => {
+            const delEl = e.target.closest('[data-del-grp]');
+            if (delEl) {
+              e.stopPropagation();
+              const delId = delEl.dataset.delGrp;
+              state.ext.groups = state.ext.groups.filter(g => g.id !== delId);
+              if (state.ext.activeGroupId === delId) state.ext.activeGroupId = state.ext.groups[0]?.id || 'all';
+              persistState();
+              renderMitakeBoard();
+              showToast('已刪除自選群組', '已移除該自訂組合並同步儲存。', 'info');
+              return;
+            }
             state.ext.activeGroupId = btn.dataset.grpId;
             persistState();
             renderMitakeBoard();
           });
+        });
+        document.getElementById('btnMitakeAddStockToGrp')?.addEventListener('click', async () => {
+          const raw = window.prompt('輸入要加入本群組的股票代號或中文名（可逗號分隔多檔，如 2330, 2317, 2454）：');
+          if (!raw || !raw.trim()) return;
+          const grpCur = getActiveGroup();
+          const parts = raw.split(/[,，\s]+/).map(s => s.trim()).filter(Boolean);
+          let added = 0;
+          for (const part of parts) {
+            const resolved = typeof resolveSymbolInput === 'function' ? await resolveSymbolInput(part) : null;
+            const sym = (resolved?.symbol || part).toUpperCase();
+            if (!sym) continue;
+            const name = resolved?.name || getStockMeta(sym)?.name || sym;
+            if (!state.watchlist.some(w => w.symbol === sym)) {
+              state.watchlist.push({ symbol: sym, name, yahooSymbol: resolved?.yahooSymbol || `${sym}.TW`, finmindId: sym, dataset: 'TaiwanStockPrice', industry: resolved?.industry || '台股' });
+            }
+            if (grpCur && !grpCur.builtIn) {
+              grpCur.symbols = Array.isArray(grpCur.symbols) ? grpCur.symbols : [];
+              if (!grpCur.symbols.includes(sym)) grpCur.symbols.push(sym);
+            }
+            added++;
+          }
+          if (added > 0) {
+            persistState();
+            renderWatchlistPills();
+            renderMitakeBoard();
+            if (typeof refreshRealtimeQuotes === 'function') refreshRealtimeQuotes(true);
+            showToast('已加入自選組合', `已加入 ${added} 檔標的至「${grpCur?.name || '全部自選'}」。`, 'success');
+          }
         });
 
         const grp = getActiveGroup();
@@ -16806,7 +16996,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         const syms = getVisibleGroupSymbols();
         if (!syms.length) {
-          gridEl.innerHTML = `<div style="grid-column:1/-1;padding:18px;text-align:center;color:#94a3b8;font-size:12px;">此群組尚無標的，點擊上方「📷 截圖匯入群組」或「查詢加入」新增台股。</div>`;
+          gridEl.innerHTML = `<div style="grid-column:1/-1;padding:18px;text-align:center;color:#94a3b8;font-size:12px;">此群組尚無標的，點擊上方「＋ 加股到本組」、「📷 截圖匯入群組」或「查詢加入」新增台股。</div>`;
         } else {
           gridEl.innerHTML = syms.map(sym => {
             const meta = getStockMeta(sym);
@@ -16821,10 +17011,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             const tickV = q?.tickVolume ? fmtInt(q.tickVolume) : '--';
             const totLots = q?.volumeLots ? fmtInt(q.volumeLots) : (q?.volume ? fmtInt(Math.round(q.volume / 1000)) : '--');
             return `
-              <button type="button" class="mitake-tile ${limitCls} ${actCls}" data-mitake-sym="${escapeHtml(sym)}">
+              <div class="mitake-tile ${limitCls} ${actCls}" data-mitake-sym="${escapeHtml(sym)}" style="cursor:pointer;position:relative;">
                 <div class="mitake-tile-head">
                   <span class="mitake-tile-name">${escapeHtml(meta.name || sym)}</span>
-                  <span class="mitake-tile-code mono">${escapeHtml(sym)}</span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;">
+                    <span class="mitake-tile-code mono">${escapeHtml(sym)}</span>
+                    <button type="button" data-mitake-del="${escapeHtml(sym)}" title="${grp && !grp.builtIn ? '從本群組移除' : '移出自選股'}" style="border:none;background:rgba(15,23,42,0.55);color:#cbd5e1;border-radius:4px;width:18px;height:18px;line-height:16px;font-size:12px;font-weight:900;cursor:pointer;padding:0;">×</button>
+                  </span>
                 </div>
                 <div class="mitake-tile-mid">
                   <span class="mitake-tile-price mono ${colorCls}">${hasP ? fmtNum(q.price, 2) : '--'}</span>
@@ -16836,12 +17029,29 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                   <span>單 <strong style="color:#e2e8f0;">${tickV}</strong></span>
                   <span>總 <strong style="color:#fbbf24;">${totLots}</strong></span>
                 </div>
-              </button>
+              </div>
             `;
           }).join('');
 
           gridEl.querySelectorAll('[data-mitake-sym]').forEach(el => {
-            el.addEventListener('click', () => selectStock(el.dataset.mitakeSym));
+            el.addEventListener('click', (e) => {
+              if (e.target.closest('[data-mitake-del]')) return;
+              selectStock(el.dataset.mitakeSym);
+            });
+          });
+          gridEl.querySelectorAll('[data-mitake-del]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const sym = btn.dataset.mitakeDel;
+              if (grp && !grp.builtIn) {
+                grp.symbols = (grp.symbols || []).filter(s => s !== sym);
+                persistState();
+                renderMitakeBoard();
+                showToast('已從群組移除', `${sym} 已從「${grp.name}」移除。`, 'info');
+              } else {
+                removeStockFromWatchlist(sym);
+              }
+            });
           });
         }
 
@@ -19220,7 +19430,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
         document.getElementById('sjIndSearchInput')?.addEventListener('input', e => renderIndicatorPicker(e.target.value));
 
-        // v3.11.1: Separate SIM Market/Sim API Token save & live test (never unlocks LIVE orders)
+        // v3.11.1 / v3.13.4: Separate SIM Market/Sim API Token save & live test (strictly isolated from LIVE)
         document.getElementById('btnSaveShioajiSimConfig')?.addEventListener('click', async () => {
           const apiBase = getApiBase();
           const simApiKey = (document.getElementById('shioajiSimApiKeyInput')?.value || '').trim();
@@ -19237,6 +19447,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             return;
           }
           try {
+            await fetch(`${apiBase}/api/v1/shioaji/configure`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sim_api_key: simApiKey, sim_secret_key: simSecretKey, http_url: httpUrl, simulation: state.envMode !== 'LIVE' })
+            });
             const r = await fetch(`${apiBase}/api/v1/shioaji/test-token`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -19244,31 +19459,44 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             });
             if (r.ok) {
               const j = await r.json();
+              if (state.backendHealth && simApiKey && simSecretKey) state.backendHealth.sim_token_configured = true;
               showToast(j.ok ? 'SIM 秒級行情連線驗證完成' : 'SIM 行情提示', j.message || '已儲存 SIM 模擬行情 Token（與正式單完全隔離）。', j.ok ? 'success' : 'info');
             }
           } catch (e) {}
           openLiveSafetyModal();
         });
 
-        // Enhance Shioaji LIVE Token Save button to also invoke live /api/v1/shioaji/test-token
+        // Enhance Shioaji LIVE Token Save button (strictly LIVE only)
         document.getElementById('btnSaveShioajiConfig')?.addEventListener('click', async () => {
           const apiBase = getApiBase();
           const apiKey = (document.getElementById('shioajiApiKeyInput')?.value || '').trim();
           const secretKey = (document.getElementById('shioajiSecretKeyInput')?.value || '').trim();
           const httpUrl = (document.getElementById('shioajiHttpUrlInput')?.value || 'http://127.0.0.1:8080').trim();
-          if (!apiBase || !apiKey || !secretKey) return;
+          if (!state.ext.shioaji) state.ext.shioaji = { simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl, simulation: true };
+          state.ext.shioaji.apiKey = apiKey;
+          state.ext.shioaji.secretKey = secretKey;
+          state.ext.shioaji.httpUrl = httpUrl;
+          persistState();
+          if (!apiBase || !apiKey || !secretKey) { openLiveSafetyModal(); return; }
           try {
             const r = await fetch(`${apiBase}/api/v1/shioaji/test-token`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ api_key: apiKey, secret_key: secretKey, http_url: httpUrl, simulation: state.envMode !== 'LIVE' })
+              body: JSON.stringify({ api_key: apiKey, secret_key: secretKey, http_url: httpUrl, simulation: false })
             });
             if (r.ok) {
               const j = await r.json();
+              if (state.backendHealth) state.backendHealth.live_token_configured = true;
               showToast(j.ok ? '永豐金 LIVE 正式單 Token 驗證結果' : '永豐金驗證提示', j.message || '已完成連線測試', j.ok ? 'success' : 'warn');
             }
           } catch (e) {}
+          openLiveSafetyModal();
         });
+
+        // v3.13.4: Token purge buttons (clear inputs + localStorage + backend memory)
+        document.getElementById('btnClearShioajiSimConfig')?.addEventListener('click', () => clearShioajiTokens('sim'));
+        document.getElementById('btnClearShioajiLiveConfig')?.addEventListener('click', () => clearShioajiTokens('live'));
+        document.getElementById('btnClearAllShioajiTokens')?.addEventListener('click', () => clearShioajiTokens('all'));
 
         window.SHL_EXT.renderCapitalFlow();
         updateSimSessionBadge();
@@ -20045,8 +20273,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.3';
+      const CURRENT_VERSION = 'v3.13.4';
       const HISTORY = [
+        {
+          ver: 'v3.13.4',
+          items: [
+            '修正永豐金 SIM 與 LIVE Token 儲存與比對混用問題（獨立比對 hasValidSimToken / hasValidShioajiToken，並停用瀏覽器密碼自動填入干擾），新增 SIM／LIVE 個別清除與「🧹 一鍵清除全部 Token」按鈕，同步消除輸入框、localStorage 本機記憶與後端快取（POST /api/v1/shioaji/clear），避免憑證流出',
+            '強化自選股與自訂組合管理：頂部自選股膠囊與深色行情看板每張卡片皆新增 × 一鍵刪除鍵，群組列新增「＋ 加股到本組」與自訂群組 × 刪除鍵，支援自由新增、刪除與搭配多組自選組合',
+            '新增常駐「🤖 自動交易實盤戰情室（SIM / LIVE 全支援）」：一鍵啟動／停止全自動量化交易，即時呈現總淨損益（已實現＋未實現）、勝率、本月手續費折讓、目前持倉與 SL/TP 追蹤（含一鍵平倉）及最新 15 筆買賣流水紀錄'
+          ]
+        },
         {
           ver: 'v3.13.3',
           items: [
@@ -21046,9 +21282,212 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode, aiTechScore, placeLong, manageStops, onSyncApplied };
     })();
 
+    // =========================================================================
+    // v3.13.4 自動交易實盤戰情室 (window.SHL_AUTO_DASH · SIM/LIVE 全支援)
+    // =========================================================================
+    window.SHL_AUTO_DASH = (function createAutoTradeDashboard() {
+      const $ = id => document.getElementById(id);
+      const esc = s => (typeof escapeHtml === 'function' ? escapeHtml(String(s ?? '')) : String(s ?? ''));
+      const pnlColor = v => (v > 0 ? '#dc2626' : (v < 0 ? '#059669' : '#334155'));
+      const fmtSignedMoney = v => `${v > 0 ? '+' : (v < 0 ? '-' : '')}$${Math.round(Math.abs(v)).toLocaleString()}`;
+
+      function isAutoRunning() {
+        const warAuto = Boolean(window.SHL_WAR && window.SHL_WAR.cfg().autoTrade);
+        const agentAuto = Boolean(state.agentConfig && state.agentConfig.autoExecute);
+        return warAuto || agentAuto;
+      }
+
+      function render() {
+        if (!$('autoTradeWarDashboard')) return;
+        const isLive = state.envMode === 'LIVE';
+        const running = isAutoRunning();
+        const envEl = $('atDashEnvBadge');
+        if (envEl) {
+          envEl.textContent = isLive ? '🔴 LIVE 永豐實盤（API+憑證）' : '🟢 SIM 模擬單';
+          envEl.style.background = isLive ? '#7f1d1d' : '#1e3a8a';
+          envEl.style.color = isLive ? '#fecaca' : '#bfdbfe';
+          envEl.style.borderColor = isLive ? '#ef4444' : '#3b82f6';
+        }
+        const engEl = $('atDashEngineBadge');
+        if (engEl) {
+          engEl.textContent = running ? '⚡ 全自動量化運行中' : '待命';
+          engEl.style.background = running ? '#065f46' : '#334155';
+          engEl.style.color = running ? '#a7f3d0' : '#cbd5e1';
+        }
+        const btnAuto = $('btnAtOneClickAuto');
+        if (btnAuto) {
+          btnAuto.textContent = running ? '⏹ 停止全自動量化交易' : '▶ 一鍵啟動全自動量化交易';
+          btnAuto.style.background = running ? '#059669' : '#dc2626';
+          btnAuto.style.borderColor = running ? '#10b981' : '#ef4444';
+        }
+        const tsEl = $('atDashUpdateTs');
+        if (tsEl) tsEl.textContent = `更新 ${nowTwTime()}`;
+
+        const positions = state.positions || [];
+        const orders = state.orders || [];
+        const stops = (window.SHL_WAR && window.SHL_WAR.cfg().stops) || {};
+
+        let marketVal = 0, costBasis = 0, unrealPnl = 0;
+        positions.forEach(p => {
+          const curPx = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
+          const mv = curPx * p.shares;
+          const cb = Number(p.avgPrice || 0) * p.shares;
+          marketVal += mv;
+          costBasis += cb;
+          unrealPnl += Math.round((curPx - Number(p.avgPrice || 0)) * p.shares);
+        });
+
+        let realizedPnl = 0, closedCnt = 0, winCnt = 0, buyCnt = 0, sellCnt = 0;
+        orders.forEach(o => {
+          if (o.side === 'BUY') buyCnt++;
+          if (o.side === 'SELL') {
+            sellCnt++;
+            if (typeof o.realized_pnl_twd === 'number') {
+              realizedPnl += o.realized_pnl_twd;
+              closedCnt++;
+              if (o.realized_pnl_twd > 0) winCnt++;
+            }
+          }
+        });
+        const totalPnl = realizedPnl + unrealPnl;
+        const baseCap = Number(window.SHL_WAR?.cfg()?.capital || 1000000);
+        const totalPct = baseCap > 0 ? (totalPnl / baseCap * 100) : 0;
+        const monthKey = nowTwDateTime().slice(0, 7);
+        const monthRebate = (state.ext?.monthlyRebateLedger && state.ext.monthlyRebateLedger[monthKey]) || 0;
+
+        const kTot = $('atKpiTotalPnl');
+        if (kTot) { kTot.textContent = fmtSignedMoney(totalPnl); kTot.style.color = pnlColor(totalPnl); }
+        const kTotSub = $('atKpiTotalPnlSub');
+        if (kTotSub) kTotSub.textContent = `報酬率 ${totalPct >= 0 ? '+' : ''}${totalPct.toFixed(2)}%（本金 $${baseCap.toLocaleString()}）`;
+        const kRU = $('atKpiRealUnreal');
+        if (kRU) kRU.innerHTML = `<span style="color:${pnlColor(realizedPnl)}">${fmtSignedMoney(realizedPnl)}</span> / <span style="color:${pnlColor(unrealPnl)}">${fmtSignedMoney(unrealPnl)}</span>`;
+        const kReb = $('atKpiRebateSub');
+        if (kReb) kReb.textContent = `本月手續費折讓 +$${Math.round(monthRebate).toLocaleString()}`;
+        const kPW = $('atKpiPosWin');
+        if (kPW) kPW.textContent = `${positions.length} 檔 · $${Math.round(marketVal).toLocaleString()}`;
+        const kWR = $('atKpiWinRateSub');
+        if (kWR) kWR.textContent = `平倉勝率 ${closedCnt ? Math.round(winCnt / closedCnt * 100) + '%' : '--'} (${winCnt}/${closedCnt}) · 總委託 ${orders.length} 筆`;
+        const kBS = $('atKpiBuySellCnt');
+        if (kBS) kBS.textContent = `買 ${buyCnt} 筆 · 賣 ${sellCnt} 筆`;
+
+        const posBox = $('atDashPositionsBox');
+        if (posBox) {
+          if (!positions.length) {
+            posBox.innerHTML = '<div style="padding:10px;text-align:center;color:#94a3b8;">尚無持倉部位（點上方「▶ 一鍵啟動全自動量化交易」或手動下單）</div>';
+          } else {
+            posBox.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+              <thead><tr style="border-bottom:1px solid #e2e8f0;color:#64748b;"><th style="text-align:left;padding:4px;">標的</th><th style="text-align:right;padding:4px;">股數</th><th style="text-align:right;padding:4px;">均價/現價</th><th style="text-align:right;padding:4px;">未實現損益</th><th style="text-align:right;padding:4px;">SL / TP</th><th style="text-align:right;padding:4px;">操作</th></tr></thead>
+              <tbody>${positions.map(p => {
+                const curPx = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
+                const pnl = Math.round((curPx - p.avgPrice) * p.shares);
+                const pct = p.avgPrice > 0 ? ((curPx - p.avgPrice) / p.avgPrice * 100) : 0;
+                const st = stops[p.symbol];
+                const slTp = st ? `${Number(st.sl).toFixed(1)} / ${Number(st.tp).toFixed(1)}` : '--';
+                return `<tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:4px;font-weight:800;cursor:pointer;" data-at-sel="${esc(p.symbol)}">${esc(p.symbol)} ${esc(p.name || '')}</td>
+                  <td class="mono" style="text-align:right;padding:4px;">${fmtInt(p.shares)}</td>
+                  <td class="mono" style="text-align:right;padding:4px;">${fmtNum(p.avgPrice, 2)} / <b>${fmtNum(curPx, 2)}</b></td>
+                  <td class="mono" style="text-align:right;padding:4px;font-weight:800;color:${pnlColor(pnl)};">${fmtSignedMoney(pnl)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</td>
+                  <td class="mono" style="text-align:right;padding:4px;font-size:11px;color:#475569;">${slTp}</td>
+                  <td style="text-align:right;padding:4px;"><button type="button" class="btn btn-sm" data-at-close="${esc(p.symbol)}" style="padding:2px 7px;font-size:10.5px;background:#fee2e2;color:#991b1b;border-color:#fca5a5;">平倉</button></td>
+                </tr>`;
+              }).join('')}</tbody></table>`;
+            posBox.querySelectorAll('[data-at-sel]').forEach(el => el.addEventListener('click', () => selectStock(el.dataset.atSel)));
+            posBox.querySelectorAll('[data-at-close]').forEach(btn => {
+              btn.addEventListener('click', async () => {
+                const sym = btn.dataset.atClose;
+                const pos = (state.positions || []).find(x => x.symbol === sym);
+                if (!pos) return;
+                const px = Number(getQuote(sym)?.price || pos.avgPrice || 0);
+                await executeOrder({ symbol: sym, side: 'SELL', qty: pos.shares, unit: '股', price: px, source: 'WAR_DASH_CLOSE' });
+                if (window.SHL_WAR && window.SHL_WAR.cfg().stops[sym]) { delete window.SHL_WAR.cfg().stops[sym]; persistState(); }
+                render();
+              });
+            });
+          }
+        }
+
+        const ordBox = $('atDashOrdersBox');
+        if (ordBox) {
+          if (!orders.length) {
+            ordBox.innerHTML = '<div style="padding:10px;text-align:center;color:#94a3b8;">尚無買賣成交紀錄</div>';
+          } else {
+            ordBox.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+              <thead><tr style="border-bottom:1px solid #e2e8f0;color:#64748b;"><th style="text-align:left;padding:4px;">時間 / 環境</th><th style="text-align:left;padding:4px;">方向 / 標的</th><th style="text-align:right;padding:4px;">價 × 股</th><th style="text-align:right;padding:4px;">實現損益</th></tr></thead>
+              <tbody>${orders.slice(0, 15).map(o => {
+                const isBuy = o.side === 'BUY';
+                const envBadge = o.env_mode === 'LIVE'
+                  ? '<span style="background:#fee2e2;color:#b91c1c;padding:0 4px;border-radius:3px;font-weight:800;">LIVE</span>'
+                  : '<span style="background:#dbeafe;color:#1d4ed8;padding:0 4px;border-radius:3px;font-weight:800;">SIM</span>';
+                const pnlHtml = typeof o.realized_pnl_twd === 'number'
+                  ? `<b style="color:${pnlColor(o.realized_pnl_twd)}">${fmtSignedMoney(o.realized_pnl_twd)}</b>`
+                  : '<span style="color:#94a3b8;">--</span>';
+                return `<tr style="border-bottom:1px solid #f1f5f9;">
+                  <td class="mono" style="padding:4px;font-size:10.5px;">${esc(String(o.iso_time || '').slice(5, 16))} ${envBadge}</td>
+                  <td style="padding:4px;"><b style="color:${isBuy ? '#dc2626' : '#059669'};">${isBuy ? '▲買' : '▼賣'}</b> ${esc(o.symbol)} ${esc(o.stock_name || '')}</td>
+                  <td class="mono" style="text-align:right;padding:4px;">${fmtNum(o.price, 2)} × ${fmtInt(o.shares || o.qty)}</td>
+                  <td class="mono" style="text-align:right;padding:4px;">${pnlHtml}</td>
+                </tr>`;
+              }).join('')}</tbody></table>`;
+          }
+        }
+      }
+
+      async function toggleOneClickAuto() {
+        const nextOn = !isAutoRunning();
+        if (nextOn && state.envMode === 'LIVE' && !hasValidShioajiToken()) {
+          showToast('LIVE 實盤尚未設定 Token', '請先設定永豐金 LIVE 正式單 Token 後再啟動實盤全自動交易。', 'warn');
+          openLiveSafetyModal();
+          return;
+        }
+        state.agentConfig = state.agentConfig || {};
+        state.agentConfig.autoExecute = nextOn;
+        if (window.SHL_WAR) {
+          const wc = window.SHL_WAR.cfg();
+          wc.autoTrade = nextOn;
+          const chk = document.getElementById('wrAuto');
+          if (chk) chk.checked = nextOn;
+        }
+        persistState();
+        if (typeof startOrUpdateAgentAutoLoop === 'function') {
+          try { startOrUpdateAgentAutoLoop(); } catch (e) {}
+        }
+        if (window.SHL_WAR && nextOn) {
+          try { window.SHL_WAR.scanWatch(true); } catch (e) {}
+        }
+        render();
+        showToast(
+          nextOn ? '⚡ 全自動量化交易已啟動' : '⏹ 全自動量化交易已停止',
+          nextOn
+            ? `已於「${state.envMode === 'LIVE' ? 'LIVE 永豐實盤' : 'SIM 模擬單'}」啟動 SMC+FVG+AI 全自動掃描與動態止盈止損追蹤！`
+            : '已暫停自動掃描與自動下單排程，現有持倉仍保留顯示。',
+          nextOn ? 'success' : 'info'
+        );
+      }
+
+      function init() {
+        $('btnAtOneClickAuto')?.addEventListener('click', toggleOneClickAuto);
+        $('btnAtScanNow')?.addEventListener('click', async () => {
+          showToast('⚡ 立即掃描一輪', '正在掃描自選股 SMC+FVG+AI 訊號並檢核止盈止損…', 'info');
+          if (window.SHL_WAR) await window.SHL_WAR.scanWatch(isAutoRunning());
+          if (typeof window.SHL_CHECK_PROFIT_HEDGE === 'function') await window.SHL_CHECK_PROFIT_HEDGE(true);
+          render();
+        });
+        $('btnAtSwitchEnv')?.addEventListener('click', () => {
+          if (state.envMode === 'SIM') openLiveSafetyModal();
+          else { setTradingMode('SIM'); render(); }
+        });
+        $('btnAtOpenWarModal')?.addEventListener('click', () => { if (window.SHL_WAR) window.SHL_WAR.open(); });
+        render();
+        setInterval(render, 3000);
+      }
+      return { init, render, toggleOneClickAuto, isAutoRunning };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       if (window.SHL_CHANGELOG) window.SHL_CHANGELOG.init();
       if (window.SHL_WAR) window.SHL_WAR.init();
+      if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -21058,6 +21497,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       initApp().finally(() => {
         if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
         if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
+        if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
         if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
         if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       });

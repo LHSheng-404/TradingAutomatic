@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.3",
+    version="3.13.4",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.3",
+        "version": "3.13.4",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3708,7 +3708,7 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.3: Full-market bull / bear Top-N + breadth for market-trend detection.
+    v3.13.4: Full-market bull / bear Top-N + breadth for market-trend detection.
     Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
     universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
@@ -4121,6 +4121,7 @@ async def shioaji_status():
         "sim_token_configured": _shioaji_has_sim_token(),
         "sim_api_key_masked": sim_masked,
         "token_configured": _shioaji_has_token(),
+        "live_token_configured": _shioaji_has_token(),
         "api_key_masked": masked,
         "http_url": http_url,
         "http_server_online": http_ok,
@@ -4144,6 +4145,30 @@ async def shioaji_configure(req: ShioajiConfigRequest):
         _SHIOAJI_CFG["http_url"] = req.http_url.strip().rstrip("/")
     _SHIOAJI_CFG["simulation"] = bool(req.simulation)
     return await shioaji_status()
+
+
+class ShioajiClearRequest(BaseModel):
+    scope: str = Field("all", description="sim | live | all")
+
+
+@app.post("/api/v1/shioaji/clear")
+async def shioaji_clear_tokens(req: ShioajiClearRequest):
+    """Completely purge SIM, LIVE, or all Shioaji API tokens from backend memory & process env to prevent leakage."""
+    scope = (req.scope or "all").strip().lower()
+    if scope in ("sim", "all"):
+        _SHIOAJI_CFG["sim_api_key"] = ""
+        _SHIOAJI_CFG["sim_secret_key"] = ""
+        os.environ.pop("SHIOAJI_SIM_API_KEY", None)
+        os.environ.pop("SHIOAJI_SIM_SECRET_KEY", None)
+    if scope in ("live", "all"):
+        _SHIOAJI_CFG["api_key"] = ""
+        _SHIOAJI_CFG["secret_key"] = ""
+        _SHIOAJI_CFG["simulation"] = True
+        os.environ.pop("SHIOAJI_API_KEY", None)
+        os.environ.pop("SHIOAJI_SECRET_KEY", None)
+    st = await shioaji_status()
+    st["cleared_scope"] = scope
+    return st
 
 
 class ShioajiModeSwitchRequest(BaseModel):

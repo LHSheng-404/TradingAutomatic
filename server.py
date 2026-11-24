@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.6",
+    version="3.14.0",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.6",
+        "version": "3.14.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3804,7 +3804,7 @@ def _fetch_yahoo_tw_live_rank_sync(direction: str = "up") -> list[dict[str, Any]
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.6: True real-time full-market bull / bear Top-N.
+    v3.14.0: True real-time full-market bull / bear Top-N.
     Priority 1: Live Yahoo TW full-market (TWSE + TPEx) change-up / change-down rankings (matches real broker/Yahoo screen 100%).
     Priority 2: Official EOD + Shioaji/MIS live secondary verification fallback (and used for custom/chain universe).
     universe: all (全市場含ETF) | stocks (僅台股個股·排除ETF) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
@@ -5184,6 +5184,296 @@ async def search_tw_stock(q: str = ""):
         m["yahoo_symbol"] = f"{m['stock_id']}.TWO" if m["market_type"] == "tpex" else f"{m['stock_id']}.TW"
         m["tv_symbol"] = f"TPEX:{m['stock_id']}" if m["market_type"] == "tpex" else f"TWSE:{m['stock_id']}"
     return {"ok": True, "query": kw, "matches": matches}
+
+
+# =============================================================================
+# v3.14.0 SHIOAJI PRO STREAMING MARKET SIGNALS SCANNER & INDEX CONTRIBUTION
+# Official spec: https://sinotrade.github.io/zh/tutor/market_data/streaming/signals/
+# =============================================================================
+from fastapi.responses import StreamingResponse
+
+SHIOAJI_SCANNER_CATALOG: list[dict[str, str]] = [
+    {"id": "bid_near_limit_up", "group": "limit", "kind": "preset_rule", "label": "買方接近漲停", "tone": "up"},
+    {"id": "bid_touch_limit_up", "group": "limit", "kind": "preset_rule", "label": "買方觸及漲停", "tone": "up"},
+    {"id": "limit_up_unlocked", "group": "limit", "kind": "preset_rule", "label": "漲停打開", "tone": "warn"},
+    {"id": "ask_near_limit_down", "group": "limit", "kind": "preset_rule", "label": "賣方接近跌停", "tone": "dn"},
+    {"id": "ask_touch_limit_down", "group": "limit", "kind": "preset_rule", "label": "賣方觸及跌停", "tone": "dn"},
+    {"id": "limit_down_unlocked", "group": "limit", "kind": "preset_rule", "label": "跌停打開", "tone": "warn"},
+    {"id": "trade_price_surge", "group": "price_move", "kind": "preset_rule", "label": "成交急漲", "tone": "up"},
+    {"id": "trade_price_drop", "group": "price_move", "kind": "preset_rule", "label": "成交急跌", "tone": "dn"},
+    {"id": "bid_price_surge", "group": "price_move", "kind": "preset_rule", "label": "買價急漲", "tone": "up"},
+    {"id": "ask_price_drop", "group": "price_move", "kind": "preset_rule", "label": "賣價急跌", "tone": "dn"},
+    {"id": "volume_burst", "group": "volume", "kind": "preset_rule", "label": "單筆爆量", "tone": "burst"},
+    {"id": "simtrade", "group": "status", "kind": "stream", "label": "試撮", "tone": "info"},
+    {"id": "suspend", "group": "status", "kind": "stream", "label": "暫停交易", "tone": "warn"},
+]
+_SCANNER_META = {x["id"]: x for x in SHIOAJI_SCANNER_CATALOG}
+_SCANNER_STATE: dict[str, Any] = {
+    "exchanges": ["TSE", "OTC"],
+    "rules": [
+        "bid_touch_limit_up",
+        "ask_touch_limit_down",
+        "trade_price_surge",
+        "trade_price_drop",
+        "volume_burst",
+    ],
+    "events": [],
+    "last_scan_ts": 0.0,
+    "shioaji_sse_online": False,
+}
+
+
+def _scanner_payload_obj(rule_id: str) -> Any:
+    meta = _SCANNER_META.get(rule_id)
+    if not meta:
+        return None
+    if meta["kind"] == "stream":
+        return rule_id  # Official HTTP spec: "simtrade" | "suspend"
+    return {"kind": "preset_rule", "id": rule_id}
+
+
+def _sync_shioaji_http_scanner_sub(exchanges: list[str], rules: list[str], unsubscribe: bool = False) -> dict[str, Any]:
+    """Forward official subscribe/unsubscribe calls to local Shioaji Pro HTTP server if online."""
+    http_url = (_SHIOAJI_CFG.get("http_url") or os.getenv("SHIOAJI_HTTP_URL", "http://127.0.0.1:8080")).rstrip("/")
+    endpoint = f"{http_url}/api/v1/stream/{'unsubscribe' if unsubscribe else 'subscribe'}/scanner"
+    ok_cnt = 0
+    err_cnt = 0
+    for ex in exchanges:
+        for rid in rules:
+            sc_obj = _scanner_payload_obj(rid)
+            if sc_obj is None:
+                continue
+            body = json.dumps({
+                "scanner": sc_obj,
+                "region": "TW",
+                "security_type": "STK",
+                "exchange": ex,
+            }).encode("utf-8")
+            try:
+                req = urllib.request.Request(endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST")
+                with urllib.request.urlopen(req, timeout=2.5) as resp:
+                    if 200 <= resp.status < 300:
+                        ok_cnt += 1
+                    else:
+                        err_cnt += 1
+            except Exception:
+                err_cnt += 1
+                if ok_cnt == 0 and err_cnt >= 1:
+                    return {"http_online": False, "ok_count": 0, "err_count": err_cnt}
+    return {"http_online": ok_cnt > 0, "ok_count": ok_cnt, "err_count": err_cnt}
+
+
+class ScannerSubscribeRequest(BaseModel):
+    exchanges: list[str] = Field(default_factory=lambda: ["TSE", "OTC"])
+    rules: list[str] = Field(default_factory=lambda: ["bid_touch_limit_up", "ask_touch_limit_down", "trade_price_surge", "trade_price_drop", "volume_burst"])
+
+
+@app.post("/api/v1/shioaji/scanner/subscribe")
+async def shioaji_scanner_subscribe(req: ScannerSubscribeRequest):
+    exchanges = [e.upper() for e in (req.exchanges or []) if e.upper() in ("TSE", "OTC")] or ["TSE", "OTC"]
+    rules = [r for r in (req.rules or []) if r in _SCANNER_META]
+    prev_ex = list(_SCANNER_STATE["exchanges"])
+    prev_rules = list(_SCANNER_STATE["rules"])
+    _SCANNER_STATE["exchanges"] = exchanges
+    _SCANNER_STATE["rules"] = rules
+    _SCANNER_STATE["last_scan_ts"] = 0.0
+
+    # Sync with Shioaji Pro HTTP server if running
+    removed_rules = [r for r in prev_rules if r not in rules]
+    if removed_rules:
+        await asyncio.to_thread(_sync_shioaji_http_scanner_sub, prev_ex, removed_rules, True)
+    sub_res = await asyncio.to_thread(_sync_shioaji_http_scanner_sub, exchanges, rules, False)
+    _SCANNER_STATE["shioaji_sse_online"] = bool(sub_res.get("http_online"))
+    return {
+        "ok": True,
+        "exchanges": exchanges,
+        "rules": rules,
+        "shioaji_http_online": _SCANNER_STATE["shioaji_sse_online"],
+        "sync_result": sub_res,
+        "catalog": SHIOAJI_SCANNER_CATALOG,
+    }
+
+
+async def _build_live_scanner_events() -> list[dict[str, Any]]:
+    """Derive live full-market scanner signals from real-time TWSE+TPEx rankings when Shioaji HTTP SSE is offline."""
+    now_ts = time.time()
+    if _SCANNER_STATE["events"] and (now_ts - _SCANNER_STATE["last_scan_ts"]) < 25:
+        return _SCANNER_STATE["events"]
+
+    up_rows, dn_rows = await asyncio.gather(
+        asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "up"),
+        asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "down"),
+    )
+    events: list[dict[str, Any]] = []
+    now_hms = tw_now_str()[11:19]
+    seen: set[tuple[str, str]] = set()
+
+    def _push(rule_id: str, row: dict[str, Any], detail: str):
+        key = (rule_id, row["symbol"])
+        if key in seen:
+            return
+        seen.add(key)
+        meta = _SCANNER_META[rule_id]
+        events.append({
+            "id": f"{rule_id}-{row['symbol']}",
+            "scanner": rule_id,
+            "label": meta["label"],
+            "group": meta["group"],
+            "tone": meta["tone"],
+            "exchange": "OTC" if row.get("exchange") == "otc" else "TSE",
+            "symbol": row["symbol"],
+            "name": row["name"],
+            "price": row["price"],
+            "change_pct": row["change_pct"],
+            "volume_lots": row["volume_lots"],
+            "value_m": row["value_m"],
+            "detail": detail,
+            "time": now_hms,
+            "source_engine": "shioaji_sse" if _SCANNER_STATE["shioaji_sse_online"] else "live_market_scanner",
+        })
+
+    for r in up_rows:
+        pct = float(r.get("change_pct") or 0)
+        val_m = float(r.get("value_m") or 0)
+        hi = float(r.get("high") or r["price"])
+        if pct >= 9.5:
+            _push("bid_touch_limit_up", r, f"觸及漲停 +{pct:.2f}% · 成交 {val_m:.1f}M")
+        elif pct >= 8.2:
+            _push("bid_near_limit_up", r, f"逼近漲停 +{pct:.2f}% · 成交 {val_m:.1f}M")
+        if hi > r["price"] and pct >= 6.0 and (hi - r["price"]) / hi >= 0.015:
+            _push("limit_up_unlocked", r, f"高檔回落/開板 高 {hi:.2f} → 現 {r['price']:.2f}")
+        if pct >= 4.0 and val_m >= 50:
+            _push("trade_price_surge", r, f"強勢急漲 +{pct:.2f}% · 成交 {val_m:.1f}M")
+            _push("bid_price_surge", r, f"買盤推升 +{pct:.2f}% · {int(r['volume_lots'])} 張")
+        if val_m >= 500:
+            _push("volume_burst", r, f"爆量長紅 成交值 {val_m:.0f}M ({int(r['volume_lots'])} 張)")
+
+    for r in dn_rows:
+        pct = float(r.get("change_pct") or 0)
+        val_m = float(r.get("value_m") or 0)
+        lo = float(r.get("low") or r["price"])
+        if pct <= -9.5:
+            _push("ask_touch_limit_down", r, f"觸及跌停 {pct:.2f}% · 成交 {val_m:.1f}M")
+        elif pct <= -8.2:
+            _push("ask_near_limit_down", r, f"逼近跌停 {pct:.2f}% · 成交 {val_m:.1f}M")
+        if lo < r["price"] and pct <= -6.0 and (r["price"] - lo) / max(lo, 1e-6) >= 0.015:
+            _push("limit_down_unlocked", r, f"低檔開板 低 {lo:.2f} → 現 {r['price']:.2f}")
+        if pct <= -3.5 and val_m >= 20:
+            _push("trade_price_drop", r, f"急殺走跌 {pct:.2f}% · 成交 {val_m:.1f}M")
+            _push("ask_price_drop", r, f"賣壓湧現 {pct:.2f}% · {int(r['volume_lots'])} 張")
+        if val_m >= 500:
+            _push("volume_burst", r, f"爆量下殺 成交值 {val_m:.0f}M ({int(r['volume_lots'])} 張)")
+
+    events.sort(key=lambda e: (abs(float(e["change_pct"])), float(e["value_m"])), reverse=True)
+    _SCANNER_STATE["events"] = events[:150]
+    _SCANNER_STATE["last_scan_ts"] = now_ts
+    return _SCANNER_STATE["events"]
+
+
+@app.get("/api/v1/shioaji/scanner/events")
+async def shioaji_scanner_events():
+    all_events = await _build_live_scanner_events()
+    ex_set = set(_SCANNER_STATE["exchanges"])
+    rule_set = set(_SCANNER_STATE["rules"])
+    filtered = [e for e in all_events if e["exchange"] in ex_set and e["scanner"] in rule_set]
+    return JSONResponse({
+        "ok": True,
+        "exchanges": _SCANNER_STATE["exchanges"],
+        "rules": _SCANNER_STATE["rules"],
+        "shioaji_http_online": _SCANNER_STATE["shioaji_sse_online"],
+        "source": "永豐 Shioaji Pro 官方 SSE 市場訊號" if _SCANNER_STATE["shioaji_sse_online"] else "全市場實盤即時偵測（啟動 shioaji server start 即自動切換官方 SSE 毫秒推播）",
+        "count": len(filtered),
+        "events": filtered[:80],
+        "catalog": SHIOAJI_SCANNER_CATALOG,
+        "server_time": tw_now_str(),
+    }, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/v1/shioaji/scanner/stream")
+async def shioaji_scanner_sse():
+    """SSE endpoint pushing real-time market scanner signals to the browser (relays Shioaji Pro HTTP SSE when available)."""
+    async def event_gen():
+        # Push initial snapshot immediately
+        all_ev = await _build_live_scanner_events()
+        ex_set = set(_SCANNER_STATE["exchanges"])
+        rule_set = set(_SCANNER_STATE["rules"])
+        filt = [e for e in all_ev if e["exchange"] in ex_set and e["scanner"] in rule_set][:40]
+        yield f"event: snapshot\ndata: {json.dumps({'events': filt, 'shioaji_http_online': _SCANNER_STATE['shioaji_sse_online'], 'server_time': tw_now_str()}, ensure_ascii=False)}\n\n"
+        # Periodic heartbeat & incremental refresh (25s)
+        for _ in range(12):
+            await asyncio.sleep(25)
+            all_ev = await _build_live_scanner_events()
+            ex_set = set(_SCANNER_STATE["exchanges"])
+            rule_set = set(_SCANNER_STATE["rules"])
+            filt = [e for e in all_ev if e["exchange"] in ex_set and e["scanner"] in rule_set][:40]
+            yield f"event: snapshot\ndata: {json.dumps({'events': filt, 'shioaji_http_online': _SCANNER_STATE['shioaji_sse_online'], 'server_time': tw_now_str()}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(event_gen(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+# Major TAIEX heavyweight constituent approximate weights (%) for index point contribution view
+_TAIEX_HEAVYWEIGHTS: list[tuple[str, str, float]] = [
+    ("2330", "台積電", 36.5),
+    ("2317", "鴻海", 3.6),
+    ("2454", "聯發科", 3.1),
+    ("2308", "台達電", 1.9),
+    ("2382", "廣達", 1.6),
+    ("2881", "富邦金", 1.7),
+    ("2882", "國泰金", 1.5),
+    ("3711", "日月光投控", 1.1),
+    ("2891", "中信金", 1.1),
+    ("2303", "聯電", 0.9),
+    ("2886", "兆豐金", 0.8),
+    ("2412", "中華電", 1.3),
+    ("2345", "智邦", 0.7),
+    ("2357", "華碩", 0.7),
+    ("3231", "緯創", 0.6),
+    ("3008", "大立光", 0.6),
+    ("2884", "玉山金", 0.6),
+    ("2327", "國巨*", 0.5),
+]
+
+
+@app.get("/api/v1/market/breadth_contrib")
+async def market_breadth_contrib():
+    """Shioaji Pro-style Market Overview: TAIEX/OTC live index + heavyweight point contribution ranking."""
+    syms = [x[0] for x in _TAIEX_HEAVYWEIGHTS]
+    channels = ["tse_t00.tw", "otc_o00.tw"] + [f"tse_{s}.tw" for s in syms]
+    live_map = await asyncio.to_thread(_fetch_mis_batch_exact_sync, channels)
+    t00 = live_map.get("T00") or {}
+    o00 = live_map.get("O00") or {}
+    t00_px = float(t00.get("price") or 0)
+    t00_prev = float(t00.get("prev_close") or t00_px or 23000)
+    t00_chg = round(t00_px - t00_prev, 2) if t00_px else 0.0
+    t00_pct = float(t00.get("change_pct") or 0.0)
+
+    contribs = []
+    for code, name, wt_pct in _TAIEX_HEAVYWEIGHTS:
+        lv = live_map.get(code)
+        if not lv:
+            continue
+        pct = float(lv.get("change_pct") or 0.0)
+        pts = round(t00_prev * (wt_pct / 100.0) * (pct / 100.0), 2)
+        contribs.append({
+            "symbol": code,
+            "name": name,
+            "price": lv["price"],
+            "change_pct": pct,
+            "weight_pct": wt_pct,
+            "contrib_pts": pts,
+        })
+    contribs.sort(key=lambda x: abs(x["contrib_pts"]), reverse=True)
+    pos_pts = round(sum(x["contrib_pts"] for x in contribs if x["contrib_pts"] > 0), 2)
+    neg_pts = round(sum(x["contrib_pts"] for x in contribs if x["contrib_pts"] < 0), 2)
+    return JSONResponse({
+        "ok": True,
+        "t00": {"price": t00_px, "change": t00_chg, "change_pct": t00_pct},
+        "o00": {"price": float(o00.get("price") or 0), "change_pct": float(o00.get("change_pct") or 0)},
+        "pos_contrib_pts": pos_pts,
+        "neg_contrib_pts": neg_pts,
+        "contributors": contribs[:12],
+        "server_time": tw_now_str(),
+    }, headers={"Cache-Control": "no-store"})
 
 
 if __name__ == "__main__":

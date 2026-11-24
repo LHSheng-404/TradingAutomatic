@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.6 · 版本說明
+              v3.14.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2826,6 +2826,58 @@
                 <span style="font-size:10.5px;color:#64748b;font-weight:600;">最新 15 筆</span>
               </div>
               <div id="atDashOrdersBox" style="font-size:12px;color:#64748b;">尚無交易買賣紀錄</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2.6 v3.14.0 Shioaji Pro Full-Market Streaming Signals & Index Contribution Deck -->
+      <article id="shioajiSignalsDeck" class="card" style="border:1.5px solid #1e293b;background:#0f172a;color:#e2e8f0;">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#020617;border-bottom:1px solid #1e293b;border-radius:12px 12px 0 0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:14.5px;font-weight:900;color:#f8fafc;">📡 永豐全市場即時訊號串流 &amp; 權值貢獻</span>
+            <span id="sjSigCountBadge" class="badge mono" style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;">訊號 5/13 · 市場 2/2</span>
+            <span id="sjSigEngineBadge" class="badge mono" style="background:#1e293b;color:#fde68a;border:1px solid #475569;">連線中...</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btnSjSigToggleFilter" class="btn btn-sm" style="background:#1e293b;color:#e2e8f0;border-color:#334155;">⚙ 訂閱規則 (13項)</button>
+            <button type="button" id="btnSjSigRefresh" class="btn btn-sm" style="background:#1e293b;color:#38bdf8;border-color:#334155;">↻ 立即刷新</button>
+            <button type="button" id="btnSjSigCollapse" class="btn btn-sm" style="background:#1e293b;color:#94a3b8;border-color:#334155;">收合</button>
+          </div>
+        </div>
+        <div id="sjSigDeckBody" class="card-body" style="padding:10px 14px;">
+          <!-- Collapsible Shioaji Official 13-Rule Scanner Filter Panel (matches Shioaji Pro UI) -->
+          <div id="sjSigFilterPanel" style="display:none;background:#111827;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1f2937;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <b style="color:#93c5fd;">市場範圍：</b>
+                <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" data-sj-ex="TSE" checked /> 上市 TSE</label>
+                <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" data-sj-ex="OTC" checked /> 上櫃 OTC</label>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button type="button" id="btnSjSigAll" class="btn btn-sm" style="background:#1e293b;color:#93c5fd;border-color:#334155;padding:2px 8px;">全選 13 項</button>
+                <button type="button" id="btnSjSigNone" class="btn btn-sm" style="background:#1e293b;color:#94a3b8;border-color:#334155;padding:2px 8px;">全部清除</button>
+                <button type="button" id="btnSjSigApply" class="btn btn-sm" style="background:#2563eb;color:#fff;border-color:#3b82f6;padding:2px 10px;font-weight:800;">套用訂閱</button>
+              </div>
+            </div>
+            <div id="sjSigRuleGroups" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;"></div>
+          </div>
+
+          <!-- Dual-column Shioaji Pro Linked View: Left=Streaming Signals, Right=Market Overview & Heavyweight Contribution -->
+          <div style="display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:10px;">
+            <div style="background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px;max-height:270px;overflow:auto;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:12px;font-weight:800;color:#f8fafc;">⚡ 全市場即時主動推送（漲跌停／急漲跌／爆量）</span>
+                <span id="sjSigSrcHint" style="font-size:10.5px;color:#94a3b8;">點擊任一標的立即聯動 K 線與下單</span>
+              </div>
+              <div id="sjSigEventsBox" class="mono" style="font-size:11.5px;color:#94a3b8;">正在載入全市場訊號...</div>
+            </div>
+            <div style="background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px;max-height:270px;overflow:auto;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:12px;font-weight:800;color:#f8fafc;">🏛️ 市場總覽 · 成分股貢獻點數</span>
+                <span id="sjContribSummary" class="mono" style="font-size:11px;color:#fbbf24;">--</span>
+              </div>
+              <div id="sjContribBox" class="mono" style="font-size:11.5px;color:#94a3b8;">載入權值股貢獻點數...</div>
             </div>
           </div>
         </div>
@@ -20273,8 +20325,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.6';
+      const CURRENT_VERSION = 'v3.14.0';
       const HISTORY = [
+        {
+          ver: 'v3.14.0',
+          items: [
+            '串接永豐金 Shioaji Pro 官方市場訊號串流 API（POST /api/v1/stream/subscribe/scanner & GET /api/v1/stream/data/scanner SSE），免逐檔輪詢即可主動監測全市場上市(TSE)／上櫃(OTC)共 13 項官方規則：漲跌停(6)、價格急變(4)、單筆爆量(1)、試撮／暫停交易(2)',
+            '新增「📡 永豐全市場即時訊號串流 & 權值貢獻」深色連動面板（對標 Shioaji Pro 畫面）：支援一鍵勾選 13 項規則與 TSE/OTC 市場、SSE 即時推送事件流、點擊任一訊號股即刻聯動主畫面 K 線、五檔報價與下單票',
+            '新增「🏛️ 市場總覽 · 成分股貢獻點數」即時端點（GET /api/v1/market/breadth_contrib）與視覺化長條排行，即時呈現加權／櫃買點數、上漲／下跌貢獻點數與前 12 大權值股影響力並支援點擊聯動'
+          ]
+        },
         {
           ver: 'v3.13.6',
           items: [
@@ -21502,10 +21562,241 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, render, toggleOneClickAuto, isAutoRunning };
     })();
 
+    // =========================================================================
+    // v3.14.0 永豐 Shioaji Pro 全市場即時訊號串流 & 權值股大盤貢獻 (window.SHL_SIGNALS)
+    // =========================================================================
+    window.SHL_SIGNALS = (function createShioajiSignalsDeck() {
+      const CATALOG = [
+        { id: 'bid_near_limit_up', group: '漲跌停', label: '買方接近漲停', tone: 'up' },
+        { id: 'bid_touch_limit_up', group: '漲跌停', label: '買方觸及漲停', tone: 'up' },
+        { id: 'limit_up_unlocked', group: '漲跌停', label: '漲停打開', tone: 'warn' },
+        { id: 'ask_near_limit_down', group: '漲跌停', label: '賣方接近跌停', tone: 'dn' },
+        { id: 'ask_touch_limit_down', group: '漲跌停', label: '賣方觸及跌停', tone: 'dn' },
+        { id: 'limit_down_unlocked', group: '漲跌停', label: '跌停打開', tone: 'warn' },
+        { id: 'trade_price_surge', group: '急漲跌', label: '成交急漲', tone: 'up' },
+        { id: 'trade_price_drop', group: '急漲跌', label: '成交急跌', tone: 'dn' },
+        { id: 'bid_price_surge', group: '急漲跌', label: '買價急漲', tone: 'up' },
+        { id: 'ask_price_drop', group: '急漲跌', label: '賣價急跌', tone: 'dn' },
+        { id: 'volume_burst', group: '爆量', label: '單筆爆量', tone: 'burst' },
+        { id: 'simtrade', group: '狀態', label: '試撮', tone: 'info' },
+        { id: 'suspend', group: '狀態', label: '暫停交易', tone: 'warn' }
+      ];
+      let sse = null;
+      const $ = id => document.getElementById(id);
+      const esc = s => (typeof escapeHtml === 'function' ? escapeHtml(String(s ?? '')) : String(s ?? ''));
+
+      function cfg() {
+        state.ext = state.ext || {};
+        if (!state.ext.sjScanner || typeof state.ext.sjScanner !== 'object') {
+          state.ext.sjScanner = {
+            exchanges: ['TSE', 'OTC'],
+            rules: ['bid_touch_limit_up', 'ask_touch_limit_down', 'trade_price_surge', 'trade_price_drop', 'volume_burst']
+          };
+        }
+        return state.ext.sjScanner;
+      }
+
+      function updateBadges(online) {
+        const c = cfg();
+        const cb = $('sjSigCountBadge');
+        if (cb) cb.textContent = `訊號 ${c.rules.length}/13 · 市場 ${c.exchanges.length}/2`;
+        const eb = $('sjSigEngineBadge');
+        if (eb && online !== undefined) {
+          eb.textContent = online ? '🟢 永豐 Shioaji SSE 毫秒串流' : '🟡 全市場實盤偵測（免逐檔訂閱）';
+          eb.style.color = online ? '#86efac' : '#fde68a';
+        }
+      }
+
+      function renderFilterPanel() {
+        const box = $('sjSigRuleGroups');
+        if (!box) return;
+        const c = cfg();
+        document.querySelectorAll('[data-sj-ex]').forEach(el => {
+          el.checked = c.exchanges.includes(el.dataset.sjEx);
+        });
+        const groups = ['漲跌停', '急漲跌', '爆量', '狀態'];
+        box.innerHTML = groups.map(g => {
+          const items = CATALOG.filter(x => x.group === g);
+          const selCnt = items.filter(x => c.rules.includes(x.id)).length;
+          return `<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;">
+            <div style="font-weight:800;color:#93c5fd;margin-bottom:5px;display:flex;justify-content:space-between;">
+              <span>${g}</span><span style="color:#64748b;">${selCnt}/${items.length}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              ${items.map(x => `<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:#e2e8f0;"><input type="checkbox" data-sj-rule="${x.id}" ${c.rules.includes(x.id) ? 'checked' : ''} /> ${x.label}</label>`).join('')}
+            </div>
+          </div>`;
+        }).join('');
+        updateBadges();
+      }
+
+      function renderEvents(events, srcText) {
+        const box = $('sjSigEventsBox');
+        if (!box) return;
+        if (srcText && $('sjSigSrcHint')) $('sjSigSrcHint').textContent = srcText;
+        if (!Array.isArray(events) || !events.length) {
+          box.innerHTML = '<div style="padding:12px;text-align:center;color:#64748b;">目前勾選條件無觸發事件，可點上方「⚙ 訂閱規則」調整條件</div>';
+          return;
+        }
+        const toneStyle = (t) => t === 'up'
+          ? 'background:#7f1d1d;color:#fecaca;'
+          : (t === 'dn' ? 'background:#064e3b;color:#a7f3d0;' : (t === 'burst' ? 'background:#78350f;color:#fde68a;' : 'background:#1e293b;color:#cbd5e1;'));
+        box.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+          <thead><tr style="border-bottom:1px solid #1e293b;color:#64748b;"><th style="text-align:left;padding:3px 4px;">時間 / 市場</th><th style="text-align:left;padding:3px 4px;">訊號</th><th style="text-align:left;padding:3px 4px;">標的</th><th style="text-align:right;padding:3px 4px;">價 / 漲跌</th><th style="text-align:right;padding:3px 4px;">量(張)</th></tr></thead>
+          <tbody>${events.slice(0, 40).map(e => {
+            const pct = Number(e.change_pct || 0);
+            const pClr = pct > 0 ? '#f87171' : (pct < 0 ? '#34d399' : '#cbd5e1');
+            return `<tr data-sig-sym="${esc(e.symbol)}" style="border-bottom:1px solid #1e293b;cursor:pointer;" title="${esc(e.detail || '')}">
+              <td style="padding:4px;color:#94a3b8;font-size:10.5px;">${esc(e.time || '')} <span style="color:#60a5fa;">${esc(e.exchange || '')}</span></td>
+              <td style="padding:4px;"><span style="padding:1px 5px;border-radius:4px;font-size:10.5px;font-weight:800;${toneStyle(e.tone)}">${esc(e.label)}</span></td>
+              <td style="padding:4px;font-weight:800;color:#f8fafc;">${esc(e.symbol)} ${esc(e.name || '')}</td>
+              <td style="padding:4px;text-align:right;color:${pClr};font-weight:800;">${Number(e.price || 0).toFixed(2)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</td>
+              <td style="padding:4px;text-align:right;color:#fbbf24;">${Math.round(Number(e.volume_lots || 0)).toLocaleString()}</td>
+            </tr>`;
+          }).join('')}</tbody></table>`;
+        box.querySelectorAll('[data-sig-sym]').forEach(tr => {
+          tr.addEventListener('click', () => {
+            const sym = tr.dataset.sigSym;
+            if (!sym) return;
+            if (!state.watchlist.some(w => w.symbol === sym)) {
+              const ev = events.find(x => x.symbol === sym);
+              state.watchlist.push({ symbol: sym, name: ev?.name || sym, yahooSymbol: ev?.exchange === 'OTC' ? `${sym}.TWO` : `${sym}.TW`, finmindId: sym, dataset: 'TaiwanStockPrice', industry: '台股' });
+              renderWatchlistPills();
+            }
+            selectStock(sym);
+            showToast('📡 訊號聯動切換', `已聯動切換至 ${sym} 即時 K 線、五檔與下單票`, 'info');
+          });
+        });
+      }
+
+      async function refreshContrib() {
+        const box = $('sjContribBox');
+        const sumEl = $('sjContribSummary');
+        const base = getApiBase();
+        if (!box) return;
+        if (!base) {
+          box.innerHTML = '<div style="padding:10px;color:#64748b;">連線本機／雲端 server.py 後即可顯示即時權值股大盤貢獻點數</div>';
+          return;
+        }
+        try {
+          const r = await fetch(`${base}/api/v1/market/breadth_contrib`, { cache: 'no-store' });
+          const j = await r.json();
+          if (!j.ok) return;
+          const t = j.t00 || {};
+          if (sumEl) {
+            const pClr = (t.change || 0) >= 0 ? '#f87171' : '#34d399';
+            sumEl.innerHTML = `加權 <b style="color:${pClr}">${Number(t.price || 0).toLocaleString()} (${t.change >= 0 ? '+' : ''}${Number(t.change || 0).toFixed(1)})</b> · 上漲貢獻 <b style="color:#f87171">+${j.pos_contrib_pts}</b> / 下跌 <b style="color:#34d399">${j.neg_contrib_pts}</b>`;
+          }
+          const rows = j.contributors || [];
+          const maxAbs = Math.max(1, ...rows.map(x => Math.abs(Number(x.contrib_pts || 0))));
+          box.innerHTML = rows.map((x, idx) => {
+            const pts = Number(x.contrib_pts || 0);
+            const pct = Number(x.change_pct || 0);
+            const clr = pts >= 0 ? '#ef4444' : '#10b981';
+            const barW = Math.min(100, Math.round(Math.abs(pts) / maxAbs * 100));
+            return `<div data-contrib-sym="${esc(x.symbol)}" style="display:flex;align-items:center;gap:6px;padding:4px 2px;border-bottom:1px solid #1e293b;cursor:pointer;">
+              <span style="width:16px;color:#64748b;">${idx + 1}</span>
+              <span style="width:95px;color:#f8fafc;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(x.symbol)} ${esc(x.name)}</span>
+              <div style="flex:1;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="height:100%;width:${barW}%;background:${clr};"></div></div>
+              <span style="width:68px;text-align:right;font-weight:800;color:${clr};">${pts >= 0 ? '+' : ''}${pts.toFixed(1)}點</span>
+              <span style="width:54px;text-align:right;color:${clr};">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>
+            </div>`;
+          }).join('');
+          box.querySelectorAll('[data-contrib-sym]').forEach(el => {
+            el.addEventListener('click', () => selectStock(el.dataset.contribSym));
+          });
+        } catch (e) {}
+      }
+
+      async function applySubscription(pushServer = true) {
+        const c = cfg();
+        const base = getApiBase();
+        updateBadges();
+        persistState();
+        if (!base) {
+          updateBadges(false);
+          renderEvents([], '靜態網頁模式：啟動 server.py 即可開啟永豐全市場訊號串流');
+          return;
+        }
+        try {
+          if (pushServer) {
+            await fetch(`${base}/api/v1/shioaji/scanner/subscribe`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ exchanges: c.exchanges, rules: c.rules })
+            });
+          }
+          const r = await fetch(`${base}/api/v1/shioaji/scanner/events`, { cache: 'no-store' });
+          const j = await r.json();
+          if (j.ok) {
+            updateBadges(Boolean(j.shioaji_http_online));
+            renderEvents(j.events || [], j.source);
+          }
+          connectSse();
+        } catch (e) {}
+      }
+
+      function connectSse() {
+        const base = getApiBase();
+        if (!base || typeof EventSource === 'undefined') return;
+        if (sse) { try { sse.close(); } catch (e) {} sse = null; }
+        try {
+          sse = new EventSource(`${base}/api/v1/shioaji/scanner/stream`);
+          sse.addEventListener('snapshot', (ev) => {
+            try {
+              const d = JSON.parse(ev.data || '{}');
+              updateBadges(Boolean(d.shioaji_http_online));
+              if (Array.isArray(d.events)) renderEvents(d.events);
+            } catch (e) {}
+          });
+        } catch (e) {}
+      }
+
+      function init() {
+        if (!$('shioajiSignalsDeck')) return;
+        renderFilterPanel();
+        $('btnSjSigToggleFilter')?.addEventListener('click', () => {
+          const p = $('sjSigFilterPanel');
+          if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        });
+        $('btnSjSigCollapse')?.addEventListener('click', () => {
+          const b = $('sjSigDeckBody');
+          const btn = $('btnSjSigCollapse');
+          if (!b) return;
+          const hidden = b.style.display === 'none';
+          b.style.display = hidden ? 'block' : 'none';
+          if (btn) btn.textContent = hidden ? '收合' : '展開';
+        });
+        $('btnSjSigAll')?.addEventListener('click', () => {
+          cfg().rules = CATALOG.map(x => x.id);
+          renderFilterPanel();
+        });
+        $('btnSjSigNone')?.addEventListener('click', () => {
+          cfg().rules = [];
+          renderFilterPanel();
+        });
+        $('btnSjSigApply')?.addEventListener('click', async () => {
+          const ex = [];
+          document.querySelectorAll('[data-sj-ex]:checked').forEach(el => ex.push(el.dataset.sjEx));
+          const rules = [];
+          document.querySelectorAll('[data-sj-rule]:checked').forEach(el => rules.push(el.dataset.sjRule));
+          cfg().exchanges = ex.length ? ex : ['TSE', 'OTC'];
+          cfg().rules = rules;
+          renderFilterPanel();
+          await applySubscription(true);
+          showToast('📡 永豐全市場訂閱已更新', `已套用 ${cfg().rules.length} 項訊號規則（${cfg().exchanges.join(' / ')}）`, 'success');
+        });
+        $('btnSjSigRefresh')?.addEventListener('click', () => { applySubscription(false); refreshContrib(); });
+      }
+
+      return { init, applySubscription, refreshContrib, renderFilterPanel, cfg };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       if (window.SHL_CHANGELOG) window.SHL_CHANGELOG.init();
       if (window.SHL_WAR) window.SHL_WAR.init();
       if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.init();
+      if (window.SHL_SIGNALS) window.SHL_SIGNALS.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -21516,6 +21807,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
         if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
         if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
+        if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
         if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       });

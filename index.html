@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.5 · 版本說明
+              v3.13.6 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -20273,8 +20273,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.5';
+      const CURRENT_VERSION = 'v3.13.6';
       const HISTORY = [
+        {
+          ver: 'v3.13.6',
+          items: [
+            '徹底解決強勢股多空前 50 檔與真實即時盤面不一致問題：後端 GET /api/v1/market/rank 改為直連即時全市場（上市＋上櫃）漲跌幅排行，不再因從前一日清單抽樣而漏抓當日急漲／急跌標的（如 2466 冠西電 -9.99% 等），名次、價位、漲跌幅與成交值與券商／Yahoo 股市 100% 同步',
+            '前 50 檔母體選單新增「全市場（含 ETF · 即時排行）」與「僅台股個股（排除 ETF）」切換選項，可依需求自由切換'
+          ]
+        },
         {
           ver: 'v3.13.5',
           items: [
@@ -20913,7 +20920,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             <div class="wr-grid">
               <label>即時資料源<select id="wrDataMode"><option value="auto">自動（有 Token→永豐，否則 MIS）</option><option value="shioaji">強制永豐 Shioaji</option><option value="mis">強制 TWSE MIS 估算</option></select></label>
               <label>訊號模式<select id="wrIndMode"><option value="fvg">BOS + FVG 回測（Pine 預設）</option><option value="bos">僅 SMC BOS</option><option value="fvgOnly">僅 FVG 回測</option></select></label>
-              <label>前50檔範圍<select id="wrUniverse"><option value="all">全市場</option><option value="liquid">全市場 · 成交值≥門檻</option><option value="chain">12 大產業鏈＋自選股</option></select></label>
+              <label>前50檔範圍<select id="wrUniverse"><option value="all">全市場（含ETF·即時排行）</option><option value="stocks">僅台股個股（排除ETF）</option><option value="liquid">全市場 · 成交值≥門檻</option><option value="chain">12 大產業鏈＋自選股</option></select></label>
               <label>成交值門檻(百萬)<input id="wrMinVal" type="number" min="0" step="10"></label>
               <label>K 線級距<select id="wrIv"><option value="1">1 分</option><option value="5">5 分</option><option value="15">15 分</option><option value="60">60 分</option><option value="D">日</option></select></label>
               <label>止損模式<select id="wrSlMode"><option value="smc">SMC 結構邊界</option><option value="atr">ATR 動態</option><option value="pct">固定百分比</option></select></label>

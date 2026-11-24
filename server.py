@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.15.1",
+    version="3.16.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -530,7 +530,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.15.1",
+        "version": "3.16.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -5562,8 +5562,30 @@ async def market_breadth_contrib():
     }, headers={"Cache-Control": "no-store"})
 
 
+_SERVER_SHUTTING_DOWN = False
+
+
+@app.on_event("shutdown")
+async def _on_server_shutdown():
+    """Ensure desktop / cloud shutdown immediately stops background scanner & SSE loops."""
+    global _SERVER_SHUTTING_DOWN
+    _SERVER_SHUTTING_DOWN = True
+    try:
+        _SCANNER_STATE["active"] = False
+    except Exception:
+        pass
+    try:
+        for q in list(globals().get("_SCANNER_SSE_QUEUES") or []):
+            try:
+                q.put_nowait(None)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port, timeout_graceful_shutdown=3)

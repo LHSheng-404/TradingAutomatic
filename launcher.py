@@ -73,18 +73,29 @@ def main() -> None:
     lan_ip = detect_lan_ip() if bind_host == "0.0.0.0" else ""
 
     print("=" * 64)
-    print("  SHL TW · 全自動台股交易系統 v3.15.1")
+    print("  SHL TW · 全自動台股交易系統 v3.16.0")
     print(f"  本機介面：{url}")
     if lan_ip:
         print(f"  手機區網：http://{lan_ip}:{port}  （同 Wi-Fi iPhone / Android 開啟或加入主畫面）")
     print(f"  健康檢查：{url}/api/v1/health")
-    print("  按 Ctrl+C 即可安全停止系統")
+    print("  按 Ctrl+C 或關閉視窗即可安全停止系統")
     print("=" * 64)
 
     if not args.no_browser:
         open_browser_later(url)
 
-    uvicorn.run(app, host=bind_host, port=port, log_level="info")
+    try:
+        uvicorn.run(
+            app,
+            host=bind_host,
+            port=port,
+            log_level="info",
+            timeout_graceful_shutdown=3,
+        )
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("\n[SHL TW] 系統已安全結束並釋放連接埠。")
 
 
 if __name__ == "__main__":

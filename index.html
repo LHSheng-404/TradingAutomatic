@@ -2497,6 +2497,139 @@
   </style>
 </head>
 <body>
+  <!-- v3.16.0: SinoPac-inspired Startup Loading Progress Splash & Foreground Resume Bar -->
+  <style>
+    @keyframes shlPulseRing { 0% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(0.92); opacity: 0.7; } }
+    @keyframes shlShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    #shlBootSplash {
+      position: fixed; inset: 0; z-index: 99999;
+      background: radial-gradient(circle at 50% 28%, #1e293b 0%, #0b1120 62%, #050811 100%);
+      color: #f8fafc; display: flex; align-items: center; justify-content: center;
+      padding: 20px; transition: opacity 0.38s ease, visibility 0.38s ease;
+    }
+    #shlBootSplash.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .shl-boot-card {
+      width: 100%; max-width: 390px; background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(248, 113, 113, 0.28); border-radius: 18px;
+      padding: 24px 22px 20px; box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+      backdrop-filter: blur(12px);
+    }
+    .shl-boot-logo {
+      width: 54px; height: 54px; border-radius: 15px; margin: 0 auto 12px;
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 55%, #1e3a8a 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 20px; letter-spacing: 0.5px; color: #fff;
+      box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.16);
+      animation: shlPulseRing 1.9s ease-in-out infinite;
+    }
+    .shl-boot-bar-track {
+      width: 100%; height: 9px; border-radius: 999px; background: #1e293b;
+      overflow: hidden; border: 1px solid #334155; margin: 12px 0 8px;
+    }
+    .shl-boot-bar-fill {
+      height: 100%; width: 8%; border-radius: 999px;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e, #ef4444);
+      background-size: 220% 100%; animation: shlShimmer 2s linear infinite;
+      transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .shl-boot-steps { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 12px; }
+    .shl-boot-step { display: flex; align-items: center; gap: 8px; color: #64748b; transition: color 0.2s; }
+    .shl-boot-step.active { color: #fde68a; font-weight: 700; }
+    .shl-boot-step.done { color: #4ade80; }
+    #shlResumeBar {
+      position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 99998;
+      background: transparent; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+    }
+    #shlResumeBar.active { opacity: 1; }
+    #shlResumeBarInner {
+      height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+      transition: width 0.3s ease;
+    }
+  </style>
+  <div id="shlResumeBar" aria-hidden="true"><div id="shlResumeBarInner"></div></div>
+  <div id="shlBootSplash" role="status" aria-live="polite">
+    <div class="shl-boot-card">
+      <div class="shl-boot-logo">SHL</div>
+      <div style="text-align:center;">
+        <div style="font-size:16px;font-weight:900;letter-spacing:0.4px;color:#f8fafc;">SHL TW · 永豐金即時量化系統</div>
+        <div id="shlBootSub" style="font-size:11.5px;color:#94a3b8;margin-top:3px;">正在初始化系統並自動連線行情伺服器...</div>
+      </div>
+      <div class="shl-boot-bar-track"><div id="shlBootBarFill" class="shl-boot-bar-fill"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-family:ui-monospace,monospace;">
+        <span id="shlBootStageText" style="color:#fde68a;font-weight:700;">啟動引擎中...</span>
+        <span id="shlBootPct" style="color:#38bdf8;font-weight:800;">8%</span>
+      </div>
+      <div class="shl-boot-steps" id="shlBootSteps">
+        <div class="shl-boot-step active" data-step="1"><span>◌</span><span>讀取本機設定、安全保險箱與自選股</span></div>
+        <div class="shl-boot-step" data-step="2"><span>◌</span><span>自動連線本機／24H 雲端後端伺服器</span></div>
+        <div class="shl-boot-step" data-step="3"><span>◌</span><span>抓取台股即時報價、五檔與大盤指數</span></div>
+        <div class="shl-boot-step" data-step="4"><span>◌</span><span>載入當日即時 K 線走勢與多空戰情室</span></div>
+        <div class="shl-boot-step" data-step="5"><span>◌</span><span>同步永豐全市場訊號串流與帳務狀態</span></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+        <button type="button" id="btnShlBootSkip" style="background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;">略過等待 →</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.SHL_BOOT_LOADER = (function() {
+      let curPct = 8;
+      let finished = false;
+      const $ = (id) => document.getElementById(id);
+      function setProgress(pct, text, stepIdx) {
+        if (finished) return;
+        curPct = Math.max(curPct, Math.min(100, Math.round(pct)));
+        const fill = $('shlBootBarFill');
+        const pctEl = $('shlBootPct');
+        const txtEl = $('shlBootStageText');
+        if (fill) fill.style.width = curPct + '%';
+        if (pctEl) pctEl.textContent = curPct + '%';
+        if (txtEl && text) txtEl.textContent = text;
+        if (stepIdx) {
+          document.querySelectorAll('#shlBootSteps .shl-boot-step').forEach((el) => {
+            const s = Number(el.dataset.step || 0);
+            const icon = el.querySelector('span');
+            if (s < stepIdx) {
+              el.className = 'shl-boot-step done';
+              if (icon) icon.textContent = '✓';
+            } else if (s === stepIdx) {
+              el.className = 'shl-boot-step active';
+              if (icon) icon.textContent = '◉';
+            } else {
+              el.className = 'shl-boot-step';
+              if (icon) icon.textContent = '◌';
+            }
+          });
+        }
+      }
+      function finish(msg) {
+        if (finished) return;
+        setProgress(100, msg || '即時行情載入完成！', 6);
+        finished = true;
+        setTimeout(() => {
+          const sp = $('shlBootSplash');
+          if (sp) sp.classList.add('is-done');
+        }, 280);
+      }
+      function showResumeBar(pct) {
+        const bar = $('shlResumeBar');
+        const inner = $('shlResumeBarInner');
+        if (!bar || !inner) return;
+        bar.classList.add('active');
+        inner.style.width = Math.min(100, Math.max(5, pct)) + '%';
+        if (pct >= 100) {
+          setTimeout(() => { bar.classList.remove('active'); inner.style.width = '0%'; }, 380);
+        }
+      }
+      setTimeout(() => {
+        const btn = $('btnShlBootSkip');
+        if (btn) btn.addEventListener('click', () => finish('已進入主畫面（背景持續載入）'));
+      }, 0);
+      // Hard safety timeout: never trap user on splash longer than 10 seconds
+      setTimeout(() => { if (!finished) finish('主畫面就緒（背景同步中）'); }, 10000);
+      return { setProgress, finish, showResumeBar };
+    })();
+  </script>
   <!-- Sticky Top Navigation (Clean Menu-Driven Header) -->
   <header class="topbar">
     <div class="container topbar-inner">
@@ -2507,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.15.1 · 版本說明
+              v3.16.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -16690,6 +16823,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
       updatePwaInstallStatusUI();
 
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(18, '已讀取本機設定，檢核安全保險箱...', 1);
       // Gate startup behind Device Sandbox Vault (Face ID / Touch ID / Phone Passcode / Vault Password) if enabled
       if (window.SHL_VAULT) {
         await window.SHL_VAULT.ensureUnlockedOnBoot();
@@ -16702,7 +16836,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
 
       // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
-      await detectBackend();
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(35, '自動連線本機／24H 雲端後端...', 2);
+      const backendOk = await detectBackend();
       if (window.SHL_VAULT) window.SHL_VAULT.refreshUI();
       if (window.SHL_EXT) window.SHL_EXT.init();
 
@@ -16713,16 +16848,33 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         testAllAiModels(true).catch(() => {});
       }
 
-      if (window.SHL_EXT) {
-        window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {});
+      if (window.SHL_BOOT_LOADER) {
+        window.SHL_BOOT_LOADER.setProgress(
+          58,
+          backendOk ? '後端已連線！抓取台股即時報價與大盤...' : '抓取台股官方即時報價與大盤...',
+          3
+        );
       }
-      await fetchMarketData(state.activeSymbol, 'auto');
+      const rtPromise = (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function')
+        ? Promise.race([
+            window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {}),
+            new Promise(r => setTimeout(r, 2500))
+          ])
+        : Promise.resolve();
+      await rtPromise;
+
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(80, `載入 ${state.activeSymbol} 當日即時 K 線與技術線...`, 4);
+      await Promise.race([
+        fetchMarketData(state.activeSymbol, 'auto').catch(() => {}),
+        new Promise(r => setTimeout(r, 3500))
+      ]);
       // Sync top 4 benchmark stocks automatically in background
       for (const sym of ['2317', '2454', '0050', '3037']) {
         if (sym !== state.activeSymbol && state.watchlist.some(w => w.symbol === sym)) {
           fetchMarketData(sym, 'auto');
         }
       }
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(92, '同步永豐全市場訊號串流與帳務...', 5);
     }
 
     // =========================================================================
@@ -20533,8 +20685,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.15.1';
+      const CURRENT_VERSION = 'v3.16.0';
       const HISTORY = [
+        {
+          ver: 'v3.16.0',
+          items: [
+            '新增仿永豐金 APP 啟動載入畫面（SHL_BOOT_LOADER）：開啟時動態顯示 0%~100% 載入進度條與 5 大即時階段（讀取設定→自動連線後端→抓取即時報價與大盤→載入當日 K 線→同步訊號串流），載入完畢自動淡出並附「略過等待」安全逃生鈕',
+            '強化電腦版與手機版關閉正常結束機制：launcher.py 與 server.py 新增 3 秒優雅關閉與 shutdown 鉤子釋放 SSE／連接埠；Android MainActivity 補齊 onPause / onResume / onDestroy 完整釋放 WebView 與本機資源；前端 SHL_LIFECYCLE 於 pagehide/beforeunload 自動存檔並關閉串流',
+            '強化手機／電腦重新開啟與背景返回自動連線：切回前景時自動顯示頂部纖細載入進度條，自動重連後端、刷新最新台股報價並重新掛載永豐訊號串流'
+          ]
+        },
         {
           ver: 'v3.15.1',
           items: [
@@ -22021,7 +22181,89 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         $('btnSjSigRefresh')?.addEventListener('click', () => { applySubscription(false); refreshContrib(); });
       }
 
-      return { init, applySubscription, refreshContrib, renderFilterPanel, cfg };
+      function stopStream() {
+        if (sse) {
+          try { sse.close(); } catch (e) {}
+          sse = null;
+        }
+      }
+
+      return { init, applySubscription, refreshContrib, renderFilterPanel, cfg, stopStream, connectSse };
+    })();
+
+    // v3.16.0: Unified Desktop & Mobile Clean Shutdown + Foreground Auto-Reconnect Lifecycle
+    window.SHL_LIFECYCLE = (function() {
+      let lastHiddenAt = 0;
+      let reconnecting = false;
+
+      function cleanShutdown() {
+        try { persistState(); } catch (e) {}
+        try { if (window.SHL_SIGNALS && window.SHL_SIGNALS.stopStream) window.SHL_SIGNALS.stopStream(); } catch (e) {}
+        try {
+          if (window._shlCloudKeepAliveTimer) {
+            clearInterval(window._shlCloudKeepAliveTimer);
+            window._shlCloudKeepAliveTimer = null;
+          }
+        } catch (e) {}
+      }
+
+      async function reconnectOnResume(force) {
+        if (reconnecting) return;
+        const hiddenMs = lastHiddenAt ? (Date.now() - lastHiddenAt) : 0;
+        lastHiddenAt = 0;
+        if (!force && hiddenMs < 15000 && state.backendDetected) return;
+        reconnecting = true;
+        try {
+          if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.showResumeBar(25);
+          await detectBackend({ retries: 2, timeoutMs: 10000 });
+          if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.showResumeBar(60);
+          if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+            await Promise.race([
+              window.SHL_EXT.refreshRealtimeQuotes(true).catch(() => {}),
+              new Promise(r => setTimeout(r, 3000))
+            ]);
+          }
+          if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.showResumeBar(85);
+          if (window.SHL_SIGNALS && state.backendDetected) {
+            window.SHL_SIGNALS.connectSse();
+            window.SHL_SIGNALS.refreshContrib().catch(() => {});
+          }
+          if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.showResumeBar(100);
+        } catch (e) {
+          if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.showResumeBar(100);
+        } finally {
+          reconnecting = false;
+        }
+      }
+
+      window.__shlAppShutdown = cleanShutdown;
+      window.addEventListener('pagehide', cleanShutdown);
+      window.addEventListener('beforeunload', cleanShutdown);
+      window.addEventListener('pageshow', (ev) => {
+        if (ev && ev.persisted) reconnectOnResume(true);
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          lastHiddenAt = Date.now();
+          try { persistState(); } catch (e) {}
+        } else {
+          reconnectOnResume(false);
+        }
+      });
+
+      const prevResume = window.__shlOnNativeResume;
+      window.__shlOnNativeResume = () => {
+        try { if (typeof prevResume === 'function') prevResume(); } catch (e) {}
+        reconnectOnResume(true);
+      };
+      const prevBg = window.__shlOnNativeBackground;
+      window.__shlOnNativeBackground = () => {
+        lastHiddenAt = Date.now();
+        try { persistState(); } catch (e) {}
+        try { if (typeof prevBg === 'function') prevBg(); } catch (e) {}
+      };
+
+      return { cleanShutdown, reconnectOnResume };
     })();
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -22042,6 +22284,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
         if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
+        if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.finish('即時數據與連線就緒！');
       });
     });
   </script>

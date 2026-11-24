@@ -108,21 +108,55 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (webView != null) {
+            try {
+                webView.evaluateJavascript("if (typeof window.__shlOnNativeBackground === 'function') window.__shlOnNativeBackground();", null);
+            } catch (Exception ignored) {}
+            webView.onPause();
+            webView.pauseTimers();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            webView.resumeTimers();
+            webView.onResume();
+            try {
+                webView.evaluateJavascript("if (typeof window.__shlOnNativeResume === 'function') window.__shlOnNativeResume();", null);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
         } else {
-            super.onBackPressed();
+            finishAndRemoveTask();
         }
     }
 
     @Override
     protected void onDestroy() {
-        if (assetServer != null) {
-            assetServer.stop();
-        }
         if (webView != null) {
-            webView.destroy();
+            try {
+                webView.evaluateJavascript("if (typeof window.__shlAppShutdown === 'function') window.__shlAppShutdown();", null);
+                webView.stopLoading();
+                webView.loadUrl("about:blank");
+                webView.removeAllViews();
+                webView.destroy();
+            } catch (Exception ignored) {}
+            webView = null;
+        }
+        if (assetServer != null) {
+            try {
+                assetServer.stop();
+            } catch (Exception ignored) {}
+            assetServer = null;
         }
         super.onDestroy();
     }

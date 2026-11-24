@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.12.0",
+    version="3.12.1",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.12.0",
+        "version": "3.12.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3605,45 +3605,160 @@ def _parse_mis_float(v: Any) -> Optional[float]:
         return None
 
 
+_OFFICIAL_EOD_CACHE: dict[str, Any] = {"ts": 0.0, "data": {}}
+
+
+def _parse_eod_num(v: Any) -> Optional[float]:
+    try:
+        s = str(v or "").replace(",", "").replace("+", "").replace("X", "").strip()
+        if not s or s in ("-", "--", "N/A"):
+            return None
+        return float(s)
+    except Exception:
+        return None
+
+
+def _fetch_twse_eod_sync() -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+    try:
+        req = urllib.request.Request("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL", headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as r:
+            rows = json.loads(r.read().decode("utf-8", errors="replace"))
+        if isinstance(rows, list):
+            for row in rows:
+                code = str(row.get("Code", "")).strip().upper()
+                close = _parse_eod_num(row.get("ClosingPrice"))
+                if not code or close is None or close <= 0:
+                    continue
+                chg = _parse_eod_num(row.get("Change"))
+                prev = round(close - chg, 4) if chg is not None else close
+                shares = _parse_eod_num(row.get("TradeVolume")) or 0.0
+                out[code] = {
+                    "symbol": code,
+                    "name": str(row.get("Name", "")).strip(),
+                    "exchange": "tse",
+                    "price": close,
+                    "prev_close": prev if prev > 0 else close,
+                    "change": round(chg, 4) if chg is not None else 0.0,
+                    "change_pct": round((chg / prev) * 100.0, 2) if (chg is not None and prev > 0) else 0.0,
+                    "open": _parse_eod_num(row.get("OpeningPrice")) or close,
+                    "high": _parse_eod_num(row.get("HighestPrice")) or close,
+                    "low": _parse_eod_num(row.get("LowestPrice")) or close,
+                    "volume_lots": round(shares / 1000.0, 2),
+                    "date": str(row.get("Date", "")).strip(),
+                    "is_eod_official": True,
+                }
+    except Exception:
+        pass
+    return out
+
+
+def _fetch_tpex_eod_sync() -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+    try:
+        req = urllib.request.Request("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes", headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as r:
+            rows = json.loads(r.read().decode("utf-8", errors="replace"))
+        if isinstance(rows, list):
+            for row in rows:
+                code = str(row.get("SecuritiesCompanyCode", "")).strip().upper()
+                close = _parse_eod_num(row.get("Close"))
+                if not code or close is None or close <= 0:
+                    continue
+                chg = _parse_eod_num(row.get("Change"))
+                prev = round(close - chg, 4) if chg is not None else close
+                shares = _parse_eod_num(row.get("TradingShares")) or 0.0
+                out[code] = {
+                    "symbol": code,
+                    "name": str(row.get("CompanyName", "")).strip(),
+                    "exchange": "otc",
+                    "price": close,
+                    "prev_close": prev if prev > 0 else close,
+                    "change": round(chg, 4) if chg is not None else 0.0,
+                    "change_pct": round((chg / prev) * 100.0, 2) if (chg is not None and prev > 0) else 0.0,
+                    "open": _parse_eod_num(row.get("Open")) or close,
+                    "high": _parse_eod_num(row.get("High")) or close,
+                    "low": _parse_eod_num(row.get("Low")) or close,
+                    "volume_lots": round(shares / 1000.0, 2),
+                    "date": str(row.get("Date", "")).strip(),
+                    "is_eod_official": True,
+                }
+    except Exception:
+        pass
+    return out
+
+
+async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
+    now = time.time()
+    if _OFFICIAL_EOD_CACHE["data"] and (now - _OFFICIAL_EOD_CACHE["ts"]) < 300:
+        return _OFFICIAL_EOD_CACHE["data"]
+    twse_map, tpex_map = await asyncio.gather(
+        asyncio.to_thread(_fetch_twse_eod_sync),
+        asyncio.to_thread(_fetch_tpex_eod_sync),
+    )
+    merged = {**tpex_map, **twse_map}
+    if merged:
+        _OFFICIAL_EOD_CACHE["data"] = merged
+        _OFFICIAL_EOD_CACHE["ts"] = now
+    return _OFFICIAL_EOD_CACHE["data"]
+
+
 @app.get("/api/v1/market/realtime")
 async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
     """
     盤中即時報價（三竹股市同級官方 TWSE/TPEx MIS 來源）：成交價、漲跌、開高低昨收、總量、單量、五檔。
     symbols=2330,6488 （自動同時查詢上市 tse 與上櫃 otc 通道）；indices=t00（加權）,o00（櫃買）。
+    若遇盤前 MIS 重置無成交量/價，自動以 TWSE/TPEx OpenData 官方最近交易日收盤與成交量補齊，不歸零。
     """
-    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:60]
+    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:80]
     idx = [x.strip().lower() for x in indices.split(",") if x.strip().lower() in ("t00", "o00", "t13", "t17")]
-    channels: list[str] = []
+    all_channels: list[str] = []
     for i in idx:
-        channels.append(f"{'otc' if i.startswith('o') else 'tse'}_{i}.tw")
+        all_channels.append(f"{'otc' if i.startswith('o') else 'tse'}_{i}.tw")
     for sy in syms:
-        channels.append(f"tse_{sy}.tw")
-        channels.append(f"otc_{sy}.tw")
-    if not channels:
+        all_channels.append(f"tse_{sy}.tw")
+        all_channels.append(f"otc_{sy}.tw")
+    if not all_channels:
         raise HTTPException(status_code=400, detail="請提供 symbols 或 indices")
-    url = (
-        "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch="
-        + urllib.parse.quote("|".join(channels), safe="|_.")
-        + f"&_={int(time.time() * 1000)}"
-    )
-    status, data, _ = await asyncio.to_thread(_sync_relay_request, url, "GET", None, "")
-    if status != 200:
-        raise HTTPException(status_code=502, detail=f"TWSE MIS HTTP {status}")
-    try:
-        payload = json.loads(data.decode("utf-8", errors="replace").strip())
-    except Exception:
-        raise HTTPException(status_code=502, detail="TWSE MIS 回應格式異常")
+
+    # Fetch MIS chunks concurrently (max 50 channels per request so TWSE MIS never drops trailing symbols)
+    chunk_size = 50
+    chunks = [all_channels[s:s + chunk_size] for s in range(0, len(all_channels), chunk_size)]
+
+    async def _fetch_chunk(ch_list: list[str]) -> list[dict[str, Any]]:
+        url = (
+            "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch="
+            + urllib.parse.quote("|".join(ch_list), safe="|_.")
+            + f"&_={int(time.time() * 1000)}"
+        )
+        try:
+            status, data, _ = await asyncio.to_thread(_sync_relay_request, url, "GET", None, "")
+            if status == 200:
+                payload = json.loads(data.decode("utf-8", errors="replace").strip())
+                return payload.get("msgArray", []) or []
+        except Exception:
+            pass
+        return []
+
+    chunk_results = await asyncio.gather(*[_fetch_chunk(c) for c in chunks])
+    msg_rows: list[dict[str, Any]] = [row for sub in chunk_results for row in sub]
+
     out: dict[str, Any] = {}
-    for m in payload.get("msgArray", []) or []:
+    need_eod_syms: list[str] = []
+    for m in msg_rows:
         code = str(m.get("c", "")).strip()
         if not code:
             continue
-        last = _parse_mis_float(m.get("z"))
+        raw_z = _parse_mis_float(m.get("z"))
         bids = [_parse_mis_float(x) for x in str(m.get("b", "")).split("_") if x]
         asks = [_parse_mis_float(x) for x in str(m.get("a", "")).split("_") if x]
+        last = raw_z
         if last is None:
             last = _parse_mis_float(m.get("pz")) or (bids[0] if bids else None) or _parse_mis_float(m.get("y"))
         prev = _parse_mis_float(m.get("y"))
+        vol_lots = _parse_mis_float(m.get("v"))
         out[code] = {
             "symbol": code,
             "name": m.get("n", ""),
@@ -3655,7 +3770,7 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
             "open": _parse_mis_float(m.get("o")),
             "high": _parse_mis_float(m.get("h")),
             "low": _parse_mis_float(m.get("l")),
-            "volume_lots": _parse_mis_float(m.get("v")),
+            "volume_lots": vol_lots,
             "tick_volume": _parse_mis_float(m.get("tv")),
             "bids": bids[:5],
             "bid_sizes": [_parse_mis_float(x) for x in str(m.get("g", "")).split("_") if x][:5],
@@ -3665,8 +3780,47 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
             "time": m.get("t", ""),
             "tlong": m.get("tlong", ""),
         }
+        # Detect pre-market / MIS-reset empty rows (no intraday trade & zero volume)
+        if code not in ("t00", "o00", "t13", "t17") and raw_z is None and (vol_lots is None or vol_lots <= 0):
+            need_eod_syms.append(code)
+
+    for sy in syms:
+        if sy not in out:
+            need_eod_syms.append(sy)
+
+    used_eod = False
+    if need_eod_syms:
+        eod_map = await _get_official_eod_map()
+        for code in set(need_eod_syms):
+            eod = eod_map.get(code)
+            if not eod:
+                continue
+            used_eod = True
+            base = out.get(code, {})
+            out[code] = {
+                **base,
+                "symbol": code,
+                "name": base.get("name") or eod["name"],
+                "exchange": base.get("exchange") or eod["exchange"],
+                "price": eod["price"],
+                "prev_close": eod["prev_close"],
+                "change": eod["change"],
+                "change_pct": eod["change_pct"],
+                "open": eod["open"],
+                "high": eod["high"],
+                "low": eod["low"],
+                "volume_lots": eod["volume_lots"],
+                "date": base.get("date") or eod["date"],
+                "time": base.get("time") or "收盤",
+                "is_eod_official": True,
+            }
+
     return JSONResponse(
-        {"source": "TWSE/TPEx MIS 官方即時", "server_time": tw_now_str(), "quotes": out},
+        {
+            "source": "TWSE/TPEx 官方最近交易日收盤＋MIS即時" if used_eod else "TWSE/TPEx MIS 官方即時",
+            "server_time": tw_now_str(),
+            "quotes": out,
+        },
         headers={"Cache-Control": "no-store"},
     )
 
@@ -4164,7 +4318,7 @@ async def shioaji_test_token(req: ShioajiConfigRequest):
 
 @app.get("/api/v1/shioaji/snapshots")
 async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
-    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:50]
+    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:80]
     sj_data = await _fetch_shioaji_http_snapshots(syms)
     if sj_data:
         return JSONResponse(

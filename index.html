@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.12.0 · 版本說明
+              v3.12.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -16005,15 +16005,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
 
         const existing = state.quotes[code] || {};
+        const isPreMarketEmpty = volumeLots === 0 && prevClose && Math.abs(price - prevClose) < 1e-6 && !m.is_eod_official;
+        const keepExistingStats = isPreMarketEmpty && (Number(existing.volume || 0) > 0 || (existing.prevClose && existing.price && Math.abs(existing.price - existing.prevClose) > 1e-6));
+        const finalPrevClose = keepExistingStats ? existing.prevClose : (prevClose ?? existing.prevClose ?? open);
+        const finalVolLots = keepExistingStats ? (existing.volumeLots || Math.round((existing.volume || 0) / 1000)) : volumeLots;
+        const finalVol = keepExistingStats ? (existing.volume || finalVolLots * 1000) : (volumeLots * 1000);
         state.quotes[code] = {
           ...existing,
-          price,
-          prevClose: prevClose ?? existing.prevClose ?? open,
-          open,
-          high,
-          low,
-          volume: volumeLots * 1000,
-          volumeLots,
+          price: keepExistingStats ? existing.price : price,
+          prevClose: finalPrevClose,
+          open: keepExistingStats ? (existing.open ?? open) : open,
+          high: keepExistingStats ? (existing.high ?? high) : high,
+          low: keepExistingStats ? (existing.low ?? low) : low,
+          volume: finalVol,
+          volumeLots: finalVolLots,
           tickVolume: tickVol,
           bids,
           bidSizes,
@@ -16022,8 +16027,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           lastDate: stamp,
           isRealtime: true,
           realtimeTs: Date.now(),
-          realtimeSource: 'TWSE/TPEx MIS 即時',
-          source: existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : 'TWSE/TPEx MIS 官方即時',
+          realtimeSource: m.is_eod_official ? 'TWSE/TPEx 官方收盤' : 'TWSE/TPEx MIS 即時',
+          source: existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : (m.is_eod_official ? 'TWSE/TPEx 官方最近交易日' : 'TWSE/TPEx MIS 官方即時'),
           sourceType: existing.sourceType || 'twse_mis'
         };
         return true;
@@ -16151,10 +16156,53 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return ok;
       }
 
+      const FLOW_CHAIN_SYMBOLS = [
+        '2382', '2317', '3231', '6669', '2356', '2330', '2454', '3711', '2303', '3034',
+        '3363', '3163', '4979', '6442', '3450', '3131', '6187', '2308', '3017', '3008',
+        '4958', '2327', '3037', '3189', '8046', '2368', '6213', '3324', '2421', '6805',
+        '2345', '2881', '2882', '2891', '2886', '0050', '0056', '00878', '00919'
+      ];
+
+      async function fetchTwseOpenDataStatic(symSet) {
+        let count = 0;
+        try {
+          const r = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+          if (r.ok) {
+            const rows = await r.json();
+            if (Array.isArray(rows)) {
+              rows.forEach(row => {
+                const code = String(row.Code || '').trim().toUpperCase();
+                if (!symSet.has(code)) return;
+                const close = parseNum(String(row.ClosingPrice || '').replace(/,/g, ''));
+                if (close === null || close <= 0) return;
+                const chg = parseNum(String(row.Change || '').replace(/[,+X]/g, '')) ?? 0;
+                const prev = Number((close - chg).toFixed(4)) || close;
+                const shares = parseNum(String(row.TradeVolume || '').replace(/,/g, '')) ?? 0;
+                if (applyMisRow({
+                  symbol: code,
+                  name: row.Name || '',
+                  price: close,
+                  prev_close: prev > 0 ? prev : close,
+                  open: parseNum(String(row.OpeningPrice || '').replace(/,/g, '')) ?? close,
+                  high: parseNum(String(row.HighestPrice || '').replace(/,/g, '')) ?? close,
+                  low: parseNum(String(row.LowestPrice || '').replace(/,/g, '')) ?? close,
+                  volume_lots: Number((shares / 1000).toFixed(2)),
+                  date: String(row.Date || ''),
+                  time: '收盤',
+                  is_eod_official: true
+                })) count++;
+              });
+            }
+          }
+        } catch (e) {}
+        return count;
+      }
+
       async function refreshRealtimeQuotes(silent = true, extraSymbols = []) {
         const syms = Array.from(new Set([
           ...state.watchlist.map(w => w.symbol),
           ...state.ext.lockTickerSymbols.filter(s => !['t00', 'o00', 'TXF'].includes(s)),
+          ...FLOW_CHAIN_SYMBOLS,
           ...(Array.isArray(extraSymbols) ? extraSymbols : [])
         ])).filter(s => /^[0-9A-Z]{4,6}$/.test(s));
 
@@ -16164,7 +16212,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         try {
           if (apiBase) {
-            // v3.10.5: Prioritize Sinotrade Shioaji Pro snapshots (seamless fallback to TWSE/TPEx MIS)
+            // v3.12.1: Fetch watchlist + all 12-chain sector stocks via Shioaji Pro / TWSE+TPEx MIS + official EOD fallback
             const sjUrl = `${apiBase}/api/v1/shioaji/snapshots?symbols=${encodeURIComponent(syms.join(','))}&_t=${Date.now()}`;
             const resp = await fetch(sjUrl, { cache: 'no-store' });
             let usedShioaji = false;
@@ -16172,7 +16220,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               const j = await resp.json();
               usedShioaji = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
               Object.values(j.quotes || {}).forEach(row => { if (applyMisRow(row)) updated++; });
-              if (badge) badge.textContent = usedShioaji ? `永豐金 Shioaji 即時 (${nowTwTime()})` : `TWSE/TPEx 官方即時 (${nowTwTime()})`;
+              if (badge) badge.textContent = usedShioaji ? `永豐金 Shioaji 即時 (${nowTwTime()})` : `${j.source || 'TWSE/TPEx 官方即時'} (${nowTwTime()})`;
               // If Shioaji returned stock snapshots without t00/o00 indices, also sync TWSE/TPEx indices
               if (usedShioaji && (!j.quotes?.t00 || !j.quotes?.o00)) {
                 try {
@@ -16186,7 +16234,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             }
           } else if (isAndroidApkHost()) {
             const channels = ['tse_t00.tw', 'otc_o00.tw'];
-            syms.slice(0, 35).forEach(s => { channels.push(`tse_${s}.tw`, `otc_${s}.tw`); });
+            syms.slice(0, 45).forEach(s => { channels.push(`tse_${s}.tw`, `otc_${s}.tw`); });
             const misUrl = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${encodeURIComponent(channels.join('|'))}&_=${Date.now()}`;
             const resp = await androidProxyFetch(misUrl);
             if (resp.ok) {
@@ -16198,7 +16246,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             updated += await fetchFugleRealtime(syms);
             if (badge && updated > 0) badge.textContent = `Fugle 富果即時 (${nowTwTime()})`;
           } else {
-            if (badge) badge.textContent = `靜態模式（連線後端/App/Fugle 啟用盤中即時）`;
+            // Static GitHub Pages fallback: fetch official TWSE STOCK_DAY_ALL so heatmap/ranking/rotation/panorama never zero out
+            updated += await fetchTwseOpenDataStatic(new Set(syms));
+            if (badge) badge.textContent = updated > 0
+              ? `TWSE 官方收盤行情 (${nowTwTime()})`
+              : `靜態模式（連線後端/App/Fugle 啟用盤中即時）`;
           }
 
           await fetchTaifexRealtime();
@@ -16218,12 +16270,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             lastBar.close = Number(actQ.price);
             lastBar.high = Math.max(Number(lastBar.high || actQ.price), Number(actQ.price));
             lastBar.low = Math.min(Number(lastBar.low || actQ.price), Number(actQ.price));
-            if (state.chartMode !== 'tv' && typeof renderRawCandlestickChart === 'function') {
-              try { renderRawCandlestickChart(); } catch (e) {}
+            if (state.chartMode !== 'tv' && typeof renderRawPriceChart === 'function') {
+              try { renderRawPriceChart(); } catch (e) {}
             }
           }
           renderActiveStockHeaderAndOhlcv();
           renderWatchlistPills();
+          if (window.SHL_EXT && typeof window.SHL_EXT.renderCapitalFlow === 'function') {
+            try { window.SHL_EXT.renderCapitalFlow(); } catch (e) {}
+          }
         }
         return { updated };
       }
@@ -17085,6 +17140,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           rtSel.value = String(state.ext.realtimeRefreshSec || 0);
           rtSel.addEventListener('change', () => setRealtimeRefreshSec(Number(rtSel.value)));
           if (state.ext.realtimeRefreshSec > 0) setRealtimeRefreshSec(state.ext.realtimeRefreshSec);
+          else refreshRealtimeQuotes(true).catch(() => {});
         }
         const fugleIn = document.getElementById('fugleApiKeyInput');
         if (fugleIn && state.ext.fugleApiKey) fugleIn.value = state.ext.fugleApiKey;
@@ -17815,7 +17871,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             }).join('')}
           `;
           stage.querySelectorAll('[data-flow-sector]').forEach(r => {
-            r.addEventListener('click', () => { state.ext.flowSelectedSector = r.dataset.flowSector; state.ext.flowTab = 'heatmap'; renderCapitalFlow(); });
+            r.addEventListener('click', () => { state.ext.flowSelectedSector = r.dataset.flowSector; state.ext.flowTab = 'heatmap'; window.SHL_EXT.renderCapitalFlow(); });
           });
           return;
         }
@@ -17991,19 +18047,19 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.querySelectorAll('[data-flow-tab]').forEach(btn => {
           btn.addEventListener('click', () => {
             state.ext.flowTab = btn.dataset.flowTab;
-            renderCapitalFlow();
+            window.SHL_EXT.renderCapitalFlow();
           });
         });
         document.getElementById('btnFlowPrivacyToggle')?.addEventListener('click', e => {
           state.ext.flowPrivacy = !state.ext.flowPrivacy;
           e.currentTarget.textContent = state.ext.flowPrivacy ? '👁 取消遮蔽' : '🙈 金額遮蔽';
-          renderCapitalFlow();
+          window.SHL_EXT.renderCapitalFlow();
         });
 
         installDesktopMouseDrag();
         renderSignalHistory();
         renderLiveActivityCard();
-        renderCapitalFlow();
+        window.SHL_EXT.renderCapitalFlow();
         refreshShioajiStatus();
         fetchGlobalIndices().then(renderLiveActivityCard);
         if (window.SHIOAJI_PRO && typeof window.SHIOAJI_PRO.init === 'function') {
@@ -19537,8 +19593,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.12.0';
+      const CURRENT_VERSION = 'v3.12.1';
       const HISTORY = [
+        {
+          ver: 'v3.12.1',
+          items: [
+            '修正盤前／MIS 重置期間熱力圖、排行、輪動與產業全景全部顯示 +0% · +0億 問題：後端自動偵測 MIS 無盤中成交量時，即時以官方 TWSE STOCK_DAY_ALL 與 TPEx OpenData 最近交易日真實收盤價、漲跌幅與成交量補齊（零假資料、絕不歸零）',
+            '擴大即時刷新涵蓋全部台灣 12 大產業鏈 39 檔核心成分股（後端自動分批向 TWSE/TPEx MIS 查詢避免截斷），並於每次刷新後即時重繪熱力／排行／輪動／產業全景',
+            '修正熱力／排行／輪動／產業全景頁籤切換事件指向 window.SHL_EXT.renderCapitalFlow()，並強化靜態網頁模式直連 TWSE OpenData 補齊行情'
+          ]
+        },
         {
           ver: 'v3.12.0',
           items: [

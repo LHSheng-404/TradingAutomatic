@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.12.1 · 版本說明
+              v3.13.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -5643,6 +5643,7 @@
           shioaji: state.ext.shioaji,
           sjIndicators: state.ext.sjIndicators,
           tabMemory: state.ext.tabMemory || {},
+          war: state.ext.war || {},
           aiFocusPrompt: state.ext.aiFocusPrompt || '',
           aiFocusMode: state.ext.aiFocusMode || 'AUTO',
           monthlyRebateLedger: state.ext.monthlyRebateLedger || {},
@@ -5733,6 +5734,7 @@
         if (Array.isArray(saved.ext.signalHistory)) state.ext.signalHistory = saved.ext.signalHistory.slice(0, 100);
         if (saved.ext.shioaji && typeof saved.ext.shioaji === 'object') state.ext.shioaji = Object.assign({ simApiKey: '', simSecretKey: '', apiKey: '', secretKey: '', httpUrl: 'http://127.0.0.1:8080', simulation: true }, saved.ext.shioaji);
         if (saved.ext.sjIndicators && typeof saved.ext.sjIndicators === 'object') state.ext.sjIndicators = Object.assign({ ema: true, ma20: true, bb: false, vwap: true, signals: true }, saved.ext.sjIndicators);
+        if (saved.ext.war && typeof saved.ext.war === 'object') state.ext.war = saved.ext.war;
         if (saved.ext.tabMemory && typeof saved.ext.tabMemory === 'object') {
           state.ext.tabMemory = saved.ext.tabMemory;
           try { localStorage.setItem('synapse_tw_tab_memory_v1', JSON.stringify(saved.ext.tabMemory)); } catch (e) {}
@@ -19593,8 +19595,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.12.1';
+      const CURRENT_VERSION = 'v3.13.0';
       const HISTORY = [
+        {
+          ver: 'v3.13.0',
+          items: [
+            '資料源調整：永豐 Shioaji 即時為主（逐筆／五檔），無 Token 自動降級 TWSE MIS 即時快照估算並明確標示來源；FinMind 僅作盤後輔助，Yahoo 僅備援',
+            '新增「⚔️ 盤中作戰室」：① 大盤趨勢偵測（加權指數均線＋官方上市櫃漲跌家數）② 全市場／高成交值／12 大產業鏈＋自選股 多空前 50 檔（新 API GET /api/v1/market/rank）③ 自選股逐檔訊號偵測',
+            '移植 TradingView「SMC BOS + 訂單流 + VWAP/FVG」策略：SMC 壓縮通道 BOS、FVG 首次回測、OF Delta 過濾、爆量、VWAP、冷卻／最短持有，輸出自動進出場點位；可切換「BOS+FVG／僅 BOS／僅 FVG」',
+            '止損設定：SMC 結構邊界／ATR 動態／固定百分比、RRR、單筆風險%、最大槓桿；動態出場含 1R 保本、Fib 0.382 移動停利、Granville MA50 反轉、13:25 尾盤強制出場',
+            '單股偵測：大單流向（Shioaji 五檔／MIS 五檔估算）＋ FVG 訊號 → 進出場建議、回測績效（含手續費、證交稅、滑點）',
+            '盤中真實點位下單：依訊號以真實報價於模擬單進場並記錄 SL/TP，自選股自動進出場（僅 SIM、台股盤中）；LIVE 一律手動確認',
+            'K 線圖顯示策略進場◆、出場◇（盈虧分色）、SL/TP 線與 FVG 區間，並顯示策略回測損益；作戰室設定納入雲端／遠端共享帳號同步'
+          ]
+        },
         {
           ver: 'v3.12.1',
           items: [
@@ -19818,8 +19832,567 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, render, CURRENT_VERSION, HISTORY };
     })();
 
+    // =========================================================================
+    // v3.13.0 盤中作戰室 (window.SHL_WAR)
+    // 永豐即時為主 · 大盤趨勢 / 多空前50 / 自選股偵測 / SMC+OF+FVG 量化訊號 / 止損 / 盤中下單 / 圖表進出場
+    // 策略移植自 TradingView「SMC+OF VF Alerts｜SMC BOS + 訂單流 + VWAP/FVG [Sheng]」
+    // =========================================================================
+    window.SHL_WAR = (function createWarRoom() {
+      const DEF = {
+        dataMode: 'auto', indMode: 'fvg', universe: 'all', minValueM: 100, iv: '5',
+        slMode: 'smc', atrMult: 1.2, slPct: 4, rrr: 1.015, riskPct: 4, capital: 1000000, maxLev: 1,
+        ofFilter: true, volFilter: true, volMult: 1.5, imbalance: 1.5,
+        be: true, fib: true, granville: true, minHold: 2, cooldown: 1,
+        boxLen: 20, squeezeMax: 3, fvgMinTicks: 1, fvgAge: 60,
+        feePct: 0.1425, taxDayPct: 0.15, taxSwingPct: 0.3, shortFeePct: 0.08,
+        chartOverlay: true, autoTrade: false, forceExit: true, scanSec: 60, stops: {}, lastAuto: {}
+      };
+      let timer = null;
+      let lastRank = null;
+      let lastAnalysis = null;
+
+      function cfg() {
+        state.ext = state.ext || {};
+        if (!state.ext.war || typeof state.ext.war !== 'object') state.ext.war = {};
+        Object.keys(DEF).forEach(k => { if (state.ext.war[k] === undefined) state.ext.war[k] = (typeof DEF[k] === 'object' ? JSON.parse(JSON.stringify(DEF[k])) : DEF[k]); });
+        return state.ext.war;
+      }
+      const $ = id => document.getElementById(id);
+      const esc = s => (typeof escapeHtml === 'function' ? escapeHtml(String(s ?? '')) : String(s ?? ''));
+      const fx = (n, d = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(d) : '--');
+      const isIntra = iv => ['1', '5', '15', '30', '60'].includes(String(iv));
+
+      // ---------------- Taiwan tick ladder ----------------
+      function tick(p) { return p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5; }
+      function snap(p) { const t = tick(p); return Math.round(p / t) * t; }
+
+      // ---------------- Engine (Pine port) ----------------
+      function analyze(bars, c, iv) {
+        const n = bars.length;
+        const out = { trades: [], open: null, zones: [], sigs: [], now: null, n, skipped: 0 };
+        if (n < 30) return out;
+        const intra = isIntra(iv);
+        const H = bars.map(b => +b.high), L = bars.map(b => +b.low), C = bars.map(b => +b.close), O = bars.map(b => +b.open), V = bars.map(b => +b.volume || 0);
+        // ATR14
+        const atr = []; let prevAtr = null;
+        for (let i = 0; i < n; i++) {
+          const tr = i ? Math.max(H[i] - L[i], Math.abs(H[i] - C[i - 1]), Math.abs(L[i] - C[i - 1])) : H[i] - L[i];
+          prevAtr = prevAtr === null ? tr : (prevAtr * 13 + tr) / 14; atr.push(i >= 13 ? prevAtr : null);
+        }
+        const smaAt = (arr, len, i) => { if (i < len - 1) return null; let s = 0; for (let k = i - len + 1; k <= i; k++) s += arr[k]; return s / len; };
+        const ma50 = C.map((_, i) => smaAt(C, Math.min(50, n), i < 49 ? null : i) );
+        // anchored VWAP (resets per day for intraday)
+        const vw = []; let cumPV = 0, cumV = 0, curDate = null;
+        for (let i = 0; i < n; i++) {
+          if (bars[i].date !== curDate) { curDate = bars[i].date; cumPV = 0; cumV = 0; }
+          const tp = (H[i] + L[i] + C[i]) / 3; cumPV += tp * V[i]; cumV += V[i];
+          vw.push(cumV > 0 ? cumPV / cumV : C[i]);
+        }
+        // CLV order-flow proxy (Pine fallback when no lower-TF volume)
+        const uv = [], dv = [];
+        for (let i = 0; i < n; i++) { const r = H[i] - L[i]; const u = r > 0 ? V[i] * (C[i] - L[i]) / r : V[i] / 2; uv.push(u); dv.push(V[i] - u); }
+        const dayLast = bars.map((b, i) => (i === n - 1 || bars[i + 1].date !== b.date));
+
+        const zonesAll = []; let active = [];
+        let pos = null; let cooldownUntil = -1;
+        const costOf = (px, qty, side, dayTrade, isShort) => {
+          const notional = px * qty; let cost = notional * c.feePct / 100;
+          if (side === 'SELL') cost += notional * (dayTrade ? c.taxDayPct : c.taxSwingPct) / 100;
+          if (isShort) cost += notional * c.shortFeePct / 100;
+          return cost;
+        };
+        const closeTrade = (i, px, reason) => {
+          const dir = pos.dir; const slip = tick(px);
+          const ex = dir > 0 ? px - slip : px + slip;
+          const dayTrade = intra;
+          const gross = (ex - pos.entry) * dir * pos.qty;
+          const cost = costOf(pos.entry, pos.qty, dir > 0 ? 'BUY' : 'SELL', dayTrade, dir < 0) + costOf(ex, pos.qty, dir > 0 ? 'SELL' : 'BUY', dayTrade, dir < 0);
+          out.trades.push({ dir, entryIdx: pos.entryIdx, entry: pos.entry, exitIdx: i, exit: ex, reason, qty: pos.qty, sl0: pos.sl0, tp0: pos.tp0, pnl: Math.round(gross - cost), why: pos.why });
+          pos = null; cooldownUntil = i + c.cooldown;
+        };
+
+        for (let i = 0; i < n; i++) {
+          // ---- FVG zones: evaluate existing, then create ----
+          let fvgL = false, fvgS = false, fvgZ = null;
+          active = active.filter(z => {
+            const age = i - z.born;
+            if (age > c.fvgAge) { z.end = i; return false; }
+            if (z.dir > 0) {
+              if (C[i] < z.lo) { z.end = i; return false; }
+              if (L[i] <= z.hi) { if (C[i] > (z.lo + z.hi) / 2 && C[i] > O[i]) { fvgL = true; fvgZ = z; } z.end = i; z.hit = true; return false; }
+            } else {
+              if (C[i] > z.hi) { z.end = i; return false; }
+              if (H[i] >= z.lo) { if (C[i] < (z.lo + z.hi) / 2 && C[i] < O[i]) { fvgS = true; fvgZ = z; } z.end = i; z.hit = true; return false; }
+            }
+            return true;
+          });
+          if (i >= 2) {
+            const t = tick(C[i]) * c.fvgMinTicks;
+            if (L[i] - H[i - 2] >= t) { const z = { dir: 1, lo: H[i - 2], hi: L[i], born: i, end: null }; active.push(z); zonesAll.push(z); }
+            else if (L[i - 2] - H[i] >= t) { const z = { dir: -1, lo: H[i], hi: L[i - 2], born: i, end: null }; active.push(z); zonesAll.push(z); }
+            if (active.length > 20) { const z = active.shift(); z.end = i; }
+          }
+          // ---- SMC squeeze box BOS ----
+          let bosL = false, bosS = false, top = null, bot = null;
+          if (i >= c.boxLen) {
+            top = -Infinity; bot = Infinity;
+            for (let k = i - c.boxLen; k < i; k++) { if (H[k] > top) top = H[k]; if (L[k] < bot) bot = L[k]; }
+            const width = (top - bot) / bot * 100;
+            if (width <= c.squeezeMax) {
+              const mid = (H[i] + L[i]) / 2;
+              bosL = C[i] > top && C[i] > O[i] && C[i] >= mid;
+              bosS = C[i] < bot && C[i] < O[i] && C[i] <= mid;
+            }
+          }
+
+          // ---- manage open position (bar i, stop-first) ----
+          if (pos && i > pos.entryIdx) {
+            const dir = pos.dir; const hold = i - pos.entryIdx;
+            const hitSl = dir > 0 ? L[i] <= pos.sl : H[i] >= pos.sl;
+            const dyn = c.be || c.fib || c.granville;
+            if (hitSl) { closeTrade(i, pos.sl, pos.sl === pos.sl0 ? '止損' : (pos.trailed ? '移動停利/保本出場' : '止損')); }
+            else if (!dyn && (dir > 0 ? H[i] >= pos.tp : L[i] <= pos.tp)) { closeTrade(i, pos.tp, '固定停利'); }
+            else {
+              let exitReason = null;
+              if (intra && dayLast[i] && c.forceExit) exitReason = '尾盤強制出場 13:25';
+              else if (hold >= c.minHold) {
+                if (c.granville && ma50[i] !== null && ma50[i - 1] !== null && ((dir > 0 && C[i] < ma50[i] && C[i - 1] >= ma50[i - 1]) || (dir < 0 && C[i] > ma50[i] && C[i - 1] <= ma50[i - 1]))) exitReason = 'Granville MA50 反轉';
+                else if ((dir > 0 && bosS) || (dir < 0 && bosL)) exitReason = '反向 BOS 出場';
+              }
+              if (exitReason) closeTrade(i, C[i], exitReason);
+              else {
+                // dynamic trail applies from next bar
+                if (dir > 0) pos.ext = Math.max(pos.ext, H[i]); else pos.ext = Math.min(pos.ext, L[i]);
+                const run = (pos.ext - pos.entry) * dir;
+                if (c.be && run >= pos.risk) { const nsl = pos.entry; if (dir > 0 ? nsl > pos.sl : nsl < pos.sl) { pos.sl = nsl; pos.trailed = true; } }
+                if (c.fib && run >= pos.risk) { const nsl = snap(pos.ext - dir * run * 0.382); if (dir > 0 ? nsl > pos.sl : nsl < pos.sl) { pos.sl = nsl; pos.trailed = true; } }
+              }
+            }
+          }
+
+          // ---- entry signal on confirmed bar i ----
+          const mode = c.indMode;
+          const wantL = (mode !== 'fvgOnly' && bosL) || (mode !== 'bos' && fvgL);
+          const wantS = (mode !== 'fvgOnly' && bosS) || (mode !== 'bos' && fvgS);
+          const delta = uv[i] - dv[i];
+          const ofL = !c.ofFilter || (delta >= 0 && uv[i] >= dv[i] * c.imbalance);
+          const ofS = !c.ofFilter || (delta <= 0 && dv[i] >= uv[i] * c.imbalance);
+          const vsma = smaAt(V, 20, i);
+          const spike = !c.volFilter || (vsma !== null && V[i] >= vsma * c.volMult);
+          const vwL = !intra || C[i] > vw[i], vwS = !intra || C[i] < vw[i];
+          let dir = 0, why = '';
+          if (wantL && ofL && spike && vwL) { dir = 1; why = (bosL ? 'SMC BOS 向上突破' : '') + (fvgL ? (bosL ? ' + ' : '') + 'FVG 回測確認' : ''); }
+          else if (wantS && ofS && spike && vwS) { dir = -1; why = (bosS ? 'SMC BOS 向下跌破' : '') + (fvgS ? (bosS ? ' + ' : '') + 'FVG 回測確認' : ''); }
+          if (dir) {
+            const sig = { idx: i, dir, why, zone: fvgZ ? { lo: fvgZ.lo, hi: fvgZ.hi } : null, top, bot, cooling: i <= cooldownUntil || !!pos };
+            if (!sig.cooling) {
+              const entry = C[i]; const a = atr[i] || (entry * 0.01);
+              let sl;
+              if (c.slMode === 'atr') sl = entry - dir * a * c.atrMult;
+              else if (c.slMode === 'pct') sl = entry * (1 - dir * c.slPct / 100);
+              else if (dir > 0) sl = fvgL && fvgZ ? Math.min(fvgZ.lo, L[i]) : (bot !== null ? Math.min(bot, L[i]) : L[i]);
+              else sl = fvgS && fvgZ ? Math.max(fvgZ.hi, H[i]) : (top !== null ? Math.max(top, H[i]) : H[i]);
+              if (Math.abs(entry - sl) > entry * 0.05) sl = entry * (1 - dir * 0.05);
+              if ((dir > 0 && sl >= entry) || (dir < 0 && sl <= entry)) sl = entry - dir * a * c.atrMult;
+              sl = snap(sl);
+              const risk = Math.abs(entry - sl);
+              const qty = risk > 0 ? Math.floor(Math.min((c.capital * c.riskPct / 100) / risk, c.capital * c.maxLev / entry)) : 0;
+              const tp = snap(entry + dir * risk * c.rrr);
+              sig.entry = entry; sig.sl = sl; sig.tp = tp; sig.qty = qty; sig.risk = risk;
+              if (qty >= 1) { pos = { dir, entryIdx: i, entry, sl, sl0: sl, tp, tp0: tp, risk, qty, ext: entry, why, trailed: false }; sig.taken = true; }
+              else out.skipped++;
+            }
+            out.sigs.push(sig);
+          }
+        }
+        out.open = pos;
+        out.zones = zonesAll.filter(z => z.end === null || (n - z.end) <= 40);
+        out.activeZones = active;
+        out.now = out.sigs.length && out.sigs[out.sigs.length - 1].idx >= n - 2 ? out.sigs[out.sigs.length - 1] : null;
+        out.lastDelta = uv[n - 1] - dv[n - 1];
+        out.vwap = vw[n - 1]; out.ma50 = ma50[n - 1]; out.atr = atr[n - 1];
+        const wins = out.trades.filter(t => t.pnl > 0).length;
+        out.stats = { count: out.trades.length, winRate: out.trades.length ? wins / out.trades.length : 0, pnl: out.trades.reduce((s, t) => s + t.pnl, 0) };
+        return out;
+      }
+
+      // ---------------- data fetchers ----------------
+      async function fetchBars(sym, iv) {
+        const base = getApiBase();
+        if (!base) throw new Error('尚未連線後端（server.py）');
+        const r = await fetch(`${base}/api/v1/shioaji/kbars/${encodeURIComponent(sym)}?interval=${encodeURIComponent(iv)}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error('K 線 HTTP ' + r.status);
+        const j = await r.json();
+        if (!Array.isArray(j.candles) || !j.candles.length) throw new Error('無 K 線資料');
+        return { candles: j.candles, source: j.source || '', engine: j.source_engine || '' };
+      }
+      function srcMode() {
+        const m = cfg().dataMode;
+        const tok = typeof hasValidShioajiToken === 'function' && hasValidShioajiToken();
+        if (m === 'shioaji') return 'shioaji';
+        if (m === 'mis') return 'mis';
+        return tok ? 'shioaji' : 'mis';
+      }
+      async function fetchRt(syms) {
+        const base = getApiBase();
+        if (!base) throw new Error('尚未連線後端');
+        const mode = srcMode();
+        const list = [].concat(syms).join(',');
+        const url = mode === 'shioaji'
+          ? `${base}/api/v1/shioaji/snapshots?symbols=${encodeURIComponent(list)}`
+          : `${base}/api/v1/market/realtime?symbols=${encodeURIComponent(list)}&indices=t00,o00`;
+        const r = await fetch(url, { cache: 'no-store' });
+        const j = await r.json();
+        let q = j.quotes || j.stocks || j.data || {};
+        if (Array.isArray(q)) { const m = {}; q.forEach(x => { m[x.symbol] = x; }); q = m; }
+        const live = j.source_engine === 'shioaji_http' || j.source_engine === 'shioaji_sdk';
+        return { quotes: q, live, label: live ? '永豐 Shioaji 即時（逐筆／五檔）' : (j.is_eod_official ? 'TWSE/TPEx 官方最近交易日（非盤中）' : 'TWSE MIS 即時快照估算（無 Shioaji Token）') };
+      }
+
+      function flowOf(q, analysis) {
+        const bs = (q?.bid_sizes || []).reduce((s, x) => s + (+x || 0), 0);
+        const as = (q?.ask_sizes || []).reduce((s, x) => s + (+x || 0), 0);
+        const imb = (bs + as) > 0 ? (bs - as) / (bs + as) : 0;
+        const px = +q?.price || 0, bid = +(q?.bids?.[0]) || 0, ask = +(q?.asks?.[0]) || 0;
+        const tv = +q?.tick_volume || 0;
+        const side = tv > 0 && ask && px >= ask ? '外盤(買)' : (tv > 0 && bid && px <= bid ? '內盤(賣)' : '中間價');
+        const maxLvl = Math.max(0, ...(q?.bid_sizes || []).map(Number), ...(q?.ask_sizes || []).map(Number));
+        const delta = analysis ? analysis.lastDelta : 0;
+        let verdict = '中性';
+        if (imb > 0.15 && delta >= 0) verdict = '大單偏多'; else if (imb < -0.15 && delta <= 0) verdict = '大單偏空';
+        return { bs, as, imb, tv, side, maxLvl, delta, verdict };
+      }
+
+      // ---------------- UI ----------------
+      function ensureUi() {
+        if ($('warRoomModal')) return;
+        const css = document.createElement('style');
+        css.textContent = `#warRoomModal .wr-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px}
+        #warRoomModal h3{margin:0 0 8px;font-size:14px}#warRoomModal table{width:100%;border-collapse:collapse;font-size:12px}
+        #warRoomModal td,#warRoomModal th{padding:3px 6px;border-bottom:1px solid #f1f5f9;text-align:right}#warRoomModal td:first-child,#warRoomModal th:first-child{text-align:left}
+        #warRoomModal tr.wr-row{cursor:pointer}#warRoomModal tr.wr-row:hover{background:#f8fafc}
+        #warRoomModal .wr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;font-size:12px}
+        #warRoomModal label{display:flex;flex-direction:column;gap:2px;font-weight:700;color:#334155}
+        #warRoomModal input,#warRoomModal select{padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+        #warRoomModal .wr-up{color:#dc2626;font-weight:800}#warRoomModal .wr-dn{color:#059669;font-weight:800}
+        #warRoomModal .wr-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:800px){#warRoomModal .wr-two{grid-template-columns:1fr}}
+        #warRoomModal .wr-scroll{max-height:320px;overflow:auto}`;
+        document.head.appendChild(css);
+        const m = document.createElement('div');
+        m.id = 'warRoomModal'; m.className = 'modal-backdrop';
+        m.innerHTML = `<div class="modal-dialog" style="max-width:1150px;width:100%;max-height:92vh;overflow:auto;padding:14px;background:#f8fafc;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div><b style="font-size:16px">⚔️ 盤中作戰室</b> <span class="badge mono" id="wrSrcBadge"></span>
+            <div style="font-size:11px;color:#64748b">資料源：永豐 Shioaji 即時為主（無 Token 自動降級 TWSE MIS 估算並標示）· FinMind 僅盤後輔助 · 預設模擬單</div></div>
+            <button class="btn btn-dark" id="wrClose">關閉</button></div>
+          <div class="wr-card"><h3>⚙️ 資料源與策略設定（永久記憶、隨遠端共享帳號同步）</h3>
+            <div class="wr-grid">
+              <label>即時資料源<select id="wrDataMode"><option value="auto">自動（有 Token→永豐，否則 MIS）</option><option value="shioaji">強制永豐 Shioaji</option><option value="mis">強制 TWSE MIS 估算</option></select></label>
+              <label>訊號模式<select id="wrIndMode"><option value="fvg">BOS + FVG 回測（Pine 預設）</option><option value="bos">僅 SMC BOS</option><option value="fvgOnly">僅 FVG 回測</option></select></label>
+              <label>前50檔範圍<select id="wrUniverse"><option value="all">全市場</option><option value="liquid">全市場 · 成交值≥門檻</option><option value="chain">12 大產業鏈＋自選股</option></select></label>
+              <label>成交值門檻(百萬)<input id="wrMinVal" type="number" min="0" step="10"></label>
+              <label>K 線級距<select id="wrIv"><option value="1">1 分</option><option value="5">5 分</option><option value="15">15 分</option><option value="60">60 分</option><option value="D">日</option></select></label>
+              <label>止損模式<select id="wrSlMode"><option value="smc">SMC 結構邊界</option><option value="atr">ATR 動態</option><option value="pct">固定百分比</option></select></label>
+              <label>ATR 倍數<input id="wrAtr" type="number" step="0.1" min="0.3"></label>
+              <label>固定止損 %<input id="wrSlPct" type="number" step="0.5" min="0.5"></label>
+              <label>風報比 RRR<input id="wrRrr" type="number" step="0.005" min="0.5"></label>
+              <label>單筆風險 %<input id="wrRisk" type="number" step="0.5" min="0.1"></label>
+              <label>本金 (TWD)<input id="wrCap" type="number" step="10000" min="10000"></label>
+              <label>最大槓桿<input id="wrLev" type="number" step="1" min="1" max="20"></label>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12px">
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrOf">大單/OF Delta 過濾</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrVol">爆量 1.5× 過濾</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrBe">1R 保本</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrFib">Fib 0.382 移動停利</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrGran">Granville MA50 反轉出場</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrForce">13:25 尾盤強制出場</label>
+              <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="wrOverlay">K 線圖顯示進出場／FVG</label>
+              <label style="flex-direction:row;align-items:center;gap:4px;color:#b91c1c"><input type="checkbox" id="wrAuto">🤖 自選股自動進出場（僅模擬單，每 60 秒）</label>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:6px">費用模型：手續費 0.1425%（折讓月結）、當沖證交稅 0.15%／波段 0.3%、現股空單 +0.08%、滑點 1 tick。自動下單僅在 SIM 模式、台股盤中（09:00–13:20）執行；LIVE 一律需手動確認。</div>
+          </div>
+          <div class="wr-card"><h3>① 大盤趨勢偵測 <button class="btn btn-dark" id="wrBtnTrend" style="padding:2px 8px;font-size:11px">更新</button></h3><div id="wrTrend" style="font-size:13px">尚未更新</div></div>
+          <div class="wr-card"><h3>② 強勢股多空前 50 檔 <button class="btn btn-dark" id="wrBtnRank" style="padding:2px 8px;font-size:11px">更新</button> <span id="wrRankMeta" style="font-size:11px;color:#64748b"></span></h3>
+            <div class="wr-two"><div><div class="wr-up">▲ 多方前50</div><div class="wr-scroll" id="wrBulls"></div></div><div><div class="wr-dn">▼ 空方前50</div><div class="wr-scroll" id="wrBears"></div></div></div></div>
+          <div class="wr-card"><h3>③ 自選股偵測 <button class="btn btn-dark" id="wrBtnWatch" style="padding:2px 8px;font-size:11px">掃描自選股</button></h3><div class="wr-scroll" id="wrWatch" style="font-size:12px">尚未掃描</div></div>
+          <div class="wr-card"><h3>④⑧ 單股偵測：大單流向 + FVG → 進出場</h3>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input id="wrSym" placeholder="股票代號" style="width:100px"><button class="btn btn-dark" id="wrBtnOne" style="padding:3px 10px">偵測</button>
+            <button class="btn btn-dark" id="wrBtnChart" style="padding:3px 10px">📈 在 K 線圖顯示</button><button class="btn btn-dark" id="wrBtnOrder" style="padding:3px 10px;background:#b91c1c">依訊號下單（模擬）</button></div>
+            <div id="wrOne" style="font-size:13px">輸入代號後按「偵測」</div></div>
+        </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+        $('wrClose').onclick = () => m.classList.remove('open');
+        const bindSel = (id, key, num) => { const el = $(id); el.onchange = () => { const c = cfg(); c[key] = num ? Number(el.value) : el.value; save(); }; };
+        [['wrDataMode', 'dataMode'], ['wrIndMode', 'indMode'], ['wrUniverse', 'universe'], ['wrIv', 'iv'], ['wrSlMode', 'slMode']].forEach(a => bindSel(a[0], a[1]));
+        [['wrMinVal', 'minValueM'], ['wrAtr', 'atrMult'], ['wrSlPct', 'slPct'], ['wrRrr', 'rrr'], ['wrRisk', 'riskPct'], ['wrCap', 'capital'], ['wrLev', 'maxLev']].forEach(a => bindSel(a[0], a[1], true));
+        [['wrOf', 'ofFilter'], ['wrVol', 'volFilter'], ['wrBe', 'be'], ['wrFib', 'fib'], ['wrGran', 'granville'], ['wrForce', 'forceExit'], ['wrOverlay', 'chartOverlay'], ['wrAuto', 'autoTrade']].forEach(([id, key]) => {
+          $(id).onchange = () => { cfg()[key] = $(id).checked; save(); if (key === 'autoTrade') applyAuto(); if (key === 'chartOverlay' && typeof renderRawPriceChart === 'function') renderRawPriceChart(); };
+        });
+        $('wrBtnTrend').onclick = refreshTrend; $('wrBtnRank').onclick = refreshRank; $('wrBtnWatch').onclick = () => scanWatch(false);
+        $('wrBtnOne').onclick = () => analyzeOne($('wrSym').value.trim().toUpperCase());
+        $('wrBtnChart').onclick = () => { const s = $('wrSym').value.trim().toUpperCase(); if (s) { m.classList.remove('open'); selectStock(s); } };
+        $('wrBtnOrder').onclick = orderFromSignal;
+      }
+      function syncUi() {
+        const c = cfg();
+        const set = (id, v) => { const el = $(id); if (el) el.value = v; };
+        set('wrDataMode', c.dataMode); set('wrIndMode', c.indMode); set('wrUniverse', c.universe); set('wrIv', c.iv); set('wrSlMode', c.slMode);
+        set('wrMinVal', c.minValueM); set('wrAtr', c.atrMult); set('wrSlPct', c.slPct); set('wrRrr', c.rrr); set('wrRisk', c.riskPct); set('wrCap', c.capital); set('wrLev', c.maxLev);
+        [['wrOf', 'ofFilter'], ['wrVol', 'volFilter'], ['wrBe', 'be'], ['wrFib', 'fib'], ['wrGran', 'granville'], ['wrForce', 'forceExit'], ['wrOverlay', 'chartOverlay'], ['wrAuto', 'autoTrade']].forEach(([id, k]) => { const el = $(id); if (el) el.checked = !!c[k]; });
+        const b = $('wrSrcBadge');
+        if (b) { const sm = srcMode(); b.textContent = sm === 'shioaji' ? '永豐 Shioaji 即時' : 'TWSE MIS 估算'; b.style.background = sm === 'shioaji' ? '#fee2e2' : '#fef3c7'; }
+      }
+      function save() { try { if (typeof persistState === 'function') persistState(); } catch (e) {} syncUi(); }
+
+      function pctCls(p) { return p > 0 ? 'wr-up' : (p < 0 ? 'wr-dn' : ''); }
+
+      async function refreshTrend() {
+        const el = $('wrTrend'); el.textContent = '偵測中…';
+        let score = 0; const notes = [];
+        try {
+          const { candles } = await fetchBars('T00', 'D');
+          const cl = candles.map(b => +b.close); const n = cl.length; const last = cl[n - 1];
+          const ma = k => (n >= k ? cl.slice(n - k).reduce((s, x) => s + x, 0) / k : null);
+          const m5 = ma(5), m20 = ma(20), m60 = ma(60);
+          if (m5) { notes.push(`收 ${fx(last, 0)} · MA5 ${fx(m5, 0)}`); score += last > m5 ? 1 : -1; }
+          if (m20) { notes.push(`MA20 ${fx(m20, 0)}`); score += last > m20 ? 1 : -1; const prev20 = cl.slice(n - 21, n - 1).reduce((s, x) => s + x, 0) / 20; score += m20 > prev20 ? 1 : -1; }
+          if (m60) { notes.push(`MA60 ${fx(m60, 0)}`); score += last > m60 ? 1 : -1; }
+        } catch (e) { notes.push('加權指數 K 線取得失敗：' + esc(e.message)); }
+        let breadth = null;
+        try { const r = await loadRank(); breadth = r.breadth; } catch (e) { notes.push('市場廣度取得失敗'); }
+        if (breadth) { notes.push(`上漲 ${breadth.advance} / 下跌 ${breadth.decline} / 平盤 ${breadth.flat}（上漲占比 ${(breadth.adv_ratio * 100).toFixed(1)}%）`); score += breadth.adv_ratio > 0.55 ? 1 : (breadth.adv_ratio < 0.45 ? -1 : 0); }
+        const verdict = score >= 3 ? '🔴 偏多（順勢做多）' : (score <= -3 ? '🟢 偏空（防守／減碼）' : '🟡 盤整（區間操作）');
+        el.innerHTML = `<div style="font-size:16px;font-weight:800">${verdict} <span style="font-size:12px;color:#64748b">趨勢分數 ${score}</span></div><div style="color:#475569;margin-top:4px">${notes.join(' · ')}</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">資料：加權指數日 K（永豐／官方）＋ 官方上市櫃漲跌家數</div>`;
+        state.ext.warTrend = { verdict, score, ts: Date.now() };
+      }
+
+      async function loadRank() {
+        const c = cfg(); const base = getApiBase();
+        if (!base) throw new Error('尚未連線後端');
+        let url = `${base}/api/v1/market/rank?limit=50&universe=${c.universe === 'chain' ? 'custom' : c.universe}&min_value_m=${c.minValueM}`;
+        if (c.universe === 'chain') {
+          const set = new Set((state.watchlist || []).map(w => (typeof w === 'string' ? w : w.symbol)));
+          try { (window.SHL_EXT?.FLOW_CHAINS_SYMBOLS || []).forEach(s => set.add(s)); } catch (e) {}
+          try { if (typeof FLOW_CHAIN_SYMBOLS !== 'undefined') [].concat(FLOW_CHAIN_SYMBOLS).forEach(s => set.add(s)); } catch (e) {}
+          url += `&symbols=${encodeURIComponent([...set].join(','))}`;
+        }
+        const r = await fetch(url, { cache: 'no-store' }); const j = await r.json();
+        if (!j.ok) throw new Error('排行取得失敗');
+        lastRank = j; return j;
+      }
+      function rankTable(rows) {
+        return `<table><tr><th>#／股票</th><th>價</th><th>漲跌%</th><th>成交值(百萬)</th></tr>${rows.map((r, i) =>
+          `<tr class="wr-row" data-sym="${esc(r.symbol)}"><td>${i + 1}. ${esc(r.symbol)} ${esc(r.name)}</td><td>${fx(r.price)}</td><td class="${pctCls(r.change_pct)}">${r.change_pct > 0 ? '+' : ''}${fx(r.change_pct)}%</td><td>${Math.round(r.value_m).toLocaleString()}</td></tr>`).join('')}</table>`;
+      }
+      async function refreshRank() {
+        $('wrBulls').textContent = '載入中…'; $('wrBears').textContent = '';
+        try {
+          const j = await loadRank();
+          $('wrBulls').innerHTML = rankTable(j.bulls); $('wrBears').innerHTML = rankTable(j.bears);
+          $('wrRankMeta').textContent = `${j.source} · 資料日 ${j.data_date} · 母體 ${j.count} 檔`;
+          document.querySelectorAll('#wrBulls tr.wr-row,#wrBears tr.wr-row').forEach(tr => tr.onclick = () => { $('wrSym').value = tr.dataset.sym; analyzeOne(tr.dataset.sym); });
+        } catch (e) { $('wrBulls').textContent = '失敗：' + e.message; }
+      }
+
+      async function scanWatch(silent) {
+        const c = cfg(); const box = $('wrWatch');
+        const list = (state.watchlist || []).map(w => (typeof w === 'string' ? w : w.symbol)).filter(Boolean);
+        if (!silent && box) box.textContent = `掃描 ${list.length} 檔…`;
+        const rows = [];
+        let rt = { quotes: {}, label: '' };
+        try { rt = await fetchRt(list); } catch (e) {}
+        const results = await Promise.all(list.map(async sym => {
+          try { const { candles } = await fetchBars(sym, c.iv); return { sym, candles }; } catch (e) { return { sym, err: e.message }; }
+        }));
+        for (const r0 of results) {
+          const sym = r0.sym;
+          if (r0.err) { rows.push({ sym, err: r0.err }); continue; }
+          try {
+            const candles = r0.candles;
+            const a = analyze(candles, c, c.iv);
+            rows.push({ sym, a, q: rt.quotes[sym], candles });
+            if (silent && c.autoTrade) await autoAct(sym, a, rt.quotes[sym], candles);
+          } catch (e) { rows.push({ sym, err: e.message }); }
+        }
+        if (silent && c.autoTrade) await manageStops(rt.quotes);
+        if (box) {
+          box.innerHTML = `<div style="font-size:11px;color:#64748b;margin-bottom:4px">來源：${esc(rt.label)} · 級距 ${c.iv}</div><table><tr><th>股票</th><th>現價</th><th>訊號</th><th>FVG 區</th><th>回測筆/勝率/淨損益</th><th>持倉模擬</th></tr>${rows.map(r => {
+            if (r.err) return `<tr><td>${esc(r.sym)}</td><td colspan="5">${esc(r.err)}</td></tr>`;
+            const a = r.a; const nw = a.now;
+            const sg = nw ? `<b class="${nw.dir > 0 ? 'wr-up' : 'wr-dn'}">${nw.dir > 0 ? '▲ 多' : '▼ 空'}</b> ${esc(nw.why)}` : '—';
+            const z = (a.activeZones || []).map(z => `${z.dir > 0 ? '↑' : '↓'}${fx(z.lo)}–${fx(z.hi)}`).join(' ') || '—';
+            const o = a.open ? `${a.open.dir > 0 ? '多' : '空'} @${fx(a.open.entry)} SL ${fx(a.open.sl)} TP ${fx(a.open.tp)}` : '空手';
+            return `<tr class="wr-row" data-sym="${esc(r.sym)}"><td>${esc(r.sym)} ${esc(getStockMeta(r.sym)?.name || '')}</td><td>${fx(r.q?.price ?? r.candles[r.candles.length - 1].close)}</td><td style="text-align:left">${sg}</td><td style="text-align:left">${z}</td><td>${a.stats.count}/${(a.stats.winRate * 100).toFixed(0)}%/${a.stats.pnl.toLocaleString()}</td><td style="text-align:left">${o}</td></tr>`;
+          }).join('')}</table>`;
+          box.querySelectorAll('tr.wr-row').forEach(tr => tr.onclick = () => { $('wrSym').value = tr.dataset.sym; analyzeOne(tr.dataset.sym); });
+        }
+      }
+
+      let oneCtx = null;
+      async function analyzeOne(sym) {
+        const c = cfg(); const box = $('wrOne');
+        if (!sym) { box.textContent = '請輸入代號'; return; }
+        $('wrSym').value = sym; box.textContent = '偵測中…';
+        try {
+          const [bars, rt] = await Promise.all([fetchBars(sym, c.iv), fetchRt(sym).catch(() => ({ quotes: {}, label: '無即時報價', live: false }))]);
+          const a = analyze(bars.candles, c, c.iv);
+          const q = rt.quotes[sym]; const f = flowOf(q, a);
+          const nw = a.now; const conflict = nw && ((nw.dir > 0 && f.verdict === '大單偏空') || (nw.dir < 0 && f.verdict === '大單偏多'));
+          let advice = '⏸ 觀望（無新訊號）', cls = '';
+          if (nw && !conflict) { advice = `${nw.dir > 0 ? '🔴 進場做多' : '🟢 進場做空（現股僅提示）'}：${nw.why}`; cls = nw.dir > 0 ? 'wr-up' : 'wr-dn'; }
+          else if (nw && conflict) advice = '⚠️ 訊號被大單流向否決，等待';
+          else if (a.open) advice = `持有模擬部位：${a.open.dir > 0 ? '多' : '空'} @${fx(a.open.entry)} · 目前停損 ${fx(a.open.sl)} · 停利 ${fx(a.open.tp)}`;
+          oneCtx = { sym, a, q, f, rt, candles: bars.candles };
+          lastAnalysis = oneCtx;
+          const last = a.trades[a.trades.length - 1];
+          box.innerHTML = `
+            <div style="font-size:15px;font-weight:800" class="${cls}">${esc(sym)} ${esc(getStockMeta(sym)?.name || q?.name || '')} · ${esc(advice)}</div>
+            <div class="wr-two" style="margin-top:6px"><div>
+              <b>大單流向</b>（來源：${esc(rt.label)}）<br>
+              委買五檔 ${f.bs.toLocaleString()} ／ 委賣五檔 ${f.as.toLocaleString()} · 失衡 <b class="${pctCls(f.imb)}">${(f.imb * 100).toFixed(1)}%</b><br>
+              最大單檔 ${f.maxLvl.toLocaleString()} 張 · 最新成交 ${f.tv} 張（${f.side}）<br>
+              區間 Delta(CLV 估算) ${Math.round(f.delta).toLocaleString()} · 判定 <b>${f.verdict}</b>
+            </div><div>
+              <b>FVG／SMC</b>（級距 ${c.iv}，${a.n} 根）<br>
+              有效 FVG：${(a.activeZones || []).map(z => `${z.dir > 0 ? '↑多' : '↓空'} ${fx(z.lo)}–${fx(z.hi)}`).join('；') || '無'}<br>
+              VWAP ${fx(a.vwap)} · MA50 ${fx(a.ma50)} · ATR ${fx(a.atr)}<br>
+              ${nw ? `<b>最新訊號</b>：${nw.dir > 0 ? '多' : '空'} 進 ${fx(nw.entry)} / 損 ${fx(nw.sl)} / 利 ${fx(nw.tp)} / ${nw.qty} 股` : '最新 K 棒無新訊號'}
+            </div></div>
+            <div style="margin-top:6px;font-size:12px;color:#475569">回測（含手續費／稅／滑點）：${a.stats.count} 筆 · 勝率 ${(a.stats.winRate * 100).toFixed(0)}% · 淨損益 <b class="${a.stats.pnl >= 0 ? 'wr-up' : 'wr-dn'}">${a.stats.pnl.toLocaleString()}</b> 元${last ? ` · 最近一筆：${last.dir > 0 ? '多' : '空'} ${fx(last.entry)}→${fx(last.exit)}（${esc(last.reason)}）${last.pnl.toLocaleString()}` : ''}</div>`;
+        } catch (e) { box.textContent = '偵測失敗：' + e.message; }
+      }
+
+      // ---------------- orders ----------------
+      function posOf(sym) { return (state.positions || []).find(p => p.symbol === sym); }
+      function sessionOk() {
+        const s = isTwSimTradingWindow();
+        if (!s.open) return false;
+        const hm = String(s.timeStr || '').slice(-8, -3).replace(':', '');
+        return !(hm && Number(hm) >= 1320);
+      }
+      async function placeLong(sym, sig, price, tag) {
+        const c = cfg();
+        if (state.envMode !== 'SIM') { showToast('作戰室', 'LIVE 模式不自動下單，請手動確認。', 'warn'); return false; }
+        if (posOf(sym) || !price) return false;
+        const lots = sig.qty;
+        if (!lots || lots < 1) return false;
+        await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '股', price, source: tag || 'SMC_FVG_WAR', dayTrade: isIntra(c.iv) });
+        if (posOf(sym)) {
+          const risk = Math.abs(price - sig.sl);
+          c.stops[sym] = { dir: 1, entry: price, sl: sig.sl, sl0: sig.sl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why };
+          save(); return true;
+        }
+        return false;
+      }
+      async function orderFromSignal() {
+        if (!oneCtx || !oneCtx.a.now) { showToast('作戰室', '目前無可下單訊號', 'warn'); return; }
+        const nw = oneCtx.a.now;
+        if (nw.dir < 0) { showToast('作戰室', '現股不可直接放空，僅作提示', 'warn'); return; }
+        const price = +oneCtx.q?.price || nw.entry;
+        const ok = await placeLong(oneCtx.sym, Object.assign({}, nw, { sl: nw.sl }), price, 'SMC_FVG_MANUAL');
+        showToast('作戰室', ok ? `已依訊號買進 ${oneCtx.sym} @${price}（SL ${nw.sl}）` : '下單未成立（可能已持有、時段或熔斷）', ok ? 'info' : 'warn');
+      }
+      async function autoAct(sym, a, q, candles) {
+        const c = cfg(); const nw = a.now;
+        if (!nw || nw.dir < 0 || !nw.taken || !sessionOk()) return;
+        const key = sym + '|' + (candles[nw.idx]?.time || nw.idx);
+        if (c.lastAuto[sym] === key) return;
+        const price = +q?.price || 0;
+        if (!price) return;
+        c.lastAuto[sym] = key;
+        if (await placeLong(sym, nw, price, 'SMC_FVG_AUTO')) showToast('🤖 作戰室自動進場', `${sym} @${price} · ${nw.why}`, 'info');
+      }
+      async function manageStops(quotes) {
+        const c = cfg();
+        const s = isTwSimTradingWindow();
+        for (const sym of Object.keys(c.stops)) {
+          const st = c.stops[sym]; const p = posOf(sym);
+          if (!p) { delete c.stops[sym]; continue; }
+          const px = +quotes?.[sym]?.price || 0; if (!px) continue;
+          st.ext = Math.max(st.ext, px); const run = st.ext - st.entry;
+          if (c.be && run >= st.risk && st.entry > st.sl) st.sl = st.entry;
+          if (c.fib && run >= st.risk) { const nsl = snap(st.ext - run * 0.382); if (nsl > st.sl) st.sl = nsl; }
+          let reason = null;
+          if (px <= st.sl) reason = px >= st.entry ? '移動停利/保本' : '止損';
+          else if (!(c.be || c.fib || c.granville) && px >= st.tp) reason = '固定停利';
+          else if (c.forceExit && s.open && Number(String(s.timeStr || '').slice(-8, -3).replace(':', '')) >= 1325) reason = '尾盤強制出場';
+          if (reason && state.envMode === 'SIM') {
+            await executeOrder({ symbol: sym, side: 'SELL', qty: p.shares, unit: '股', price: px, source: 'SMC_FVG_EXIT', dayTrade: isIntra(c.iv) });
+            if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 作戰室自動出場', `${sym} @${px} · ${reason}`, 'info'); }
+          }
+        }
+        save();
+      }
+      function applyAuto() {
+        if (timer) { clearInterval(timer); timer = null; }
+        const c = cfg();
+        if (c.autoTrade) { timer = setInterval(() => scanWatch(true), Math.max(30, c.scanSec) * 1000); scanWatch(true); }
+      }
+
+      // ---------------- chart overlay ----------------
+      const prevAug = window.SHL_EXT && window.SHL_EXT.augmentChartIndicators;
+      if (window.SHL_EXT) {
+        window.SHL_EXT.augmentChartIndicators = function (datasets, candles, closes, vwap, meta) {
+          if (typeof prevAug === 'function') prevAug(datasets, candles, closes, vwap, meta);
+          try {
+            const c = cfg(); if (!c.chartOverlay || !candles || candles.length < 30) return;
+            const iv = String(state.tvInterval || c.iv);
+            const a = analyze(candles, c, iv); const n = candles.length;
+            const arr = () => new Array(n).fill(null);
+            const en = arr(), exL = arr(), exS = arr();
+            a.trades.forEach(t => { en[t.entryIdx] = t.entry; (t.pnl >= 0 ? exL : exS)[t.exitIdx] = t.exit; });
+            if (a.open) en[a.open.entryIdx] = a.open.entry;
+            if (en.some(v => v !== null)) datasets.push({ label: '◆ SMC/FVG 進場', data: en, borderColor: '#7c3aed', backgroundColor: '#c4b5fd', pointStyle: 'rectRot', pointRadius: 8, showLine: false });
+            if (exL.some(v => v !== null)) datasets.push({ label: '◇ 出場（獲利）', data: exL, borderColor: '#b91c1c', backgroundColor: '#fecaca', pointStyle: 'rectRot', pointRadius: 8, showLine: false });
+            if (exS.some(v => v !== null)) datasets.push({ label: '◇ 出場（虧損）', data: exS, borderColor: '#047857', backgroundColor: '#a7f3d0', pointStyle: 'rectRot', pointRadius: 8, showLine: false });
+            if (a.open) {
+              const o = a.open;
+              [['SL', o.sl, '#16a34a'], ['TP', o.tp, '#dc2626'], ['進場', o.entry, '#7c3aed']].forEach(([nm, v, col]) => {
+                const ln = arr(); for (let i = o.entryIdx; i < n; i++) ln[i] = v;
+                datasets.push({ label: `${nm} ${fx(v)}`, data: ln, borderColor: col, borderDash: [5, 4], borderWidth: 1.2, fill: false, pointRadius: 0 });
+              });
+            }
+            (a.activeZones || []).slice(-4).forEach(z => {
+              const hi = arr(), lo = arr(); for (let i = z.born; i < n; i++) { hi[i] = z.hi; lo[i] = z.lo; }
+              const col = z.dir > 0 ? '#f97316' : '#0ea5e9';
+              datasets.push({ label: `FVG ${z.dir > 0 ? '多' : '空'}區`, data: hi, borderColor: col, borderWidth: 1, borderDash: [2, 2], fill: false, pointRadius: 0 });
+              datasets.push({ label: `FVG ${z.dir > 0 ? '多' : '空'}區下緣`, data: lo, borderColor: col, borderWidth: 1, borderDash: [2, 2], fill: false, pointRadius: 0 });
+            });
+            const strip = $('chartTradePnlStrip');
+            if (strip) {
+              let s2 = $('warChartStrip');
+              if (!s2) { s2 = document.createElement('div'); s2.id = 'warChartStrip'; s2.style.cssText = 'font-size:12px;margin:4px 0;color:#4c1d95;font-weight:700'; strip.insertAdjacentElement('afterend', s2); }
+              const lt = a.trades[a.trades.length - 1];
+              s2.textContent = `策略回測（${iv}）：${a.stats.count} 筆 · 勝率 ${(a.stats.winRate * 100).toFixed(0)}% · 淨損益 ${a.stats.pnl.toLocaleString()} 元` +
+                (lt ? ` · 最近：${lt.dir > 0 ? '多' : '空'} ${fx(lt.entry)}→${fx(lt.exit)}（${lt.reason}）${lt.pnl.toLocaleString()}` : '') +
+                (a.open ? ` · 持有中 SL ${fx(a.open.sl)} TP ${fx(a.open.tp)}` : '');
+            }
+          } catch (e) { /* overlay must never break chart */ }
+        };
+      }
+
+      function open() { ensureUi(); syncUi(); $('warRoomModal').classList.add('open'); if (state.activeSymbol && !$('wrSym').value) $('wrSym').value = state.activeSymbol; if (!lastRank) { refreshRank(); refreshTrend(); } }
+      function init() {
+        cfg();
+        const host = $('btnOpenChangelog');
+        if (host && !$('btnWarRoom')) {
+          const b = document.createElement('button');
+          b.type = 'button'; b.id = 'btnWarRoom'; b.className = 'badge mono';
+          b.style.cssText = 'cursor:pointer;background:#7f1d1d;color:#fecaca;border:1px solid #b91c1c;font-weight:800;padding:3px 9px;';
+          b.textContent = '⚔️ 盤中作戰室';
+          b.onclick = open;
+          host.insertAdjacentElement('afterend', b);
+        }
+        if (cfg().autoTrade) applyAuto();
+      }
+      return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       if (window.SHL_CHANGELOG) window.SHL_CHANGELOG.init();
+      if (window.SHL_WAR) window.SHL_WAR.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {

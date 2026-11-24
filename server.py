@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.12.1",
+    version="3.13.0",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.12.1",
+        "version": "3.13.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3703,6 +3703,56 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
         _OFFICIAL_EOD_CACHE["data"] = merged
         _OFFICIAL_EOD_CACHE["ts"] = now
     return _OFFICIAL_EOD_CACHE["data"]
+
+
+@app.get("/api/v1/market/rank")
+async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
+    """
+    v3.13.0: Full-market bull / bear Top-N + breadth for market-trend detection.
+    Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
+    universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
+    """
+    eod = await _get_official_eod_map()
+    limit = max(5, min(int(limit), 100))
+    custom = {x.strip().upper() for x in symbols.split(",") if x.strip()}
+    rows: list[dict[str, Any]] = []
+    adv = dec = flat = 0
+    for code, r in eod.items():
+        if not re.fullmatch(r"[1-9][0-9]{3}", code):
+            continue
+        px = float(r.get("price") or 0)
+        pct = float(r.get("change_pct") or 0)
+        lots = float(r.get("volume_lots") or 0)
+        value_m = round(px * lots * 1000.0 / 1e6, 1)
+        if pct > 0:
+            adv += 1
+        elif pct < 0:
+            dec += 1
+        else:
+            flat += 1
+        if universe == "custom" and code not in custom:
+            continue
+        if universe == "liquid" and value_m < min_value_m:
+            continue
+        if lots <= 0:
+            continue
+        rows.append({
+            "symbol": code, "name": r.get("name", ""), "exchange": r.get("exchange", ""),
+            "price": px, "change_pct": pct, "volume_lots": lots, "value_m": value_m,
+            "high": r.get("high"), "low": r.get("low"),
+        })
+    bulls = sorted(rows, key=lambda x: (x["change_pct"], x["value_m"]), reverse=True)[:limit]
+    bears = sorted(rows, key=lambda x: (x["change_pct"], -x["value_m"]))[:limit]
+    dates = sorted({str(r.get("date", "")) for r in eod.values() if r.get("date")})
+    total = adv + dec + flat
+    return JSONResponse({
+        "ok": True,
+        "source": "TWSE STOCK_DAY_ALL + TPEx OpenData（官方最近交易日）",
+        "data_date": dates[-1] if dates else "",
+        "universe": universe, "count": len(rows),
+        "breadth": {"advance": adv, "decline": dec, "flat": flat, "adv_ratio": round(adv / total, 4) if total else 0},
+        "bulls": bulls, "bears": bears,
+    }, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/v1/market/realtime")

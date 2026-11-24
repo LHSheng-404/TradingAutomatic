@@ -1,0 +1,23 @@
+name: Cloud Backend Keep-Alive (TW Market Hours)
+
+on:
+  schedule:
+    # Mon-Fri 00:30-06:00 UTC = 08:30-14:00 Taipei Time (every 10 min)
+    - cron: '*/10 0-6 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Cloud Backend Health
+        env:
+          CLOUD_URL: ${{ vars.CLOUD_BACKEND_URL || secrets.CLOUD_BACKEND_URL }}
+        run: |
+          if [ -z "$CLOUD_URL" ]; then
+            echo "CLOUD_BACKEND_URL not configured; skipping keep-alive ping."
+            exit 0
+          fi
+          TARGET="${CLOUD_URL%/}/api/v1/health"
+          echo "Pinging $TARGET ..."
+          curl -fsS --max-time 45 "$TARGET" | head -c 300 || echo "Wake-up ping sent (cold start may still be warming up)."

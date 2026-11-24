@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.14.1 · 版本說明
+              v3.15.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -5390,6 +5390,21 @@
         <button class="btn btn-sm" data-close-modal="liveSafetyModal">關閉</button>
       </div>
       <div id="liveCheckStatusBox" style="padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#991b1b;line-height:1.6;"></div>
+      <!-- v3.15.0: Mobile 24/7 Cloud Backend Quick Connect (No Always-On PC Needed) -->
+      <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="font-size:12.5px;font-weight:800;color:#1e40af;">☁️ 電腦不開機 · 手機 24H 雲端後端連線</div>
+          <a href="https://render.com/deploy?repo=https://github.com/LHSheng-404/TradingAutomatic" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1d4ed8;color:#fff;border-color:#1d4ed8;text-decoration:none;font-size:11px;padding:4px 9px;">🚀 免費一鍵部署至 Render</a>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="liveCloudBackendInput" type="url" class="input mono" style="flex:1;min-width:190px;font-size:12px;" placeholder="貼上 24H 雲端網址，例：https://你的服務.onrender.com" />
+          <button type="button" id="btnLiveConnectCloud" class="btn btn-sm btn-primary">🔌 連線／喚醒</button>
+          <button type="button" id="btnLiveCopyMobileLink" class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">📱 複製手機免設定連結</button>
+        </div>
+        <div style="font-size:11px;color:#1e3a8a;line-height:1.5;">
+          電腦關機時，只需免費部署 <code class="mono">server.py</code> 到雲端（Render / Zeabur / Railway），貼上 HTTPS 網址即可讓手機 24H 獨立連線處理行情、永豐串流、AI 與下單；<strong>免費雲端休眠時點「連線／喚醒」會自動等待喚醒（約 15~35 秒）</strong>，亦可直接用手機打開該雲端網址加入主畫面。
+        </div>
+      </div>
       <!-- v3.11.1: Separate SIM Market/Sim API Token vs LIVE Production Order API Token -->
       <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="font-size:12.5px;font-weight:800;color:#166534;">🟢 SIM 模擬環境專用 API（秒級即時數據 ＋ 模擬下單 · 與正式單完全隔離）</div>
@@ -6702,34 +6717,97 @@
     // =========================================================================
     // 5. REAL MARKET DATA ENGINE (YAHOO FINANCE & FINMIND V4 — NO GUESSING)
     // =========================================================================
-    async function detectBackend() {
+    function isPublicCloudUrl(u) {
+      const s = String(u || '').trim().toLowerCase();
+      if (!s.startsWith('https://')) return false;
+      if (/^https:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(s)) return false;
+      return true;
+    }
+
+    function ensureCloudKeepAlive(base) {
+      if (window._shlCloudKeepAliveTimer) {
+        clearInterval(window._shlCloudKeepAliveTimer);
+        window._shlCloudKeepAliveTimer = null;
+      }
+      if (!isPublicCloudUrl(base)) return;
+      window._shlCloudKeepAliveTimer = setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
+        const cur = getApiBase();
+        if (!isPublicCloudUrl(cur)) return;
+        fetch(`${cur}/api/v1/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+      }, 240000);
+    }
+
+    async function detectBackend(opts = {}) {
+      // v3.15.0: Auto-bind ?backend=https://... from URL query (1-tap mobile setup link)
+      try {
+        const sp = new URLSearchParams(window.location.search || '');
+        const qBackend = (sp.get('backend') || '').trim().replace(/\/+$/, '');
+        if (qBackend && /^https?:\/\//i.test(qBackend)) {
+          state.backendUrl = qBackend;
+          persistState();
+          sp.delete('backend');
+          const qs = sp.toString();
+          const cleanUrl = window.location.pathname + (qs ? '?' + qs : '') + (window.location.hash || '');
+          window.history.replaceState({}, '', cleanUrl);
+          showToast('已套用 24H 雲端後端網址', `正自動連線／喚醒：${qBackend}`, 'info');
+        }
+      } catch (e) {}
+
       const candidates = [];
       if (state.backendUrl && state.backendUrl.trim()) {
         candidates.push(state.backendUrl.trim().replace(/\/+$/, ''));
       }
       if (window.location.protocol.startsWith('http')) {
-        candidates.push(window.location.origin);
+        const orig = window.location.origin;
+        if (!candidates.includes(orig)) candidates.push(orig);
       }
 
+      const maxRetries = Math.max(1, Number(opts.retries || (isPublicCloudUrl(state.backendUrl) ? 2 : 1)));
+      const perTryTimeoutMs = Number(opts.timeoutMs || 14000);
+
       for (const base of candidates) {
-        try {
-          const resp = await fetch(`${base}/api/v1/health`, { method: 'GET' });
-          if (resp.ok) {
-            const data = await resp.json();
-            if (data && data.status === 'ok') {
-              state.backendDetected = true;
-              state.backendHealth = data;
-              if (!state.backendUrl && base !== window.location.origin) {
-                state.backendUrl = base;
-              }
-              if (data.telegram_binding) {
-                applyTelegramBindingState(data.telegram_binding, false);
-              }
-              updateBackendBadges();
-              return true;
-            }
+        const isCloud = isPublicCloudUrl(base);
+        const attempts = isCloud ? maxRetries : 1;
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+          if (isCloud && attempt > 1) {
+            const hBadge = document.getElementById('backendHealthBadge');
+            const rMode = document.getElementById('ribbonBackendMode');
+            if (hBadge) { hBadge.className = 'badge badge-amber'; hBadge.textContent = `⏳ 喚醒雲端後端中 (${attempt}/${attempts})...`; }
+            if (rMode) rMode.textContent = `⏳ 正在喚醒 24H 雲端後端（免費主機冷啟動約 15~35 秒）...`;
           }
-        } catch (e) {}
+          const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const tid = ctrl ? setTimeout(() => ctrl.abort(), perTryTimeoutMs) : null;
+          try {
+            const resp = await fetch(`${base}/api/v1/health`, {
+              method: 'GET',
+              cache: 'no-store',
+              signal: ctrl ? ctrl.signal : undefined
+            });
+            if (tid) clearTimeout(tid);
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data && data.status === 'ok') {
+                state.backendDetected = true;
+                state.backendHealth = data;
+                if (!state.backendUrl && base !== window.location.origin) {
+                  state.backendUrl = base;
+                }
+                if (data.telegram_binding) {
+                  applyTelegramBindingState(data.telegram_binding, false);
+                }
+                ensureCloudKeepAlive(base);
+                updateBackendBadges();
+                return true;
+              }
+            }
+          } catch (e) {
+            if (tid) clearTimeout(tid);
+          }
+          if (attempt < attempts) {
+            await new Promise(r => setTimeout(r, 3500));
+          }
+        }
       }
 
       state.backendDetected = false;
@@ -11021,8 +11099,59 @@
       if (akIn) akIn.value = sj.apiKey || '';
       if (skIn) skIn.value = sj.secretKey || '';
       if (urlIn) urlIn.value = sj.httpUrl || 'http://127.0.0.1:8080';
+      const cloudIn = document.getElementById('liveCloudBackendInput');
+      if (cloudIn) cloudIn.value = state.backendUrl || '';
+      if (!window._shlLiveCloudBtnsBound) {
+        window._shlLiveCloudBtnsBound = true;
+        document.getElementById('btnLiveConnectCloud')?.addEventListener('click', async () => {
+          const inp = document.getElementById('liveCloudBackendInput');
+          const btn = document.getElementById('btnLiveConnectCloud');
+          const raw = (inp?.value || '').trim().replace(/\/+$/, '');
+          if (!raw || !/^https?:\/\//i.test(raw)) {
+            showToast('請輸入有效網址', '請貼上 https:// 開頭的 24H 雲端後端網址（例如 https://你的服務.onrender.com）', 'warn');
+            return;
+          }
+          state.backendUrl = raw;
+          const cb = document.getElementById('cloudBackendInput');
+          const mb = document.getElementById('mobBackendUrl');
+          if (cb) cb.value = raw;
+          if (mb) mb.value = raw;
+          persistState();
+          if (btn) { btn.disabled = true; btn.textContent = '⏳ 喚醒連線中...'; }
+          showToast('正連線／喚醒 24H 雲端後端', '若為免費方案休眠中，系統會自動等待喚醒（最多約 35 秒）...', 'info');
+          const ok = await detectBackend({ retries: 4, timeoutMs: 12000 });
+          if (btn) { btn.disabled = false; btn.textContent = '🔌 連線／喚醒'; }
+          if (ok) {
+            showToast('24H 雲端後端連線成功！', `已連線 ${raw}，手機可免開電腦獨立執行所有後端功能！`, 'success');
+            if (window.SHL_REMOTE_ACCOUNT && typeof window.SHL_REMOTE_ACCOUNT.push === 'function') {
+              window.SHL_REMOTE_ACCOUNT.push(true).catch(() => {});
+            }
+            openLiveSafetyModal();
+            refreshRealtimeQuotes(true).catch(() => {});
+          } else {
+            showToast('尚無法連上該後端', '請確認雲端服務已部署完成並處於 Running 狀態，或稍後再點一次「連線／喚醒」。', 'warn');
+          }
+        });
+        document.getElementById('btnLiveCopyMobileLink')?.addEventListener('click', async () => {
+          const raw = ((document.getElementById('liveCloudBackendInput')?.value || state.backendUrl || '').trim()).replace(/\/+$/, '');
+          if (!raw || !/^https?:\/\//i.test(raw)) {
+            showToast('請先填入雲端後端網址', '填入 https:// 雲端網址後，即可產生手機一鍵直連連結。', 'warn');
+            return;
+          }
+          const pageBase = (window.location.origin + window.location.pathname).replace(/\/+$/, '/');
+          const targetBase = pageBase.includes('github.io') ? 'https://lhsheng-404.github.io/TradingAutomatic/' : raw + '/';
+          const link = targetBase.includes('github.io') ? `${targetBase}?backend=${encodeURIComponent(raw)}` : raw;
+          try {
+            await navigator.clipboard.writeText(link);
+            showToast('已複製手機免設定直連連結', `傳到手機 LINE／瀏覽器打開即可自動連線：${link}`, 'success');
+          } catch (e) {
+            window.prompt('請複製以下手機直連連結：', link);
+          }
+        });
+      }
       if (box) {
         const backendOk = state.backendDetected;
+        const activeBase = getApiBase();
         let remoteLoggedIn = false;
         let remoteAcctName = '';
         try {
@@ -11035,10 +11164,10 @@
         const sameKeyWarn = Boolean((sj.simApiKey || '').trim() && (sj.apiKey || '').trim() && sj.simApiKey.trim() === sj.apiKey.trim());
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
         const connHtml = backendOk
-          ? '<strong style="color:#15803d;">✓ 已連線本機／雲端 server.py（完整即時串流）</strong>'
+          ? `<strong style="color:#15803d;">✓ 已連線${isPublicCloudUrl(activeBase) ? ' 24H 雲端' : '本機／雲端'} server.py（${escapeHtml(activeBase || 'same-origin')}）</strong>`
           : (remoteLoggedIn
-              ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)} · 免架站 Private Gist，手機 4G/5G 獨立模式）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">手機獨立網路下 K 線直連官方真實數據，並自動同步電腦端最新報價與推播設定；僅送出「正式實盤 LIVE 單」時才需要公開 HTTPS server.py。</div>`
-              : '<strong>✗ 尚未連線 server.py（若手機與電腦不同網路，建議使用「遠端共享帳號」免架站同步）</strong>');
+              ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)}）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">若電腦不常開機且想讓手機 24H 獨立連線後端處理，請於下方貼上免費 24H 雲端 server.py 網址。</div>`
+              : '<strong>✗ 尚未連線 server.py（電腦不開機時，請於下方一鍵部署免費 24H 雲端後端並貼上網址）</strong>');
         box.innerHTML = `
           <div>1. 雲端／後端連線：${connHtml}</div>
           <div>2. SIM 模擬行情 Token（選填·獨立）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設使用官方真實數據與遠端共享報價）'}</strong></div>
@@ -17759,7 +17888,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             if (!parsed.ownerId || !/^own_[A-Za-z0-9_-]{12,}$/.test(parsed.ownerId)) throw new Error('無效的離線配對金鑰');
             d.ownerId = parsed.ownerId;
             d.syncSpace = parsed.syncSpace || ('owner-' + d.ownerId.slice(4, 16));
-            if (parsed.backendUrl && !state.backendUrl) state.backendUrl = parsed.backendUrl;
+            if (parsed.backendUrl && (!state.backendUrl || (isPublicCloudUrl(parsed.backendUrl) && !isPublicCloudUrl(state.backendUrl)))) {
+              state.backendUrl = parsed.backendUrl;
+            }
             const spaceIn = document.getElementById('vaultSyncSpaceInput');
             if (spaceIn) spaceIn.value = d.syncSpace;
             persistState();
@@ -20151,7 +20282,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (!obj || !obj.accountId || !obj.pass) {
             throw new Error('登入碼內缺少帳號或同步密碼');
           }
-          if (obj.backendUrl && !state.backendUrl) state.backendUrl = obj.backendUrl;
+          if (obj.backendUrl && (!state.backendUrl || (isPublicCloudUrl(obj.backendUrl) && !isPublicCloudUrl(state.backendUrl)))) {
+            state.backendUrl = obj.backendUrl;
+            persistState();
+            detectBackend({ retries: 3, timeoutMs: 12000 }).catch(() => {});
+          }
           writeCfg({ ...obj, loggedIn: true, lastSyncAt: '' });
           document.getElementById('remoteAcctQuickImportInput').value = '';
           refreshUI();
@@ -20375,8 +20510,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.14.1';
+      const CURRENT_VERSION = 'v3.15.0';
       const HISTORY = [
+        {
+          ver: 'v3.15.0',
+          items: [
+            '解決電腦不常開機導致手機顯示「尚未連線」問題：於「永豐金 API 與安全檢核」視窗直接內建「☁️ 電腦不開機 · 手機 24H 雲端後端連線」快捷列，提供免費一鍵部署至 Render 按鈕、貼上 HTTPS 雲端網址連線／喚醒，以及「📱 複製手機免設定直連連結」（透過 ?backend= 參數點開即自動綁定）',
+            '新增免費雲端主機冷啟動自動喚醒重試（detectBackend 自動重試等待 Render/Zeabur 休眠喚醒並顯示進度）與 4 分鐘自動保活 Ping，並同步附帶可選的台股盤中保活工作流（cloud-keepalive.yml）',
+            '強化 Dockerfile（完整打包 PWA 靜態檔）與 render.yaml（補齊 Shioaji / Groq / 存取密碼環境變數），手機可直接將 24H 雲端網址加入主畫面免開電腦運作，且跨裝置同步自動優先套用公開 HTTPS 雲端後端網址'
+          ]
+        },
         {
           ver: 'v3.14.1',
           items: [

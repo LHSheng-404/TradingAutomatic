@@ -5,7 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY index.html server.py ./
+COPY index.html server.py sw.js manifest.webmanifest ./
+COPY icons ./icons
 
 ENV PORT=8000
 EXPOSE 8000

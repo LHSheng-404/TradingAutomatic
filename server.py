@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.14.0",
+    version="3.14.1",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.14.0",
+        "version": "3.14.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -1962,12 +1962,82 @@ async def analyze_multi_ai(req: AIAnalyzeRequest):
                 raise HTTPException(status_code=400, detail="缺少真實報價，嚴禁在無真實數據時進行 AI 猜測分析")
             resolved_mode = "SINGLE"
 
-    results = await asyncio.gather(
-        *(
-            _call_single_ai(m, req, resolved_mode=resolved_mode, resolved_targets=resolved_targets)
-            for m in req.models
-        )
-    )
+    # v3.14.1: Per-model circuit breaker cooldown (429/402/401/5xx/timeout) + 60s response cache + 12s strict timeout
+    global _AI_COOLDOWN_MAP, _AI_RESULT_CACHE
+    if "_AI_COOLDOWN_MAP" not in globals():
+        _AI_COOLDOWN_MAP = {}
+    if "_AI_RESULT_CACHE" not in globals():
+        _AI_RESULT_CACHE = {}
+
+    async def _call_single_ai_guarded(model_id: str) -> dict[str, Any]:
+        now_t = time.time()
+        raw_key = str((req.api_keys or {}).get(model_id, "") or "")
+        key_fp = hashlib.sha1(raw_key.encode("utf-8")).hexdigest()[:8] if raw_key else "env"
+        cd_key = f"{model_id}:{key_fp}"
+
+        # 1. Check circuit-breaker cooldown (prevents hammering 429/402/401 providers)
+        cd = _AI_COOLDOWN_MAP.get(cd_key)
+        if cd and cd["until"] > now_t:
+            rem = max(1, int(cd["until"] - now_t))
+            return {
+                "model": model_id,
+                "connected": False,
+                "cooldown_sec": rem,
+                "error": f"{cd['reason']}（自動冷卻剩餘 {rem} 秒，避免過度詢問）",
+            }
+
+        # 2. Check 60s response cache for same model + targets + price bucket + focus prompt
+        sig_parts = [f"{t.get('symbol')}:{round(float(t.get('price') or 0), 1)}" for t in (resolved_targets or [])[:8]]
+        c_key = f"{cd_key}|{resolved_mode}|{'/'.join(sig_parts)}|{hashlib.sha1(focus.encode('utf-8')).hexdigest()[:8]}"
+        cached_item = _AI_RESULT_CACHE.get(c_key)
+        if cached_item and (now_t - cached_item["ts"]) < 60.0:
+            out_c = dict(cached_item["res"])
+            out_c["from_cache"] = True
+            return out_c
+
+        # 3. Call provider with strict 12s timeout so slow/broken APIs never block other models
+        try:
+            res = await asyncio.wait_for(
+                _call_single_ai(model_id, req, resolved_mode=resolved_mode, resolved_targets=resolved_targets),
+                timeout=12.0,
+            )
+        except asyncio.TimeoutError:
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 45.0, "reason": "連線逾時 (>12s)"}
+            return {"model": model_id, "connected": False, "cooldown_sec": 45, "error": "連線逾時 (>12s)，已自動冷卻 45 秒"}
+        except Exception as exc:
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 45.0, "reason": f"網路異常 ({type(exc).__name__})"}
+            return {"model": model_id, "connected": False, "cooldown_sec": 45, "error": f"網路異常，已自動冷卻 45 秒"}
+
+        if res.get("connected"):
+            _AI_COOLDOWN_MAP.pop(cd_key, None)
+            _AI_RESULT_CACHE[c_key] = {"ts": now_t, "res": dict(res)}
+            if len(_AI_RESULT_CACHE) > 200:
+                oldest = sorted(_AI_RESULT_CACHE.items(), key=lambda kv: kv[1]["ts"])[:50]
+                for k_old, _ in oldest:
+                    _AI_RESULT_CACHE.pop(k_old, None)
+            return res
+
+        # Classify error and trigger appropriate circuit-breaker cooldown
+        err_str = str(res.get("error") or "")
+        if "HTTP 402" in err_str or "402" in err_str:
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 600.0, "reason": "API 額度不足 (HTTP 402)"}
+            res["cooldown_sec"] = 600
+            res["error"] = "API 額度不足 (HTTP 402)，已自動冷卻 10 分鐘避免重複扣款／詢問"
+        elif "HTTP 401" in err_str or "HTTP 403" in err_str:
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 600.0, "reason": "API 金鑰無效或無權限 (HTTP 401/403)"}
+            res["cooldown_sec"] = 600
+            res["error"] = "API 金鑰無效或無權限 (HTTP 401/403)，已自動冷卻 10 分鐘（更換金鑰即解除）"
+        elif "HTTP 429" in err_str or "429" in err_str or "rate" in err_str.lower():
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 90.0, "reason": "速率限流 (HTTP 429)"}
+            res["cooldown_sec"] = 90
+            res["error"] = "速率限流 (HTTP 429)，已自動冷卻 90 秒避免持續鎖流"
+        elif any(code in err_str for code in ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "逾時", "連線")):
+            _AI_COOLDOWN_MAP[cd_key] = {"until": now_t + 45.0, "reason": "雲端服務暫時異常"}
+            res["cooldown_sec"] = 45
+            res["error"] = f"{err_str}（已自動冷卻 45 秒）"
+        return res
+
+    results = await asyncio.gather(*(_call_single_ai_guarded(m) for m in req.models))
     primary_sym = resolved_targets[0]["symbol"] if len(resolved_targets) == 1 else (
         "MULTI" if resolved_mode == "MULTI_TARGETS" else "CUSTOM"
     )

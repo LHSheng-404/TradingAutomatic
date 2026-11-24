@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.14.0 · 版本說明
+              v3.14.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -8728,7 +8728,15 @@
       return chosen.length > 0 ? chosen : valid;
     }
 
+    window._shlAiInFlight = window._shlAiInFlight || false;
+    window._shlAiCooldowns = window._shlAiCooldowns || {};
+    window._shlAiCache = window._shlAiCache || {};
+
     async function runMultiAiAnalysis(customPrompt = '', opts = {}) {
+      if (window._shlAiInFlight) {
+        showToast('AI 解析處理中', '前次多模型解析尚在回傳結果，已自動避免重複詢問。', 'info');
+        return;
+      }
       const forceActive = Boolean(opts.forceActive);
       const focusMode = forceActive ? 'ACTIVE' : (document.getElementById('aiFocusModeSelect')?.value || 'AUTO');
       const promptClean = String(customPrompt || '').trim();
@@ -8740,6 +8748,8 @@
       const effectiveOpts = { ...state.modelOptions, ...liveCreds.modelOptions };
       const selectedModelIds = getSelectedAiProviderIds();
       const selectedDefs = AI_MODELS.filter(m => selectedModelIds.includes(m.id));
+      window._shlAiInFlight = true;
+      try {
 
       const extractedSyms = forceActive ? [] : extractTwSymbolsFromPrompt(promptClean, 0);
       let targetSymbols = [];
@@ -8808,10 +8818,13 @@
       let analyzedTargets = preSnaps.slice();
 
       if (apiBase) {
+        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const tOut = ctrl ? setTimeout(() => ctrl.abort(), 16000) : null;
         try {
           const resp = await fetch(`${apiBase}/api/v1/ai/analyze`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: ctrl ? ctrl.signal : undefined,
             body: JSON.stringify({
               symbol: targetSymbols.length === 1 ? targetSymbols[0] : (focusMode === 'ACTIVE' ? activeMeta.symbol : ''),
               stock_name: targetSymbols.length === 1 ? (getStockMeta(targetSymbols[0]).name || '') : (focusMode === 'ACTIVE' ? activeMeta.name : ''),
@@ -8832,11 +8845,12 @@
             finalResults = (data.results || []).map(r => {
               const def = AI_MODELS.find(m => m.id === r.model);
               if (r.connected) {
+                const cacheTag = r.from_cache ? ' · 快取免重詢' : '';
                 return {
                   ...r,
                   modeLabel: r.model === 'ollama'
-                    ? `地端 Ollama (${r.model_name || effectiveOpts.ollama_model})`
-                    : `雲端 API (${r.model_name || r.model})`
+                    ? `地端 Ollama (${r.model_name || effectiveOpts.ollama_model})${cacheTag}`
+                    : `雲端 API (${r.model_name || r.model})${cacheTag}`
                 };
               }
               return {
@@ -8848,7 +8862,11 @@
             const errJson = await resp.json().catch(() => ({}));
             if (errJson.detail) showToast('分析前置檢查提示', String(errJson.detail), 'warn');
           }
-        } catch (e) {}
+        } catch (e) {
+          showToast('AI 後端請求逾時或中斷', '已自動切換本地量化摘要，避免長時間等待。', 'warn');
+        } finally {
+          if (tOut) clearTimeout(tOut);
+        }
       }
 
       // Direct browser / Android APK fallback when running static without FastAPI backend
@@ -8866,22 +8884,51 @@
           `${idx + 1}. ${s.symbol} ${s.stock_name || ''} 現價=${s.price}(${s.change_pct}%) EMA5=${s.ema5} EMA12=${s.ema12} RSI14=${s.rsi} VWAP乖離=${s.vwap_diff}%`
         ).join('\n');
 
+        const nowMs = Date.now();
+        const priceSig = analyzedTargets.slice(0, 6).map(s => `${s.symbol}:${Math.round(Number(s.price || 0))}`).join('/');
         finalResults = await Promise.all(selectedDefs.map(async def => {
-          const hasCred = def.id === 'ollama'
-            ? Boolean((effectiveOpts.ollama_url || '').trim())
-            : Boolean((effectiveKeys[def.id] || '').trim());
-          if (!hasCred) return buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean);
+          const rawCred = def.id === 'ollama' ? (effectiveOpts.ollama_url || '').trim() : (effectiveKeys[def.id] || '').trim();
+          if (!rawCred) return buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean);
+
+          const cdKey = `${def.id}:${rawCred.slice(-6)}`;
+          const cd = window._shlAiCooldowns[cdKey];
+          if (cd && cd.until > nowMs) {
+            const rem = Math.max(1, Math.ceil((cd.until - nowMs) / 1000));
+            return {
+              ...buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean),
+              modeLabel: `本地量化摘要（${cd.reason} · 冷卻剩 ${rem}s）`
+            };
+          }
+
+          const cacheKey = `${cdKey}|${priceSig}|${promptClean.slice(0, 40)}`;
+          const cached = window._shlAiCache[cacheKey];
+          if (cached && (nowMs - cached.ts) < 60000) {
+            return { ...cached.res, modeLabel: `${cached.res.modeLabel || def.label} · 快取免重詢` };
+          }
+
           try {
             const directPrompt = analyzedTargets.length >= 2
               ? `你是嚴謹台股量化分析師(${def.label} - ${def.role})。自訂焦點：${promptClean || '比較下列標的強弱與操作順序'}。真實數據：\n${multiTxt}\n嚴禁分析未列出的股票或捏造價格。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"200字內整合比較研判","key_levels":"強弱排序或關鍵價位","risk_note":"50字內風控提醒"}`
               : (analyzedTargets.length === 1
-                ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控"}`
+                ? `你是嚴謹台股分析師(${def.label} - ${def.role})。嚴禁捏造數據。真實數據：${multiTxt}。${promptClean ? '自訂焦點：' + promptClean : ''} 請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"120字內研判","key_levels":"支撐與壓力","risk_note":"50字內風控提醒"}`
                 : `你是嚴謹台股量化策略師(${def.label} - ${def.role})。請完全聚焦以下主題回答，勿離題討論未提及個股：${promptClean}。請回覆純 JSON：{"verdict":"BULL|NEUTRAL|BEAR","confidence":0-100,"bull_pct":0-100整數,"bear_pct":0-100整數(相加=100),"summary":"200字內整合分析","key_levels":"關鍵觀察指標或條件","risk_note":"50字內風控提醒"}`);
-            return await callSingleModelDirectBrowser(def, directPrompt, effectiveKeys, effectiveOpts);
+            const res = await Promise.race([
+              callSingleModelDirectBrowser(def, directPrompt, effectiveKeys, effectiveOpts),
+              new Promise((_, rej) => setTimeout(() => rej(new Error('連線逾時 (>12s)')), 12000))
+            ]);
+            delete window._shlAiCooldowns[cdKey];
+            window._shlAiCache[cacheKey] = { ts: Date.now(), res };
+            return res;
           } catch (err) {
+            const msg = String(err?.message || '網路異常');
+            let cdSec = 45, reason = msg.slice(0, 34);
+            if (/402/.test(msg)) { cdSec = 600; reason = '額度不足 (HTTP 402)'; }
+            else if (/401|403/.test(msg)) { cdSec = 600; reason = '金鑰無效 (HTTP 401/403)'; }
+            else if (/429|rate/i.test(msg)) { cdSec = 90; reason = '速率限流 (HTTP 429)'; }
+            window._shlAiCooldowns[cdKey] = { until: Date.now() + cdSec * 1000, reason };
             return {
               ...buildMultiTargetFallbackDigest(def, analyzedTargets, promptClean),
-              modeLabel: `本地量化摘要（${err.message.slice(0, 34)}）`
+              modeLabel: `本地量化摘要（${reason}，已自動冷卻 ${cdSec}s）`
             };
           }
         }));
@@ -8913,10 +8960,13 @@
       triggerHandshake('AI_CLUSTER', 'CORE', '#4f46e5', 'ACK', false, 64, `${labelDesc} 共識回傳完成`);
       setRibbonEvent(`AI 深度解析完成：${labelDesc}（${selectedDefs.length} 模型）`);
 
-      if (btnQuick) btnQuick.disabled = false;
-      if (btnStudio) btnStudio.disabled = false;
       renderAiPanels();
       renderTopRibbon();
+      } finally {
+        window._shlAiInFlight = false;
+        if (btnQuick) btnQuick.disabled = false;
+        if (btnStudio) btnStudio.disabled = false;
+      }
     }
 
     async function detectOllamaModelsUI() {
@@ -20325,8 +20375,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.14.0';
+      const CURRENT_VERSION = 'v3.14.1';
       const HISTORY = [
+        {
+          ver: 'v3.14.1',
+          items: [
+            '新增各 AI 模型獨立熔斷冷卻機制（前後端同步）：針對額度不足 (HTTP 402)／金鑰無效 (HTTP 401/403) 自動冷卻 10 分鐘（更換金鑰立即解除）、速率限流 (HTTP 429) 自動冷卻 90 秒、網路異常／5xx／逾時自動冷卻 45 秒，冷卻期間 0ms 直接回傳提示，絕不重複轟炸 API',
+            '新增 60 秒 AI 回應結果快取（相同標的＋價位＋焦點提示詞直接命中快取並標示「快取免重詢」），搭配前端 In-Flight 防重複觸發鎖，避免連點或自動輪詢造成過度詢問與鎖流',
+            '單一 AI 模型嚴格限制 12 秒逾時（後端 asyncio.wait_for 12s、前端 16s AbortController 與直連 12s Promise.race），任何異常或緩慢模型即時降級，絕不拖慢或卡死其他正常 AI 回傳'
+          ]
+        },
         {
           ver: 'v3.14.0',
           items: [

@@ -28,7 +28,7 @@ services:
       - key: LINE_TARGET_ID
         sync: false
       - key: SHL_ACCESS_PASSWORD
-        sync: false
+        generateValue: true
       - key: GROQ_API_KEY
         sync: false
       - key: SHIOAJI_SIM_API_KEY

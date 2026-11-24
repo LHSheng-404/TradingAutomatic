@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.15.0 · 版本說明
+              v3.15.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -5398,11 +5398,14 @@
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input id="liveCloudBackendInput" type="url" class="input mono" style="flex:1;min-width:190px;font-size:12px;" placeholder="貼上 24H 雲端網址，例：https://你的服務.onrender.com" />
+          <input id="liveCloudAccessTokenInput" type="password" class="input mono" style="flex:0.8;min-width:150px;font-size:12px;" placeholder="🔐 雲端存取密碼 (SHL_ACCESS_PASSWORD)" autocomplete="new-password" data-lpignore="true" />
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <button type="button" id="btnLiveConnectCloud" class="btn btn-sm btn-primary">🔌 連線／喚醒</button>
-          <button type="button" id="btnLiveCopyMobileLink" class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">📱 複製手機免設定連結</button>
+          <button type="button" id="btnLiveCopyMobileLink" class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">📱 複製手機免設定連結（不含密碼與金鑰）</button>
         </div>
         <div style="font-size:11px;color:#1e3a8a;line-height:1.5;">
-          電腦關機時，只需免費部署 <code class="mono">server.py</code> 到雲端（Render / Zeabur / Railway），貼上 HTTPS 網址即可讓手機 24H 獨立連線處理行情、永豐串流、AI 與下單；<strong>免費雲端休眠時點「連線／喚醒」會自動等待喚醒（約 15~35 秒）</strong>，亦可直接用手機打開該雲端網址加入主畫面。
+          🔒 <strong>防外洩保護</strong>：透過 Render 一鍵部署時已自動產生隨機 <code class="mono">SHL_ACCESS_PASSWORD</code> 密碼鎖（請至 Render → Environment 複製貼上至上方密碼欄），未帶密碼的外部請求全數回絕 401；手機直連連結僅含網址，<strong>絕不包含密碼或 API 金鑰</strong>。
         </div>
       </div>
       <!-- v3.11.1: Separate SIM Market/Sim API Token vs LIVE Production Order API Token -->
@@ -7204,9 +7207,10 @@
         // Priority 2: Cloud Backend FinMind proxy (supports D & aggregated W)
         if (!result && preferred !== 'yahoo' && apiBase) {
           try {
-            const tok = state.finmindToken ? `&token=${encodeURIComponent(state.finmindToken)}` : '';
+            const fmHeaders = state.finmindToken ? { 'X-FinMind-Token': state.finmindToken.trim() } : {};
             const resp = await fetch(
-              `${apiBase}/api/v1/market/finmind/${encodeURIComponent(meta.finmindId)}?dataset=${encodeURIComponent(meta.dataset)}&days=${spec.finmindDays}&interval=${encodeURIComponent(spec.tv)}${tok}`
+              `${apiBase}/api/v1/market/finmind/${encodeURIComponent(meta.finmindId)}?dataset=${encodeURIComponent(meta.dataset)}&days=${spec.finmindDays}&interval=${encodeURIComponent(spec.tv)}`,
+              { headers: fmHeaders }
             );
             if (resp.ok) {
               const j = await resp.json();
@@ -9101,7 +9105,9 @@
       const apiBase = getApiBase();
       if (apiBase) {
         try {
-          const r = await fetch(`${apiBase}/api/v1/ai/groq-models?api_key=${encodeURIComponent(key)}`);
+          const r = await fetch(`${apiBase}/api/v1/ai/groq-models`, {
+            headers: key ? { 'X-Groq-Api-Key': key } : {}
+          });
           if (r.ok) {
             const j = await r.json();
             if (Array.isArray(j.models) && j.models.length > 0) models = j.models;
@@ -11100,29 +11106,40 @@
       if (skIn) skIn.value = sj.secretKey || '';
       if (urlIn) urlIn.value = sj.httpUrl || 'http://127.0.0.1:8080';
       const cloudIn = document.getElementById('liveCloudBackendInput');
+      const cloudPwIn = document.getElementById('liveCloudAccessTokenInput');
       if (cloudIn) cloudIn.value = state.backendUrl || '';
+      if (cloudPwIn) cloudPwIn.value = state.backendAccessToken || '';
       if (!window._shlLiveCloudBtnsBound) {
         window._shlLiveCloudBtnsBound = true;
         document.getElementById('btnLiveConnectCloud')?.addEventListener('click', async () => {
           const inp = document.getElementById('liveCloudBackendInput');
+          const pwInp = document.getElementById('liveCloudAccessTokenInput');
           const btn = document.getElementById('btnLiveConnectCloud');
           const raw = (inp?.value || '').trim().replace(/\/+$/, '');
+          const pwVal = (pwInp?.value || '').trim();
           if (!raw || !/^https?:\/\//i.test(raw)) {
             showToast('請輸入有效網址', '請貼上 https:// 開頭的 24H 雲端後端網址（例如 https://你的服務.onrender.com）', 'warn');
             return;
           }
           state.backendUrl = raw;
+          state.backendAccessToken = pwVal;
           const cb = document.getElementById('cloudBackendInput');
           const mb = document.getElementById('mobBackendUrl');
+          const vb = document.getElementById('vaultBackendAccessInput');
           if (cb) cb.value = raw;
           if (mb) mb.value = raw;
+          if (vb) vb.value = pwVal;
           persistState();
           if (btn) { btn.disabled = true; btn.textContent = '⏳ 喚醒連線中...'; }
           showToast('正連線／喚醒 24H 雲端後端', '若為免費方案休眠中，系統會自動等待喚醒（最多約 35 秒）...', 'info');
           const ok = await detectBackend({ retries: 4, timeoutMs: 12000 });
           if (btn) { btn.disabled = false; btn.textContent = '🔌 連線／喚醒'; }
           if (ok) {
-            showToast('24H 雲端後端連線成功！', `已連線 ${raw}，手機可免開電腦獨立執行所有後端功能！`, 'success');
+            if (state.backendHealth?.access_password_required && !pwVal) {
+              showToast('此雲端後端已啟用密碼保護', '請於上方「🔐 雲端存取密碼」填入 Render 環境變數中的 SHL_ACCESS_PASSWORD 再按一次連線。', 'warn');
+            } else {
+              showToast('24H 雲端後端連線成功！', `已連線 ${raw}，手機可免開電腦獨立執行所有後端功能！`, 'success');
+            }
             if (window.SHL_REMOTE_ACCOUNT && typeof window.SHL_REMOTE_ACCOUNT.push === 'function') {
               window.SHL_REMOTE_ACCOUNT.push(true).catch(() => {});
             }
@@ -11143,15 +11160,17 @@
           const link = targetBase.includes('github.io') ? `${targetBase}?backend=${encodeURIComponent(raw)}` : raw;
           try {
             await navigator.clipboard.writeText(link);
-            showToast('已複製手機免設定直連連結', `傳到手機 LINE／瀏覽器打開即可自動連線：${link}`, 'success');
+            showToast('已複製手機免設定直連連結', `僅含雲端網址、不含任何密碼或金鑰：${link}`, 'success');
           } catch (e) {
-            window.prompt('請複製以下手機直連連結：', link);
+            window.prompt('請複製以下手機直連連結（不含密碼與金鑰）：', link);
           }
         });
       }
       if (box) {
         const backendOk = state.backendDetected;
         const activeBase = getApiBase();
+        const pwLocked = Boolean(state.backendHealth?.access_password_required);
+        const cloudUnprotected = Boolean(state.backendHealth?.public_cloud_unprotected) || (backendOk && isPublicCloudUrl(activeBase) && !pwLocked);
         let remoteLoggedIn = false;
         let remoteAcctName = '';
         try {
@@ -11163,8 +11182,11 @@
         const sjOk = hasValidShioajiToken();
         const sameKeyWarn = Boolean((sj.simApiKey || '').trim() && (sj.apiKey || '').trim() && sj.simApiKey.trim() === sj.apiKey.trim());
         const caOk = Boolean(state.backendHealth?.shioaji_ca_ready);
+        const lockBadge = pwLocked
+          ? ' <span style="color:#0f766e;">· 🔒 密碼鎖已啟用</span>'
+          : (cloudUnprotected ? ' <span style="color:#dc2626;">· ⚠️ 尚未設存取密碼！</span>' : '');
         const connHtml = backendOk
-          ? `<strong style="color:#15803d;">✓ 已連線${isPublicCloudUrl(activeBase) ? ' 24H 雲端' : '本機／雲端'} server.py（${escapeHtml(activeBase || 'same-origin')}）</strong>`
+          ? `<strong style="color:#15803d;">✓ 已連線${isPublicCloudUrl(activeBase) ? ' 24H 雲端' : '本機／雲端'} server.py（${escapeHtml(activeBase || 'same-origin')}）</strong>${lockBadge}`
           : (remoteLoggedIn
               ? `<strong style="color:#15803d;">✓ 遠端共享帳號已連線（${escapeHtml(remoteAcctName)}）</strong><div style="font-size:11px;color:#475569;margin-top:2px;">若電腦不常開機且想讓手機 24H 獨立連線後端處理，請於下方貼上免費 24H 雲端 server.py 網址。</div>`
               : '<strong>✗ 尚未連線 server.py（電腦不開機時，請於下方一鍵部署免費 24H 雲端後端並貼上網址）</strong>');
@@ -11173,6 +11195,7 @@
           <div>2. SIM 模擬行情 Token（選填·獨立）：<strong style="color:${simOk ? '#15803d' : '#0369a1'};">${simOk ? '✓ 已設定 SIM 專屬 Token' : '未填（預設使用官方真實數據與遠端共享報價）'}</strong></div>
           <div>3. LIVE 正式單 API Token（必要·獨立）：<strong style="color:${sjOk ? '#15803d' : '#dc2626'};">${sjOk ? '✓ 已設定 LIVE 正式單 Token' : '✗ 尚未設定（無正式單 Token 嚴禁切換 LIVE）'}</strong></div>
           <div>4. 永豐金 CA 憑證 (Sinopac.pfx)：<strong>${caOk ? '✓ 憑證檔案就緒' : '⚠ 尚未掛載（實盤送單時須備妥）'}</strong></div>
+          ${cloudUnprotected ? '<div style="margin-top:4px;color:#dc2626;font-weight:800;">🚨 安全警告：此公開雲端後端尚未設定 SHL_ACCESS_PASSWORD，請立即於 Render → Environment 新增存取密碼防止外部未授權存取！</div>' : ''}
           ${sameKeyWarn ? '<div style="margin-top:4px;color:#b45309;font-weight:800;">⚠️ 偵測到 SIM 與 LIVE 填入了相同的 API Key，建議分開管理或點下方清除！</div>' : ''}
         `;
       }
@@ -20510,8 +20533,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.15.0';
+      const CURRENT_VERSION = 'v3.15.1';
       const HISTORY = [
+        {
+          ver: 'v3.15.1',
+          items: [
+            '全面強化 24H 雲端後端防 API 外洩保護：render.yaml 預設自動產生隨機強密碼 SHL_ACCESS_PASSWORD（generateValue: true），所有 /api/v1/* 私有端點未帶正確密碼一律回絕 401；若公開雲端未設密碼，安全檢核視窗會即時跳出紅色警告',
+            '消除網址列 Query 紀錄外洩風險：Groq 模型偵測與 FinMind 後端代理全面改採 HTTP Header（X-Groq-Api-Key / X-FinMind-Token）傳遞金鑰，不再出現在雲端反向代理的網址存取日誌中',
+            '後端新增 Referrer-Policy: no-referrer、X-Content-Type-Options: nosniff、API Cache-Control: no-store 安全標頭與可選 SHL_ALLOWED_ORIGINS CORS 白名單；「永豐金 API 設定」雲端連線區直接內建 🔐 雲端存取密碼輸入欄'
+          ]
+        },
         {
           ver: 'v3.15.0',
           items: [

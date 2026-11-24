@@ -398,12 +398,15 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.15.0",
+    version="3.15.1",
 )
+
+_ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
+_ALLOWED_ORIGINS = [o.strip() for o in _ALLOWED_ORIGINS_RAW.split(",") if o.strip()] if _ALLOWED_ORIGINS_RAW else ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -415,6 +418,7 @@ async def optional_access_password_guard(request: Request, call_next):
     若伺服器環境變數設定了 SHL_ACCESS_PASSWORD，則所有 /api/v1/* 私有端點
     （/api/v1/health 與 /api/v1/webhook/tv 除外）皆須於標頭攜帶相符的
     X-SHL-Access-Token，防止同區網或外部陌生人存取。
+    同時為所有回應加上安全標頭，避免 Referrer 外洩或代理層快取敏感資料。
     """
     required_pw = os.getenv("SHL_ACCESS_PASSWORD", "").strip()
     path = request.url.path or ""
@@ -429,11 +433,16 @@ async def optional_access_password_guard(request: Request, call_next):
             return JSONResponse(
                 status_code=401,
                 content={
-                    "detail": "此伺服器已啟用存取密碼保護，請於「安全保險箱 & 多設備連動」填入正確的後端存取密碼（X-SHL-Access-Token）。",
+                    "detail": "此伺服器已啟用存取密碼保護，請填入正確的後端存取密碼（SHL_ACCESS_PASSWORD / X-SHL-Access-Token）。",
                     "access_password_required": True,
                 },
             )
-    return await call_next(request)
+    resp = await call_next(request)
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    if path.startswith("/api/v1/"):
+        resp.headers["Cache-Control"] = "no-store, private"
+    return resp
 
 
 @app.get("/", include_in_schema=False)
@@ -521,11 +530,15 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.15.0",
+        "version": "3.15.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
         "access_password_required": bool(os.getenv("SHL_ACCESS_PASSWORD", "").strip()),
+        "public_cloud_unprotected": bool(
+            any(os.getenv(k) for k in ("RENDER", "RAILWAY_ENVIRONMENT", "ZEABUR", "FLY_APP_NAME", "SPACE_ID"))
+            and not os.getenv("SHL_ACCESS_PASSWORD", "").strip()
+        ),
         "server_time": tw_now_str(),
         "trading_mode": SERVER_TRADING_MODE,
         "kill_switch": KILL_SWITCH_ACTIVE,
@@ -716,6 +729,7 @@ def _aggregate_finmind_weekly(rows: list[dict[str, Any]]) -> list[dict[str, Any]
 @app.get("/api/v1/market/finmind/{stock_id}")
 async def get_finmind_market_data(
     stock_id: str,
+    request: Request,
     dataset: str = "TaiwanStockPrice",
     days: int = 120,
     interval: str = "D",
@@ -732,7 +746,8 @@ async def get_finmind_market_data(
     if cached:
         return {"source": "finmind_cache", **cached}
 
-    use_token = token.strip() or (next(_token_cycle) if _token_cycle else "")
+    hdr_tok = (request.headers.get("x-finmind-token") or "").strip()
+    use_token = hdr_tok or token.strip() or (next(_token_cycle) if _token_cycle else "")
     params = {
         "dataset": dataset,
         "data_id": stock_id,
@@ -1624,8 +1639,9 @@ async def list_ollama_models(base_url: str = ""):
 
 
 @app.get("/api/v1/ai/groq-models")
-async def list_groq_models(api_key: str = ""):
-    key = api_key.strip() or os.getenv("GROQ_API_KEY", "")
+async def list_groq_models(request: Request, api_key: str = ""):
+    hdr_key = (request.headers.get("x-groq-api-key") or "").strip()
+    key = hdr_key or api_key.strip() or os.getenv("GROQ_API_KEY", "")
     if not key:
         return {
             "ok": False,

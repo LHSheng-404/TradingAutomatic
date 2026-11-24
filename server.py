@@ -398,7 +398,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.13.4",
+    version="3.13.5",
 )
 
 app.add_middleware(
@@ -521,7 +521,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.13.4",
+        "version": "3.13.5",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3705,15 +3705,65 @@ async def _get_official_eod_map() -> dict[str, dict[str, Any]]:
     return _OFFICIAL_EOD_CACHE["data"]
 
 
+_RANK_LIVE_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+
+
+def _fetch_mis_batch_exact_sync(ex_channels: list[str]) -> dict[str, dict[str, Any]]:
+    """Fetch exact tse_XXXX.tw / otc_XXXX.tw channels from official TWSE/TPEx MIS."""
+    out: dict[str, dict[str, Any]] = {}
+    if not ex_channels:
+        return out
+    url = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=" + urllib.parse.quote("|".join(ex_channels))
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://mis.twse.com.tw/stock/fibest.jsp",
+        "Accept": "application/json",
+    }
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+        for m in data.get("msgArray") or []:
+            code = str(m.get("c", "")).strip().upper()
+            if not code:
+                continue
+            z = _parse_mis_float(m.get("z"))
+            y = _parse_mis_float(m.get("y"))
+            v = _parse_mis_float(m.get("v"))
+            if z is None:
+                bids = [_parse_mis_float(x) for x in str(m.get("b", "")).split("_") if x]
+                z = _parse_mis_float(m.get("pz")) or (bids[0] if bids else None)
+            if z is not None and z > 0 and y is not None and y > 0:
+                out[code] = {
+                    "price": round(z, 2),
+                    "prev_close": round(y, 2),
+                    "change_pct": round((z - y) / y * 100.0, 2),
+                    "volume_lots": v if (v is not None and v >= 0) else 0.0,
+                    "high": _parse_mis_float(m.get("h")) or z,
+                    "low": _parse_mis_float(m.get("l")) or z,
+                    "date": str(m.get("d", "")).strip(),
+                    "time": str(m.get("t", "")).strip(),
+                }
+    except Exception:
+        pass
+    return out
+
+
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.13.4: Full-market bull / bear Top-N + breadth for market-trend detection.
-    Source: official TWSE STOCK_DAY_ALL + TPEx OpenData (real data, 5-min cache); never fabricated.
-    universe: all (全市場) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
+    v3.13.5: Full-market bull / bear Top-N with LIVE secondary verification (Shioaji / TWSE-TPEx MIS).
+    Prevents stale TWSE STOCK_DAY_ALL dates from causing wrong bull/bear selections and filters illiquid 0M stocks.
+    universe: all (全市場 · 自動排除成交值<1百萬無量股) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
-    eod = await _get_official_eod_map()
     limit = max(5, min(int(limit), 100))
+    cache_key = f"{universe}|{limit}|{min_value_m}|{symbols.strip().upper()}"
+    now_ts = time.time()
+    cached = _RANK_LIVE_CACHE.get(cache_key)
+    if cached and (now_ts - cached[0]) < 45:
+        return JSONResponse(cached[1], headers={"Cache-Control": "no-store"})
+
+    eod = await _get_official_eod_map()
     custom = {x.strip().upper() for x in symbols.split(",") if x.strip()}
     rows: list[dict[str, Any]] = []
     adv = dec = flat = 0
@@ -3734,25 +3784,105 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
             continue
         if universe == "liquid" and value_m < min_value_m:
             continue
+        if universe == "all" and (lots < 5 or value_m < 1.0):
+            continue
         if lots <= 0:
             continue
         rows.append({
-            "symbol": code, "name": r.get("name", ""), "exchange": r.get("exchange", ""),
+            "symbol": code, "name": r.get("name", ""), "exchange": r.get("exchange", "tse") or "tse",
             "price": px, "change_pct": pct, "volume_lots": lots, "value_m": value_m,
             "high": r.get("high"), "low": r.get("low"),
+            "trade_date": str(r.get("date", "")), "live_verified": False,
         })
-    bulls = sorted(rows, key=lambda x: (x["change_pct"], x["value_m"]), reverse=True)[:limit]
-    bears = sorted(rows, key=lambda x: (x["change_pct"], -x["value_m"]))[:limit]
+
+    # Select candidate pool (top bulls + top bears + most active liquid stocks) for LIVE secondary verification
+    cand_bulls = sorted(rows, key=lambda x: (x["change_pct"], x["value_m"]), reverse=True)[:75]
+    cand_bears = sorted(rows, key=lambda x: (x["change_pct"], -x["value_m"]))[:75]
+    cand_active = sorted(rows, key=lambda x: x["value_m"], reverse=True)[:70]
+    cand_map: dict[str, dict[str, Any]] = {}
+    for item in cand_bulls + cand_bears + cand_active:
+        cand_map[item["symbol"]] = item
+
+    # Fetch live quotes (Shioaji HTTP first if online, otherwise exact batched TWSE/TPEx MIS)
+    live_map: dict[str, dict[str, Any]] = {}
+    cand_syms = list(cand_map.keys())
+    try:
+        sj_live = await _fetch_shioaji_http_snapshots(cand_syms[:80])
+        if sj_live:
+            for k, v in sj_live.items():
+                if v.get("price") and v.get("prev_close"):
+                    live_map[k] = {
+                        "price": float(v["price"]),
+                        "prev_close": float(v["prev_close"]),
+                        "change_pct": float(v.get("change_pct") or 0.0),
+                        "volume_lots": float(v.get("volume_lots") or 0.0),
+                        "high": float(v.get("high") or v["price"]),
+                        "low": float(v.get("low") or v["price"]),
+                        "date": str(v.get("date", "")).replace("-", ""),
+                        "time": str(v.get("time", "")),
+                    }
+    except Exception:
+        pass
+
+    missing_syms = [s for s in cand_syms if s not in live_map]
+    if missing_syms:
+        channels = [
+            f"{'otc' if cand_map[s].get('exchange') == 'otc' else 'tse'}_{s}.tw"
+            for s in missing_syms
+        ]
+        chunks = [channels[i:i + 50] for i in range(0, len(channels), 50)]
+        batch_results = await asyncio.gather(*[asyncio.to_thread(_fetch_mis_batch_exact_sync, ch) for ch in chunks])
+        for bres in batch_results:
+            live_map.update(bres)
+
+    # Apply live secondary verification & count stale mismatches removed
+    verified_count = 0
+    filtered_stale_count = 0
+    live_dates: list[str] = []
+    for sym, item in cand_map.items():
+        lv = live_map.get(sym)
+        if not lv:
+            continue
+        old_pct = item["change_pct"]
+        new_pct = lv["change_pct"]
+        if (old_pct > 0 and new_pct <= 0) or (old_pct < 0 and new_pct >= 0) or abs(old_pct - new_pct) >= 1.5:
+            filtered_stale_count += 1
+        item["price"] = lv["price"]
+        item["change_pct"] = new_pct
+        if lv["volume_lots"] > 0:
+            item["volume_lots"] = lv["volume_lots"]
+            item["value_m"] = round(lv["price"] * lv["volume_lots"] * 1000.0 / 1e6, 1)
+        item["high"] = lv["high"]
+        item["low"] = lv["low"]
+        item["live_verified"] = True
+        if lv.get("date"):
+            item["trade_date"] = lv["date"]
+            live_dates.append(lv["date"])
+        verified_count += 1
+
+    # Strict bull (>0%) and bear (<0%) separation prioritized by live verification
+    verified_pool = list(cand_map.values())
+    bulls_src = [x for x in verified_pool if x["change_pct"] > 0]
+    bears_src = [x for x in verified_pool if x["change_pct"] < 0]
+    bulls = sorted(bulls_src, key=lambda x: (1 if x["live_verified"] else 0, x["change_pct"], x["value_m"]), reverse=True)[:limit]
+    bears = sorted(bears_src, key=lambda x: (1 if x["live_verified"] else 0, -x["change_pct"], x["value_m"]), reverse=True)[:limit]
+
     dates = sorted({str(r.get("date", "")) for r in eod.values() if r.get("date")})
+    live_date = sorted(set(live_dates))[-1] if live_dates else (dates[-1] if dates else "")
     total = adv + dec + flat
-    return JSONResponse({
+    payload = {
         "ok": True,
-        "source": "TWSE STOCK_DAY_ALL + TPEx OpenData（官方最近交易日）",
-        "data_date": dates[-1] if dates else "",
+        "source": f"實盤二次校驗（永豐／TWSE·TPEx MIS 即時 · 校驗 {verified_count} 檔，修正過期 {filtered_stale_count} 檔）" if verified_count > 0 else "TWSE STOCK_DAY_ALL + TPEx OpenData（官方最近交易日）",
+        "data_date": live_date,
+        "live_verified": verified_count > 0,
+        "verified_count": verified_count,
+        "filtered_stale_count": filtered_stale_count,
         "universe": universe, "count": len(rows),
         "breadth": {"advance": adv, "decline": dec, "flat": flat, "adv_ratio": round(adv / total, 4) if total else 0},
         "bulls": bulls, "bears": bears,
-    }, headers={"Cache-Control": "no-store"})
+    }
+    _RANK_LIVE_CACHE[cache_key] = (now_ts, payload)
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/v1/market/realtime")

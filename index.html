@@ -2507,7 +2507,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.13.4 · 版本說明
+              v3.13.5 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -20273,8 +20273,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.13.4';
+      const CURRENT_VERSION = 'v3.13.5';
       const HISTORY = [
+        {
+          ver: 'v3.13.5',
+          items: [
+            '修正強勢股多空前 50 檔因 TWSE STOCK_DAY_ALL 日期延遲導致抓錯選錯的異常：後端 GET /api/v1/market/rank 新增「實盤二次校驗」機制，針對候選多方／空方／高成交值共約 200 檔標的，強制向永豐 Shioaji 或 TWSE/TPEx MIS 即時報價再次確認當日真實價格、漲跌幅與成交量，自動剔除過期誤判股與成交值低於 1 百萬之無量股',
+            '嚴格分離多方（實盤漲幅 > 0%）與空方（實盤跌幅 < 0%）名單並於作戰室標示「✓實盤」校驗徽章、實盤日期與過期修正檔數'
+          ]
+        },
         {
           ver: 'v3.13.4',
           items: [
@@ -21037,28 +21044,32 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (pct > 0) adv++; else if (pct < 0) dec++; else flat++;
           if (c.universe === 'chain' && !custom.has(code)) return;
           if (c.universe === 'liquid' && valM < c.minValueM) return;
+          if (c.universe === 'all' && (lots < 5 || valM < 1.0)) return;
           if (lots <= 0) return;
-          rows.push({ symbol: code, name: String(x.Name || '').trim(), exchange: 'tse', price: px, change_pct: pct, volume_lots: lots, value_m: valM });
+          rows.push({ symbol: code, name: String(x.Name || '').trim(), exchange: 'tse', price: px, change_pct: pct, volume_lots: lots, value_m: valM, live_verified: false });
         });
         const total = adv + dec + flat;
         const j = {
-          ok: true, source: 'TWSE STOCK_DAY_ALL（靜態直連官方）', data_date: dt, universe: c.universe, count: rows.length,
+          ok: true, source: 'TWSE STOCK_DAY_ALL（靜態直連官方·建議連後端啟用實盤二次校驗）', data_date: dt, universe: c.universe, count: rows.length,
           breadth: { advance: adv, decline: dec, flat, adv_ratio: total ? Number((adv / total).toFixed(4)) : 0 },
-          bulls: rows.slice().sort((a, b) => (b.change_pct - a.change_pct) || (b.value_m - a.value_m)).slice(0, 50),
-          bears: rows.slice().sort((a, b) => (a.change_pct - b.change_pct) || (b.value_m - a.value_m)).slice(0, 50)
+          bulls: rows.filter(x => x.change_pct > 0).sort((a, b) => (b.change_pct - a.change_pct) || (b.value_m - a.value_m)).slice(0, 50),
+          bears: rows.filter(x => x.change_pct < 0).sort((a, b) => (a.change_pct - b.change_pct) || (b.value_m - a.value_m)).slice(0, 50)
         };
         lastRank = j; return j;
       }
       function rankTable(rows) {
-        return `<table><tr><th>#／股票</th><th>價</th><th>漲跌%</th><th>成交值(百萬)</th></tr>${rows.map((r, i) =>
-          `<tr class="wr-row" data-sym="${esc(r.symbol)}"><td>${i + 1}. ${esc(r.symbol)} ${esc(r.name)}</td><td>${fx(r.price)}</td><td class="${pctCls(r.change_pct)}">${r.change_pct > 0 ? '+' : ''}${fx(r.change_pct)}%</td><td>${Math.round(r.value_m).toLocaleString()}</td></tr>`).join('')}</table>`;
+        if (!rows || !rows.length) return '<div style="padding:10px;color:#94a3b8;font-size:12px;">目前實盤無符合條件標的</div>';
+        return `<table><tr><th>#／股票</th><th>價</th><th>漲跌%</th><th>成交值(百萬)</th></tr>${rows.map((r, i) => {
+          const badge = r.live_verified ? ' <span style="font-size:10px;color:#059669;background:#dcfce7;padding:0 4px;border-radius:3px;">✓實盤</span>' : '';
+          return `<tr class="wr-row" data-sym="${esc(r.symbol)}"><td>${i + 1}. ${esc(r.symbol)} ${esc(r.name)}${badge}</td><td>${fx(r.price)}</td><td class="${pctCls(r.change_pct)}">${r.change_pct > 0 ? '+' : ''}${fx(r.change_pct)}%</td><td>${Math.round(r.value_m).toLocaleString()}</td></tr>`;
+        }).join('')}</table>`;
       }
       async function refreshRank() {
-        $('wrBulls').textContent = '載入中…'; $('wrBears').textContent = '';
+        $('wrBulls').textContent = '實盤二次校驗中…'; $('wrBears').textContent = '';
         try {
           const j = await loadRank();
           $('wrBulls').innerHTML = rankTable(j.bulls); $('wrBears').innerHTML = rankTable(j.bears);
-          $('wrRankMeta').textContent = `${j.source} · 資料日 ${j.data_date} · 母體 ${j.count} 檔`;
+          $('wrRankMeta').textContent = `${j.source} · 實盤日 ${j.data_date} · 母體 ${j.count} 檔`;
           document.querySelectorAll('#wrBulls tr.wr-row,#wrBears tr.wr-row').forEach(tr => tr.onclick = () => { $('wrSym').value = tr.dataset.sym; analyzeOne(tr.dataset.sym); });
         } catch (e) { $('wrBulls').textContent = '失敗：' + e.message; }
       }

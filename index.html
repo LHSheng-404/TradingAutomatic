@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.21.0 · 版本說明
+              v3.22.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2877,7 +2877,7 @@
       <article id="diagHandshakeCard" class="card" role="region" aria-label="SHL TW 交易判斷邏輯診斷交握網路" style="border:1.5px solid #bfdbfe;box-shadow:0 8px 26px rgba(15,23,42,0.06);">
         <style>
           .diag-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
-          .diag-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:8px 14px; background:#ffffff; border-bottom:1px solid #e2e8f0; }
+          .diag-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:8px 14px; background:#ffffff; border-bottom:1px solid #e2e8f0; max-height:124px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
           .diag-chip {
             display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px;
             font-size:12px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#334155;
@@ -3031,6 +3031,7 @@
                 <strong style="font-size:13px;">⚡ 30 組盤中策略統計 × System One 影子決策</strong>
                 <span class="badge" style="background:#14532d;color:#86efac;border:1px solid #22c55e;font-size:10.5px;">💰 免費模式 $0（嚴格零收費）</span>
                 <span class="badge" style="background:#312e81;color:#c7d2fe;border:1px solid #6366f1;font-size:10.5px;">👻 影子模式 · 不繞過硬風控</span>
+                <span id="strat30JevQuotaBadge" class="badge" style="background:#0f172a;color:#fde68a;border:1px solid #475569;font-size:10.5px;">🛡️ Jev 額度守衛：超額自動停用待更新</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <a href="https://github.com/jarrodwatts/jev-trader" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">jev-trader</a>
@@ -20105,6 +20106,21 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         { name: '金融保險', symbols: ['2881', '2882', '2891', '2886'] },
         { name: '權值 / 高股息 ETF', symbols: ['0050', '0056', '00878', '00919'] }
       ];
+      const CHAIN_ZH_NAMES = {
+        '2330': '台積電', '2454': '聯發科', '3711': '日月光投控', '2303': '聯電', '3034': '聯詠',
+        '2382': '廣達', '2317': '鴻海', '3231': '緯創', '6669': '緯穎', '2356': '英業達',
+        '3363': '上詮', '3163': '波若威', '4979': '華星光', '6442': '光聖', '3450': '聯鈞',
+        '3131': '弘塑', '6187': '萬潤', '2308': '台達電', '3017': '奇鋐', '3008': '大立光',
+        '4958': '臻鼎-KY', '2327': '國巨*', '3037': '欣興', '3189': '景碩', '8046': '南電',
+        '2368': '金像電', '6213': '聯茂', '3324': '雙鴻', '2421': '建準', '6805': '富世達',
+        '2345': '智邦', '2881': '富邦金', '2882': '國泰金', '2891': '中信金', '2886': '兆豐金',
+        '0050': '元大台灣50', '0056': '元大高股息', '00878': '國泰永續高股息', '00919': '群益台灣精選高息'
+      };
+      window.SHL_CHAINS_12 = SHIOAJI_CHAINS_12;
+      window.SHL_CHAIN_ZH_NAMES = CHAIN_ZH_NAMES;
+      window._shlChainLastPrices = window._shlChainLastPrices || {};
+      window._shlChainChangedSyms = window._shlChainChangedSyms || new Set();
+      window._shlChainLastRefreshInfo = window._shlChainLastRefreshInfo || '';
 
       function binarySplitRects(items, rect) {
         const out = new Map();
@@ -20150,10 +20166,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             const pct = (price && prev) ? Number(((price - prev) / prev * 100).toFixed(2)) : 0;
             const vol = Number(q?.volume || 0);
             const turnoverYi = price && vol ? Number(((price * vol) / 1e8).toFixed(2)) : 0;
-            // Exact Shioaji chain-flow proxy: Σ amount × sign(close - prevClose)
             const sign = pct > 0 ? 1 : (pct < 0 ? -1 : 0);
             const netFlowYi = Number((turnoverYi * sign * Math.min(1, Math.abs(pct) / 2.5 + 0.15)).toFixed(2));
-            return { symbol: sym, name: meta.name || sym, price, pct, turnoverYi, netFlowYi, hasQuote: price !== null };
+            const zhName = (meta?.name && meta.name !== sym) ? meta.name : (CHAIN_ZH_NAMES[sym] || sym);
+            return { symbol: sym, name: zhName, price, pct, turnoverYi, netFlowYi, hasQuote: price !== null };
           });
           const liveM = members.filter(m => m.hasQuote);
           const avgPct = liveM.length ? Number((liveM.reduce((s, m) => s + m.pct, 0) / liveM.length).toFixed(2)) : 0;
@@ -20175,7 +20191,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             totalVal += val;
             if (pct >= 0) inWeight += val;
             const meta = getStockMeta(p.symbol);
-            return { symbol: p.symbol, name: p.name || meta.name, industry: meta.industry || '台股', pct, val, pnl: Math.round((px - p.avgPrice) * p.shares) };
+            return { symbol: p.symbol, name: p.name || CHAIN_ZH_NAMES[p.symbol] || meta.name, industry: meta.industry || '台股', pct, val, pnl: Math.round((px - p.avgPrice) * p.shares) };
           });
           const inflowRatioPct = totalVal > 0 ? Math.round((inWeight / totalVal) * 100) : 0;
           const rotSorted = chains.slice().sort((a, b) => (b.avgPct - a.avgPct) || (b.netFlow - a.netFlow));
@@ -20192,16 +20208,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           stage.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:10px;">
               <div>
-                <div style="font-size:13.5px;font-weight:900;">🌐 台灣 12 大產業全景 ／ 族群資金輪動總覽</div>
-                <div style="font-size:11px;color:#64748b;">即時追蹤 12 大主流產業鏈輪動象限（領先 ${leadCount} · 改善 ${improveCount} · 落後 ${lagCount}），點擊成分股立即切換 K 線與 21 指標</div>
+                <div style="font-size:13.5px;font-weight:900;">🌐 台灣 12 大產業全景 ／ 族群資金輪動總覽（股票代號＋中文名稱）</div>
+                <div style="font-size:11px;color:#64748b;">即時追蹤 12 大主流產業鏈輪動象限（領先 ${leadCount} · 改善 ${improveCount} · 落後 ${lagCount}）${window._shlChainLastRefreshInfo ? ' ｜ ' + escapeHtml(window._shlChainLastRefreshInfo) : ''}</div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button type="button" id="btnRefreshChains12" class="btn btn-sm btn-primary" style="padding:4px 10px;font-size:11.5px;">🔄 刷新產業鏈・偵測更新</button>
                 <span class="badge mono" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;">領先 ${leadCount}</span>
                 <span class="badge mono" style="background:#fffbeb;color:#b45309;border:1px solid #fcd34d;">改善 ${improveCount}</span>
                 <span class="badge mono" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;">落後 ${lagCount}</span>
               </div>
             </div>
-            <div id="industryPanoramaGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:9px;margin-bottom:14px;">
+            <div id="industryPanoramaGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:9px;margin-bottom:14px;">
               ${rotSorted.map(c => {
                 const st = stageOf(c);
                 const pctColor = c.avgPct >= 0 ? '#dc2626' : '#16a34a';
@@ -20219,7 +20236,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                   <div style="display:flex;flex-wrap:wrap;gap:4px;">
                     ${topMembers.map(m => {
                       const mc = m.pct >= 0 ? '#dc2626' : '#16a34a';
-                      return `<button type="button" data-pick-stock="${escapeHtml(m.symbol)}" style="font-size:10.5px;padding:2px 6px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;color:#0f172a;cursor:pointer;display:inline-flex;align-items:center;gap:3px;">
+                      const updatedRing = window._shlChainChangedSyms.has(m.symbol) ? 'border-color:#f59e0b;box-shadow:0 0 0 1.5px rgba(245,158,11,0.45);' : '';
+                      return `<button type="button" data-pick-stock="${escapeHtml(m.symbol)}" style="font-size:10.5px;padding:2px 6px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;color:#0f172a;cursor:pointer;display:inline-flex;align-items:center;gap:3px;${updatedRing}">
+                        <strong class="mono">${escapeHtml(m.symbol)}</strong>
                         <span>${escapeHtml(m.name)}</span>
                         <span class="mono" style="font-weight:800;color:${mc};">${m.pct >= 0 ? '+' : ''}${m.pct}%</span>
                       </button>`;
@@ -20263,6 +20282,31 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           `;
           stage.querySelectorAll('[data-hold-view]').forEach(b => b.addEventListener('click', () => { state.ext.flowHoldingView = b.dataset.holdView; window.SHL_EXT.renderCapitalFlow(); }));
           stage.querySelectorAll('[data-pick-stock]').forEach(el => el.addEventListener('click', () => selectStock(el.dataset.pickStock)));
+          stage.querySelector('#btnRefreshChains12')?.addEventListener('click', async (ev) => {
+            const btn = ev.currentTarget;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ 刷新偵測中...'; }
+            try {
+              const allChainSyms = Array.from(new Set(SHIOAJI_CHAINS_12.flatMap(ch => ch.symbols)));
+              const beforeMap = {};
+              allChainSyms.forEach(s => { beforeMap[s] = Number(getQuote(s)?.price || 0); });
+              if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+                await window.SHL_EXT.refreshRealtimeQuotes(true, allChainSyms);
+              }
+              const changed = new Set();
+              allChainSyms.forEach(s => {
+                const afterPx = Number(getQuote(s)?.price || 0);
+                if (afterPx > 0 && beforeMap[s] !== afterPx) changed.add(s);
+                if (afterPx > 0) window._shlChainLastPrices[s] = afterPx;
+              });
+              window._shlChainChangedSyms = changed;
+              window._shlChainLastRefreshInfo = `已刷新 ${allChainSyms.length} 檔 · 偵測到 ${changed.size} 檔價量更新 (${nowTwTime()})`;
+              window.SHL_EXT.renderCapitalFlow();
+              if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.renderChips === 'function') window.SHL_DIAG_NET.renderChips();
+              showToast('🔄 12 大產業鏈刷新完成', `共掃描 ${allChainSyms.length} 檔成分股，偵測到 ${changed.size} 檔即時更新！`, 'success');
+            } catch (e) {
+              showToast('產業鏈刷新失敗', e?.message || '請確認網路連線', 'warn');
+            }
+          });
           return;
         }
 
@@ -21206,8 +21250,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.21.0';
+      const CURRENT_VERSION = 'v3.22.0';
       const HISTORY = [
+        {
+          ver: 'v3.22.0',
+          items: [
+            '修正手機端（Android／iOS）掃描依據截斷問題：全面移除 12 筆上限，全市場擴充至真實多空強勢 50 檔（含 ETF ＋ 12 大產業鏈核心股），全個股（不含 ETF）擴充至 50 檔，12 大產業鏈 ＋ 自選股完整保留全部 39 檔產業鏈成分股 ＋ 全部自選股（最高 60 檔），並改採 8 檔分批抓取避免手機 WebView 卡頓',
+            '全面補齊並統一顯示「股票代號 ＋ 中文名稱」：台灣 12 大產業全景 39 檔成分股與診斷交握網路所有股票晶片皆固定同時顯示「股票代號 ＋ 中文名稱 ＋ 漲跌幅／價格」，並於台灣 12 大產業全景新增「🔄 刷新產業鏈・偵測更新」按鈕，刷新時即時比對價格變動並以金色亮框標示剛更新股票與更新檔數',
+            '新增 Jev 免費額度守衛（/api/v1/strategy30/jev-quota）：超出每日免費額度（6 次／UTC 日）立即停用外部 Jev 呼叫並顯示「待 08:00 台北時間更新」，自動回退至 $0 本機確定性 30 組策略引擎，嚴格杜絕任何付費扣款'
+          ]
+        },
         {
           ver: 'v3.21.0',
           items: [
@@ -23054,6 +23106,35 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return Array.from(pool);
       }
 
+      function getAllChains12Symbols() {
+        const list = [];
+        const chains = Array.isArray(window.SHL_CHAINS_12) ? window.SHL_CHAINS_12 : [];
+        const zhMap = window.SHL_CHAIN_ZH_NAMES || {};
+        chains.forEach(c => {
+          (c.stocks || []).forEach(s => {
+            if (s && !list.includes(s)) list.push(s);
+            if (s && zhMap[s] && typeof registerDynamicStockMeta === 'function') {
+              registerDynamicStockMeta(s, zhMap[s], 'TWSE');
+            }
+          });
+        });
+        if (!list.length) {
+          return ['2330','2454','2303','3711','2317','2382','3231','2357','3037','3189','8046','6213','2308','2345','2881','2882','2603','2609','2412','3008','2327','2379','3034','6669'];
+        }
+        return list;
+      }
+
+      function resolveStockZhName(sym, fallbackName = '') {
+        const zhMap = window.SHL_CHAIN_ZH_NAMES || {};
+        const meta = typeof getStockMeta === 'function' ? getStockMeta(sym) : null;
+        if (meta && meta.name && meta.name !== sym) return meta.name;
+        if (zhMap[sym]) return zhMap[sym];
+        const qName = state.quotes?.[sym]?.name;
+        if (qName && qName !== sym) return qName;
+        if (fallbackName && fallbackName !== sym) return fallbackName;
+        return '';
+      }
+
       async function loadUniverseIfNeeded(mode, force = false) {
         if (!['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) return resolveSelectedSymbols();
         const cached = universeCache[mode];
@@ -23061,33 +23142,43 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           return cached.syms;
         }
         const apiBase = getApiBase();
-        const watchSyms = (state.watchlist || []).map(w => w.symbol);
-        const chainSyms = Array.from(new Set([
-          ...watchSyms,
-          '2330', '2454', '2303', '3711', '2317', '2382', '3231', '2357',
-          '3037', '3189', '8046', '6213', '2308', '2345', '2881', '2882',
-          '2603', '2609', '2412', '3008', '2327', '2379', '3034', '6669'
-        ]));
+        const watchSyms = (state.watchlist || []).map(w => w.symbol).filter(Boolean);
+        const chains12Syms = getAllChains12Symbols();
+        const sectors12All = Array.from(new Set([...watchSyms, ...chains12Syms]));
         const univParam = mode === 'stocks_only' ? 'stocks' : (mode === 'sectors12_watch' ? 'custom' : 'all');
+        const maxCount = mode === 'sectors12_watch' ? 60 : 50;
         let picked = [];
         if (apiBase) {
           try {
-            const url = `${apiBase}/api/v1/market/rank?universe=${encodeURIComponent(univParam)}&limit=10&min_value_m=100`
-              + (mode === 'sectors12_watch' ? `&symbols=${encodeURIComponent(chainSyms.join(','))}` : '');
+            const limitParam = mode === 'sectors12_watch' ? 60 : 25;
+            const minVal = mode === 'sectors12_watch' ? 0 : 50;
+            const url = `${apiBase}/api/v1/market/rank?universe=${encodeURIComponent(univParam)}&limit=${limitParam}&min_value_m=${minVal}`
+              + (mode === 'sectors12_watch' ? `&symbols=${encodeURIComponent(sectors12All.join(','))}` : '');
             const resp = await fetch(url, { cache: 'no-store' });
             if (resp.ok) {
               const j = await resp.json();
               const bullArr = j.bulls || j.bull || [];
               const bearArr = j.bears || j.bear || [];
-              const bulls = bullArr.slice(0, 6).map(x => x.symbol);
-              const bears = bearArr.slice(0, 6).map(x => x.symbol);
-              picked = [...bulls, ...bears];
-              if (mode === 'sectors12_watch') picked = [...watchSyms.slice(0, 6), ...picked];
               [...bullArr, ...bearArr].forEach(x => {
-                if (x && x.symbol && x.name && typeof registerDynamicStockMeta === 'function') {
-                  registerDynamicStockMeta(x.symbol, x.name, x.market || 'TWSE');
+                if (x && x.symbol) {
+                  const nm = (x.name && x.name !== x.symbol) ? x.name : resolveStockZhName(x.symbol);
+                  if (nm && typeof registerDynamicStockMeta === 'function') {
+                    registerDynamicStockMeta(x.symbol, nm, x.market || 'TWSE');
+                  }
                 }
               });
+              const bulls = bullArr.slice(0, 25).map(x => x.symbol);
+              const bears = bearArr.slice(0, 25).map(x => x.symbol);
+              if (mode === 'sectors12_watch') {
+                // 完整保留全部自選股 + 12 大產業鏈 39 檔（先排有即時動能者，其餘全數保留不截斷）
+                picked = [...bulls, ...bears, ...watchSyms, ...chains12Syms];
+              } else if (mode === 'market_all') {
+                // 全市場：真實排行（含 ETF）+ 補足 12 大產業鏈核心權值，確保遠超 12 筆且具備代號+中文名
+                picked = [...bulls, ...bears, ...chains12Syms];
+              } else {
+                // 全個股（不含 ETF）：濾除 00 開頭 ETF
+                picked = [...bulls, ...bears, ...chains12Syms].filter(s => !String(s || '').startsWith('00'));
+              }
             }
           } catch (e) {}
         }
@@ -23097,13 +23188,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             const filterFn = mode === 'stocks_only' ? (x => !String(x.symbol || '').startsWith('00')) : (() => true);
             const bA = (lr.bulls || lr.bull || []).filter(filterFn);
             const dA = (lr.bears || lr.bear || []).filter(filterFn);
-            picked = [...bA.slice(0, 6).map(x => x.symbol), ...dA.slice(0, 6).map(x => x.symbol)];
+            picked = [...bA.slice(0, 25).map(x => x.symbol), ...dA.slice(0, 25).map(x => x.symbol)];
           }
-          if (mode === 'sectors12_watch' || !picked.length) {
-            picked = [...watchSyms, ...picked];
+          if (mode === 'sectors12_watch') {
+            picked = [...watchSyms, ...chains12Syms, ...picked];
+          } else if (mode === 'stocks_only') {
+            picked = [...picked, ...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00'));
+          } else {
+            picked = [...picked, ...chains12Syms, ...watchSyms];
           }
         }
-        const unique = Array.from(new Set(picked.filter(Boolean))).slice(0, 12);
+        const unique = Array.from(new Set(picked.filter(Boolean))).slice(0, maxCount);
         universeCache[mode] = { ts: Date.now(), syms: unique };
         renderChips();
         return unique;
@@ -23111,20 +23206,26 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       function resolveSelectedSymbols() {
         const mode = $('diagScopeSelect')?.value || 'watchlist';
+        const watchSyms = (state.watchlist || []).map(w => w.symbol).filter(Boolean);
+        const chains12Syms = getAllChains12Symbols();
         let list = [];
         if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
           if (universeCache[mode] && universeCache[mode].syms.length) {
             list = universeCache[mode].syms;
+          } else if (mode === 'sectors12_watch') {
+            list = [...watchSyms, ...chains12Syms].slice(0, 60);
+          } else if (mode === 'stocks_only') {
+            list = [...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00')).slice(0, 50);
           } else {
-            list = (state.watchlist || []).map(w => w.symbol).slice(0, 12);
+            list = [...chains12Syms, ...watchSyms].slice(0, 50);
           }
         } else if (mode === 'watchlist') {
-          list = (state.watchlist || []).map(w => w.symbol).slice(0, 12);
+          list = watchSyms.slice(0, 60);
         } else {
           if (customSelected.size === 0) {
-            (state.watchlist || []).slice(0, 5).forEach(w => customSelected.add(w.symbol));
+            (state.watchlist || []).slice(0, 8).forEach(w => customSelected.add(w.symbol));
           }
-          list = Array.from(customSelected).slice(0, 12);
+          list = Array.from(customSelected).slice(0, 60);
         }
         return Array.from(new Set(list.filter(Boolean)));
       }
@@ -23145,15 +23246,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         lastResults.forEach(r => { bySym[r.symbol] = r; });
 
         box.innerHTML = pool.map(sym => {
-          const meta = getStockMeta(sym);
+          const dispName = resolveStockZhName(sym);
           const r = bySym[sym];
           const isSel = selSet.has(sym);
           const isFoc = focusedSym === sym;
           const dirIcon = r ? (r.direction === 'LONG' ? '🔴' : (r.direction === 'SHORT' ? '🟢' : '⚪')) : '';
           const pxTxt = r && r.price ? ` ${fx(r.price, 1)}` : (state.quotes[sym]?.price ? ` ${fx(state.quotes[sym].price, 1)}` : '');
           return `<button type="button" class="diag-chip ${isSel ? 'is-selected' : ''} ${isFoc ? 'is-active' : ''}" data-diag-chip="${esc(sym)}" aria-pressed="${isSel}">
-            <span>${dirIcon}${esc(sym)}</span>
-            <span style="font-weight:500;opacity:0.85;">${esc(meta?.name || '')}${pxTxt}</span>
+            <span class="mono">${dirIcon}${esc(sym)}</span>
+            <span style="font-weight:600;opacity:0.9;">${esc(dispName)}${pxTxt}</span>
           </button>`;
         }).join('') || '<span style="font-size:12px;color:#64748b;">尚無自選股，請先新增自選標的。</span>';
 
@@ -23360,17 +23461,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           setStageStatus('SCAN_5M_1M', 'st-running', '抓取 5分K＋1分K...');
           triggerHandshake('SHIOAJI_PRO', 'CORE', '#dc2626', '5m+1m', true, 40, `掃描 ${syms.length} 檔真實 5分K/1分K`);
 
-          // Stage 2: Parallel Real-Time Quotes + 5m & 1m K-Bars
+          // Stage 2: Batched Real-Time Quotes + 5m & 1m K-Bars (chunks of 8 for Android/iOS mobile smoothness)
           const tScan = performance.now();
           const rt = await window.SHL_WAR.fetchRt(syms).catch(() => ({ quotes: {}, label: '官方實盤' }));
-          const perSymRaw = await Promise.all(syms.map(async (sym) => {
-            const ts0 = performance.now();
-            const [b5, b1] = await Promise.all([
-              window.SHL_WAR.fetchBars(sym, '5').catch(() => ({ candles: [] })),
-              window.SHL_WAR.fetchBars(sym, '1').catch(() => ({ candles: [] }))
-            ]);
-            return { sym, bars5: b5.candles || [], bars1: b1.candles || [], q: rt.quotes?.[sym] || state.quotes[sym] || {}, latencyMs: Math.round(performance.now() - ts0) };
-          }));
+          const perSymRaw = [];
+          const CHUNK_SIZE = 8;
+          for (let i = 0; i < syms.length; i += CHUNK_SIZE) {
+            const batch = syms.slice(i, i + CHUNK_SIZE);
+            setStageStatus('SCAN_5M_1M', 'st-running', `抓取 ${Math.min(i + batch.length, syms.length)}/${syms.length} 檔...`);
+            const batchRes = await Promise.all(batch.map(async (sym) => {
+              const ts0 = performance.now();
+              const [b5, b1] = await Promise.all([
+                window.SHL_WAR.fetchBars(sym, '5').catch(() => ({ candles: [] })),
+                window.SHL_WAR.fetchBars(sym, '1').catch(() => ({ candles: [] }))
+              ]);
+              return { sym, bars5: b5.candles || [], bars1: b1.candles || [], q: rt.quotes?.[sym] || state.quotes[sym] || {}, latencyMs: Math.round(performance.now() - ts0) };
+            }));
+            perSymRaw.push(...batchRes);
+          }
           const scanMs = Math.round(performance.now() - tScan);
           setStageStatus('SCAN_5M_1M', 'st-ok', `${syms.length} 檔完成 (${scanMs}ms)`);
 
@@ -23384,7 +23492,6 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
           for (const item of perSymRaw) {
             const { sym, bars5, bars1, q, latencyMs } = item;
-            const meta = getStockMeta(sym);
             const last5 = bars5.length ? bars5[bars5.length - 1] : null;
             const last1 = bars1.length ? bars1[bars1.length - 1] : null;
             const px = Number(q?.price || last1?.close || last5?.close || 0);
@@ -23440,7 +23547,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
             diagItems.push({
               symbol: sym,
-              stock_name: meta?.name || q?.name || '',
+              stock_name: resolveStockZhName(sym, q?.name || ''),
               price: px,
               change_pct: chgPct,
               bar_5m: { count: bars5.length, close: last5?.close || px, trend: trend5 },
@@ -23605,13 +23712,31 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
+      function updateJevQuotaBadge(jq) {
+        const badge = $('strat30JevQuotaBadge');
+        if (!badge || !jq) return;
+        if (jq.exhausted) {
+          badge.style.background = '#fef3c7';
+          badge.style.color = '#b45309';
+          badge.style.border = '1px solid #fcd34d';
+          badge.textContent = `⏸ Jev 額度已滿停用（待 ${jq.reset_at_tw || '08:00 台北'} 更新 · 本機 $0）`;
+        } else {
+          badge.style.background = '#ecfdf5';
+          badge.style.color = '#047857';
+          badge.style.border = '1px solid #a7f3d0';
+          badge.textContent = `🛡️ Jev 免費守衛（剩 ${jq.remaining ?? 6}/${jq.daily_limit ?? 6} · 本機 $0）`;
+        }
+      }
+
       function renderStrategy30(data) {
         const tbody = $('strat30Body');
         const metaBar = $('strat30MetaBar');
         if (!tbody) return;
+        if (data?.jev_quota) updateJevQuotaBadge(data.jev_quota);
         const rows = Array.isArray(data?.results) ? data.results : [];
         if (metaBar && data) {
-          metaBar.textContent = `版本 ${data.weight_version || 'w_v1.0.0'} / ${data.prompt_version || 's1_v1.0.0'} ｜ 標的 ${rows.length} 檔 ｜ 總耗時 ${fx(data.total_latency_ms, 1)} ms ｜ 費用 $0.00（免費本機 System One 影子模式）`;
+          const jqNote = data.jev_quota?.exhausted ? ` ｜ ⏸ Jev 超額暫停（待 ${data.jev_quota.reset_at_tw} 更新）` : ' ｜ 免費本機 System One 影子模式';
+          metaBar.textContent = `版本 ${data.weight_version || 'w_v1.0.0'} / ${data.prompt_version || 's1_v1.0.0'} ｜ 標的 ${rows.length} 檔 ｜ 總耗時 ${fx(data.total_latency_ms, 1)} ms ｜ 費用 $0.00${jqNote}`;
         }
         if (!rows.length) {
           tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:#64748b;">尚無 30 組策略評估資料。</td></tr>';
@@ -23677,13 +23802,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (metaBar) metaBar.textContent = '尚未連線後端 server.py（連上本機或 24H 雲端後端即可執行 30 組策略免費統計）';
           return;
         }
-        if (btn) { btn.disabled = true; btn.textContent = '⏳ 計算 30 組策略中...'; }
+        if (btn) { btn.disabled = true; btn.textContent = `⏳ 計算 30 組策略中 (${syms.length} 檔)...`; }
         try {
           const stockNames = {};
           const quotesPayload = {};
           syms.forEach(s => {
-            const m = getStockMeta(s);
-            stockNames[s] = m?.name || '';
+            stockNames[s] = resolveStockZhName(s);
             const q = (prefetchedQuotes && prefetchedQuotes[s]) || state.quotes[s];
             if (q && q.price) quotesPayload[s] = { price: q.price, change_pct: q.change_pct ?? q.changePct ?? 0, volume: q.volume || 0, prev_close: q.prevClose || q.prev_close || 0 };
           });
@@ -23710,8 +23834,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
+      async function syncJevQuota() {
+        const apiBase = getApiBase();
+        if (!apiBase) return;
+        try {
+          const resp = await fetch(`${apiBase}/api/v1/strategy30/jev-quota`, { cache: 'no-store' });
+          if (resp.ok) updateJevQuotaBadge(await resp.json());
+        } catch (e) {}
+      }
+
       function init() {
         renderChips();
+        syncJevQuota();
+        const initMode = $('diagScopeSelect')?.value || 'watchlist';
+        if (['market_all', 'stocks_only', 'sectors12_watch'].includes(initMode)) {
+          loadUniverseIfNeeded(initMode, false).catch(() => {});
+        }
         $('btnRunDiagPipeline')?.addEventListener('click', () => runPipeline(false));
         $('btnRunStrat30')?.addEventListener('click', () => runStrategy30());
         $('diagScopeSelect')?.addEventListener('change', async () => {

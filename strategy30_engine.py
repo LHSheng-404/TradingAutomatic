@@ -22,6 +22,54 @@ TW_TZ = timezone(timedelta(hours=8))
 WEIGHT_VERSION = "w_v1.0.0"
 PROMPT_VERSION = "s1_v1.0.0"
 
+# Jev / System One 免費額度守衛（嚴格防超額收費：達每日免費上限或 429/402 即停用，待 UTC 00:00 / 台北 08:00 自動重置）
+_JEV_QUOTA_STATE: dict[str, Any] = {
+    "utc_day": "",
+    "used": 0,
+    "daily_limit": 6,
+    "exhausted": False,
+    "reason": "",
+}
+
+
+def _sync_jev_quota_day() -> None:
+    today_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if _JEV_QUOTA_STATE["utc_day"] != today_utc:
+        _JEV_QUOTA_STATE["utc_day"] = today_utc
+        _JEV_QUOTA_STATE["used"] = 0
+        _JEV_QUOTA_STATE["exhausted"] = False
+        _JEV_QUOTA_STATE["reason"] = ""
+
+
+def get_jev_quota_status() -> dict[str, Any]:
+    _sync_jev_quota_day()
+    now_utc = datetime.now(timezone.utc)
+    next_reset_utc = (now_utc + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    next_reset_tw = next_reset_utc.astimezone(TW_TZ)
+    exhausted = bool(_JEV_QUOTA_STATE["exhausted"] or _JEV_QUOTA_STATE["used"] >= _JEV_QUOTA_STATE["daily_limit"])
+    return {
+        "external_jev_allowed": not exhausted,
+        "exhausted": exhausted,
+        "used": int(_JEV_QUOTA_STATE["used"]),
+        "daily_limit": int(_JEV_QUOTA_STATE["daily_limit"]),
+        "remaining": max(0, int(_JEV_QUOTA_STATE["daily_limit"]) - int(_JEV_QUOTA_STATE["used"])),
+        "reset_at_utc": next_reset_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "reset_at_tw": next_reset_tw.strftime("%Y-%m-%d %H:%M TST"),
+        "reason": _JEV_QUOTA_STATE["reason"] or ("已達每日免費上限，自動改用本機 $0 免費引擎，待額度更新後再啟用" if exhausted else "免費本機引擎優先（$0）"),
+    }
+
+
+def can_use_external_jev() -> bool:
+    return get_jev_quota_status()["external_jev_allowed"]
+
+
+def record_jev_quota_exhausted(reason: str = "Jev 免費額度已用盡") -> dict[str, Any]:
+    _sync_jev_quota_day()
+    _JEV_QUOTA_STATE["exhausted"] = True
+    _JEV_QUOTA_STATE["used"] = max(_JEV_QUOTA_STATE["used"], _JEV_QUOTA_STATE["daily_limit"])
+    _JEV_QUOTA_STATE["reason"] = str(reason or "Jev 免費額度已用盡，待 UTC 00:00 更新後自動恢復")
+    return get_jev_quota_status()
+
 # 30 組版本化盤中策略目錄（5 獨立群組 × 6 策略 = 30 組；權重固定於盤外版本化，盤中唯讀）
 STRATEGY_CATALOG: list[dict[str, Any]] = [
     # 1. trend (趨勢 6 組)

@@ -41,6 +41,7 @@ from strategy30_engine import (
     PROMPT_VERSION,
     WEIGHT_VERSION,
     evaluate_symbol_30,
+    get_jev_quota_status,
 )
 
 if getattr(sys, "frozen", False):
@@ -544,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.21.0",
+    version="3.22.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -676,7 +677,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.21.0",
+        "version": "3.22.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -6182,7 +6183,7 @@ async def evaluate_strategy30_batch(req: Strategy30EvalRequest, request: Request
     created_at = datetime.now(TW_TZ).isoformat(timespec="seconds")
     eval_id = f"s30_{ts_ms}_{secrets.token_hex(4)}"
 
-    # Deduplicate and enforce max 16 symbols
+    # Deduplicate and allow up to 60 symbols (Full-Market Top-50 or all 12-sector chains + watchlist)
     clean_symbols: list[str] = []
     seen_syms: set[str] = set()
     for raw_sym in req.symbols or []:
@@ -6190,7 +6191,7 @@ async def evaluate_strategy30_batch(req: Strategy30EvalRequest, request: Request
         if s and s not in seen_syms:
             seen_syms.add(s)
             clean_symbols.append(s)
-            if len(clean_symbols) >= 16:
+            if len(clean_symbols) >= 60:
                 break
 
     if not clean_symbols:
@@ -6355,11 +6356,17 @@ async def evaluate_strategy30_batch(req: Strategy30EvalRequest, request: Request
             "shadow_mode": True,
             "weight_version": WEIGHT_VERSION,
             "prompt_version": PROMPT_VERSION,
+            "jev_quota": get_jev_quota_status(),
             "total_latency_ms": total_latency_ms,
             "results": results,
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+@app.get("/api/v1/strategy30/jev-quota")
+async def get_jev_quota_endpoint():
+    return JSONResponse({"ok": True, **get_jev_quota_status()}, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/v1/strategy30/audit")

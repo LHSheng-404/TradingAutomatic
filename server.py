@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.22.0",
+    version="3.23.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -677,7 +677,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.22.0",
+        "version": "3.23.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3452,6 +3452,13 @@ async def place_order(req: PlaceOrderRequest, request: Request):
             )
 
     shares = req.qty * 1000 if req.unit == "張" else req.qty
+    if shares < 1000 or (shares % 1000) != 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"買賣最低單位為 1,000 股（1 張），且僅接受 1,000 股之整數倍（收到 {shares} 股），禁止低於 1,000 股或零股下單。",
+        )
+    lots = shares // 1000
+    norm_unit = "張"
     notional = shares * req.price
     is_etf = req.symbol.startswith("00")
     safe_discount = max(0.1, min(6.0, float(req.fee_discount or 2.8)))
@@ -3482,11 +3489,11 @@ async def place_order(req: PlaceOrderRequest, request: Request):
                 contract = api.Contracts.Stocks[req.symbol]
                 order = api.Order(
                     price=req.price,
-                    quantity=req.qty,
+                    quantity=lots,
                     action=sj.constant.Action.Buy if req.side.upper() == "BUY" else sj.constant.Action.Sell,
                     price_type=sj.constant.StockPriceType.MKT if req.order_type == "MKT" else sj.constant.StockPriceType.LMT,
                     order_type=getattr(sj.constant.OrderType, req.tif, sj.constant.OrderType.ROD),
-                    order_lot=sj.constant.StockOrderLot.Odd if req.unit == "股" else sj.constant.StockOrderLot.Common,
+                    order_lot=sj.constant.StockOrderLot.Common,
                     account=api.stock_account,
                 )
                 trade = api.place_order(contract, order)
@@ -3495,7 +3502,7 @@ async def place_order(req: PlaceOrderRequest, request: Request):
 
             broker_id, status_str = await asyncio.to_thread(_exec_shioaji)
             order_id = broker_id or order_id
-            broker_msg = f"永豐金 Shioaji 實盤委託送出 ({status_str})"
+            broker_msg = f"永豐金 Shioaji 實盤整張委託送出 ({lots}張={shares:,}股 · {status_str})"
             final_status = "SUBMITTED_LIVE"
         except ImportError:
             raise HTTPException(
@@ -3505,7 +3512,7 @@ async def place_order(req: PlaceOrderRequest, request: Request):
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Shioaji 實盤下單錯誤：{exc}")
     else:
-        broker_msg = "模擬盤 SIM 依真實行情即時撮合成交"
+        broker_msg = f"模擬盤 SIM 依真實行情整張撮合成交 ({lots}張={shares:,}股)"
         final_status = "FILLED_SIM"
 
     conn = sqlite3.connect(DB_PATH)
@@ -3525,8 +3532,8 @@ async def place_order(req: PlaceOrderRequest, request: Request):
             req.side.upper(),
             req.order_type,
             req.tif,
-            req.qty,
-            req.unit,
+            lots,
+            norm_unit,
             req.price,
             fee,
             tax,
@@ -3547,8 +3554,9 @@ async def place_order(req: PlaceOrderRequest, request: Request):
         "symbol": req.symbol,
         "stock_name": req.stock_name,
         "side": req.side.upper(),
-        "qty": req.qty,
-        "unit": req.unit,
+        "qty": lots,
+        "unit": norm_unit,
+        "shares": shares,
         "price": req.price,
         "fee_twd": fee,
         "tax_twd": tax,

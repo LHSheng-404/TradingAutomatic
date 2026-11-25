@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.22.0 · 版本說明
+              v3.23.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3103,6 +3103,19 @@
           </div>
         </div>
         <div class="card-body" style="padding:12px 14px;">
+          <!-- v3.23.0: Principal (本金) Input & 1,000-Share Integer Lot Lock Bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <label for="atPrincipalInput" style="font-size:12px;font-weight:800;color:#1e3a8a;white-space:nowrap;">💰 投入本金 (TWD)</label>
+              <input id="atPrincipalInput" type="number" min="10000" step="10000" value="1000000" class="input mono" style="width:136px;padding:4px 8px;font-weight:800;background:#fff;" />
+              <button type="button" id="btnAtApplyPrincipal" class="btn btn-sm btn-primary" style="padding:4px 10px;font-weight:800;">套用本金・自主滾動交易</button>
+              <span id="atAvailCashBadge" class="mono" style="font-size:11.5px;font-weight:800;color:#0f766e;">可用現金：$1,000,000</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#1e40af;font-weight:700;">
+              <span class="badge" style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">🔒 買賣最低 1,000 股（1 張）· 僅整數 1,000 股倍數</span>
+              <span style="color:#475569;">輸入本金後由系統依獲利自動複利下單，不足 1 張自動略過</span>
+            </div>
+          </div>
           <!-- 4 Core PnL & Status KPIs -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:12px;">
             <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
@@ -3406,14 +3419,14 @@
                   <input id="orderPriceInput" type="number" step="0.5" min="0" class="input mono" placeholder="請先同步真實報價" />
                 </div>
                 <div>
-                  <label class="field-label" for="orderQtyInput">委託數量</label>
-                  <div style="display:flex;gap:6px;">
-                    <input id="orderQtyInput" type="number" min="1" value="1" class="input mono" />
-                    <select id="orderUnitSelect" class="select" style="width:72px;">
-                      <option value="張" selected>張</option>
-                      <option value="股">股</option>
+                  <label class="field-label" for="orderQtyInput">委託數量（最低 1 張 = 1,000 股）</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <input id="orderQtyInput" type="number" min="1" step="1" value="1" class="input mono" />
+                    <select id="orderUnitSelect" class="select" style="width:106px;">
+                      <option value="張" selected>張 (1,000股)</option>
                     </select>
                   </div>
+                  <div id="orderSharesHint" class="mono" style="font-size:10.5px;color:#0f766e;margin-top:3px;font-weight:700;">= 1,000 股（僅整數 1,000 股倍數）</div>
                 </div>
               </div>
 
@@ -4482,9 +4495,7 @@
                     <div class="ql-fld">
                       <label for="qlCfgUnit">交易單位</label>
                       <select id="qlCfgUnit" class="select">
-                        <option value="mixed" selected>整張＋盤中零股</option>
-                        <option value="lot">只買整張 (1000股)</option>
-                        <option value="odd">全部零股</option>
+                        <option value="lot" selected>只買整張 (1,000股倍數)</option>
                       </select>
                     </div>
                     <div class="ql-fld">
@@ -6017,7 +6028,8 @@
         setup_expires_in_sec: 0
       },
 
-      simCashTwd: 3000000,
+      initialCapitalTwd: 1000000,
+      simCashTwd: 1000000,
       positions: [],
       orders: [],
       watchlist: [],
@@ -6121,6 +6133,7 @@
       });
       return {
         watchlist: state.watchlist,
+        initialCapitalTwd: state.initialCapitalTwd,
         simCashTwd: state.simCashTwd,
         feeDiscount: state.feeDiscount,
         positions: state.positions,
@@ -6200,6 +6213,7 @@
     function applyPersistedSnapshot(saved) {
       if (!saved || typeof saved !== 'object') return;
       if (Array.isArray(saved.watchlist) && saved.watchlist.length > 0) state.watchlist = saved.watchlist;
+      if (typeof saved.initialCapitalTwd === 'number' && saved.initialCapitalTwd >= 10000) state.initialCapitalTwd = saved.initialCapitalTwd;
       if (typeof saved.simCashTwd === 'number') state.simCashTwd = saved.simCashTwd;
       if (typeof saved.feeDiscount === 'number') state.feeDiscount = Math.max(0.1, Math.min(6.0, saved.feeDiscount));
       if (Array.isArray(saved.positions)) state.positions = saved.positions;
@@ -11573,9 +11587,11 @@
 
     function updateOrderSummary() {
       const price = Number(document.getElementById('orderPriceInput')?.value || 0);
-      const qty = Math.max(1, Number(document.getElementById('orderQtyInput')?.value || 1));
-      const unit = document.getElementById('orderUnitSelect')?.value || '張';
-      const shares = unit === '張' ? qty * 1000 : qty;
+      const rawQty = Math.max(1, Math.floor(Number(document.getElementById('orderQtyInput')?.value || 1)));
+      const unit = '張';
+      const shares = rawQty * 1000;
+      const hintEl = document.getElementById('orderSharesHint');
+      if (hintEl) hintEl.textContent = `= ${shares.toLocaleString()} 股（${rawQty} 張 · 僅整數 1,000 股倍數）`;
       const notional = price * shares;
       const isEtf = state.activeSymbol.startsWith('00');
       const isDayTrade = Boolean(document.getElementById('orderDayTradeChk')?.checked);
@@ -11652,7 +11668,19 @@
       );
       const isDayTrade = dayTrade !== null ? Boolean(dayTrade) : (Boolean(document.getElementById('orderDayTradeChk')?.checked) || hasOppositeToday || Boolean(allowShort));
 
-      const shares = unit === '張' ? qty * 1000 : qty;
+      // v3.23.0: Hard 1,000-share (1 張) integer multiple rule — never allow < 1,000 shares or odd lots
+      const rawShares = unit === '張' ? Math.round(Number(qty || 0)) * 1000 : Math.round(Number(qty || 0));
+      if (!Number.isFinite(rawShares) || rawShares < 1000 || (rawShares % 1000) !== 0) {
+        showToast(
+          '下單單位不符（最低 1,000 股）',
+          `${meta.symbol} ${meta.name} 委託 ${rawShares || 0} 股被攔截：買賣最低單位為 1,000 股（1 張），且僅接受 1,000 股整數倍！`,
+          'warn'
+        );
+        return;
+      }
+      const shares = rawShares;
+      qty = shares / 1000;
+      unit = '張';
       // v3.12.0: Realistic slippage + standard fee + monthly rebate settlement (折讓為月結)
       const slipPctCfg = state.envMode === 'SIM'
         ? Math.max(0, Math.min(2.0, Number(state.agentConfig?.slippagePct ?? 0.1)))
@@ -13223,12 +13251,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       document.getElementById('btnScanSignals').addEventListener('click', () => runSignalScan(false));
       document.getElementById('btnPushBatchSignals').addEventListener('click', () => runSignalScan(true));
       document.getElementById('btnResetSimAcct').addEventListener('click', () => {
-        state.simCashTwd = 3000000;
+        const cap = Math.max(10000, Math.round(Number(state.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000)));
+        state.initialCapitalTwd = cap;
+        state.simCashTwd = cap;
         state.positions = [];
         state.orders = [];
+        if (window.SHL_WAR?.cfg) window.SHL_WAR.cfg().stops = {};
         persistState();
         renderAllViews();
-        showToast('模擬盤已重設', '可用現金已恢復為 $3,000,000 TWD。', 'info');
+        updateOrderSummary();
+        if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+        showToast('模擬盤已重設', `可用現金已恢復為您設定的投入本金 ${fmtMoney(cap)} TWD（後續依 1,000 股整張倍數自主複利交易）。`, 'info');
       });
       document.getElementById('btnExportOrdersCsv').addEventListener('click', () => {
         if (state.orders.length === 0) {
@@ -21250,8 +21283,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.22.0';
+      const CURRENT_VERSION = 'v3.23.0';
       const HISTORY = [
+        {
+          ver: 'v3.23.0',
+          items: [
+            '全面鎖定買賣最低單位為 1,000 股（1 張）整數倍：手動下單票夾、executeOrder()、SHL_WAR 量化策略引擎、回測預設與後端 POST /api/v1/orders/place 全鏈路強制攔截任何低於 1,000 股或非 1,000 股倍數之零股委託，永豐實盤固定採用整張 StockOrderLot.Common',
+            '新增「投入本金 (TWD) × 自主複利滾動交易」統一資金控管：於自動交易實盤戰情室直接輸入投入本金，系統自動同步初始本金、可用現金與總權益，後續全自動買賣皆依實際可用資金（本金＋已實現獲利）自動計算整張張數，資金不足 1 張（1,000 股）直接略過絕不下零股',
+            '重設模擬盤同步改為恢復至使用者設定之投入本金，與作戰室本金設定（#wrCap）雙向即時連動'
+          ]
+        },
         {
           ver: 'v3.22.0',
           items: [
@@ -21787,10 +21828,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               if ((dir > 0 && sl >= entry) || (dir < 0 && sl <= entry)) sl = entry - dir * a * c.atrMult;
               sl = snap(sl);
               const risk = Math.abs(entry - sl);
-              const qty = risk > 0 ? Math.floor(Math.min((c.capital * c.riskPct / 100) / risk, c.capital * c.maxLev / entry)) : 0;
+              const rawShares = risk > 0 ? Math.floor(Math.min((c.capital * c.riskPct / 100) / risk, (c.capital * c.maxLev) / (entry * 1.003))) : 0;
+              const qty = Math.floor(rawShares / 1000) * 1000;
               const tp = snap(entry + dir * risk * c.rrr);
               sig.entry = entry; sig.sl = sl; sig.tp = tp; sig.qty = qty; sig.risk = risk;
-              if (qty >= 1) { pos = { dir, entryIdx: i, entry, sl, sl0: sl, tp, tp0: tp, risk, qty, ext: entry, why, trailed: false }; sig.taken = true; }
+              if (qty >= 1000) { pos = { dir, entryIdx: i, entry, sl, sl0: sl, tp, tp0: tp, risk, qty, ext: entry, why, trailed: false }; sig.taken = true; }
               else out.skipped++;
             }
             out.sigs.push(sig);
@@ -22020,7 +22062,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.body.appendChild(m);
         m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
         $('wrClose').onclick = () => m.classList.remove('open');
-        const bindSel = (id, key, num) => { const el = $(id); el.onchange = () => { const c = cfg(); c[key] = num ? Number(el.value) : el.value; save(); }; };
+        const bindSel = (id, key, num) => { const el = $(id); el.onchange = () => { if (key === 'capital' && window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.applyPrincipalCapital === 'function') { window.SHL_AUTO_DASH.applyPrincipalCapital(el.value); return; } const c = cfg(); c[key] = num ? Number(el.value) : el.value; save(); }; };
         [['wrDataMode', 'dataMode'], ['wrIndMode', 'indMode'], ['wrUniverse', 'universe'], ['wrIv', 'iv'], ['wrSlMode', 'slMode']].forEach(a => bindSel(a[0], a[1]));
         [['wrMinVal', 'minValueM'], ['wrAtr', 'atrMult'], ['wrSlPct', 'slPct'], ['wrRrr', 'rrr'], ['wrRisk', 'riskPct'], ['wrCap', 'capital'], ['wrLev', 'maxLev']].forEach(a => bindSel(a[0], a[1], true));
         [['wrOf', 'ofFilter'], ['wrVol', 'volFilter'], ['wrBe', 'be'], ['wrFib', 'fib'], ['wrGran', 'granville'], ['wrForce', 'forceExit'], ['wrOverlay', 'chartOverlay'], ['wrAuto', 'autoTrade']].forEach(([id, key]) => {
@@ -22279,10 +22321,6 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           trCnt++;
         }
         const atr = Math.max(px * 0.006, trCnt > 0 ? (trSum / trCnt) * 1.4 : px * 0.01);
-        const riskBudget = Math.max(3000, Number(c.riskTwd || 5000));
-        const rawQty = Math.floor(riskBudget / Math.max(atr, px * 0.005));
-        const qty = Math.max(1000, Math.min(5000, Math.round(rawQty / 1000) * 1000 || 1000));
-
         const bullBar = px > Number(b.open || prev.close || px);
         const bearBar = px < Number(b.open || prev.close || px);
         const volSurge = volRatio >= 1.2 || curVol > Number(prev.volume || 0) * 1.15;
@@ -22290,41 +22328,77 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         // 順勢買入：分K收紅 + 站上 VWAP & EMA5 > EMA12 + 突破近5根高點或帶量推升
         if (bullBar && px >= vwap && ema5 > ema12 && (px >= hi5 || (volSurge && px > Number(prev.high || prev.close)))) {
           const sl = snap(Math.min(lo5, px - atr));
+          const effSl = sl < px ? sl : snap(px * 0.988);
+          const lots = computeAutoLots(px, effSl, c);
+          if (lots < 1) return null;
           return {
             dir: 1,
             taken: true,
             idx: n - 1,
             entry: px,
-            sl: sl < px ? sl : snap(px * 0.988),
-            tp: snap(px + Math.abs(px - sl) * (Number(c.rrr) || 2.0)),
-            qty,
-            why: `分K價量順勢買入（站上VWAP ${fx(vwap)} · EMA5>${fx(ema12)} · 量比 ${volRatio.toFixed(1)}x）`
+            sl: effSl,
+            tp: snap(px + Math.abs(px - effSl) * (Number(c.rrr) || 2.0)),
+            qty: lots * 1000,
+            lots,
+            why: `分K價量順勢買入 ${lots}張(${(lots * 1000).toLocaleString()}股)（站上VWAP ${fx(vwap)} · EMA5>${fx(ema12)} · 量比 ${volRatio.toFixed(1)}x）`
           };
         }
 
         // 順勢先賣（現股當沖先賣）：分K收黑 + 跌破 VWAP & EMA5 < EMA12 + 跌破近5根低點或帶量下殺
         if (bearBar && px <= vwap && ema5 < ema12 && (px <= lo5 || (volSurge && px < Number(prev.low || prev.close)))) {
           const sl = snap(Math.max(hi5, px + atr));
+          const effSl = sl > px ? sl : snap(px * 1.012);
+          const lots = computeAutoLots(px, effSl, c);
+          if (lots < 1) return null;
           return {
             dir: -1,
             taken: true,
             idx: n - 1,
             entry: px,
-            sl: sl > px ? sl : snap(px * 1.012),
-            tp: snap(px - Math.abs(sl - px) * (Number(c.rrr) || 2.0)),
-            qty,
-            why: `分K價量順勢先賣·現沖（跌破VWAP ${fx(vwap)} · EMA5<${fx(ema12)} · 量比 ${volRatio.toFixed(1)}x）`
+            sl: effSl,
+            tp: snap(px - Math.abs(effSl - px) * (Number(c.rrr) || 2.0)),
+            qty: lots * 1000,
+            lots,
+            why: `分K價量順勢先賣·現沖 ${lots}張(${(lots * 1000).toLocaleString()}股)（跌破VWAP ${fx(vwap)} · EMA5<${fx(ema12)} · 量比 ${volRatio.toFixed(1)}x）`
           };
         }
         return null;
       }
 
+      // v3.23.0: Autonomous principal-compounding 1,000-share (1 張) lot calculator
+      function getAvailableCapital(c) {
+        if (state.envMode === 'SIM') {
+          return Math.max(0, Number(state.simCashTwd || 0));
+        }
+        const baseCap = Math.max(10000, Number(state.initialCapitalTwd || c?.capital || 1000000));
+        const realized = (state.orders || []).reduce((s, o) => s + (typeof o.realized_pnl_twd === 'number' ? o.realized_pnl_twd : 0), 0);
+        return Math.max(0, baseCap + realized);
+      }
+
+      function computeAutoLots(price, sl, c) {
+        const px = Number(price || 0);
+        if (!px || px <= 0) return 0;
+        const availCash = getAvailableCapital(c);
+        const maxLev = Math.max(1, Number(c?.maxLev || 1));
+        const oneLotCost = px * 1000 * 1.003; // 1 張 (1,000 股) + 手續費/滑點預留
+        const maxAffordableLots = Math.floor((availCash * maxLev) / oneLotCost);
+        if (maxAffordableLots < 1) return 0; // 資金不足 1 張（1,000 股）→ 嚴禁零股，直接略過
+        const riskPerShare = Math.max(px * 0.005, Math.abs(px - Number(sl || px * 0.99)));
+        const riskPct = Math.max(0.5, Number(c?.riskPct || 4));
+        const riskBudget = Math.max(3000, availCash * (riskPct / 100));
+        const riskLots = Math.max(1, Math.floor(riskBudget / (riskPerShare * 1000)));
+        return Math.max(1, Math.min(riskLots, maxAffordableLots));
+      }
+
       async function placeLong(sym, sig, price, tag) {
         const c = cfg();
         if (posOf(sym) || !price) return false;
-        const lots = sig.qty || 1000;
-        if (!lots || lots < 1) return false;
-        await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '股', price, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
+        const lots = computeAutoLots(price, sig?.sl, c);
+        if (!lots || lots < 1) {
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，買進 1 張需約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          return false;
+        }
+        await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '張', price, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
         if (posOf(sym)) {
           const risk = Math.max(price * 0.005, Math.abs(price - sig.sl));
           c.stops[sym] = { dir: 1, entry: price, sl: sig.sl, sl0: sig.sl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why, envMode: state.envMode };
@@ -22336,10 +22410,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       async function placeShort(sym, sig, price, tag) {
         const c = cfg();
         if (posOf(sym) || !price) return false;
-        const lots = sig.qty || 1000;
-        if (!lots || lots < 1) return false;
-        // 現股當沖先賣（空單進場）：SIM 與 LIVE 走完全一致的止損止盈流程
-        await executeOrder({ symbol: sym, side: 'SELL', qty: lots, unit: '股', price, source: tag || 'MINK_PV_SHORT', dayTrade: true, allowShort: true });
+        const lots = computeAutoLots(price, sig?.sl, c);
+        if (!lots || lots < 1) {
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，現沖先賣 1 張需預留約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          return false;
+        }
+        // 現股當沖先賣（空單進場）：嚴格以整張 1,000 股倍數下單，SIM 與 LIVE 共用止損止盈
+        await executeOrder({ symbol: sym, side: 'SELL', qty: lots, unit: '張', price, source: tag || 'MINK_PV_SHORT', dayTrade: true, allowShort: true });
         if (posOf(sym)) {
           const risk = Math.max(price * 0.005, Math.abs(sig.sl - price));
           const slPx = sig.sl > price ? sig.sl : snap(price + risk);
@@ -22352,7 +22429,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       async function orderFromSignal() {
         if (!oneCtx) { showToast('作戰室', '請先偵測標的再下單', 'warn'); return; }
         const nw = oneCtx.a.now || evalMinuteKPriceVolume(oneCtx.candles, oneCtx.q, cfg());
-        if (!nw) { showToast('作戰室', '目前無符合分K價量或 SMC 之可下單訊號', 'warn'); return; }
+        if (!nw) { showToast('作戰室', '目前無符合分K價量或 SMC 之可下單訊號（或資金不足 1 張）', 'warn'); return; }
         const price = +oneCtx.q?.price || nw.entry;
         const ok = nw.dir < 0
           ? await placeShort(oneCtx.sym, Object.assign({}, nw, { sl: nw.sl }), price, 'MINK_PV_MANUAL_SHORT')
@@ -22361,7 +22438,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           '作戰室',
           ok
             ? `已依訊號${nw.dir < 0 ? '現沖先賣（空單）' : '買進（多單）'} ${oneCtx.sym} @${price}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'} · SL ${nw.sl}）`
-            : '下單未成立（可能已持有、非盤中時段、缺少永豐 Token 或熔斷）',
+            : '下單未成立（可能資金不足 1 張、已持有、非盤中時段、缺少永豐 Token 或熔斷）',
           ok ? 'info' : 'warn'
         );
       }
@@ -22397,6 +22474,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (!p) { delete c.stops[sym]; continue; }
           const px = +quotes?.[sym]?.price || 0; if (!px) continue;
           const isShort = st.dir < 0 || p.shares < 0;
+          const exitLots = Math.max(1, Math.round(Math.abs(p.shares) / 1000));
           let reason = null;
 
           if (!isShort) {
@@ -22408,8 +22486,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             else if (!(c.be || c.fib || c.granville) && px >= st.tp) reason = '多單固定停利';
             else if (c.forceExit && s.open && hmNum >= 1325) reason = '多單尾盤強制平倉';
             if (reason) {
-              await executeOrder({ symbol: sym, side: 'SELL', qty: Math.abs(p.shares), unit: '股', price: px, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
-              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動平多', `${sym} @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
+              await executeOrder({ symbol: sym, side: 'SELL', qty: exitLots, unit: '張', price: px, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
+              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動平多', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
             }
           } else {
             // SHORT position stop-loss / trailing profit / end-of-day cover (空單回補)
@@ -22421,8 +22499,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             else if (!(c.be || c.fib || c.granville) && px <= st.tp) reason = '空單固定停利回補';
             else if (c.forceExit && s.open && hmNum >= 1325) reason = '現沖空單尾盤強制回補';
             if (reason) {
-              await executeOrder({ symbol: sym, side: 'BUY', qty: Math.abs(p.shares), unit: '股', price: px, source: 'QUANT_COVER_SHORT', dayTrade: true });
-              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動回補空單', `${sym} @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
+              await executeOrder({ symbol: sym, side: 'BUY', qty: exitLots, unit: '張', price: px, source: 'QUANT_COVER_SHORT', dayTrade: true });
+              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動回補空單', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
             }
           }
         }
@@ -22582,10 +22660,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           }
         });
         const totalPnl = realizedPnl + unrealPnl;
-        const baseCap = Number(window.SHL_WAR?.cfg()?.capital || 1000000);
+        const baseCap = Math.max(10000, Number(state.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000));
         const totalPct = baseCap > 0 ? (totalPnl / baseCap * 100) : 0;
         const monthKey = nowTwDateTime().slice(0, 7);
         const monthRebate = (state.ext?.monthlyRebateLedger && state.ext.monthlyRebateLedger[monthKey]) || 0;
+
+        const pInp = $('atPrincipalInput');
+        if (pInp && document.activeElement !== pInp) pInp.value = String(Math.round(baseCap));
+        const availCash = state.envMode === 'SIM' ? Math.max(0, Number(state.simCashTwd || 0)) : Math.max(0, baseCap + realizedPnl);
+        const cashBadge = $('atAvailCashBadge');
+        if (cashBadge) cashBadge.textContent = `可用現金：${fmtMoney(availCash)} ｜ 總權益：${fmtMoney(baseCap + totalPnl)}`;
 
         const kTot = $('atKpiTotalPnl');
         if (kTot) { kTot.textContent = fmtSignedMoney(totalPnl); kTot.style.color = pnlColor(totalPnl); }
@@ -22631,7 +22715,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                 const pos = (state.positions || []).find(x => x.symbol === sym);
                 if (!pos) return;
                 const px = Number(getQuote(sym)?.price || pos.avgPrice || 0);
-                await executeOrder({ symbol: sym, side: 'SELL', qty: pos.shares, unit: '股', price: px, source: 'WAR_DASH_CLOSE' });
+                const isShort = pos.shares < 0;
+                const closeLots = Math.max(1, Math.round(Math.abs(pos.shares) / 1000));
+                await executeOrder({ symbol: sym, side: isShort ? 'BUY' : 'SELL', qty: closeLots, unit: '張', price: px, dayTrade: isShort ? true : null, source: 'WAR_DASH_CLOSE' });
                 if (window.SHL_WAR && window.SHL_WAR.cfg().stops[sym]) { delete window.SHL_WAR.cfg().stops[sym]; persistState(); }
                 render();
               });
@@ -22665,6 +22751,28 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
+      function applyPrincipalCapital(rawVal) {
+        const cap = Math.max(10000, Math.round(Number(rawVal || 0)));
+        if (!Number.isFinite(cap) || cap < 10000) {
+          showToast('本金金額無效', '請輸入至少 $10,000 TWD 的投入本金。', 'warn');
+          return;
+        }
+        const prevCap = Number(state.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000);
+        state.initialCapitalTwd = cap;
+        if (window.SHL_WAR?.cfg) window.SHL_WAR.cfg().capital = cap;
+        const wrCapEl = document.getElementById('wrCap');
+        if (wrCapEl) wrCapEl.value = String(cap);
+        if ((state.positions || []).length === 0 && (state.orders || []).length === 0) {
+          state.simCashTwd = cap;
+        } else {
+          state.simCashTwd = Math.max(0, Math.round(Number(state.simCashTwd || 0) + (cap - prevCap)));
+        }
+        persistState();
+        updateOrderSummary();
+        render();
+        showToast('💰 投入本金已套用', `本金設為 ${fmtMoney(cap)} TWD（可用現金 ${fmtMoney(state.simCashTwd)}）。後續全部買賣嚴格採 1,000 股（1 張）整數倍由系統自主複利交易！`, 'success');
+      }
+
       async function toggleOneClickAuto() {
         const nextOn = !isAutoRunning();
         if (nextOn && state.envMode === 'LIVE' && !hasValidShioajiToken()) {
@@ -22691,13 +22799,19 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         showToast(
           nextOn ? '⚡ 全自動量化交易已啟動' : '⏹ 全自動量化交易已停止',
           nextOn
-            ? `已於「${state.envMode === 'LIVE' ? 'LIVE 永豐實盤' : 'SIM 模擬單'}」啟動 SMC+FVG+AI 全自動掃描與動態止盈止損追蹤！`
+            ? `已於「${state.envMode === 'LIVE' ? 'LIVE 永豐實盤' : 'SIM 模擬單'}」啟動 SMC+FVG+AI 全自動掃描（1,000 股整張倍數）與動態止盈止損追蹤！`
             : '已暫停自動掃描與自動下單排程，現有持倉仍保留顯示。',
           nextOn ? 'success' : 'info'
         );
       }
 
       function init() {
+        $('btnAtApplyPrincipal')?.addEventListener('click', () => {
+          applyPrincipalCapital($('atPrincipalInput')?.value);
+        });
+        $('atPrincipalInput')?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') applyPrincipalCapital($('atPrincipalInput')?.value);
+        });
         $('btnAtOneClickAuto')?.addEventListener('click', toggleOneClickAuto);
         $('btnAtScanNow')?.addEventListener('click', async () => {
           showToast('⚡ 立即掃描一輪', '正在掃描自選股 SMC+FVG+AI 訊號並檢核止盈止損…', 'info');
@@ -22713,7 +22827,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         render();
         setInterval(render, 3000);
       }
-      return { init, render, toggleOneClickAuto, isAutoRunning };
+      return { init, render, toggleOneClickAuto, isAutoRunning, applyPrincipalCapital };
     })();
 
     // =========================================================================

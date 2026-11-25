@@ -2,9 +2,12 @@ package com.synapsetw.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -17,10 +20,58 @@ import java.io.IOException;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQ = 4201;
+    private static final int DEVICE_AUTH_REQ = 4202;
 
     private WebView webView;
     private LocalAssetServer assetServer;
     private ValueCallback<Uri[]> filePathCallback;
+
+    private class AndroidAuthBridge {
+        @JavascriptInterface
+        public boolean isDeviceSecure() {
+            try {
+                KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                return km != null && km.isDeviceSecure();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public void requestDeviceUnlock(final String title, final String subtitle) {
+            runOnUiThread(() -> {
+                try {
+                    KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                    if (km != null && km.isDeviceSecure()) {
+                        Intent intent = km.createConfirmDeviceCredentialIntent(
+                                title != null && !title.isEmpty() ? title : "SHL TW 身分驗證",
+                                subtitle != null && !subtitle.isEmpty() ? subtitle : "請使用人臉辨識、指紋或手機解鎖密碼登入"
+                        );
+                        if (intent != null) {
+                            startActivityForResult(intent, DEVICE_AUTH_REQ);
+                            return;
+                        }
+                    }
+                    notifyAuthResult(false, "裝置尚未啟用系統螢幕鎖");
+                } catch (Exception e) {
+                    notifyAuthResult(false, e.getMessage() != null ? e.getMessage() : "驗證呼叫失敗");
+                }
+            });
+        }
+    }
+
+    private void notifyAuthResult(final boolean ok, final String msg) {
+        if (webView == null) return;
+        final String safeMsg = msg == null ? "" : msg.replace("\\", "\\\\").replace("'", "\\'");
+        webView.post(() -> {
+            if (webView != null) {
+                webView.evaluateJavascript(
+                        "if (typeof window.__shlOnAndroidAuthResult === 'function') window.__shlOnAndroidAuthResult(" + ok + ", '" + safeMsg + "');",
+                        null
+                );
+            }
+        });
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -29,6 +80,7 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
+        webView.addJavascriptInterface(new AndroidAuthBridge(), "SHLAndroidAuth");
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -104,6 +156,8 @@ public class MainActivity extends Activity {
             Uri[] results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
             filePathCallback.onReceiveValue(results);
             filePathCallback = null;
+        } else if (requestCode == DEVICE_AUTH_REQ) {
+            notifyAuthResult(resultCode == RESULT_OK, resultCode == RESULT_OK ? "OK" : "已取消或驗證未通過");
         }
     }
 

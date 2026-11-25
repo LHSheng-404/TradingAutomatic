@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.17.0 · 版本說明
+              v3.18.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -5288,30 +5288,76 @@
     </div>
   </div>
 
-  <!-- Full-Screen Device Sandbox Vault Lock Screen (Face ID / Touch ID / Phone Passcode / Vault Password) -->
+  <!-- Full-Screen Device Sandbox Vault Lock Screen (Face ID / Touch ID / Android System Lock / Phone-Style PIN Keypad) -->
+  <style>
+    #shlVaultLockOverlay { z-index: 100001 !important; }
+    .shl-pin-dots { display: flex; justify-content: center; gap: 12px; margin: 10px 0 6px; min-height: 16px; }
+    .shl-pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #64748b; background: transparent; transition: all 0.14s ease; }
+    .shl-pin-dot.filled { background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 8px rgba(56,189,248,0.65); transform: scale(1.1); }
+    .shl-pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 264px; margin: 8px auto 4px; }
+    .shl-pin-key {
+      height: 54px; border-radius: 50px; border: 1px solid rgba(148,163,184,0.24);
+      background: rgba(30,41,59,0.78); color: #f8fafc; font-size: 20px; font-weight: 700;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: transform 0.08s ease, background 0.12s ease; user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .shl-pin-key:active { transform: scale(0.92); background: rgba(56,189,248,0.28); }
+    .shl-pin-key.fn-key { font-size: 13px; font-weight: 800; color: #93c5fd; background: rgba(15,23,42,0.65); }
+    @keyframes shlShake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+    .shl-shake { animation: shlShake 0.34s ease; }
+  </style>
   <div id="shlVaultLockOverlay" class="vault-lock-overlay" role="dialog" aria-modal="true" aria-labelledby="vaultLockTitle">
     <!-- Live Public Market Ticker Visible Even While Vault Is Locked -->
     <div id="vaultLockLiveTicker" class="lock-ticker-widget" style="margin-bottom:14px;"></div>
 
-    <div class="vault-lock-card">
+    <div class="vault-lock-card" id="vaultLockCardInner">
       <div class="vault-lock-shield">
         <i data-lucide="shield-check" style="width:30px;height:30px;"></i>
       </div>
       <div>
-        <h2 id="vaultLockTitle" style="margin:0;font-size:20px;font-weight:800;letter-spacing:0.02em;">SHL TW 沙盒保險箱已鎖定</h2>
-        <p id="vaultLockSubtitle" style="margin:6px 0 0;font-size:12.5px;color:#94a3b8;line-height:1.5;">
-          您的 API Token 與交易設定已於本機沙盒 AES-256 加密保護，請驗證身分後取用。
+        <h2 id="vaultLockTitle" style="margin:0;font-size:20px;font-weight:800;letter-spacing:0.02em;">SHL TW 安全登入解鎖</h2>
+        <p id="vaultLockSubtitle" style="margin:6px 0 0;font-size:12px;color:#94a3b8;line-height:1.5;">
+          支援人臉識別、指紋或手機解鎖密碼；解鎖後自動拉取伺服器最新設定並完成全盤載入。
         </p>
       </div>
 
       <button id="btnUnlockBiometric" type="button" class="vault-lock-btn-bio" style="display:none;">
         <i data-lucide="scan-face" style="width:18px;height:18px;"></i>
-        <span id="btnUnlockBioText">使用 Face ID / 手機解鎖密碼解鎖</span>
+        <span id="btnUnlockBioText">使用 Face ID / 人臉識別解鎖</span>
       </button>
 
-      <div style="display:flex;flex-direction:column;gap:8px;">
+      <!-- v3.18.0: Phone Lock-Screen Style Numeric PIN Keypad -->
+      <div id="vaultPinPadWrap">
+        <div id="vaultPinDots" class="shl-pin-dots" aria-label="密碼輸入進度">
+          <span class="shl-pin-dot"></span><span class="shl-pin-dot"></span><span class="shl-pin-dot"></span>
+          <span class="shl-pin-dot"></span><span class="shl-pin-dot"></span><span class="shl-pin-dot"></span>
+        </div>
+        <div class="shl-pin-keypad" id="vaultPinKeypad">
+          <button type="button" class="shl-pin-key" data-pin-digit="1">1</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="2">2</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="3">3</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="4">4</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="5">5</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="6">6</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="7">7</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="8">8</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="9">9</button>
+          <button type="button" class="shl-pin-key fn-key" id="btnPinPadBio">👤 人臉</button>
+          <button type="button" class="shl-pin-key" data-pin-digit="0">0</button>
+          <button type="button" class="shl-pin-key fn-key" id="btnPinPadDel">⌫</button>
+        </div>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:8px;">
+          <button id="btnPinPadSubmit" type="button" class="vault-lock-btn-pw" style="padding:8px 18px;font-size:12.5px;">✓ 確認解鎖並自動同步</button>
+          <button id="btnToggleAlphaPw" type="button" style="background:none;border:none;color:#93c5fd;font-size:11.5px;cursor:pointer;text-decoration:underline;">切換英數密碼</button>
+        </div>
+      </div>
+
+      <div id="vaultAlphaPwWrap" style="display:none;flex-direction:column;gap:8px;">
         <input id="vaultUnlockPasswordInput" type="password" class="vault-lock-input mono" autocomplete="current-password" placeholder="輸入保險箱密碼 / PIN" />
-        <button id="btnUnlockPassword" type="button" class="vault-lock-btn-pw">以保險箱密碼解鎖</button>
+        <div style="display:flex;gap:8px;">
+          <button id="btnUnlockPassword" type="button" class="vault-lock-btn-pw" style="flex:1;">以密碼解鎖並自動同步</button>
+          <button id="btnBackToPinPad" type="button" style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#cbd5e1;border-radius:10px;padding:0 12px;font-size:12px;cursor:pointer;">數字鍵盤</button>
+        </div>
       </div>
 
       <div id="vaultLockError" class="vault-lock-err"></div>
@@ -16298,9 +16344,71 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         showToast('已停用安全保險箱', '資料已還原為一般本機儲存模式。', 'info');
       }
 
+      let _pinPadBuf = '';
+      let _pinPadBound = false;
+
+      function updatePinDotsUI() {
+        const dots = document.querySelectorAll('#vaultPinDots .shl-pin-dot');
+        dots.forEach((d, idx) => {
+          d.classList.toggle('filled', idx < _pinPadBuf.length);
+        });
+      }
+
+      function bindPinPadOnce() {
+        if (_pinPadBound) return;
+        _pinPadBound = true;
+        document.querySelectorAll('#vaultPinKeypad [data-pin-digit]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            if (_pinPadBuf.length >= 12) return;
+            _pinPadBuf += String(btn.dataset.pinDigit || '');
+            updatePinDotsUI();
+            const pwEl = document.getElementById('vaultUnlockPasswordInput');
+            if (pwEl) pwEl.value = _pinPadBuf;
+            const meta = readMeta() || {};
+            const expectedLen = Number(meta.pinLength || 0);
+            if (expectedLen >= 4 && _pinPadBuf.length === expectedLen) {
+              completeUnlockWithPassword(_pinPadBuf);
+            }
+          });
+        });
+        document.getElementById('btnPinPadDel')?.addEventListener('click', () => {
+          _pinPadBuf = _pinPadBuf.slice(0, -1);
+          updatePinDotsUI();
+          const pwEl = document.getElementById('vaultUnlockPasswordInput');
+          if (pwEl) pwEl.value = _pinPadBuf;
+        });
+        document.getElementById('btnPinPadBio')?.addEventListener('click', () => {
+          unlockWithBiometric();
+        });
+        document.getElementById('btnPinPadSubmit')?.addEventListener('click', () => {
+          if (_pinPadBuf.length < 4) {
+            const errEl = document.getElementById('vaultLockError');
+            if (errEl) errEl.textContent = '請輸入至少 4 碼數字密碼（或點「切換英數密碼」）';
+            return;
+          }
+          completeUnlockWithPassword(_pinPadBuf);
+        });
+        document.getElementById('btnToggleAlphaPw')?.addEventListener('click', () => {
+          const pinW = document.getElementById('vaultPinPadWrap');
+          const alpW = document.getElementById('vaultAlphaPwWrap');
+          if (pinW) pinW.style.display = 'none';
+          if (alpW) alpW.style.display = 'flex';
+          document.getElementById('vaultUnlockPasswordInput')?.focus();
+        });
+        document.getElementById('btnBackToPinPad')?.addEventListener('click', () => {
+          const pinW = document.getElementById('vaultPinPadWrap');
+          const alpW = document.getElementById('vaultAlphaPwWrap');
+          if (pinW) pinW.style.display = 'block';
+          if (alpW) alpW.style.display = 'none';
+        });
+      }
+
       function showLockOverlay(subtitleText) {
         const ov = document.getElementById('shlVaultLockOverlay');
         if (!ov) return;
+        bindPinPadOnce();
+        _pinPadBuf = '';
+        updatePinDotsUI();
         const meta = readMeta() || {};
         const sub = document.getElementById('vaultLockSubtitle');
         if (sub && subtitleText) sub.textContent = subtitleText;
@@ -16313,9 +16421,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         const bioBtn = document.getElementById('btnUnlockBiometric');
         const bioTxt = document.getElementById('btnUnlockBioText');
-        const showBio = Boolean(meta.biometricEnabled);
+        const hasAndroidAuth = Boolean(window.SHLAndroidAuth && typeof window.SHLAndroidAuth.isDeviceSecure === 'function' && window.SHLAndroidAuth.isDeviceSecure());
+        const showBio = Boolean(meta.biometricEnabled || hasAndroidAuth);
         if (bioBtn) bioBtn.style.display = showBio ? 'flex' : 'none';
-        if (bioTxt) bioTxt.textContent = `使用 ${bioCaps.label || 'Face ID / 手機解鎖密碼'} 解鎖`;
+        if (bioTxt) bioTxt.textContent = `使用 ${bioCaps.label || 'Face ID / 人臉識別 / 手機解鎖'} 解鎖`;
 
         ov.classList.add('active');
         if (window.SHL_EXT && typeof window.SHL_EXT.renderLockTickers === 'function') {
@@ -16325,9 +16434,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.lucide && typeof window.lucide.createIcons === 'function') {
           window.lucide.createIcons();
         }
+        // Auto-prompt Face ID / Biometric right on open (SinoPac APP style!)
+        if (meta.biometricEnabled && !window._shlAutoBioPromptedThisLock) {
+          window._shlAutoBioPromptedThisLock = true;
+          setTimeout(() => {
+            if (isLocked) unlockWithBiometric().catch(() => {});
+          }, 280);
+        }
       }
 
       function hideLockOverlay() {
+        window._shlAutoBioPromptedThisLock = false;
         document.getElementById('shlVaultLockOverlay')?.classList.remove('active');
       }
 
@@ -16351,11 +16468,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const decrypted = await decryptEnvelope(meta, pw);
           unlockedPassword = pw;
           isLocked = false;
+          // Remember numeric PIN length (4~8 digits) for auto-submit on next phone-style unlock
+          if (/^\d{4,8}$/.test(String(pw)) && meta.pinLength !== String(pw).length) {
+            meta.pinLength = String(pw).length;
+            writeMeta(meta);
+          }
           applyPersistedSnapshot(decrypted);
           hideLockOverlay();
           populateSettingsInputs();
           if (window.QLAB && typeof window.QLAB.init === 'function') {
-            // Re-hydrate QLAB inputs if needed
             try { window.QLAB.renderLib(); } catch (e) {}
           }
           renderAllViews();
@@ -16363,32 +16484,103 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           renderTopRibbon();
           refreshUI();
 
-          // Resolve boot waiters
+          // Resolve boot waiters (initApp will immediately auto-pull server profile & load all data)
           const waiters = pendingUnlockCallbacks.splice(0, pendingUnlockCallbacks.length);
           waiters.forEach(fn => { try { fn(); } catch (e) {} });
 
-          showToast('安全保險箱已解鎖', `裝置沙盒已驗證（${meta.deviceName || getDefaultDeviceName()}）`, 'success');
-
-          // Auto-check newer E2EE revision on backend when autoSync enabled
-          if (meta.autoSync && state.backendDetected) {
-            checkRemoteNewerRevision().catch(() => {});
-          }
+          showToast('安全解鎖成功', `裝置沙盒已驗證（${meta.deviceName || getDefaultDeviceName()}），正自動同步伺服器最新設定...`, 'success');
           return true;
         } catch (e) {
+          _pinPadBuf = '';
+          updatePinDotsUI();
+          const card = document.getElementById('vaultLockCardInner');
+          if (card) {
+            card.classList.remove('shl-shake');
+            void card.offsetWidth;
+            card.classList.add('shl-shake');
+          }
+          if (navigator.vibrate) try { navigator.vibrate([40, 40, 40]); } catch (_) {}
           if (errEl) errEl.textContent = '密碼錯誤或密文驗證失敗，請重新輸入。';
+          return false;
+        }
+      }
+
+      async function pullFromBackendSilent() {
+        const base = getApiBase();
+        const meta = readMeta();
+        if (!base || !meta || !meta.enabled || !unlockedPassword) return false;
+        try {
+          const syncSpace = (meta.syncSpace || 'personal-main').trim();
+          const { vaultId, authHash } = await deriveSyncCreds(syncSpace, unlockedPassword);
+          const resp = await fetch(`${base}/api/v1/vault/pull`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vault_id: vaultId, auth_hash: authHash })
+          });
+          if (!resp.ok) return false;
+          const data = await resp.json().catch(() => ({}));
+          if (!data.exists || !data.payload_json) return false;
+          if (meta.lastSyncRev && Number(data.revision || 0) <= Number(meta.lastSyncRev || 0)) {
+            return true; // Already up to date
+          }
+          const envelope = JSON.parse(data.payload_json);
+          await importEncryptedPackage({
+            format: 'SHL_TW_E2EE_VAULT_V1',
+            exportedAt: data.updated_at,
+            deviceName: data.device_name,
+            syncSpace,
+            envelope
+          }, unlockedPassword);
+          const cur = readMeta();
+          if (cur) {
+            cur.lastSyncRev = data.revision;
+            cur.lastSyncAt = data.updated_at;
+            cur.syncSpace = syncSpace;
+            writeMeta(cur);
+          }
+          populateSettingsInputs();
+          renderAllViews();
+          renderAiPanels();
+          renderTopRibbon();
+          if (window.SHL_WAR && typeof window.SHL_WAR.onSyncApplied === 'function') window.SHL_WAR.onSyncApplied();
+          if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+          refreshUI();
+          showToast('☁️ 已自動同步伺服器匹配設定', `空間「${syncSpace}」第 ${data.revision} 版已自動套用完成`, 'success');
+          return true;
+        } catch (e) {
           return false;
         }
       }
 
       async function unlockWithBiometric() {
         const errEl = document.getElementById('vaultLockError');
-        if (errEl) errEl.textContent = '正在呼叫裝置身分驗證...';
+        if (errEl) errEl.textContent = '正在呼叫人臉識別／裝置系統解鎖...';
         try {
+          // Prefer native Android Keyguard (Face / Fingerprint / Phone PIN) when running inside Android APK
+          if (window.SHLAndroidAuth && typeof window.SHLAndroidAuth.requestDeviceUnlock === 'function' && window.SHLAndroidAuth.isDeviceSecure()) {
+            const androidOk = await new Promise((resolve) => {
+              window.__shlOnAndroidAuthResult = (ok) => resolve(Boolean(ok));
+              window.SHLAndroidAuth.requestDeviceUnlock('SHL TW 安全登入', '請使用人臉辨識、指紋或手機解鎖密碼');
+            });
+            if (!androidOk) throw new Error('裝置系統驗證已取消或未通過');
+            const wrapped = await idbGet('wrappedMaster');
+            const wrapKey = await idbGet('wrapKey');
+            if (wrapped && wrapKey) {
+              const plainBuf = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: b64Decode(wrapped.iv) },
+                wrapKey,
+                b64Decode(wrapped.ct)
+              );
+              const pw = new TextDecoder().decode(plainBuf);
+              if (errEl) errEl.textContent = '';
+              return await completeUnlockWithPassword(pw);
+            }
+          }
           const pw = await verifyAndRetrieveBiometricPassword();
           if (errEl) errEl.textContent = '';
           return await completeUnlockWithPassword(pw);
         } catch (err) {
-          if (errEl) errEl.textContent = err?.message || '生物辨識未通過，請改用保險箱密碼解鎖。';
+          if (errEl) errEl.textContent = err?.message || '人臉／生物辨識未通過，請以數字密碼解鎖。';
           return false;
         }
       }
@@ -16841,8 +17033,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       return {
         isEnabled,
+        isLocked: () => isLocked,
         saveEncryptedSnapshot,
         ensureUnlockedOnBoot,
+        pullFromBackendSilent,
         lockNow,
         refreshUI,
         bindVaultUIEvents,
@@ -16923,9 +17117,36 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         openFeatureModal(hashPane);
       }
 
-      // Detect cloud backend & immediately sync real Taiwan stock data (zero fake prices!)
-      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(35, '自動連線本機／24H 雲端後端...', 2);
+      // Detect cloud backend & immediately auto-pull matched server profile (zero manual pull needed!)
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(32, '自動連線本機／24H 雲端後端...', 2);
       const backendOk = await detectBackend();
+      if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.setProgress(48, '自動拉取伺服器匹配設定檔並套用...', 3);
+
+      // Zero-touch auto-pull: E2EE Vault backend + Remote Shared Account (all settings hydrated before entering dashboard!)
+      const syncTasks = [];
+      if (window.SHL_VAULT && window.SHL_VAULT.isEnabled() && typeof window.SHL_VAULT.pullFromBackendSilent === 'function') {
+        syncTasks.push(Promise.race([window.SHL_VAULT.pullFromBackendSilent().catch(() => false), new Promise(r => setTimeout(r, 3500))]));
+      }
+      if (window.SHL_REMOTE_ACCOUNT && typeof window.SHL_REMOTE_ACCOUNT.pull === 'function') {
+        try {
+          const rc = JSON.parse(localStorage.getItem('synapse_tw_remote_acct_v1') || '{}');
+          if (rc && rc.loggedIn && rc.accountId) {
+            syncTasks.push(Promise.race([window.SHL_REMOTE_ACCOUNT.pull(true).catch(() => false), new Promise(r => setTimeout(r, 3500))]));
+          }
+        } catch (e) {}
+      }
+      if (syncTasks.length > 0) {
+        await Promise.all(syncTasks);
+        // Re-hydrate every UI input, watchlist, indicator, AI panel & auto-trade dashboard from pulled profile
+        populateSettingsInputs();
+        renderAllViews();
+        renderAiPanels();
+        renderTopRibbon();
+        startOrUpdateAgentAutoLoop();
+        if (window.SHL_WAR && typeof window.SHL_WAR.onSyncApplied === 'function') window.SHL_WAR.onSyncApplied();
+        if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+      }
+
       if (window.SHL_VAULT) window.SHL_VAULT.refreshUI();
       if (window.SHL_EXT) window.SHL_EXT.init();
 
@@ -16938,8 +17159,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       if (window.SHL_BOOT_LOADER) {
         window.SHL_BOOT_LOADER.setProgress(
-          58,
-          backendOk ? '後端已連線！抓取台股即時報價與大盤...' : '抓取台股官方即時報價與大盤...',
+          66,
+          backendOk ? '設定已套用！透過永豐／官方 API 抓取即時股價...' : '設定已套用！抓取台股官方即時報價與大盤...',
           3
         );
       }
@@ -20817,8 +21038,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.17.0';
+      const CURRENT_VERSION = 'v3.18.0';
       const HISTORY = [
+        {
+          ver: 'v3.18.0',
+          items: [
+            '全面升級手機版安全登入介面（比照永豐交易 APP）：開啟時自動喚起 Face ID / 人臉識別 / 指紋或 Android 系統螢幕鎖（MainActivity 新增原生 KeyguardManager 橋接），並提供同手機解鎖螢幕風格的 0~9 數字密碼鍵盤、圓點指示燈、達碼數自動解鎖與錯誤震動搖晃回饋（亦可切換完整英數密碼）',
+            '解鎖後零點擊自動同步伺服器匹配檔案：身分驗證通過後，於永豐風格載入進度條內自動連線後端並靜默拉取伺服器最新加密設定檔（E2EE 保險箱＋遠端共享帳號），不須手動點擊拉取',
+            '登入載入時一次套用全部設定：自動還原自選股、永豐 SIM/LIVE Token、AI 金鑰、技術指標、自動交易戰情室與推播設定，並隨即抓取最新即時股價與當日 K 線進入主畫面'
+          ]
+        },
         {
           ver: 'v3.17.0',
           items: [

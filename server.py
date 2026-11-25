@@ -202,6 +202,9 @@ def format_telegram_html(text: str) -> str:
 # ---------------------------------------------------------------------------
 def init_db() -> None:
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS trade_orders (
@@ -314,6 +317,96 @@ def init_db() -> None:
         )
         """
     )
+
+    # v3.19.0 — Versioned Schema Migrations & Decision Handshake Diagnostics (Slow-Query Indexed)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            applied_at TEXT NOT NULL
+        )
+        """
+    )
+    applied_versions = {
+        int(r[0]) for r in conn.execute("SELECT version FROM schema_migrations").fetchall()
+    }
+    mig_ts = datetime.now(TW_TZ).isoformat(timespec="seconds")
+
+    if 1 not in applied_versions:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS decision_handshake_runs (
+                run_id TEXT PRIMARY KEY,
+                owner_id TEXT DEFAULT '',
+                env_mode TEXT DEFAULT 'SIM',
+                scope_type TEXT DEFAULT '',
+                symbols_json TEXT DEFAULT '[]',
+                total_symbols INTEGER DEFAULT 0,
+                buy_count INTEGER DEFAULT 0,
+                short_count INTEGER DEFAULT 0,
+                order_exec_count INTEGER DEFAULT 0,
+                avg_latency_ms REAL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                ts_ms INTEGER NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (1, "decision_handshake_runs", mig_ts),
+        )
+
+    if 2 not in applied_versions:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS decision_handshake_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                owner_id TEXT DEFAULT '',
+                symbol TEXT NOT NULL,
+                stock_name TEXT DEFAULT '',
+                price REAL DEFAULT 0,
+                change_pct REAL DEFAULT 0,
+                bar_5m_json TEXT DEFAULT '{}',
+                bar_1m_json TEXT DEFAULT '{}',
+                direction TEXT DEFAULT 'NEUTRAL',
+                strategies_json TEXT DEFAULT '[]',
+                ai_score INTEGER DEFAULT 0,
+                ai_verdict TEXT DEFAULT '',
+                ai_reason TEXT DEFAULT '',
+                final_action TEXT DEFAULT 'HOLD',
+                order_executed INTEGER DEFAULT 0,
+                order_id TEXT DEFAULT '',
+                order_msg TEXT DEFAULT '',
+                latency_ms REAL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                ts_ms INTEGER NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (2, "decision_handshake_items", mig_ts),
+        )
+
+    # Composite indexes to prevent slow queries on owner/symbol/action/run lookups
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dh_runs_owner_ts ON decision_handshake_runs(owner_id, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dh_items_run_sym ON decision_handshake_items(run_id, symbol)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dh_items_sym_ts ON decision_handshake_items(symbol, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dh_items_action_ts ON decision_handshake_items(final_action, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_dh_items_owner_ts ON decision_handshake_items(owner_id, ts_ms DESC)"
+    )
+
     conn.commit()
     conn.close()
 
@@ -398,7 +491,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.18.0",
+    version="3.19.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -530,7 +623,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.18.0",
+        "version": "3.19.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -5560,6 +5653,404 @@ async def market_breadth_contrib():
         "contributors": contribs[:12],
         "server_time": tw_now_str(),
     }, headers={"Cache-Control": "no-store"})
+
+
+# ---------------------------------------------------------------------------
+# Decision Handshake Diagnostics API (v3.19.0 — WAL + Composite-Indexed SQLite)
+# ---------------------------------------------------------------------------
+class DiagnosticHandshakeItemIn(BaseModel):
+    symbol: str = Field(..., min_length=1, max_length=32)
+    stock_name: str = ""
+    price: float = 0.0
+    change_pct: float = 0.0
+    bar_5m: Any = Field(default_factory=dict)
+    bar_1m: Any = Field(default_factory=dict)
+    direction: str = "NEUTRAL"
+    strategies: Any = Field(default_factory=list)
+    ai_score: int = 0
+    ai_verdict: str = ""
+    ai_reason: str = ""
+    final_action: str = "HOLD"
+    order_executed: bool | int = 0
+    order_id: str = ""
+    order_msg: str = ""
+    latency_ms: float = 0.0
+
+
+class DiagnosticHandshakeRunIn(BaseModel):
+    run_id: str = ""
+    env_mode: str = "SIM"
+    scope_type: str = "WATCHLIST_ALL"
+    symbols: list[str] = Field(default_factory=list)
+    avg_latency_ms: Optional[float] = None
+    items: list[DiagnosticHandshakeItemIn] = Field(default_factory=list)
+
+
+def _diag_owner_from_request(request: Optional[Request]) -> str:
+    oid = _owner_from_request(request)
+    if oid:
+        return oid
+    if request is None:
+        return ""
+    raw = (request.headers.get("x-shl-owner-id") or "").strip()
+    if raw and re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", raw):
+        return raw
+    return ""
+
+
+def _diag_json_dumps(val: Any, fallback: str) -> str:
+    if isinstance(val, str):
+        s = val.strip()
+        return s if s else fallback
+    try:
+        return json.dumps(val, ensure_ascii=False, separators=(",", ":"))
+    except Exception:
+        return fallback
+
+
+def _diag_json_loads(raw: Optional[str], default: Any) -> Any:
+    if not raw:
+        return default
+    try:
+        return json.loads(raw)
+    except Exception:
+        return default
+
+
+def _diag_db_connect() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
+@app.post("/api/v1/diagnostics/handshake/run")
+async def save_diagnostic_handshake_run(req: DiagnosticHandshakeRunIn, request: Request):
+    owner_id = _diag_owner_from_request(request)
+    ts_ms = int(time.time() * 1000)
+    created_at = datetime.now(TW_TZ).isoformat(timespec="seconds")
+
+    raw_run_id = (req.run_id or "").strip()
+    run_id = raw_run_id[:64] if raw_run_id else f"dh_{ts_ms}_{secrets.token_hex(4)}"
+
+    env_mode = (req.env_mode or SERVER_TRADING_MODE or "SIM").strip().upper()
+    if env_mode not in ("SIM", "LIVE"):
+        env_mode = "SIM"
+    scope_type = (req.scope_type or "WATCHLIST_ALL").strip()[:48]
+
+    symbols = [s.strip().upper() for s in req.symbols if isinstance(s, str) and s.strip()]
+    if not symbols and req.items:
+        symbols = [it.symbol.strip().upper() for it in req.items if it.symbol.strip()]
+
+    buy_count = 0
+    short_count = 0
+    order_exec_count = 0
+    latencies: list[float] = []
+    item_rows: list[tuple[Any, ...]] = []
+
+    for it in req.items:
+        sym = it.symbol.strip().upper()[:32]
+        direction = (it.direction or "NEUTRAL").strip().upper()[:16]
+        final_action = (it.final_action or "HOLD").strip().upper()[:24]
+        executed_int = 1 if bool(it.order_executed) else 0
+        lat = round(float(it.latency_ms or 0.0), 2)
+        latencies.append(lat)
+
+        if final_action == "BUY":
+            buy_count += 1
+        elif final_action in ("SHORT_SELL", "SHORT", "SELL"):
+            short_count += 1
+        if executed_int:
+            order_exec_count += 1
+
+        item_rows.append(
+            (
+                run_id,
+                owner_id,
+                sym,
+                (it.stock_name or "").strip()[:64],
+                float(it.price or 0.0),
+                float(it.change_pct or 0.0),
+                _diag_json_dumps(it.bar_5m, "{}"),
+                _diag_json_dumps(it.bar_1m, "{}"),
+                direction,
+                _diag_json_dumps(it.strategies, "[]"),
+                int(it.ai_score or 0),
+                (it.ai_verdict or "").strip()[:32],
+                (it.ai_reason or "").strip()[:500],
+                final_action,
+                executed_int,
+                (it.order_id or "").strip()[:64],
+                (it.order_msg or "").strip()[:300],
+                lat,
+                created_at,
+                ts_ms,
+            )
+        )
+
+    total_symbols = len(item_rows) if item_rows else len(symbols)
+    if req.avg_latency_ms is not None:
+        avg_latency_ms = round(float(req.avg_latency_ms), 2)
+    elif latencies:
+        avg_latency_ms = round(sum(latencies) / len(latencies), 2)
+    else:
+        avg_latency_ms = 0.0
+
+    conn = _diag_db_connect()
+    try:
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO decision_handshake_runs (
+                    run_id, owner_id, env_mode, scope_type, symbols_json,
+                    total_symbols, buy_count, short_count, order_exec_count,
+                    avg_latency_ms, created_at, ts_ms
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    owner_id,
+                    env_mode,
+                    scope_type,
+                    _diag_json_dumps(symbols, "[]"),
+                    total_symbols,
+                    buy_count,
+                    short_count,
+                    order_exec_count,
+                    avg_latency_ms,
+                    created_at,
+                    ts_ms,
+                ),
+            )
+            if item_rows:
+                conn.executemany(
+                    """
+                    INSERT INTO decision_handshake_items (
+                        run_id, owner_id, symbol, stock_name, price, change_pct,
+                        bar_5m_json, bar_1m_json, direction, strategies_json,
+                        ai_score, ai_verdict, ai_reason, final_action,
+                        order_executed, order_id, order_msg, latency_ms,
+                        created_at, ts_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    item_rows,
+                )
+    finally:
+        conn.close()
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "run_id": run_id,
+            "saved_items": len(item_rows),
+            "created_at": created_at,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/v1/diagnostics/handshake/history")
+async def get_diagnostic_handshake_history(
+    request: Request,
+    symbol: str = "",
+    action: str = "",
+    limit: int = 30,
+):
+    owner_id = _diag_owner_from_request(request)
+    eff_limit = max(1, min(int(limit or 30), 100))
+    sym = symbol.strip().upper()
+    act = action.strip().upper()
+
+    conn = _diag_db_connect()
+    try:
+        # Runs query (uses idx_dh_runs_owner_ts when owner_id is specified)
+        if owner_id:
+            run_rows = conn.execute(
+                "SELECT * FROM decision_handshake_runs WHERE owner_id = ? ORDER BY ts_ms DESC LIMIT ?",
+                (owner_id, eff_limit),
+            ).fetchall()
+        else:
+            run_rows = conn.execute(
+                "SELECT * FROM decision_handshake_runs ORDER BY ts_ms DESC LIMIT ?",
+                (eff_limit,),
+            ).fetchall()
+
+        # Items query (uses idx_dh_items_sym_ts / idx_dh_items_action_ts / idx_dh_items_owner_ts)
+        where_clauses: list[str] = []
+        params: list[Any] = []
+        if sym:
+            where_clauses.append("symbol = ?")
+            params.append(sym)
+        if act:
+            where_clauses.append("final_action = ?")
+            params.append(act)
+        if owner_id:
+            where_clauses.append("owner_id = ?")
+            params.append(owner_id)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        params.append(eff_limit)
+        item_rows = conn.execute(
+            f"SELECT * FROM decision_handshake_items {where_sql} ORDER BY ts_ms DESC LIMIT ?",
+            tuple(params),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    runs_out = []
+    for r in run_rows:
+        d = dict(r)
+        d["symbols"] = _diag_json_loads(d.pop("symbols_json", "[]"), [])
+        runs_out.append(d)
+
+    items_out = []
+    for r in item_rows:
+        d = dict(r)
+        d["bar_5m"] = _diag_json_loads(d.pop("bar_5m_json", "{}"), {})
+        d["bar_1m"] = _diag_json_loads(d.pop("bar_1m_json", "{}"), {})
+        d["strategies"] = _diag_json_loads(d.pop("strategies_json", "[]"), [])
+        d["order_executed"] = bool(d.get("order_executed"))
+        items_out.append(d)
+
+    return JSONResponse(
+        {"ok": True, "runs": runs_out, "items": items_out},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/v1/diagnostics/handshake/stats")
+async def get_diagnostic_handshake_stats(request: Request):
+    owner_id = _diag_owner_from_request(request)
+    conn = _diag_db_connect()
+    try:
+        if owner_id:
+            run_agg = conn.execute(
+                "SELECT COUNT(*) AS total_runs, AVG(avg_latency_ms) AS avg_lat FROM decision_handshake_runs WHERE owner_id = ?",
+                (owner_id,),
+            ).fetchone()
+            item_agg = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_items,
+                    SUM(CASE WHEN final_action = 'BUY' THEN 1 ELSE 0 END) AS buy_signals,
+                    SUM(CASE WHEN final_action IN ('SHORT_SELL', 'SHORT', 'SELL') THEN 1 ELSE 0 END) AS short_signals,
+                    SUM(CASE WHEN order_executed = 1 THEN 1 ELSE 0 END) AS executed_orders,
+                    AVG(latency_ms) AS item_avg_lat
+                FROM decision_handshake_items
+                WHERE owner_id = ?
+                """,
+                (owner_id,),
+            ).fetchone()
+            action_rows = conn.execute(
+                """
+                SELECT final_action, COUNT(*) AS cnt
+                FROM decision_handshake_items
+                WHERE owner_id = ?
+                GROUP BY final_action
+                ORDER BY cnt DESC
+                """,
+                (owner_id,),
+            ).fetchall()
+            top_rows = conn.execute(
+                """
+                SELECT
+                    symbol,
+                    MAX(stock_name) AS stock_name,
+                    COUNT(*) AS count,
+                    SUM(CASE WHEN final_action = 'BUY' THEN 1 ELSE 0 END) AS buy_count,
+                    SUM(CASE WHEN final_action IN ('SHORT_SELL', 'SHORT', 'SELL') THEN 1 ELSE 0 END) AS short_count,
+                    SUM(CASE WHEN order_executed = 1 THEN 1 ELSE 0 END) AS exec_count,
+                    ROUND(AVG(ai_score), 1) AS avg_ai_score
+                FROM decision_handshake_items
+                WHERE owner_id = ?
+                GROUP BY symbol
+                ORDER BY count DESC, exec_count DESC
+                LIMIT 10
+                """,
+                (owner_id,),
+            ).fetchall()
+        else:
+            run_agg = conn.execute(
+                "SELECT COUNT(*) AS total_runs, AVG(avg_latency_ms) AS avg_lat FROM decision_handshake_runs"
+            ).fetchone()
+            item_agg = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_items,
+                    SUM(CASE WHEN final_action = 'BUY' THEN 1 ELSE 0 END) AS buy_signals,
+                    SUM(CASE WHEN final_action IN ('SHORT_SELL', 'SHORT', 'SELL') THEN 1 ELSE 0 END) AS short_signals,
+                    SUM(CASE WHEN order_executed = 1 THEN 1 ELSE 0 END) AS executed_orders,
+                    AVG(latency_ms) AS item_avg_lat
+                FROM decision_handshake_items
+                """
+            ).fetchone()
+            action_rows = conn.execute(
+                """
+                SELECT final_action, COUNT(*) AS cnt
+                FROM decision_handshake_items
+                GROUP BY final_action
+                ORDER BY cnt DESC
+                """
+            ).fetchall()
+            top_rows = conn.execute(
+                """
+                SELECT
+                    symbol,
+                    MAX(stock_name) AS stock_name,
+                    COUNT(*) AS count,
+                    SUM(CASE WHEN final_action = 'BUY' THEN 1 ELSE 0 END) AS buy_count,
+                    SUM(CASE WHEN final_action IN ('SHORT_SELL', 'SHORT', 'SELL') THEN 1 ELSE 0 END) AS short_count,
+                    SUM(CASE WHEN order_executed = 1 THEN 1 ELSE 0 END) AS exec_count,
+                    ROUND(AVG(ai_score), 1) AS avg_ai_score
+                FROM decision_handshake_items
+                GROUP BY symbol
+                ORDER BY count DESC, exec_count DESC
+                LIMIT 10
+                """
+            ).fetchall()
+    finally:
+        conn.close()
+
+    total_runs = int(run_agg["total_runs"] or 0) if run_agg else 0
+    total_items = int(item_agg["total_items"] or 0) if item_agg else 0
+    buy_signals = int(item_agg["buy_signals"] or 0) if item_agg else 0
+    short_signals = int(item_agg["short_signals"] or 0) if item_agg else 0
+    executed_orders = int(item_agg["executed_orders"] or 0) if item_agg else 0
+    raw_avg_lat = (
+        run_agg["avg_lat"]
+        if (run_agg and run_agg["avg_lat"] is not None)
+        else (item_agg["item_avg_lat"] if item_agg else 0.0)
+    )
+    avg_latency_ms = round(float(raw_avg_lat or 0.0), 2)
+
+    action_breakdown = {str(r["final_action"] or "UNKNOWN"): int(r["cnt"] or 0) for r in action_rows}
+    top_symbols = [
+        {
+            "symbol": str(r["symbol"]),
+            "stock_name": str(r["stock_name"] or ""),
+            "count": int(r["count"] or 0),
+            "buy_count": int(r["buy_count"] or 0),
+            "short_count": int(r["short_count"] or 0),
+            "exec_count": int(r["exec_count"] or 0),
+            "avg_ai_score": float(r["avg_ai_score"] or 0.0),
+        }
+        for r in top_rows
+    ]
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "total_runs": total_runs,
+            "total_items": total_items,
+            "buy_signals": buy_signals,
+            "short_signals": short_signals,
+            "executed_orders": executed_orders,
+            "avg_latency_ms": avg_latency_ms,
+            "action_breakdown": action_breakdown,
+            "top_symbols": top_symbols,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 _SERVER_SHUTTING_DOWN = False

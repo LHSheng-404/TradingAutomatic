@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.18.0 · 版本說明
+              v3.19.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2873,36 +2873,172 @@
         </div>
       </section>
 
-      <!-- 2. Centerpiece: SYNAPSE Bidirectional Data Handshake Topology -->
-      <article class="card">
+      <!-- 2. Centerpiece: SHL TW 交易判斷邏輯診斷交握網路 (v3.19.0 WYSIWYG 6-Stage Real Decision Pipeline) -->
+      <article id="diagHandshakeCard" class="card" role="region" aria-label="SHL TW 交易判斷邏輯診斷交握網路" style="border:1.5px solid #bfdbfe;box-shadow:0 8px 26px rgba(15,23,42,0.06);">
+        <style>
+          .diag-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+          .diag-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:8px 14px; background:#ffffff; border-bottom:1px solid #e2e8f0; }
+          .diag-chip {
+            display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px;
+            font-size:12px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#334155;
+            transition:all 0.15s ease;
+          }
+          .diag-chip:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+          .diag-chip.is-selected { background:#eff6ff; border-color:#2563eb; color:#1e40af; box-shadow:0 1px 4px rgba(37,99,235,0.16); }
+          .diag-chip.is-active { background:#0f172a; border-color:#0f172a; color:#fde68a; }
+          .diag-stage-strip {
+            display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:8px;
+            padding:10px 14px; background:linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color:#e2e8f0;
+          }
+          @media (max-width: 980px) { .diag-stage-strip { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+          @media (max-width: 560px) { .diag-stage-strip { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+          .diag-stage-node {
+            border-radius:10px; padding:8px 10px; background:rgba(30,41,59,0.85); border:1px solid #334155;
+            cursor:pointer; transition:all 0.18s ease; text-align:left; color:#e2e8f0;
+          }
+          .diag-stage-node:hover { border-color:#60a5fa; transform:translateY(-1px); }
+          .diag-stage-node:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
+          .diag-stage-node.st-running { border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,0.28); }
+          .diag-stage-node.st-ok { border-color:#22c55e; background:rgba(20,83,45,0.34); }
+          .diag-stage-node.st-warn { border-color:#f59e0b; background:rgba(120,53,15,0.34); }
+          .diag-stage-node.st-err { border-color:#ef4444; background:rgba(127,29,29,0.38); }
+          .diag-matrix-table { width:100%; border-collapse:collapse; font-size:12px; }
+          .diag-matrix-table th { text-align:left; padding:8px 10px; background:#f1f5f9; color:#334155; font-weight:800; border-bottom:1px solid #cbd5e1; white-space:nowrap; }
+          .diag-matrix-table td { padding:8px 10px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+          .diag-matrix-table tr.diag-row { cursor:pointer; transition:background 0.12s; }
+          .diag-matrix-table tr.diag-row:hover { background:#eff6ff; }
+          .diag-matrix-table tr.diag-row.is-focused { background:#dbeafe; }
+        </style>
         <div class="card-header">
           <div class="card-title-group">
             <h2 class="card-title">
               <i data-lucide="network" style="width:16px;height:16px;color:var(--accent);"></i>
-              SHL TW 雙向資料交流交握網路
+              SHL TW 交易判斷邏輯診斷交握網路
               <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
+              <span id="diagPipelineStateBadge" class="badge badge-gray" aria-live="polite">待命 · 即看即所得</span>
             </h2>
-            <p class="card-subtitle">即時視覺化呈現 永豐金 Shioaji Pro 最即時真實行情、FinMind 盤後輔助、21 指標掃描、AI 六模型 &amp; 多 Agent、LINE / Telegram 推播與永豐金下單的雙向 SYN-ACK 交握</p>
+            <p class="card-subtitle">即看即所得：所選多檔股票 → 5分K＋1分K 雙週期掃描 → 偵測抓取方向 → 所有策略＋AI 價量確認 → 買賣／現沖先賣實際下單查看</p>
           </div>
-          <div class="chart-group">
-            <button id="btnTriggerHandshake" class="btn btn-sm btn-primary">
-              <i data-lucide="zap" style="width:13px;height:13px;"></i>觸發全鏈路交握測試
+          <div class="chart-group" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <button id="btnRunDiagPipeline" type="button" class="btn btn-sm btn-primary" aria-label="立即執行5分K與1分K全鏈路交易診斷">
+              <i data-lucide="zap" style="width:13px;height:13px;"></i>⚡ 執行 5分K＋1分K 診斷
             </button>
-            <button id="btnToggleAnim" class="btn btn-sm">
+            <button id="btnTriggerHandshake" type="button" class="btn btn-sm" style="display:none;" aria-hidden="true">觸發交握</button>
+            <button id="btnToggleDiagHistory" type="button" class="btn btn-sm" aria-expanded="false" aria-controls="diagHistoryWrap">
+              📋 歷史紀錄
+            </button>
+            <button id="btnToggleAnim" type="button" class="btn btn-sm" aria-label="切換交握動畫運行狀態">
               <span id="animToggleLabel">動畫運行中</span>
             </button>
           </div>
         </div>
-        <div class="card-body">
+
+        <!-- Multi-Stock Scope & Execution Control Bar -->
+        <div class="diag-toolbar">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label for="diagScopeSelect" style="font-size:12px;font-weight:800;color:#1e293b;">🎯 掃描股票範圍：</label>
+            <select id="diagScopeSelect" class="input" style="width:auto;min-width:155px;padding:5px 10px;font-size:12px;font-weight:700;" aria-label="選擇掃描股票範圍">
+              <option value="watchlist">自選股全部</option>
+              <option value="group">目前自選群組</option>
+              <option value="top_bull">強勢多方前 5 檔</option>
+              <option value="top_bear">弱勢空方前 5 檔</option>
+              <option value="custom">手動勾選多檔</option>
+            </select>
+            <span id="diagScopeCountBadge" class="badge badge-blue mono">已選 0 檔</span>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#0f172a;cursor:pointer;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:4px 9px;">
+              <input id="diagAutoExecChk" type="checkbox" />
+              <span>🤖 達標自動順勢下單（含現沖先賣）</span>
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#4338ca;cursor:pointer;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 9px;">
+              <input id="diagUseCloudAiChk" type="checkbox" />
+              <span>🧠 串接雲端 AI 價量複核</span>
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:#475569;">
+            <span id="diagLastRunMeta" class="mono">尚未執行掃描</span>
+          </div>
+        </div>
+
+        <!-- Interactive Multi-Stock Chips (Click to toggle in custom mode or inspect any stock) -->
+        <div id="diagStockChips" class="diag-chips" role="group" aria-label="所選股票清單"></div>
+
+        <!-- 6-Stage Real Decision Pipeline Strip -->
+        <div id="diagStageFlow" class="diag-stage-strip" role="list" aria-label="六階段交易判斷邏輯進度">
+          <button type="button" class="diag-stage-node" data-diag-stage="SCOPE" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">① 選股範圍</div>
+            <div id="diagStScope" style="font-size:12.5px;font-weight:800;margin-top:2px;">待選擇標的</div>
+          </button>
+          <button type="button" class="diag-stage-node" data-diag-stage="SCAN_5M_1M" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">② 5分K＋1分K掃描</div>
+            <div id="diagStScan" style="font-size:12.5px;font-weight:800;margin-top:2px;">等待掃描</div>
+          </button>
+          <button type="button" class="diag-stage-node" data-diag-stage="DIRECTION" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">③ 偵測抓取方向</div>
+            <div id="diagStDir" style="font-size:12.5px;font-weight:800;margin-top:2px;">多 0 · 空 0 · 盤 0</div>
+          </button>
+          <button type="button" class="diag-stage-node" data-diag-stage="STRATEGIES" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">④ 所有策略診斷</div>
+            <div id="diagStStrat" style="font-size:12.5px;font-weight:800;margin-top:2px;">SMC＋分K價量＋大單</div>
+          </button>
+          <button type="button" class="diag-stage-node" data-diag-stage="AI_CONFIRM" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">⑤ AI 價量確認</div>
+            <div id="diagStAi" style="font-size:12.5px;font-weight:800;margin-top:2px;">等待確認</div>
+          </button>
+          <button type="button" class="diag-stage-node" data-diag-stage="ORDER_EXEC" role="listitem">
+            <div style="font-size:10.5px;color:#94a3b8;font-weight:700;">⑥ 買賣→實際下單</div>
+            <div id="diagStOrder" style="font-size:12.5px;font-weight:800;margin-top:2px;">成交 0 筆</div>
+          </button>
+        </div>
+
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
           <div class="grid-handshake">
             <div class="handshake-stage">
-              <canvas id="handshakeCanvas"></canvas>
+              <canvas id="handshakeCanvas" aria-label="交易判斷邏輯即時交握拓撲圖"></canvas>
               <div class="stage-overlay-bar">
-                <span class="stage-hint">點擊任一節點可檢視即時交握延遲、狀態與最後封包內容</span>
+                <span class="stage-hint">真實數據交握：點擊任一節點或下方個股列，即刻檢視 5分K/1分K 判斷明細與實際下單狀況</span>
                 <span id="handshakeCounters" class="stage-hint mono">SYN: 0 ｜ ACK: 0 ｜ 平均延遲: -- ms</span>
               </div>
             </div>
-            <aside id="handshakeInspector" class="inspector-box"></aside>
+            <aside id="handshakeInspector" class="inspector-box" aria-live="polite"></aside>
+          </div>
+
+          <!-- WYSIWYG Live Per-Stock Diagnostic Matrix -->
+          <div id="diagMatrixWrap" style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff;">
+            <table class="diag-matrix-table" aria-label="多檔股票交易判斷邏輯即時處理狀況表">
+              <thead>
+                <tr>
+                  <th>標的</th>
+                  <th>實盤現價</th>
+                  <th>5分K / 1分K</th>
+                  <th>偵測方向</th>
+                  <th>所有策略判定</th>
+                  <th>AI 價量確認</th>
+                  <th>買賣決策 / 實際下單狀況</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="diagMatrixBody">
+                <tr><td colspan="8" style="text-align:center;padding:18px;color:#64748b;">點擊上方「⚡ 執行 5分K＋1分K 診斷」即可同步掃描所選多檔股票並逐階段呈現真實判斷狀況。</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Collapsible Backend SQLite Diagnostic History & Stats -->
+          <div id="diagHistoryWrap" style="display:none;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;padding:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:800;color:#0f172a;">🗄️ 伺服器歷史診斷交握紀錄（SQLite 索引查詢）</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <select id="diagHistActionFilter" class="input" style="width:auto;padding:4px 8px;font-size:11.5px;">
+                  <option value="">全部動作</option>
+                  <option value="BUY">買入 (BUY)</option>
+                  <option value="SHORT_SELL">現沖先賣 (SHORT_SELL)</option>
+                  <option value="HOLD">觀望 (HOLD)</option>
+                </select>
+                <button id="btnRefreshDiagHistory" type="button" class="btn btn-sm">🔄 重新載入</button>
+              </div>
+            </div>
+            <div id="diagHistoryStats" style="font-size:11.5px;color:#475569;margin-bottom:8px;" class="mono">載入統計中...</div>
+            <div id="diagHistoryList" style="max-height:240px;overflow-y:auto;font-size:12px;"></div>
           </div>
         </div>
       </article>
@@ -17074,20 +17210,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       // Start 60fps Handshake Topology animation
       requestAnimationFrame(drawHandshakeFrame);
 
-      // Periodic ambient handshake pulse
-      setInterval(() => {
-        if (state.animRunning && !state.killSwitch) {
-          const sources = ['YAHOO', 'FINMIND', 'TRADINGVIEW'];
-          const targets = ['AI_CLUSTER', 'BROKER', 'SCANNER'];
-          const s = sources[Math.floor(Math.random() * sources.length)];
-          const t = targets[Math.floor(Math.random() * targets.length)];
-          if (s !== t) {
-            state.handshake.packets.push({
-              from: s, to: t, color: '#2563eb', tag: 'SYNC', t: 0, speed: 0.016, bidirectional: false, ackSpawned: false
-            });
-          }
-        }
-      }, 2800);
+      // v3.19.0: Handshake packets are strictly driven by real 5m/1m scan, strategy, AI, and order events (no fake random pulses)
 
       // Register PWA Service Worker & capture install prompt (iOS/Android mobile app support)
       window.addEventListener('beforeinstallprompt', (e) => {
@@ -21038,8 +21161,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.18.0';
+      const CURRENT_VERSION = 'v3.19.0';
       const HISTORY = [
+        {
+          ver: 'v3.19.0',
+          items: [
+            '全面升級「SHL TW 交易判斷邏輯診斷交握網路」（SHL_DIAG_NET）：取代靜態裝飾節點，改為即看即所得 6 階段真實交易決策管線（① 多檔股票範圍選擇 → ② 5分K＋1分K 雙週期即時掃描 → ③ 偵測抓取多空方向 → ④ 所有策略綜合檢核 → ⑤ AI 價量確認 → ⑥ 買賣／現沖先賣實際下單查看）',
+            '支援多檔靈活選擇（自選股全部、目前群組、多方前 5 檔、空方前 5 檔、手動勾選多檔），點擊任一股票列即時檢視 5分K/1分K 數據、各策略通過／未達條件明細、AI 價量評分與下單單號，並可一鍵跳轉主圖表或即時順勢下單',
+            '後端新增 SQLite WAL 效能優化、版本化遷移表（schema_migrations）、decision_handshake_runs / decision_handshake_items 雙表與 5 組防慢查詢複合索引，並開放 /api/v1/diagnostics/handshake/{run,history,stats} 三支 REST API 支援前端歷史查詢與統計'
+          ]
+        },
         {
           ver: 'v3.18.0',
           items: [
@@ -22267,7 +22398,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
         if (cfg().autoTrade) applyAuto();
       }
-      return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode, aiTechScore, placeLong, manageStops, onSyncApplied };
+      return { init, open, analyze, cfg, scanWatch, analyzeOne, refreshRank, refreshTrend, fetchBars, fetchRt, flowOf, srcMode, aiTechScore, evalMinuteKPriceVolume, placeLong, placeShort, manageStops, onSyncApplied, getLastRank: () => lastRank };
     })();
 
     // =========================================================================
@@ -22836,6 +22967,556 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
     };
 
+    // =========================================================================
+    // v3.19.0 交易判斷邏輯診斷交握網路引擎 (window.SHL_DIAG_NET)
+    // - 多檔範圍自選（全部自選 / 群組 / 多方前5 / 空方前5 / 手動多選）
+    // - 5分K + 1分K 雙週期實時掃描 -> 方向偵測 -> 全策略診斷 -> AI 價量確認 -> 實際下單查看
+    // - 自動同步寫入與查詢後端 SQLite 診斷紀錄 (/api/v1/diagnostics/handshake/*)
+    // =========================================================================
+    window.SHL_DIAG_NET = (function createDiagHandshakeNet() {
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => (typeof escapeHtml === 'function' ? escapeHtml(String(s ?? '')) : String(s ?? ''));
+      const fx = (v, d = 2) => (v == null || !isFinite(v) ? '—' : Number(v).toFixed(d));
+
+      let running = false;
+      let customSelected = new Set();
+      let lastResults = [];
+      let focusedSym = '';
+
+      function getCandidatePool() {
+        const pool = new Set((state.watchlist || []).map(w => w.symbol));
+        const lr = window.SHL_WAR && typeof window.SHL_WAR.getLastRank === 'function' ? window.SHL_WAR.getLastRank() : null;
+        if (lr && Array.isArray(lr.bull)) lr.bull.slice(0, 5).forEach(x => pool.add(x.symbol));
+        if (lr && Array.isArray(lr.bear)) lr.bear.slice(0, 5).forEach(x => pool.add(x.symbol));
+        return Array.from(pool);
+      }
+
+      function resolveSelectedSymbols() {
+        const mode = $('diagScopeSelect')?.value || 'watchlist';
+        const lr = window.SHL_WAR && typeof window.SHL_WAR.getLastRank === 'function' ? window.SHL_WAR.getLastRank() : null;
+        let list = [];
+        if (mode === 'watchlist') {
+          list = (state.watchlist || []).map(w => w.symbol).slice(0, 12);
+        } else if (mode === 'group') {
+          const grpId = state.ext?.activeGroupId || 'all';
+          const grp = (state.ext?.groups || []).find(g => g.id === grpId);
+          list = (grp && Array.isArray(grp.symbols) && grp.symbols.length ? grp.symbols : (state.watchlist || []).map(w => w.symbol)).slice(0, 12);
+        } else if (mode === 'top_bull') {
+          list = (lr && Array.isArray(lr.bull) && lr.bull.length)
+            ? lr.bull.slice(0, 5).map(x => x.symbol)
+            : (state.watchlist || []).map(w => w.symbol).slice(0, 5);
+        } else if (mode === 'top_bear') {
+          list = (lr && Array.isArray(lr.bear) && lr.bear.length)
+            ? lr.bear.slice(0, 5).map(x => x.symbol)
+            : (state.watchlist || []).map(w => w.symbol).slice(0, 5);
+        } else {
+          if (customSelected.size === 0) {
+            (state.watchlist || []).slice(0, 5).forEach(w => customSelected.add(w.symbol));
+          }
+          list = Array.from(customSelected).slice(0, 12);
+        }
+        return Array.from(new Set(list.filter(Boolean)));
+      }
+
+      function renderChips() {
+        const box = $('diagStockChips');
+        if (!box) return;
+        const mode = $('diagScopeSelect')?.value || 'watchlist';
+        const selected = resolveSelectedSymbols();
+        const selSet = new Set(selected);
+        const pool = mode === 'custom' ? getCandidatePool() : selected;
+        const cntBadge = $('diagScopeCountBadge');
+        if (cntBadge) cntBadge.textContent = `已選 ${selected.length} 檔`;
+        const stScope = $('diagStScope');
+        if (stScope) stScope.textContent = `${selected.length} 檔就緒`;
+
+        const bySym = {};
+        lastResults.forEach(r => { bySym[r.symbol] = r; });
+
+        box.innerHTML = pool.map(sym => {
+          const meta = getStockMeta(sym);
+          const r = bySym[sym];
+          const isSel = selSet.has(sym);
+          const isFoc = focusedSym === sym;
+          const dirIcon = r ? (r.direction === 'LONG' ? '🔴' : (r.direction === 'SHORT' ? '🟢' : '⚪')) : '';
+          const pxTxt = r && r.price ? ` ${fx(r.price, 1)}` : (state.quotes[sym]?.price ? ` ${fx(state.quotes[sym].price, 1)}` : '');
+          return `<button type="button" class="diag-chip ${isSel ? 'is-selected' : ''} ${isFoc ? 'is-active' : ''}" data-diag-chip="${esc(sym)}" aria-pressed="${isSel}">
+            <span>${dirIcon}${esc(sym)}</span>
+            <span style="font-weight:500;opacity:0.85;">${esc(meta?.name || '')}${pxTxt}</span>
+          </button>`;
+        }).join('') || '<span style="font-size:12px;color:#64748b;">尚無自選股，請先新增自選標的。</span>';
+
+        box.querySelectorAll('[data-diag-chip]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sym = btn.dataset.diagChip;
+            if (($('diagScopeSelect')?.value || 'watchlist') === 'custom') {
+              if (customSelected.has(sym)) customSelected.delete(sym);
+              else customSelected.add(sym);
+            }
+            focusedSym = sym;
+            renderChips();
+            const found = lastResults.find(x => x.symbol === sym);
+            if (found) renderFocusedInspector(found);
+          });
+        });
+      }
+
+      function setStageStatus(stageId, statusClass, text) {
+        const node = document.querySelector(`#diagStageFlow [data-diag-stage="${stageId}"]`);
+        if (node) {
+          node.classList.remove('st-running', 'st-ok', 'st-warn', 'st-err');
+          if (statusClass) node.classList.add(statusClass);
+        }
+        const map = { SCOPE: 'diagStScope', SCAN_5M_1M: 'diagStScan', DIRECTION: 'diagStDir', STRATEGIES: 'diagStStrat', AI_CONFIRM: 'diagStAi', ORDER_EXEC: 'diagStOrder' };
+        const el = $(map[stageId]);
+        if (el && text != null) el.textContent = text;
+      }
+
+      function renderFocusedInspector(r) {
+        const box = $('handshakeInspector');
+        if (!box || !r) return;
+        const dirBadge = r.direction === 'LONG'
+          ? '<span class="badge" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">🔴 多方趨勢</span>'
+          : (r.direction === 'SHORT'
+              ? '<span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;">🟢 空方（可現沖先賣）</span>'
+              : '<span class="badge badge-gray">⚪ 盤整觀望</span>');
+        const stratRows = (r.strategies || []).map(st => `
+          <div style="display:flex;justify-content:space-between;gap:6px;font-size:11.5px;padding:3px 0;border-bottom:1px dashed #e2e8f0;">
+            <span style="font-weight:700;color:#1e293b;">${st.pass ? '✅' : '▫️'} ${esc(st.name)}</span>
+            <span style="color:${st.pass ? '#15803d' : '#64748b'};text-align:right;">${esc(st.detail)}</span>
+          </div>
+        `).join('');
+
+        box.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+            <div>
+              <div style="font-size:10.5px;color:#64748b;font-weight:700;">個股交易邏輯診斷明細</div>
+              <div style="font-size:15px;font-weight:900;color:#0f172a;">${esc(r.symbol)} ${esc(r.stock_name)} · <span class="mono">${fx(r.price)}</span></div>
+            </div>
+            ${dirBadge}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;font-size:11px;">
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px;">
+              <div style="color:#64748b;">5分K 掃描</div>
+              <div class="mono" style="font-weight:800;color:#0f172a;">${r.bar_5m?.count || 0} 根 · ${esc(r.bar_5m?.trend || '—')}</div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px;">
+              <div style="color:#64748b;">1分K 掃描</div>
+              <div class="mono" style="font-weight:800;color:#0f172a;">${r.bar_1m?.count || 0} 根 · 量比 ${fx(r.bar_1m?.vol_ratio, 1)}x</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;margin-bottom:8px;">
+            <div style="font-size:11px;font-weight:800;color:#334155;margin-bottom:4px;">④ 所有策略判斷檢核</div>
+            ${stratRows}
+          </div>
+          <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:7px 8px;margin-bottom:8px;font-size:11.5px;">
+            <div style="font-weight:800;color:#3730a3;">⑤ AI 價量確認：${r.ai_score}/100（${esc(r.ai_verdict)}）</div>
+            <div style="color:#4338ca;margin-top:2px;">${esc(r.ai_reason)}</div>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:7px 8px;margin-bottom:8px;font-size:11.5px;">
+            <div style="font-weight:800;color:#0f172a;">⑥ 決策與下單：${esc(r.final_action_label)}</div>
+            <div style="color:#475569;margin-top:2px;">${esc(r.order_msg || '尚未送出委託')}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btnDiagViewChart" class="btn btn-sm" style="flex:1;">📈 切換主圖表</button>
+            ${r.bestSig ? `<button type="button" id="btnDiagExecNow" class="btn btn-sm btn-primary" style="flex:1;">⚡ ${r.bestSig.dir > 0 ? '立即順勢買入' : '立即現沖先賣'}</button>` : ''}
+          </div>
+        `;
+
+        $('btnDiagViewChart')?.addEventListener('click', () => {
+          if (typeof selectActiveStock === 'function') selectActiveStock(r.symbol);
+          document.getElementById('rawPriceChart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        $('btnDiagExecNow')?.addEventListener('click', async () => {
+          await executeDiagnosticSignal(r);
+          renderMatrix();
+          renderFocusedInspector(r);
+        });
+      }
+
+      async function executeDiagnosticSignal(r) {
+        if (!r || !r.bestSig || !r.price) return false;
+        const beforeLen = (state.orders || []).length;
+        let ok = false;
+        if (r.bestSig.dir > 0) {
+          ok = await window.SHL_WAR.placeLong(r.symbol, r.bestSig, r.price, 'DIAG_NET_BUY');
+        } else {
+          ok = await window.SHL_WAR.placeShort(r.symbol, r.bestSig, r.price, 'DIAG_NET_SHORT');
+        }
+        const newestOrd = (state.orders || []).length > beforeLen ? state.orders[0] : null;
+        if (ok) {
+          r.order_executed = 1;
+          r.order_id = newestOrd?.order_id || newestOrd?.id || 'EXEC_OK';
+          r.order_msg = `已實際送出${r.bestSig.dir > 0 ? '買入(多單)' : '現沖先賣(空單)'} @${fx(r.price)} · 單號 ${r.order_id}`;
+          triggerHandshake('CORE', 'BROKER', r.bestSig.dir > 0 ? '#dc2626' : '#059669', r.bestSig.dir > 0 ? 'BUY' : 'SHORT', true, 120, r.order_msg);
+        } else {
+          r.order_msg = '下單未成立（可能已持倉、非盤中時段、資金不足或缺少永豐 Token）';
+        }
+        return ok;
+      }
+
+      function renderMatrix() {
+        const tbody = $('diagMatrixBody');
+        if (!tbody) return;
+        if (!lastResults.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:18px;color:#64748b;">點擊上方「⚡ 執行 5分K＋1分K 診斷」即可同步掃描所選多檔股票。</td></tr>';
+          return;
+        }
+        tbody.innerHTML = lastResults.map(r => {
+          const isFoc = focusedSym === r.symbol;
+          const dirHtml = r.direction === 'LONG'
+            ? '<span style="color:#dc2626;font-weight:800;">🔴 多方</span>'
+            : (r.direction === 'SHORT'
+                ? '<span style="color:#059669;font-weight:800;">🟢 空方·現沖</span>'
+                : '<span style="color:#64748b;font-weight:700;">⚪ 盤整</span>');
+          const passCnt = (r.strategies || []).filter(s => s.pass).length;
+          const totalCnt = (r.strategies || []).length;
+          const actBadge = r.order_executed
+            ? `<span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;">✓ 已下單 ${esc(r.order_id)}</span>`
+            : (r.final_action === 'BUY'
+                ? '<span class="badge" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">▲ 達標買入</span>'
+                : (r.final_action === 'SHORT_SELL'
+                    ? '<span class="badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">▼ 達標現沖先賣</span>'
+                    : '<span class="badge badge-gray">⏸ 觀望</span>'));
+          return `
+            <tr class="diag-row ${isFoc ? 'is-focused' : ''}" data-diag-row="${esc(r.symbol)}">
+              <td><strong class="mono">${esc(r.symbol)}</strong> ${esc(r.stock_name)}</td>
+              <td class="mono" style="font-weight:800;">${fx(r.price)} <span style="font-size:11px;color:${r.change_pct >= 0 ? '#dc2626' : '#059669'};">(${r.change_pct >= 0 ? '+' : ''}${fx(r.change_pct)}%)</span></td>
+              <td class="mono" style="font-size:11px;">5m:${r.bar_5m?.count || 0} / 1m:${r.bar_1m?.count || 0}</td>
+              <td>${dirHtml}</td>
+              <td style="font-size:11.5px;"><b>${passCnt}/${totalCnt}</b> 通過 · ${esc(r.primary_strat_note || '—')}</td>
+              <td style="font-size:11.5px;"><b>${r.ai_score}</b> (${esc(r.ai_verdict)})</td>
+              <td>${actBadge}<div style="font-size:10.5px;color:#475569;margin-top:2px;">${esc(r.order_msg || '')}</div></td>
+              <td style="white-space:nowrap;">
+                <button type="button" class="btn btn-sm" data-diag-chart="${esc(r.symbol)}" style="padding:3px 7px;font-size:11px;">圖表</button>
+                ${r.bestSig && !r.order_executed ? `<button type="button" class="btn btn-sm btn-primary" data-diag-exec="${esc(r.symbol)}" style="padding:3px 7px;font-size:11px;">${r.bestSig.dir > 0 ? '買入' : '先賣'}</button>` : ''}
+              </td>
+            </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('[data-diag-row]').forEach(tr => {
+          tr.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            const sym = tr.dataset.diagRow;
+            focusedSym = sym;
+            renderChips();
+            renderMatrix();
+            const found = lastResults.find(x => x.symbol === sym);
+            if (found) renderFocusedInspector(found);
+          });
+        });
+        tbody.querySelectorAll('[data-diag-chart]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (typeof selectActiveStock === 'function') selectActiveStock(btn.dataset.diagChart);
+            document.getElementById('rawPriceChart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        });
+        tbody.querySelectorAll('[data-diag-exec]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const found = lastResults.find(x => x.symbol === btn.dataset.diagExec);
+            if (found) {
+              await executeDiagnosticSignal(found);
+              renderMatrix();
+              renderFocusedInspector(found);
+            }
+          });
+        });
+      }
+
+      async function runPipeline(silent = false) {
+        if (running) return;
+        if (!window.SHL_WAR) return;
+        const syms = resolveSelectedSymbols();
+        if (!syms.length) {
+          if (!silent) showToast('請先選擇股票', '目前範圍無股票可掃描，請先新增自選股。', 'warn');
+          return;
+        }
+        running = true;
+        const btn = $('btnRunDiagPipeline');
+        const stateBadge = $('diagPipelineStateBadge');
+        if (btn) btn.disabled = true;
+        if (stateBadge) { stateBadge.className = 'badge badge-amber'; stateBadge.textContent = `掃描診斷中 (${syms.length} 檔)...`; }
+
+        const tAll = performance.now();
+        const autoExec = Boolean($('diagAutoExecChk')?.checked);
+        const useCloudAi = Boolean($('diagUseCloudAiChk')?.checked);
+        const warCfg = window.SHL_WAR.cfg();
+
+        try {
+          // Stage 1: Scope
+          setStageStatus('SCOPE', 'st-ok', `已選 ${syms.length} 檔`);
+          setStageStatus('SCAN_5M_1M', 'st-running', '抓取 5分K＋1分K...');
+          triggerHandshake('SHIOAJI_PRO', 'CORE', '#dc2626', '5m+1m', true, 40, `掃描 ${syms.length} 檔真實 5分K/1分K`);
+
+          // Stage 2: Parallel Real-Time Quotes + 5m & 1m K-Bars
+          const tScan = performance.now();
+          const rt = await window.SHL_WAR.fetchRt(syms).catch(() => ({ quotes: {}, label: '官方實盤' }));
+          const perSymRaw = await Promise.all(syms.map(async (sym) => {
+            const ts0 = performance.now();
+            const [b5, b1] = await Promise.all([
+              window.SHL_WAR.fetchBars(sym, '5').catch(() => ({ candles: [] })),
+              window.SHL_WAR.fetchBars(sym, '1').catch(() => ({ candles: [] }))
+            ]);
+            return { sym, bars5: b5.candles || [], bars1: b1.candles || [], q: rt.quotes?.[sym] || state.quotes[sym] || {}, latencyMs: Math.round(performance.now() - ts0) };
+          }));
+          const scanMs = Math.round(performance.now() - tScan);
+          setStageStatus('SCAN_5M_1M', 'st-ok', `${syms.length} 檔完成 (${scanMs}ms)`);
+
+          // Stage 3 & 4: Direction + All Strategies
+          setStageStatus('DIRECTION', 'st-running', '判定多空方向...');
+          setStageStatus('STRATEGIES', 'st-running', '執行全策略檢核...');
+          triggerHandshake('SCANNER', 'CORE', '#0ea5e9', 'STRAT', true, scanMs, '5m/1m 方向與全策略診斷');
+
+          let longCnt = 0, shortCnt = 0, neutCnt = 0, buyCnt = 0, shortSigCnt = 0, execCnt = 0;
+          const diagItems = [];
+
+          for (const item of perSymRaw) {
+            const { sym, bars5, bars1, q, latencyMs } = item;
+            const meta = getStockMeta(sym);
+            const last5 = bars5.length ? bars5[bars5.length - 1] : null;
+            const last1 = bars1.length ? bars1[bars1.length - 1] : null;
+            const px = Number(q?.price || last1?.close || last5?.close || 0);
+            const chgPct = Number(q?.change_pct ?? q?.changePct ?? 0);
+
+            const a5 = bars5.length >= 30 ? window.SHL_WAR.analyze(bars5, warCfg, '5') : { now: null, vwap: px, ma50: px, trades: [], activeZones: [] };
+            const flow = window.SHL_WAR.flowOf(q, a5);
+            const sig1m = window.SHL_WAR.evalMinuteKPriceVolume(bars1, q, warCfg);
+            const sig5m = window.SHL_WAR.evalMinuteKPriceVolume(bars5, q, warCfg);
+            const ai = window.SHL_WAR.aiTechScore(bars5.length >= 8 ? bars5 : bars1, a5, flow);
+
+            // Direction detection (5m trend + 1m momentum)
+            const trend5 = last5 && a5.vwap ? (px >= a5.vwap ? '站上VWAP偏多' : '低於VWAP偏空') : '資料不足';
+            const vol1Avg = bars1.length >= 6 ? (bars1.slice(-6, -1).reduce((s, b) => s + Number(b.volume || 0), 0) / 5) : 0;
+            const vol1Ratio = vol1Avg > 0 ? (Number(last1?.volume || 0) / vol1Avg) : 1.0;
+
+            let direction = 'NEUTRAL';
+            const dirVotes = (sig1m ? sig1m.dir : 0) + (sig5m ? sig5m.dir : 0) + (a5.now ? a5.now.dir : 0) + (ai.score >= 60 ? 1 : (ai.score <= 40 ? -1 : 0));
+            if (dirVotes > 0) { direction = 'LONG'; longCnt++; }
+            else if (dirVotes < 0) { direction = 'SHORT'; shortCnt++; }
+            else { neutCnt++; }
+
+            const strategies = [
+              { name: 'SMC BOS+FVG (5分K)', pass: Boolean(a5.now && a5.now.taken), detail: a5.now ? `${a5.now.dir > 0 ? '多' : '空'} ${a5.now.why}` : '未達回測觸發點' },
+              { name: '1分K 價量順勢', pass: Boolean(sig1m), detail: sig1m ? sig1m.why : `未達突破（量比 ${fx(vol1Ratio, 1)}x）` },
+              { name: '5分K 價量順勢', pass: Boolean(sig5m), detail: sig5m ? sig5m.why : `5分K ${trend5}` },
+              { name: '大單 OF Delta', pass: flow.verdict !== '中性', detail: `${flow.verdict}（失衡 ${fx(flow.imb * 100, 1)}%）` }
+            ];
+
+            const bestSig = (a5.now && a5.now.taken) ? a5.now : (sig1m || sig5m || null);
+            const aiConfirms = bestSig
+              ? ((bestSig.dir > 0 && ai.score >= 52) || (bestSig.dir < 0 && ai.score <= 48))
+              : false;
+
+            let finalAction = 'HOLD';
+            let finalLabel = '觀望（未達買賣共振條件）';
+            let orderMsg = '等待 5分K/1分K 價量突破或跌破共振';
+            if (bestSig && aiConfirms) {
+              if (bestSig.dir > 0) {
+                finalAction = 'BUY';
+                finalLabel = '順勢買入（多單達標）';
+                orderMsg = autoExec ? '準備自動送出多單...' : '達標待執行（開啟自動下單或點右側買入）';
+                buyCnt++;
+              } else {
+                finalAction = 'SHORT_SELL';
+                finalLabel = '順勢現沖先賣（空單達標）';
+                orderMsg = autoExec ? '準備自動送出現沖先賣空單...' : '達標待執行（開啟自動下單或點右側先賣）';
+                shortSigCnt++;
+              }
+            } else if (bestSig && !aiConfirms) {
+              orderMsg = `策略觸發但 AI 價量評分 (${ai.score}) 未同向確認，暫緩進場`;
+            }
+
+            diagItems.push({
+              symbol: sym,
+              stock_name: meta?.name || q?.name || '',
+              price: px,
+              change_pct: chgPct,
+              bar_5m: { count: bars5.length, close: last5?.close || px, trend: trend5 },
+              bar_1m: { count: bars1.length, close: last1?.close || px, vol_ratio: vol1Ratio },
+              direction,
+              strategies,
+              primary_strat_note: bestSig ? bestSig.why.slice(0, 26) : trend5,
+              ai_score: ai.score,
+              ai_verdict: ai.bias,
+              ai_reason: (ai.tags || []).join(' / ') || '量價結構中性',
+              final_action: finalAction,
+              final_action_label: finalLabel,
+              bestSig: (bestSig && aiConfirms) ? bestSig : null,
+              order_executed: 0,
+              order_id: '',
+              order_msg: orderMsg,
+              latency_ms: latencyMs
+            });
+          }
+
+          setStageStatus('DIRECTION', 'st-ok', `多 ${longCnt} · 空 ${shortCnt} · 盤 ${neutCnt}`);
+          setStageStatus('STRATEGIES', (buyCnt + shortSigCnt) > 0 ? 'st-ok' : 'st-warn', `命中 ${buyCnt} 多 / ${shortSigCnt} 空`);
+
+          // Stage 5: AI Price-Volume Confirmation (Local Quant AI + optional Cloud AI check)
+          setStageStatus('AI_CONFIRM', 'st-running', 'AI 價量確認中...');
+          triggerHandshake('CORE', 'AI_CLUSTER', '#6366f1', 'AI-PV', true, 65, `AI 價量複核 ${diagItems.length} 檔`);
+          const apiBase = getApiBase();
+          if (useCloudAi && apiBase && (buyCnt + shortSigCnt) > 0) {
+            const topTargets = diagItems.filter(x => x.final_action !== 'HOLD').slice(0, 3);
+            try {
+              const resp = await fetch(`${apiBase}/api/v1/ai/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  focus_mode: 'MULTI_TARGETS',
+                  target_symbols: topTargets.map(t => t.symbol),
+                  multi_snapshots: topTargets.map(t => ({ symbol: t.symbol, stock_name: t.stock_name, price: t.price, change_pct: t.change_pct })),
+                  custom_prompt: '請依 5分K/1分K 價量方向簡短確認多空風險',
+                  models: getSelectedAiProviderIds(),
+                  api_keys: state.aiKeys || {},
+                  model_options: state.modelOptions || {}
+                })
+              });
+              if (resp.ok) {
+                const j = await resp.json();
+                const okModels = (j.results || []).filter(m => m.connected);
+                if (okModels.length > 0) {
+                  const summary = okModels.map(m => `${m.model}:${m.verdict}`).join(' / ');
+                  topTargets.forEach(t => { t.ai_reason += ` ｜ 雲端AI(${summary})`; });
+                }
+              }
+            } catch (e) {}
+          }
+          setStageStatus('AI_CONFIRM', 'st-ok', `確認 ${buyCnt + shortSigCnt} 檔達標`);
+
+          // Stage 6: Live Order Execution (when autoExec enabled)
+          setStageStatus('ORDER_EXEC', 'st-running', '檢核下單...');
+          if (autoExec) {
+            for (const r of diagItems) {
+              if (r.bestSig) {
+                const ok = await executeDiagnosticSignal(r);
+                if (ok) execCnt++;
+              }
+            }
+          }
+          setStageStatus('ORDER_EXEC', execCnt > 0 ? 'st-ok' : 'st-warn', execCnt > 0 ? `已成交 ${execCnt} 筆` : `達標 ${buyCnt + shortSigCnt} · 待下單`);
+
+          lastResults = diagItems;
+          if (!focusedSym || !diagItems.some(x => x.symbol === focusedSym)) {
+            focusedSym = (diagItems.find(x => x.final_action !== 'HOLD') || diagItems[0])?.symbol || '';
+          }
+          renderChips();
+          renderMatrix();
+          const focItem = diagItems.find(x => x.symbol === focusedSym);
+          if (focItem) renderFocusedInspector(focItem);
+
+          const totalMs = Math.round(performance.now() - tAll);
+          const metaEl = $('diagLastRunMeta');
+          if (metaEl) metaEl.textContent = `最近掃描 ${nowTwTime()} · ${syms.length} 檔 · ${totalMs}ms · 來源 ${rt.label || '永豐/官方實盤'}`;
+          if (stateBadge) { stateBadge.className = 'badge badge-teal'; stateBadge.textContent = `已完成 · 多${buyCnt} / 空${shortSigCnt} / 單${execCnt}`; }
+
+          // Persist diagnostic handshake run to SQLite backend
+          if (apiBase) {
+            fetch(`${apiBase}/api/v1/diagnostics/handshake/run`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                env_mode: state.envMode || 'SIM',
+                scope_type: $('diagScopeSelect')?.value || 'watchlist',
+                symbols: syms,
+                avg_latency_ms: totalMs,
+                items: diagItems.map(x => ({
+                  symbol: x.symbol,
+                  stock_name: x.stock_name,
+                  price: x.price,
+                  change_pct: x.change_pct,
+                  bar_5m: x.bar_5m,
+                  bar_1m: x.bar_1m,
+                  direction: x.direction,
+                  strategies: x.strategies,
+                  ai_score: x.ai_score,
+                  ai_verdict: x.ai_verdict,
+                  ai_reason: x.ai_reason,
+                  final_action: x.final_action,
+                  order_executed: Boolean(x.order_executed),
+                  order_id: x.order_id,
+                  order_msg: x.order_msg,
+                  latency_ms: x.latency_ms
+                }))
+              })
+            }).catch(() => {});
+          }
+        } catch (err) {
+          if (stateBadge) { stateBadge.className = 'badge badge-amber'; stateBadge.textContent = '診斷異常'; }
+          if (!silent) showToast('診斷交握異常', err?.message || String(err), 'warn');
+        } finally {
+          running = false;
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      async function loadHistory() {
+        const listEl = $('diagHistoryList');
+        const statsEl = $('diagHistoryStats');
+        const apiBase = getApiBase();
+        if (!apiBase) {
+          if (statsEl) statsEl.textContent = '尚未連線後端 server.py（連上後可查詢 SQLite 歷史診斷紀錄）';
+          if (listEl) listEl.innerHTML = '';
+          return;
+        }
+        const act = $('diagHistActionFilter')?.value || '';
+        try {
+          const [hResp, sResp] = await Promise.all([
+            fetch(`${apiBase}/api/v1/diagnostics/handshake/history?limit=25${act ? '&action=' + encodeURIComponent(act) : ''}`),
+            fetch(`${apiBase}/api/v1/diagnostics/handshake/stats`)
+          ]);
+          if (sResp.ok) {
+            const st = await sResp.json();
+            if (statsEl) {
+              statsEl.textContent = `累計掃描 ${st.total_runs || 0} 批次 / ${st.total_items || 0} 檔次 ｜ 達標買入 ${st.buy_signals || 0} ｜ 達標現沖先賣 ${st.short_signals || 0} ｜ 實際成交 ${st.executed_orders || 0} 筆 ｜ 平均耗時 ${fx(st.avg_latency_ms, 0)} ms`;
+            }
+          }
+          if (hResp.ok) {
+            const h = await hResp.json();
+            const items = h.items || [];
+            if (listEl) {
+              listEl.innerHTML = items.length ? items.map(it => `
+                <div style="display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-bottom:1px solid #e2e8f0;background:#fff;">
+                  <div><strong class="mono">${esc(it.symbol)}</strong> ${esc(it.stock_name)} @${fx(it.price)} · <b>${esc(it.direction)}</b> → <b>${esc(it.final_action)}</b> ${it.order_executed ? `<span style="color:#15803d;">(已下單 ${esc(it.order_id)})</span>` : ''}</div>
+                  <div class="mono" style="color:#64748b;white-space:nowrap;">AI:${it.ai_score} · ${esc(String(it.created_at || '').slice(5, 19))}</div>
+                </div>
+              `).join('') : '<div style="padding:10px;color:#64748b;">尚無符合條件的歷史診斷紀錄。</div>';
+            }
+          }
+        } catch (e) {
+          if (statsEl) statsEl.textContent = '查詢歷史診斷紀錄失敗';
+        }
+      }
+
+      function init() {
+        renderChips();
+        $('btnRunDiagPipeline')?.addEventListener('click', () => runPipeline(false));
+        $('diagScopeSelect')?.addEventListener('change', () => renderChips());
+        $('btnToggleDiagHistory')?.addEventListener('click', () => {
+          const w = $('diagHistoryWrap');
+          const b = $('btnToggleDiagHistory');
+          if (!w) return;
+          const open = w.style.display === 'none';
+          w.style.display = open ? 'block' : 'none';
+          if (b) b.setAttribute('aria-expanded', String(open));
+          if (open) loadHistory();
+        });
+        $('btnRefreshDiagHistory')?.addEventListener('click', loadHistory);
+        $('diagHistActionFilter')?.addEventListener('change', loadHistory);
+        document.querySelectorAll('#diagStageFlow [data-diag-stage]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!lastResults.length) runPipeline(false);
+            else if (focusedSym) {
+              const found = lastResults.find(x => x.symbol === focusedSym);
+              if (found) renderFocusedInspector(found);
+            }
+          });
+        });
+      }
+
+      return { init, runPipeline, renderChips, loadHistory, getLastResults: () => lastResults };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -22844,6 +23525,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_WAR) window.SHL_WAR.init();
       if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.init();
       if (window.SHL_SIGNALS) window.SHL_SIGNALS.init();
+      if (window.SHL_DIAG_NET) window.SHL_DIAG_NET.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {

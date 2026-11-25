@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.19.0 · 版本說明
+              v3.20.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2936,12 +2936,12 @@
         <!-- Multi-Stock Scope & Execution Control Bar -->
         <div class="diag-toolbar">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <label for="diagScopeSelect" style="font-size:12px;font-weight:800;color:#1e293b;">🎯 掃描股票範圍：</label>
-            <select id="diagScopeSelect" class="input" style="width:auto;min-width:155px;padding:5px 10px;font-size:12px;font-weight:700;" aria-label="選擇掃描股票範圍">
-              <option value="watchlist">自選股全部</option>
-              <option value="group">目前自選群組</option>
-              <option value="top_bull">強勢多方前 5 檔</option>
-              <option value="top_bear">弱勢空方前 5 檔</option>
+            <label for="diagScopeSelect" style="font-size:12px;font-weight:800;color:#1e293b;">🎯 掃描股票依據：</label>
+            <select id="diagScopeSelect" class="input" style="width:auto;min-width:190px;padding:5px 10px;font-size:12px;font-weight:700;" aria-label="選擇掃描股票依據">
+              <option value="market_all">全市場（含 ETF 排行）</option>
+              <option value="stocks_only">全個股（不含 ETF）</option>
+              <option value="sectors12_watch">12 大產業鏈 ＋ 自選股</option>
+              <option value="watchlist" selected>自選股</option>
               <option value="custom">手動勾選多檔</option>
             </select>
             <span id="diagScopeCountBadge" class="badge badge-blue mono">已選 0 檔</span>
@@ -2953,6 +2953,7 @@
               <input id="diagUseCloudAiChk" type="checkbox" />
               <span>🧠 串接雲端 AI 價量複核</span>
             </label>
+            <button id="btnDiagPushNotify" type="button" class="btn btn-sm btn-teal" style="padding:4px 10px;font-size:11.5px;">📨 推播 LINE / TG</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:#475569;">
             <span id="diagLastRunMeta" class="mono">尚未執行掃描</span>
@@ -3057,6 +3058,9 @@
             <button type="button" id="btnAtScanNow" class="btn btn-sm" style="background:#1e293b;color:#38bdf8;border-color:#334155;">⚡ 立即掃描一輪</button>
             <button type="button" id="btnAtSwitchEnv" class="btn btn-sm" style="background:#1e293b;color:#fde68a;border-color:#334155;">切換 SIM / LIVE</button>
             <button type="button" id="btnAtOpenWarModal" class="btn btn-sm" style="background:#7f1d1d;color:#fecaca;border-color:#b91c1c;">⚔️ 策略與止損參數</button>
+            <button type="button" id="btnAtResetSim" class="btn btn-sm" style="background:#1e293b;color:#cbd5e1;border-color:#334155;">重設模擬盤</button>
+            <button type="button" id="btnAtExportCsv" class="btn btn-sm" style="background:#1e293b;color:#93c5fd;border-color:#334155;">匯出 CSV</button>
+            <button type="button" id="btnAtSendReview" class="btn btn-sm" style="background:#1d4ed8;color:#fff;border-color:#2563eb;">送往對帳復盤</button>
           </div>
         </div>
         <div class="card-body" style="padding:12px 14px;">
@@ -3484,6 +3488,8 @@
         </div>
       </article>
 
+      <!-- v3.20.0: Duplicate scanner & positions/orders cards consolidated into #diagHandshakeCard & #autoTradeWarDashboard (DOM IDs retained hidden for zero-error compatibility) -->
+      <div id="legacyConsolidatedTables" style="display:none;" aria-hidden="true">
       <!-- 5. Auto-Signal Scanner Table (Always Code + Traditional Chinese Name) -->
       <article class="card">
         <div class="card-header">
@@ -3621,6 +3627,7 @@
           </div>
         </article>
       </div>
+      </div><!-- /#legacyConsolidatedTables -->
 
       <!-- ==================== ABOUT SHL TW: FEATURES, WORKFLOW & DATA SOURCES (Chengwaye-Style Structured Overview) ==================== -->
       <section class="shl-about-section" aria-label="關於 SHL TW 與平台說明">
@@ -6547,16 +6554,16 @@
     function computeHandshakeLayout(w, h) {
       const compact = w < 640;
       const leftIds = [
-        { id: 'SHIOAJI_PRO', label: '永豐金 Shioaji Pro', sub: '盤中即時報價 / K線', color: '#dc2626' },
-        { id: 'FINMIND', label: 'FinMind v4 (盤後)', sub: '盤後歷史 / 名稱輔助', color: '#2563eb' },
-        { id: 'TRADINGVIEW', label: 'TradingView', sub: '進階線圖 / Webhook', color: '#0f172a' },
-        { id: 'SCANNER', label: '台股訊號引擎', sub: '永豐 21 指標 / 掃描', color: '#0d9488' }
+        { id: 'SHIOAJI_PRO', label: '① 永豐／實盤報價', sub: '全市場 / 個股 / 自選母體', color: '#dc2626' },
+        { id: 'FINMIND', label: '② 5分K 趨勢掃描', sub: 'VWAP · EMA · SMC 結構', color: '#2563eb' },
+        { id: 'TRADINGVIEW', label: '② 1分K 價量動能', sub: '突破 / 跌破 · 爆量比', color: '#0f172a' },
+        { id: 'SCANNER', label: '③ 偵測抓取方向', sub: '多方 / 空方(現沖) / 盤整', color: '#0d9488' }
       ];
       const rightIds = [
-        { id: 'AI_CLUSTER', label: 'AI 六模型 & 多Agent', sub: 'Groq·Ollama·Grok·GPT', color: '#4f46e5' },
-        { id: 'LINE_BOT', label: 'LINE Bot 推播', sub: '條列代號+中文名稱', color: '#16a34a' },
-        { id: 'TG_BOT', label: 'Telegram Bot', sub: '即時訊號頻道推播', color: '#0284c7' },
-        { id: 'BROKER', label: '永豐金 Shioaji', sub: state.envMode === 'LIVE' ? '真實下單 LIVE' : '模擬下單 SIM', color: state.envMode === 'LIVE' ? '#dc2626' : '#d97706' }
+        { id: 'AI_CLUSTER', label: '④ 全策略綜合診斷', sub: 'SMC+FVG · 分K價量 · 大單', color: '#4f46e5' },
+        { id: 'LINE_BOT', label: '⑤ AI 價量確認', sub: '量化評分 + 雲端AI複核', color: '#16a34a' },
+        { id: 'TG_BOT', label: '⑤ 風控與現沖檢核', sub: 'SL/TP · 13:25 強制回補', color: '#0284c7' },
+        { id: 'BROKER', label: '⑥ 買賣→實際下單', sub: state.envMode === 'LIVE' ? '永豐實盤 LIVE 委託' : '模擬盤 SIM (含現沖先賣)', color: state.envMode === 'LIVE' ? '#dc2626' : '#d97706' }
       ];
 
       const nodes = [];
@@ -21161,8 +21168,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.19.0';
+      const CURRENT_VERSION = 'v3.20.0';
       const HISTORY = [
+        {
+          ver: 'v3.20.0',
+          items: [
+            '全面整合主頁重複的交易圖表與卡片：將重複出現的「台股真實行情自動訊號掃描」、「即時持倉與未實現損益」與「委託成交稽核紀錄」整併至「交易判斷邏輯診斷交握網路」與「自動交易實盤戰情室」，並於戰情室工具列整合重設模擬盤、匯出 CSV、送往對帳復盤與 LINE/TG 推播，主頁不再重複出現同類型表格',
+            '交握網路 Canvas 拓撲節點全面改版為真實 6 階段交易決策節點（①永豐/實盤報價 → ②5分K趨勢＋1分K價量 → ③多空方向偵測 → ④全策略診斷 → ⑤AI價量確認＋風控現沖 → ⑥買賣/現沖實際下單），徹底移除舊版裝飾節點',
+            '掃描股票依據全面對標盤中作戰室：提供「全市場（含 ETF 排行）」、「全個股（不含 ETF）」、「12 大產業鏈 ＋ 自選股」、「自選股」與「手動勾選多檔」，切換範圍即時從 /api/v1/market/rank 抓取真實母體名單'
+          ]
+        },
         {
           ver: 'v3.19.0',
           items: [
@@ -22980,35 +22995,85 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
       let running = false;
       let customSelected = new Set();
+      let universeCache = {}; // mode -> { ts, syms: [...] }
       let lastResults = [];
       let focusedSym = '';
 
       function getCandidatePool() {
         const pool = new Set((state.watchlist || []).map(w => w.symbol));
         const lr = window.SHL_WAR && typeof window.SHL_WAR.getLastRank === 'function' ? window.SHL_WAR.getLastRank() : null;
-        if (lr && Array.isArray(lr.bull)) lr.bull.slice(0, 5).forEach(x => pool.add(x.symbol));
-        if (lr && Array.isArray(lr.bear)) lr.bear.slice(0, 5).forEach(x => pool.add(x.symbol));
+        if (lr && Array.isArray(lr.bull)) lr.bull.slice(0, 6).forEach(x => pool.add(x.symbol));
+        if (lr && Array.isArray(lr.bear)) lr.bear.slice(0, 6).forEach(x => pool.add(x.symbol));
+        Object.values(universeCache).forEach(c => (c.syms || []).forEach(s => pool.add(s)));
         return Array.from(pool);
+      }
+
+      async function loadUniverseIfNeeded(mode, force = false) {
+        if (!['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) return resolveSelectedSymbols();
+        const cached = universeCache[mode];
+        if (!force && cached && (Date.now() - cached.ts) < 60000 && cached.syms.length > 0) {
+          return cached.syms;
+        }
+        const apiBase = getApiBase();
+        const watchSyms = (state.watchlist || []).map(w => w.symbol);
+        const chainSyms = Array.from(new Set([
+          ...watchSyms,
+          '2330', '2454', '2303', '3711', '2317', '2382', '3231', '2357',
+          '3037', '3189', '8046', '6213', '2308', '2345', '2881', '2882',
+          '2603', '2609', '2412', '3008', '2327', '2379', '3034', '6669'
+        ]));
+        const univParam = mode === 'stocks_only' ? 'stocks' : (mode === 'sectors12_watch' ? 'custom' : 'all');
+        let picked = [];
+        if (apiBase) {
+          try {
+            const url = `${apiBase}/api/v1/market/rank?universe=${encodeURIComponent(univParam)}&limit=10&min_value_m=100`
+              + (mode === 'sectors12_watch' ? `&symbols=${encodeURIComponent(chainSyms.join(','))}` : '');
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) {
+              const j = await resp.json();
+              const bullArr = j.bulls || j.bull || [];
+              const bearArr = j.bears || j.bear || [];
+              const bulls = bullArr.slice(0, 6).map(x => x.symbol);
+              const bears = bearArr.slice(0, 6).map(x => x.symbol);
+              picked = [...bulls, ...bears];
+              if (mode === 'sectors12_watch') picked = [...watchSyms.slice(0, 6), ...picked];
+              [...bullArr, ...bearArr].forEach(x => {
+                if (x && x.symbol && x.name && typeof registerDynamicStockMeta === 'function') {
+                  registerDynamicStockMeta(x.symbol, x.name, x.market || 'TWSE');
+                }
+              });
+            }
+          } catch (e) {}
+        }
+        if (!picked.length) {
+          const lr = window.SHL_WAR && typeof window.SHL_WAR.getLastRank === 'function' ? window.SHL_WAR.getLastRank() : null;
+          if (lr) {
+            const filterFn = mode === 'stocks_only' ? (x => !String(x.symbol || '').startsWith('00')) : (() => true);
+            const bA = (lr.bulls || lr.bull || []).filter(filterFn);
+            const dA = (lr.bears || lr.bear || []).filter(filterFn);
+            picked = [...bA.slice(0, 6).map(x => x.symbol), ...dA.slice(0, 6).map(x => x.symbol)];
+          }
+          if (mode === 'sectors12_watch' || !picked.length) {
+            picked = [...watchSyms, ...picked];
+          }
+        }
+        const unique = Array.from(new Set(picked.filter(Boolean))).slice(0, 12);
+        universeCache[mode] = { ts: Date.now(), syms: unique };
+        renderChips();
+        return unique;
       }
 
       function resolveSelectedSymbols() {
         const mode = $('diagScopeSelect')?.value || 'watchlist';
-        const lr = window.SHL_WAR && typeof window.SHL_WAR.getLastRank === 'function' ? window.SHL_WAR.getLastRank() : null;
         let list = [];
-        if (mode === 'watchlist') {
+        if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
+          if (universeCache[mode] && universeCache[mode].syms.length) {
+            list = universeCache[mode].syms;
+          } else {
+            list = (state.watchlist || []).map(w => w.symbol).slice(0, 12);
+          }
+        } else if (mode === 'watchlist') {
           list = (state.watchlist || []).map(w => w.symbol).slice(0, 12);
-        } else if (mode === 'group') {
-          const grpId = state.ext?.activeGroupId || 'all';
-          const grp = (state.ext?.groups || []).find(g => g.id === grpId);
-          list = (grp && Array.isArray(grp.symbols) && grp.symbols.length ? grp.symbols : (state.watchlist || []).map(w => w.symbol)).slice(0, 12);
-        } else if (mode === 'top_bull') {
-          list = (lr && Array.isArray(lr.bull) && lr.bull.length)
-            ? lr.bull.slice(0, 5).map(x => x.symbol)
-            : (state.watchlist || []).map(w => w.symbol).slice(0, 5);
-        } else if (mode === 'top_bear') {
-          list = (lr && Array.isArray(lr.bear) && lr.bear.length)
-            ? lr.bear.slice(0, 5).map(x => x.symbol)
-            : (state.watchlist || []).map(w => w.symbol).slice(0, 5);
         } else {
           if (customSelected.size === 0) {
             (state.watchlist || []).slice(0, 5).forEach(w => customSelected.add(w.symbol));
@@ -23226,7 +23291,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       async function runPipeline(silent = false) {
         if (running) return;
         if (!window.SHL_WAR) return;
-        const syms = resolveSelectedSymbols();
+        const scopeMode = $('diagScopeSelect')?.value || 'watchlist';
+        const syms = await loadUniverseIfNeeded(scopeMode, false);
         if (!syms.length) {
           if (!silent) showToast('請先選擇股票', '目前範圍無股票可掃描，請先新增自選股。', 'warn');
           return;
@@ -23491,7 +23557,28 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       function init() {
         renderChips();
         $('btnRunDiagPipeline')?.addEventListener('click', () => runPipeline(false));
-        $('diagScopeSelect')?.addEventListener('change', () => renderChips());
+        $('diagScopeSelect')?.addEventListener('change', async () => {
+          const mode = $('diagScopeSelect')?.value || 'watchlist';
+          if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
+            const cntBadge = $('diagScopeCountBadge');
+            if (cntBadge) cntBadge.textContent = '載入母體中...';
+            await loadUniverseIfNeeded(mode, true);
+          } else {
+            renderChips();
+          }
+        });
+        $('btnDiagPushNotify')?.addEventListener('click', () => {
+          document.getElementById('btnPushBatchSignals')?.click();
+        });
+        $('btnAtResetSim')?.addEventListener('click', () => {
+          document.getElementById('btnResetSimAcct')?.click();
+        });
+        $('btnAtExportCsv')?.addEventListener('click', () => {
+          document.getElementById('btnExportOrdersCsv')?.click();
+        });
+        $('btnAtSendReview')?.addEventListener('click', () => {
+          document.getElementById('btnSendOrdersToReview')?.click();
+        });
         $('btnToggleDiagHistory')?.addEventListener('click', () => {
           const w = $('diagHistoryWrap');
           const b = $('btnToggleDiagHistory');

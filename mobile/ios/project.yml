@@ -21,8 +21,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.synapsetw.ios
         PRODUCT_NAME: SynapseTW
-        MARKETING_VERSION: "3.19.0"
-        CURRENT_PROJECT_VERSION: "3190"
+        MARKETING_VERSION: "3.20.0"
+        CURRENT_PROJECT_VERSION: "3200"
         INFOPLIST_FILE: SynapseTW/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.0"

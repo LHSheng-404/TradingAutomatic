@@ -2640,7 +2640,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.20.0 · 版本說明
+              v3.21.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3022,6 +3022,44 @@
                 <tr><td colspan="8" style="text-align:center;padding:18px;color:#64748b;">點擊上方「⚡ 執行 5分K＋1分K 診斷」即可同步掃描所選多檔股票並逐階段呈現真實判斷狀況。</td></tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- v3.21.0: 30 組盤中策略確定性統計 + 免費 System One 影子決策排行榜 (Zero-Cost $0 Guarantee) -->
+          <div id="strat30Box" style="border:1px solid #c7d2fe;border-radius:10px;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#1e1b4b;color:#f8fafc;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <strong style="font-size:13px;">⚡ 30 組盤中策略統計 × System One 影子決策</strong>
+                <span class="badge" style="background:#14532d;color:#86efac;border:1px solid #22c55e;font-size:10.5px;">💰 免費模式 $0（嚴格零收費）</span>
+                <span class="badge" style="background:#312e81;color:#c7d2fe;border:1px solid #6366f1;font-size:10.5px;">👻 影子模式 · 不繞過硬風控</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <a href="https://github.com/jarrodwatts/jev-trader" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">jev-trader</a>
+                <a href="https://jevai.dev/zh-Hant/playground/" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">jevai.dev</a>
+                <button id="btnRunStrat30" type="button" class="btn btn-sm" style="background:#4f46e5;color:#fff;border-color:#6366f1;font-weight:800;padding:4px 10px;">⚡ 執行 30 組策略高速統計</button>
+              </div>
+            </div>
+            <div id="strat30MetaBar" class="mono" style="padding:6px 12px;font-size:11px;color:#475569;background:#eef2ff;border-bottom:1px solid #c7d2fe;">
+              5 獨立群組（趨勢/突破/均值回歸/量價/事件 × 各6組 = 30組）· 確定性計數與加權分數 · 硬風控優先 · 費用 $0.00
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="diag-matrix-table" aria-label="30組盤中策略統計與System One決策排行榜">
+                <thead>
+                  <tr>
+                    <th>排名 / 標的</th>
+                    <th>覆蓋</th>
+                    <th>多 / 空 / 中（比）</th>
+                    <th>加權分</th>
+                    <th>5 群組一致性</th>
+                    <th>硬風控阻擋</th>
+                    <th>System One 品質 / 級別</th>
+                    <th>耗時</th>
+                  </tr>
+                </thead>
+                <tbody id="strat30Body">
+                  <tr><td colspan="8" style="text-align:center;padding:14px;color:#64748b;">點擊「⚡ 執行 30 組策略高速統計」或執行上方全鏈路診斷，即可毫秒級產出 30 組策略排行榜與單行決策摘要（$0 免費）。</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- Collapsible Backend SQLite Diagnostic History & Stats -->
@@ -21168,8 +21206,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.20.0';
+      const CURRENT_VERSION = 'v3.21.0';
       const HISTORY = [
+        {
+          ver: 'v3.21.0',
+          items: [
+            '新增「30 組盤中策略確定性統計 × 免費 System One 影子決策引擎」（strategy30_engine.py，參考 jev-trader 與 jevai.dev）：5 獨立群組（趨勢／突破／均值回歸／量價／事件 × 各 6 組 = 30 組），嚴格執行 JSON 契約、版本化固定權重（w_v1.0.0）、多空比例／淨票數／加權分數 (-1~+1) 與跨群組一致性計算',
+            '嚴格遵守 $0 免費原則與硬風控優先：預設 100% 採用本機免費 System One 影子分類器（$0.00、毫秒級耗時），絕不自動呼叫付費 API；覆蓋率 <24/30、多空衝突 ≥30%、流動性不足或波動熔斷時硬風控自動阻擋，分類器絕不可繞過風控或決定槓桿',
+            '新增 SQLite Migration v3（strategy30_audit_log ＋ 3 組防慢查詢複合索引）與 /api/v1/strategy30/{evaluate,audit} 端點，並直接整合 30 組策略排行榜與單行決策摘要於「交易判斷邏輯診斷交握網路」中'
+          ]
+        },
         {
           ver: 'v3.20.0',
           items: [
@@ -23476,6 +23522,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (metaEl) metaEl.textContent = `最近掃描 ${nowTwTime()} · ${syms.length} 檔 · ${totalMs}ms · 來源 ${rt.label || '永豐/官方實盤'}`;
           if (stateBadge) { stateBadge.className = 'badge badge-teal'; stateBadge.textContent = `已完成 · 多${buyCnt} / 空${shortSigCnt} / 單${execCnt}`; }
 
+          // v3.21.0: Auto-run 30-strategy deterministic statistics + free System One shadow classifier (reuses fetched 5m bars)
+          const bars5Map = {};
+          perSymRaw.forEach(it => { if (it.bars5 && it.bars5.length) bars5Map[it.sym] = it.bars5; });
+          runStrategy30(bars5Map, rt.quotes).catch(() => {});
+
           // Persist diagnostic handshake run to SQLite backend
           if (apiBase) {
             fetch(`${apiBase}/api/v1/diagnostics/handshake/run`, {
@@ -23554,9 +23605,115 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
+      function renderStrategy30(data) {
+        const tbody = $('strat30Body');
+        const metaBar = $('strat30MetaBar');
+        if (!tbody) return;
+        const rows = Array.isArray(data?.results) ? data.results : [];
+        if (metaBar && data) {
+          metaBar.textContent = `版本 ${data.weight_version || 'w_v1.0.0'} / ${data.prompt_version || 's1_v1.0.0'} ｜ 標的 ${rows.length} 檔 ｜ 總耗時 ${fx(data.total_latency_ms, 1)} ms ｜ 費用 $0.00（免費本機 System One 影子模式）`;
+        }
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:#64748b;">尚無 30 組策略評估資料。</td></tr>';
+          return;
+        }
+        const tierStyle = (t) => {
+          if (t === 'normal_candidate') return 'background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;';
+          if (t === 'small_candidate') return 'background:#fef3c7;color:#92400e;border:1px solid #fcd34d;';
+          if (t === 'review') return 'background:#e0e7ff;color:#3730a3;border:1px solid #a5b4fc;';
+          if (t === 'watch') return 'background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;';
+          return 'background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;';
+        };
+        const tierZh = {
+          normal_candidate: '正常部位候選',
+          small_candidate: '小部位候選',
+          review: '人工覆核',
+          watch: '觀察清單',
+          ignore: '忽略'
+        };
+        const qualZh = { clear: '清楚', mixed: '混合衝突', insufficient: '資料不足', blocked: '風控阻擋' };
+
+        tbody.innerHTML = rows.map((r, idx) => {
+          const mi = r.model_input || {};
+          const c = mi.counts || {};
+          const cov = mi.signal_coverage || {};
+          const dec = r.decision || {};
+          const blocks = mi.hard_blocks || [];
+          const ws = Number(mi.weighted_score || 0);
+          const wsCls = ws > 0.08 ? 'color:#dc2626;' : (ws < -0.08 ? 'color:#059669;' : 'color:#64748b;');
+          const grpEntries = Object.entries(mi.group_summary || {}).map(([g, v]) => {
+            const ic = v.direction === 'long' ? '▲' : (v.direction === 'short' ? '▼' : '·');
+            return `${g.slice(0, 3)}:${ic}`;
+          }).join(' ');
+          return `
+            <tr class="diag-row" data-s30-sym="${esc(r.symbol)}" title="${esc(r.one_line_summary || '')}">
+              <td><span class="mono" style="color:#64748b;margin-right:4px;">#${idx + 1}</span><strong class="mono">${esc(r.symbol)}</strong> ${esc(r.stock_name)}<div class="mono" style="font-size:10.5px;color:#475569;">@${fx(r.price)} (${r.change_pct >= 0 ? '+' : ''}${fx(r.change_pct)}%)</div></td>
+              <td class="mono"><b>${cov.valid || 0}</b>/${cov.total || 30}</td>
+              <td class="mono"><span style="color:#dc2626;">多${c.long || 0}</span> / <span style="color:#059669;">空${c.short || 0}</span> / 中${c.neutral || 0}<div style="font-size:10.5px;color:#475569;">多空比 ${fx((mi.long_short_ratio || 0) * 100, 0)}%</div></td>
+              <td class="mono" style="font-weight:900;${wsCls}">${ws >= 0 ? '+' : ''}${fx(ws, 2)}</td>
+              <td style="font-size:11px;"><b>${Math.round((mi.group_agreement || 0) * 100)}%</b> (${mi.aligned_groups || 0}組)<div class="mono" style="font-size:10px;color:#64748b;">${esc(grpEntries)}</div></td>
+              <td style="font-size:11px;">${blocks.length ? `<span style="color:#b91c1c;font-weight:700;">${esc(blocks.join(', '))}</span>` : '<span style="color:#15803d;font-weight:700;">✓ 通過</span>'}</td>
+              <td><span class="badge" style="${tierStyle(dec.action_tier)}">${esc(qualZh[dec.signal_quality] || dec.signal_quality)} · ${esc(tierZh[dec.action_tier] || dec.action_tier)}</span></td>
+              <td class="mono" style="font-size:11px;color:#64748b;">${fx(r.latency_ms, 1)}ms</td>
+            </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('[data-s30-sym]').forEach(tr => {
+          tr.addEventListener('click', () => {
+            const sym = tr.dataset.s30Sym;
+            if (typeof selectActiveStock === 'function') selectActiveStock(sym);
+          });
+        });
+      }
+
+      async function runStrategy30(prefetchedBarsMap = null, prefetchedQuotes = null) {
+        const apiBase = getApiBase();
+        const btn = $('btnRunStrat30');
+        const metaBar = $('strat30MetaBar');
+        const scopeMode = $('diagScopeSelect')?.value || 'watchlist';
+        const syms = await loadUniverseIfNeeded(scopeMode, false);
+        if (!syms.length) return;
+        if (!apiBase) {
+          if (metaBar) metaBar.textContent = '尚未連線後端 server.py（連上本機或 24H 雲端後端即可執行 30 組策略免費統計）';
+          return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ 計算 30 組策略中...'; }
+        try {
+          const stockNames = {};
+          const quotesPayload = {};
+          syms.forEach(s => {
+            const m = getStockMeta(s);
+            stockNames[s] = m?.name || '';
+            const q = (prefetchedQuotes && prefetchedQuotes[s]) || state.quotes[s];
+            if (q && q.price) quotesPayload[s] = { price: q.price, change_pct: q.change_pct ?? q.changePct ?? 0, volume: q.volume || 0, prev_close: q.prevClose || q.prev_close || 0 };
+          });
+          const resp = await fetch(`${apiBase}/api/v1/strategy30/evaluate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbols: syms,
+              interval: '5',
+              stock_names: stockNames,
+              quotes: quotesPayload,
+              candles_map: prefetchedBarsMap || {}
+            })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            renderStrategy30(data);
+            triggerHandshake('AI_CLUSTER', 'LINE_BOT', '#4f46e5', '30STRAT', true, Math.round(data.total_latency_ms || 10), `30組策略完成 ${data.count} 檔 ($0)`);
+          }
+        } catch (e) {
+          if (metaBar) metaBar.textContent = '30 組策略統計暫時無法連線後端';
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = '⚡ 執行 30 組策略高速統計'; }
+        }
+      }
+
       function init() {
         renderChips();
         $('btnRunDiagPipeline')?.addEventListener('click', () => runPipeline(false));
+        $('btnRunStrat30')?.addEventListener('click', () => runStrategy30());
         $('diagScopeSelect')?.addEventListener('change', async () => {
           const mode = $('diagScopeSelect')?.value || 'watchlist';
           if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
@@ -23601,7 +23758,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
       }
 
-      return { init, runPipeline, renderChips, loadHistory, getLastResults: () => lastResults };
+      return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults };
     })();
 
     document.addEventListener('DOMContentLoaded', () => {

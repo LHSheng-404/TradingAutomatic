@@ -37,6 +37,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
+from strategy30_engine import (
+    PROMPT_VERSION,
+    WEIGHT_VERSION,
+    evaluate_symbol_30,
+)
+
 if getattr(sys, "frozen", False):
     ASSET_DIR = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
     DATA_DIR = Path(sys.executable).resolve().parent
@@ -390,6 +396,44 @@ def init_db() -> None:
             (2, "decision_handshake_items", mig_ts),
         )
 
+    if 3 not in applied_versions:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS strategy30_audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                eval_id TEXT NOT NULL,
+                owner_id TEXT DEFAULT '',
+                symbol TEXT NOT NULL,
+                stock_name TEXT DEFAULT '',
+                price REAL DEFAULT 0,
+                change_pct REAL DEFAULT 0,
+                valid_count INTEGER DEFAULT 0,
+                long_count INTEGER DEFAULT 0,
+                short_count INTEGER DEFAULT 0,
+                neutral_count INTEGER DEFAULT 0,
+                weighted_score REAL DEFAULT 0,
+                group_agreement REAL DEFAULT 0,
+                overall_direction TEXT DEFAULT 'neutral',
+                hard_blocks_json TEXT DEFAULT '[]',
+                signal_quality TEXT DEFAULT 'insufficient',
+                action_tier TEXT DEFAULT 'ignore',
+                review_required INTEGER DEFAULT 0,
+                cost_usd REAL DEFAULT 0.0,
+                weight_version TEXT DEFAULT '',
+                prompt_version TEXT DEFAULT '',
+                one_line_summary TEXT DEFAULT '',
+                payload_json TEXT DEFAULT '{}',
+                latency_ms REAL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                ts_ms INTEGER NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (3, "strategy30_audit_log", mig_ts),
+        )
+
     # Composite indexes to prevent slow queries on owner/symbol/action/run lookups
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_dh_runs_owner_ts ON decision_handshake_runs(owner_id, ts_ms DESC)"
@@ -405,6 +449,15 @@ def init_db() -> None:
     )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_dh_items_owner_ts ON decision_handshake_items(owner_id, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_s30_sym_ts ON strategy30_audit_log(symbol, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_s30_tier_ts ON strategy30_audit_log(action_tier, ts_ms DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_s30_owner_ts ON strategy30_audit_log(owner_id, ts_ms DESC)"
     )
 
     conn.commit()
@@ -491,7 +544,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.20.0",
+    version="3.21.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -623,7 +676,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.20.0",
+        "version": "3.21.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -6048,6 +6101,387 @@ async def get_diagnostic_handshake_stats(request: Request):
             "avg_latency_ms": avg_latency_ms,
             "action_breakdown": action_breakdown,
             "top_symbols": top_symbols,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Strategy30 Deterministic Statistics & Free System One Shadow Decision API
+# ---------------------------------------------------------------------------
+class Strategy30EvalRequest(BaseModel):
+    symbols: list[str] = Field(default_factory=list)
+    interval: str = "5"
+    stock_names: dict[str, str] = Field(default_factory=dict)
+    quotes: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    candles_map: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+
+
+_S30_TIER_PRIORITY: dict[str, int] = {
+    "normal_candidate": 5,
+    "small_candidate": 4,
+    "review": 3,
+    "watch": 2,
+    "ignore": 1,
+}
+
+_S30_INTERVAL_MAP: dict[str, tuple[str, str]] = {
+    "1": ("1m", "1d"),
+    "1M": ("1m", "1d"),
+    "5": ("5m", "5d"),
+    "5M": ("5m", "5d"),
+    "15": ("15m", "5d"),
+    "15M": ("15m", "5d"),
+    "30": ("30m", "5d"),
+    "30M": ("30m", "5d"),
+    "60": ("60m", "1mo"),
+    "60M": ("60m", "1mo"),
+    "D": ("1d", "6mo"),
+    "1D": ("1d", "6mo"),
+}
+
+
+async def _s30_fetch_yahoo_intraday(sym: str, interval: str) -> tuple[list[dict[str, Any]], dict[str, Any], str]:
+    """Fetch real intraday K-bars & quote metadata from Yahoo Finance (.TW then .TWO)."""
+    iv_key = str(interval or "5").strip().upper()
+    y_iv, y_rng = _S30_INTERVAL_MAP.get(iv_key, ("5m", "5d"))
+    candidates = [
+        (f"{sym}.TW", "TW_TSE"),
+        (f"{sym}.TWO", "TW_OTC"),
+    ]
+    if sym.endswith(".TW") or sym.endswith(".TWO") or sym.startswith("^"):
+        candidates = [(sym, "TW_OTC" if sym.endswith(".TWO") else "TW_TSE")]
+
+    for yh_sym, mkt in candidates:
+        try:
+            data = await get_yahoo_market_data(yh_sym, interval=y_iv, range_str=y_rng)
+            candles = data.get("candles") if isinstance(data, dict) else None
+            if isinstance(candles, list) and candles:
+                px = float(data.get("price") or candles[-1].get("close") or 0.0)
+                prev_c = float(data.get("prev_close") or 0.0)
+                chg_pct = round(((px - prev_c) / prev_c * 100.0), 2) if (px > 0 and prev_c > 0) else 0.0
+                meta_quote = {
+                    "price": px,
+                    "prev_close": prev_c,
+                    "change_pct": chg_pct,
+                    "high": float(data.get("high") or px),
+                    "low": float(data.get("low") or px),
+                }
+                return candles, meta_quote, mkt
+        except Exception:
+            continue
+    return [], {}, "TW"
+
+
+@app.post("/api/v1/strategy30/evaluate")
+async def evaluate_strategy30_batch(req: Strategy30EvalRequest, request: Request):
+    """Evaluate up to 16 symbols across 30 deterministic intraday strategies + free System One shadow classifier."""
+    t_total = time.perf_counter()
+    owner_id = _diag_owner_from_request(request)
+    ts_ms = int(time.time() * 1000)
+    created_at = datetime.now(TW_TZ).isoformat(timespec="seconds")
+    eval_id = f"s30_{ts_ms}_{secrets.token_hex(4)}"
+
+    # Deduplicate and enforce max 16 symbols
+    clean_symbols: list[str] = []
+    seen_syms: set[str] = set()
+    for raw_sym in req.symbols or []:
+        s = str(raw_sym or "").strip().upper()
+        if s and s not in seen_syms:
+            seen_syms.add(s)
+            clean_symbols.append(s)
+            if len(clean_symbols) >= 16:
+                break
+
+    if not clean_symbols:
+        return JSONResponse(
+            {
+                "ok": True,
+                "eval_id": eval_id,
+                "count": 0,
+                "total_cost_usd": 0.0,
+                "shadow_mode": True,
+                "weight_version": WEIGHT_VERSION,
+                "prompt_version": PROMPT_VERSION,
+                "total_latency_ms": round((time.perf_counter() - t_total) * 1000.0, 2),
+                "results": [],
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+
+    names_norm = {str(k).strip().upper(): str(v or "").strip() for k, v in (req.stock_names or {}).items()}
+    quotes_norm = {str(k).strip().upper(): dict(v) for k, v in (req.quotes or {}).items() if isinstance(v, dict)}
+    candles_norm = {
+        str(k).strip().upper(): list(v)
+        for k, v in (req.candles_map or {}).items()
+        if isinstance(v, list)
+    }
+
+    need_bars = [s for s in clean_symbols if not candles_norm.get(s)]
+    need_quotes = [s for s in clean_symbols if not quotes_norm.get(s)]
+
+    async def _empty_mis() -> dict[str, dict[str, Any]]:
+        return {}
+
+    if need_quotes:
+        ex_channels: list[str] = []
+        for s in need_quotes:
+            base = s.split(".", 1)[0]
+            ex_channels.append(f"tse_{base}.tw")
+            ex_channels.append(f"otc_{base}.tw")
+        mis_task = asyncio.to_thread(_fetch_mis_batch_exact_sync, ex_channels)
+    else:
+        mis_task = _empty_mis()
+
+    bar_tasks = [_s30_fetch_yahoo_intraday(s, req.interval) for s in need_bars]
+    gathered = await asyncio.gather(mis_task, *bar_tasks, return_exceptions=True)
+
+    mis_map: dict[str, dict[str, Any]] = gathered[0] if isinstance(gathered[0], dict) else {}
+    fetched_bars: dict[str, tuple[list[dict[str, Any]], dict[str, Any], str]] = {}
+    for sym, res_item in zip(need_bars, gathered[1:]):
+        if isinstance(res_item, tuple) and len(res_item) == 3:
+            fetched_bars[sym] = res_item
+        else:
+            fetched_bars[sym] = ([], {}, "TW")
+
+    results: list[dict[str, Any]] = []
+    for sym in clean_symbols:
+        candles = candles_norm.get(sym)
+        meta_quote: dict[str, Any] = {}
+        market = "TW"
+        if not candles:
+            fb_candles, fb_meta, fb_mkt = fetched_bars.get(sym, ([], {}, "TW"))
+            candles = fb_candles
+            meta_quote = fb_meta
+            market = fb_mkt
+
+        quote = dict(quotes_norm.get(sym) or {})
+        if not quote:
+            base = sym.split(".", 1)[0]
+            mis_q = mis_map.get(base) or mis_map.get(sym) or {}
+            if mis_q:
+                quote = dict(mis_q)
+                if "volume" not in quote and mis_q.get("volume_lots") is not None:
+                    quote["volume"] = float(mis_q.get("volume_lots") or 0.0) * 1000.0
+            elif meta_quote:
+                quote = dict(meta_quote)
+
+        stock_name = names_norm.get(sym) or str(quote.get("stock_name") or quote.get("name") or sym)
+        res = evaluate_symbol_30(
+            symbol=sym,
+            stock_name=stock_name,
+            market=market,
+            candles=candles or [],
+            quote=quote,
+            kill_switch=KILL_SWITCH_ACTIVE,
+        )
+        results.append(res)
+
+    def _leaderboard_sort_key(item: dict[str, Any]) -> tuple[int, int, float]:
+        mi = item.get("model_input") or {}
+        dec = item.get("decision") or {}
+        has_block = 1 if (mi.get("hard_blocks") or []) else 0
+        tier_rank = _S30_TIER_PRIORITY.get(str(dec.get("action_tier") or "ignore"), 0)
+        w_score = abs(float(mi.get("weighted_score") or 0.0))
+        grp_agree = max(float(mi.get("group_agreement") or 0.0), 0.1)
+        return (has_block, -tier_rank, -(w_score * grp_agree))
+
+    results.sort(key=_leaderboard_sort_key)
+
+    # Batch-insert all rows into strategy30_audit_log in a single transaction
+    rows_to_insert: list[tuple[Any, ...]] = []
+    for item in results:
+        mi = item.get("model_input") or {}
+        dec = item.get("decision") or {}
+        cov = mi.get("signal_coverage") or {}
+        cnt = mi.get("counts") or {}
+        rows_to_insert.append(
+            (
+                eval_id,
+                owner_id,
+                str(item.get("symbol") or ""),
+                str(item.get("stock_name") or ""),
+                float(item.get("price") or 0.0),
+                float(item.get("change_pct") or 0.0),
+                int(cov.get("valid") or 0),
+                int(cnt.get("long") or 0),
+                int(cnt.get("short") or 0),
+                int(cnt.get("neutral") or 0),
+                float(mi.get("weighted_score") or 0.0),
+                float(mi.get("group_agreement") or 0.0),
+                str(item.get("overall_direction") or "neutral"),
+                _diag_json_dumps(mi.get("hard_blocks") or [], "[]"),
+                str(dec.get("signal_quality") or "insufficient"),
+                str(dec.get("action_tier") or "ignore"),
+                1 if dec.get("review_required") else 0,
+                float(dec.get("cost_usd") or 0.0),
+                str(item.get("weight_version") or WEIGHT_VERSION),
+                str(dec.get("prompt_version") or PROMPT_VERSION),
+                str(item.get("one_line_summary") or ""),
+                _diag_json_dumps(item, "{}"),
+                float(item.get("latency_ms") or 0.0),
+                created_at,
+                ts_ms,
+            )
+        )
+
+    if rows_to_insert:
+        conn = _diag_db_connect()
+        try:
+            with conn:
+                conn.executemany(
+                    """
+                    INSERT INTO strategy30_audit_log (
+                        eval_id, owner_id, symbol, stock_name, price, change_pct,
+                        valid_count, long_count, short_count, neutral_count,
+                        weighted_score, group_agreement, overall_direction,
+                        hard_blocks_json, signal_quality, action_tier,
+                        review_required, cost_usd, weight_version, prompt_version,
+                        one_line_summary, payload_json, latency_ms, created_at, ts_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    rows_to_insert,
+                )
+        finally:
+            conn.close()
+
+    total_latency_ms = round((time.perf_counter() - t_total) * 1000.0, 2)
+    return JSONResponse(
+        {
+            "ok": True,
+            "eval_id": eval_id,
+            "count": len(results),
+            "total_cost_usd": 0.0,
+            "shadow_mode": True,
+            "weight_version": WEIGHT_VERSION,
+            "prompt_version": PROMPT_VERSION,
+            "total_latency_ms": total_latency_ms,
+            "results": results,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/v1/strategy30/audit")
+async def get_strategy30_audit(
+    request: Request,
+    symbol: str = "",
+    action_tier: str = "",
+    limit: int = 30,
+):
+    """Query indexed strategy30_audit_log records and aggregate quality/risk statistics."""
+    sym_filter = str(symbol or "").strip().upper()
+    tier_filter = str(action_tier or "").strip()
+    owner_id = _diag_owner_from_request(request)
+    lim = max(1, min(100, int(limit or 30)))
+
+    where_clauses: list[str] = []
+    params: list[Any] = []
+    if sym_filter:
+        where_clauses.append("symbol = ?")
+        params.append(sym_filter)
+    if tier_filter:
+        where_clauses.append("action_tier = ?")
+        params.append(tier_filter)
+    if owner_id:
+        where_clauses.append("owner_id = ?")
+        params.append(owner_id)
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    conn = _diag_db_connect()
+    try:
+        rows = conn.execute(
+            f"""
+            SELECT
+                id, eval_id, owner_id, symbol, stock_name, price, change_pct,
+                valid_count, long_count, short_count, neutral_count,
+                weighted_score, group_agreement, overall_direction,
+                hard_blocks_json, signal_quality, action_tier,
+                review_required, cost_usd, weight_version, prompt_version,
+                one_line_summary, latency_ms, created_at, ts_ms
+            FROM strategy30_audit_log
+            {where_sql}
+            ORDER BY ts_ms DESC
+            LIMIT ?
+            """,
+            (*params, lim),
+        ).fetchall()
+
+        agg = conn.execute(
+            f"""
+            SELECT
+                COUNT(*) AS total,
+                AVG(valid_count / 30.0) AS avg_coverage,
+                SUM(CASE WHEN hard_blocks_json LIKE '%strategy_conflicted%' THEN 1 ELSE 0 END) AS conflict_cnt,
+                SUM(CASE WHEN hard_blocks_json IS NOT NULL AND hard_blocks_json != '' AND hard_blocks_json != '[]' THEN 1 ELSE 0 END) AS block_cnt
+            FROM strategy30_audit_log
+            {where_sql}
+            """,
+            tuple(params),
+        ).fetchone()
+
+        tier_rows = conn.execute(
+            f"""
+            SELECT action_tier, COUNT(*) AS cnt
+            FROM strategy30_audit_log
+            {where_sql}
+            GROUP BY action_tier
+            ORDER BY cnt DESC
+            """,
+            tuple(params),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    items = [
+        {
+            "id": int(r["id"]),
+            "eval_id": str(r["eval_id"]),
+            "owner_id": str(r["owner_id"] or ""),
+            "symbol": str(r["symbol"]),
+            "stock_name": str(r["stock_name"] or ""),
+            "price": float(r["price"] or 0.0),
+            "change_pct": float(r["change_pct"] or 0.0),
+            "valid_count": int(r["valid_count"] or 0),
+            "long_count": int(r["long_count"] or 0),
+            "short_count": int(r["short_count"] or 0),
+            "neutral_count": int(r["neutral_count"] or 0),
+            "weighted_score": float(r["weighted_score"] or 0.0),
+            "group_agreement": float(r["group_agreement"] or 0.0),
+            "overall_direction": str(r["overall_direction"] or "neutral"),
+            "hard_blocks": _diag_json_loads(r["hard_blocks_json"], []),
+            "signal_quality": str(r["signal_quality"] or "insufficient"),
+            "action_tier": str(r["action_tier"] or "ignore"),
+            "review_required": bool(r["review_required"]),
+            "cost_usd": float(r["cost_usd"] or 0.0),
+            "weight_version": str(r["weight_version"] or ""),
+            "prompt_version": str(r["prompt_version"] or ""),
+            "one_line_summary": str(r["one_line_summary"] or ""),
+            "latency_ms": float(r["latency_ms"] or 0.0),
+            "created_at": str(r["created_at"] or ""),
+            "ts_ms": int(r["ts_ms"] or 0),
+        }
+        for r in rows
+    ]
+
+    total = int(agg["total"] or 0) if agg else 0
+    avg_coverage = round(float(agg["avg_coverage"] or 0.0), 4) if (agg and total > 0) else 0.0
+    conflict_rate = round(float(agg["conflict_cnt"] or 0) / total, 4) if (agg and total > 0) else 0.0
+    block_rate = round(float(agg["block_cnt"] or 0) / total, 4) if (agg and total > 0) else 0.0
+    tier_breakdown = {str(r["action_tier"] or "unknown"): int(r["cnt"] or 0) for r in tier_rows}
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "items": items,
+            "stats": {
+                "total": total,
+                "avg_coverage": avg_coverage,
+                "conflict_rate": conflict_rate,
+                "block_rate": block_rate,
+                "tier_breakdown": tier_breakdown,
+            },
         },
         headers={"Cache-Control": "no-store"},
     )

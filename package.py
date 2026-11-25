@@ -43,6 +43,7 @@ PORTABLE_FILES = [
     "icons/apple-touch-icon-120.png",
     "mobile/termux-start.sh",
     "server.py",
+    "strategy30_engine.py",
     "launcher.py",
     "start.sh",
     "start.bat",

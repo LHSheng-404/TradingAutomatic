@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.29.0 · 版本說明
+              v3.29.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -20726,7 +20726,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         '4958': '臻鼎-KY', '2327': '國巨*', '3037': '欣興', '3189': '景碩', '8046': '南電',
         '2368': '金像電', '6213': '聯茂', '3324': '雙鴻', '2421': '建準', '6805': '富世達',
         '2345': '智邦', '2881': '富邦金', '2882': '國泰金', '2891': '中信金', '2886': '兆豐金',
-        '0050': '元大台灣50', '0056': '元大高股息', '00878': '國泰永續高股息', '00919': '群益台灣精選高息'
+        '0050': '元大台灣50', '0056': '元大高股息', '00878': '國泰永續高股息', '00919': '群益台灣精選高息',
+        '2379': '瑞昱', '2357': '華碩', '2603': '長榮', '2609': '陽明', '2412': '中華電',
+        '2615': '萬海', '2301': '光寶科', '2408': '南亞科', '2344': '華邦電', '3443': '創意', '3661': '世芯-KY', 'TXF': '台指期近月'
       };
       window.SHL_CHAINS_12 = SHIOAJI_CHAINS_12;
       window.SHL_CHAIN_ZH_NAMES = CHAIN_ZH_NAMES;
@@ -21862,8 +21864,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.29.0';
+      const CURRENT_VERSION = 'v3.29.1';
       const HISTORY = [
+        {
+          ver: 'v3.29.1',
+          items: [
+            '修復「12 大產業全景 39 檔 vs 掃描股票依據僅 26 檔」之母體不一致 Bug：修正 SHL_DIAG_NET.getAllChains12Symbols() 誤讀 c.stocks 欄位（正確應為 c.symbols）導致退回 24 檔備援名單的問題，並補齊 2379 瑞昱、2357 華碩、2603 長榮、2609 陽明、2412 中華電等中文名稱',
+            '建立 STEP 1 → STEP 5 單一真相來源（Single Source of Truth）：STEP 1 選股母體 N 檔（12鏈 39 ＋ 自選股）→ STEP 2 母體內取價 M/N 檔 → STEP 3 母體內評分 K/N 檔（明確區分偏多／偏空趨勢與達標買／賣數，並與交握網路頂部徽章 100% 同口徑）→ STEP 4 承接達標候選檔數與硬風控 → STEP 5 實盤成交筆數／持倉／損益同步連動'
+          ]
+        },
         {
           ver: 'v3.29.0',
           items: [
@@ -23963,7 +23972,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const chains = Array.isArray(window.SHL_CHAINS_12) ? window.SHL_CHAINS_12 : [];
         const zhMap = window.SHL_CHAIN_ZH_NAMES || {};
         chains.forEach(c => {
-          (c.stocks || []).forEach(s => {
+          const members = Array.isArray(c.symbols) ? c.symbols : (Array.isArray(c.stocks) ? c.stocks : []);
+          members.forEach(s => {
             if (s && !list.includes(s)) list.push(s);
             if (s && zhMap[s] && typeof registerDynamicStockMeta === 'function') {
               registerDynamicStockMeta(s, zhMap[s], 'TWSE');
@@ -23971,7 +23981,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           });
         });
         if (!list.length) {
-          return ['2330','2454','2303','3711','2317','2382','3231','2357','3037','3189','8046','6213','2308','2345','2881','2882','2603','2609','2412','3008','2327','2379','3034','6669'];
+          return ['2330','2454','3711','2303','3034','2382','2317','3231','6669','2356','3363','3163','4979','6442','3450','3131','6187','2308','3017','3008','4958','2327','3037','3189','8046','2368','6213','3324','2421','6805','2345','2881','2882','2891','2886','0050','0056','00878','00919'];
         }
         return list;
       }
@@ -23996,13 +24006,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const apiBase = getApiBase();
         const watchSyms = (state.watchlist || []).map(w => w.symbol).filter(Boolean);
         const chains12Syms = getAllChains12Symbols();
-        const sectors12All = Array.from(new Set([...watchSyms, ...chains12Syms]));
+        const sectors12All = Array.from(new Set([...chains12Syms, ...watchSyms]));
         const univParam = mode === 'stocks_only' ? 'stocks' : (mode === 'sectors12_watch' ? 'custom' : 'all');
-        const maxCount = mode === 'sectors12_watch' ? 60 : 50;
+        const maxCount = mode === 'sectors12_watch' ? Math.max(80, sectors12All.length) : 50;
         let picked = [];
         if (apiBase) {
           try {
-            const limitParam = mode === 'sectors12_watch' ? 60 : 25;
+            const limitParam = mode === 'sectors12_watch' ? maxCount : 25;
             const minVal = mode === 'sectors12_watch' ? 0 : 50;
             const url = `${apiBase}/api/v1/market/rank?universe=${encodeURIComponent(univParam)}&limit=${limitParam}&min_value_m=${minVal}`
               + (mode === 'sectors12_watch' ? `&symbols=${encodeURIComponent(sectors12All.join(','))}` : '');
@@ -24022,8 +24032,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               const bulls = bullArr.slice(0, 25).map(x => x.symbol);
               const bears = bearArr.slice(0, 25).map(x => x.symbol);
               if (mode === 'sectors12_watch') {
-                // 完整保留全部自選股 + 12 大產業鏈 39 檔（先排有即時動能者，其餘全數保留不截斷）
-                picked = [...bulls, ...bears, ...watchSyms, ...chains12Syms];
+                // 完整保留全部 12 大產業鏈 39 檔 + 全部自選股（先排有即時動能者，其餘全數保留絕不截斷）
+                picked = [...bulls, ...bears, ...chains12Syms, ...watchSyms];
               } else if (mode === 'market_all') {
                 // 全市場：真實排行（含 ETF）+ 補足 12 大產業鏈核心權值，確保遠超 12 筆且具備代號+中文名
                 picked = [...bulls, ...bears, ...chains12Syms];
@@ -24043,7 +24053,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             picked = [...bA.slice(0, 25).map(x => x.symbol), ...dA.slice(0, 25).map(x => x.symbol)];
           }
           if (mode === 'sectors12_watch') {
-            picked = [...watchSyms, ...chains12Syms, ...picked];
+            picked = [...chains12Syms, ...watchSyms, ...picked];
           } else if (mode === 'stocks_only') {
             picked = [...picked, ...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00'));
           } else {
@@ -24053,6 +24063,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const unique = Array.from(new Set(picked.filter(Boolean))).slice(0, maxCount);
         universeCache[mode] = { ts: Date.now(), syms: unique };
         renderChips();
+        if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
         return unique;
       }
 
@@ -24065,19 +24076,19 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (universeCache[mode] && universeCache[mode].syms.length) {
             list = universeCache[mode].syms;
           } else if (mode === 'sectors12_watch') {
-            list = [...watchSyms, ...chains12Syms].slice(0, 60);
+            list = [...chains12Syms, ...watchSyms];
           } else if (mode === 'stocks_only') {
             list = [...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00')).slice(0, 50);
           } else {
             list = [...chains12Syms, ...watchSyms].slice(0, 50);
           }
         } else if (mode === 'watchlist') {
-          list = watchSyms.slice(0, 60);
+          list = watchSyms.slice(0, 80);
         } else {
           if (customSelected.size === 0) {
             (state.watchlist || []).slice(0, 8).forEach(w => customSelected.add(w.symbol));
           }
-          list = Array.from(customSelected).slice(0, 60);
+          list = Array.from(customSelected).slice(0, 80);
         }
         return Array.from(new Set(list.filter(Boolean)));
       }
@@ -24479,7 +24490,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const totalMs = Math.round(performance.now() - tAll);
           const metaEl = $('diagLastRunMeta');
           if (metaEl) metaEl.textContent = `最近掃描 ${nowTwTime()} · ${syms.length} 檔 · ${totalMs}ms · 來源 ${rt.label || '永豐/官方實盤'}`;
-          if (stateBadge) { stateBadge.className = 'badge badge-teal'; stateBadge.textContent = `已完成 · 多${buyCnt} / 空${shortSigCnt} / 單${execCnt}`; }
+          if (stateBadge) {
+            stateBadge.className = 'badge badge-teal';
+            stateBadge.textContent = `已完成 ${diagItems.length} 檔 · 偏多${longCnt}/偏空${shortCnt} · 達標買${buyCnt}/賣${shortSigCnt} · 下單${execCnt}`;
+          }
+          if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
+          if (window.SHL_TRADE_HUD && typeof window.SHL_TRADE_HUD.updateSentiment === 'function') window.SHL_TRADE_HUD.updateSentiment();
 
           // v3.21.0: Auto-run 30-strategy deterministic statistics + free System One shadow classifier (reuses fetched 5m bars)
           const bars5Map = {};
@@ -24717,6 +24733,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           } else {
             renderChips();
           }
+          if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
         });
         $('btnDiagPushNotify')?.addEventListener('click', () => {
           document.getElementById('btnPushBatchSignals')?.click();
@@ -24752,7 +24769,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
       }
 
-      return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults };
+      return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults, getSelectedSymbols: resolveSelectedSymbols, getChains12Symbols: getAllChains12Symbols };
     })();
 
     function fmtSignedMoney(v) {
@@ -25308,13 +25325,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
 
       function render() {
+        // Single Source of Truth across STEP 1 -> STEP 5
         const wlCnt = (state.watchlist || []).length;
-        const chainsCnt = Array.isArray(window.SHL_CHAINS_12) ? window.SHL_CHAINS_12.length : 12;
+        const chains12Syms = (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getChains12Symbols === 'function')
+          ? window.SHL_DIAG_NET.getChains12Symbols()
+          : Array.from(new Set((window.SHL_CHAINS_12 || []).flatMap(c => c.symbols || c.stocks || [])));
+        const selectedSyms = (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getSelectedSymbols === 'function')
+          ? window.SHL_DIAG_NET.getSelectedSymbols()
+          : Array.from(new Set([...chains12Syms, ...(state.watchlist || []).map(w => w.symbol)]));
+        const univCnt = selectedSyms.length;
         const scopeLabel = $('diagScopeSelect')?.selectedOptions?.[0]?.textContent?.slice(0, 14) || '自選股';
-        if ($('tfcVal1')) $('tfcVal1').textContent = `${chainsCnt} 產業鏈 ＋ 自選 ${wlCnt} 檔`;
-        if ($('tfcSub1')) $('tfcSub1').textContent = `掃描依據：${scopeLabel}`;
-        if ($('tfcBadge1')) $('tfcBadge1').textContent = wlCnt > 0 ? '✅ 就緒' : '⚠ 待選';
-        setNodeClass('tfcNode1', wlCnt > 0 ? 'st-ok' : 'st-warn');
+        if ($('tfcVal1')) $('tfcVal1').textContent = `母體 ${univCnt} 檔（12鏈 ${chains12Syms.length} ＋ 自選 ${wlCnt}）`;
+        if ($('tfcSub1')) $('tfcSub1').textContent = `掃描依據：${scopeLabel} · 已對齊`;
+        if ($('tfcBadge1')) $('tfcBadge1').textContent = univCnt > 0 ? `✅ ${univCnt} 檔` : '⚠ 待選';
+        setNodeClass('tfcNode1', univCnt > 0 ? 'st-ok' : 'st-warn');
 
         const sjOk = Boolean(
           state.backendHealth?.shioaji_configured
@@ -25323,27 +25347,33 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           || (typeof hasValidShioajiToken === 'function' && hasValidShioajiToken())
           || (typeof hasValidSimToken === 'function' && hasValidSimToken())
         );
-        const syncedQuotes = Object.values(state.quotes || {}).filter(q => q && Number(q.price) > 0).length;
+        // STEP 2 strictly measures live quotes inside STEP 1's selectedSyms
+        const syncedInUniv = selectedSyms.filter(s => Number(state.quotes?.[s]?.price || 0) > 0).length;
         const lats = state.handshake?.latencies || [];
         const avgLat = lats.length ? Math.round(lats.reduce((a, b) => a + b, 0) / lats.length) : 0;
         if ($('tfcBadge2')) $('tfcBadge2').textContent = sjOk ? '🟢 永豐主連' : '🟡 輔助源';
-        if ($('tfcVal2')) $('tfcVal2').textContent = `${sjOk ? '永豐 API' : 'TWSE/FinMind'} · ${syncedQuotes} 檔實盤`;
+        if ($('tfcVal2')) $('tfcVal2').textContent = `${sjOk ? '永豐 API' : 'TWSE/FinMind'} · ${syncedInUniv}/${univCnt} 檔已取價`;
         if ($('tfcSub2')) $('tfcSub2').textContent = `5m/1m K ＋ 微結構${avgLat ? ' · ' + avgLat + 'ms' : ''}`;
-        setNodeClass('tfcNode2', sjOk ? 'st-ok' : 'st-warn');
+        setNodeClass('tfcNode2', (sjOk && syncedInUniv > 0) ? 'st-ok' : 'st-warn');
 
-        const diag = window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getLastResults === 'function' ? window.SHL_DIAG_NET.getLastResults() : [];
+        // STEP 3 strictly measures scored results inside STEP 1's selectedSyms
+        const univSet = new Set(selectedSyms);
+        const rawDiag = window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getLastResults === 'function' ? window.SHL_DIAG_NET.getLastResults() : [];
+        const diag = rawDiag.filter(x => x && univSet.has(x.symbol));
         const lCnt = diag.filter(x => x.direction === 'LONG').length;
         const sCnt = diag.filter(x => x.direction === 'SHORT').length;
         const buySig = diag.filter(x => x.final_action === 'BUY').length;
         const shortSig = diag.filter(x => x.final_action === 'SHORT_SELL').length;
+        const qualCnt = buySig + shortSig;
         const sentScore = Number($('qhudSentScore')?.textContent || 50);
-        if ($('tfcVal3')) $('tfcVal3').textContent = `情緒 ${sentScore} · 多 ${lCnt} / 空 ${sCnt}`;
-        if ($('tfcSub3')) $('tfcSub3').textContent = (buySig + shortSig) > 0 ? `達標：買 ${buySig} / 現沖賣 ${shortSig} · Jev $0` : '觀望等待共識 · Jev $0';
+        if ($('tfcVal3')) $('tfcVal3').textContent = `評分 ${diag.length}/${univCnt} · 偏多 ${lCnt} / 偏空 ${sCnt}`;
+        if ($('tfcSub3')) $('tfcSub3').textContent = qualCnt > 0 ? `達標：買 ${buySig} / 賣 ${shortSig} · 情緒 ${sentScore}` : `觀望（情緒 ${sentScore}）· Jev $0`;
         if ($('tfcBadge3')) {
-          $('tfcBadge3').textContent = buySig > shortSig ? '🔴 偏多訊號' : (shortSig > buySig ? '🟢 偏空現沖' : '⚪ 觀望');
+          $('tfcBadge3').textContent = buySig > shortSig ? `🔴 買訊 ${buySig}` : (shortSig > buySig ? `🟢 空訊 ${shortSig}` : '⚪ 觀望');
         }
         setNodeClass('tfcNode3', buySig > shortSig ? 'st-buy' : (shortSig > buySig ? 'st-sell' : ''));
 
+        // STEP 4 strictly evaluates STEP 3 qualifying signals against hard risk gates
         const positions = state.positions || [];
         const orders = state.orders || [];
         const baseCap = Math.max(10000, Number(state.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000));
@@ -25358,10 +25388,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const dailyHit = pnlPct <= -2.0;
         const blocked = Boolean(state.killSwitch || dailyHit);
         if ($('tfcBadge4')) $('tfcBadge4').textContent = state.killSwitch ? '🛑 已熔斷' : (dailyHit ? '🛑 日虧-2%' : '🛡️ 通過');
-        if ($('tfcVal4')) $('tfcVal4').textContent = `1,000股整張 · ${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`;
-        if ($('tfcSub4')) $('tfcSub4').textContent = blocked ? '硬風控阻擋開新倉！' : `本金 $${Math.round(baseCap).toLocaleString()} · 13:25 強平`;
+        if ($('tfcVal4')) $('tfcVal4').textContent = `候選 ${qualCnt} 檔 · 1,000股整張 · ${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`;
+        if ($('tfcSub4')) $('tfcSub4').textContent = blocked ? '硬風控阻擋開新倉！' : `本金 $${Math.round(baseCap).toLocaleString()} · 日虧-2% / 13:25強平`;
         setNodeClass('tfcNode4', blocked ? 'st-block' : 'st-ok');
 
+        // STEP 5 strictly reflects execution & active positions from STEP 4
         const latestOrd = orders[0] || null;
         const isAutoOn = window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.isAutoRunning === 'function' && window.SHL_AUTO_DASH.isAutoRunning();
         if ($('tfcBadge5')) {
@@ -25369,15 +25400,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             ? (latestOrd.side === 'BUY' ? '🔴 最新買進' : '🟢 最新賣出')
             : (isAutoOn ? '⚡ 自動運行' : '⏸ 待命');
         }
-        if ($('tfcVal5')) $('tfcVal5').textContent = `${state.envMode || 'SIM'} · 持倉 ${positions.length} 檔 · ${fmtSignedMoney(totalPnl)}`;
+        if ($('tfcVal5')) $('tfcVal5').textContent = `${state.envMode || 'SIM'} · 成交 ${orders.length} 筆 · 持倉 ${positions.length} 檔 · ${fmtSignedMoney(totalPnl)}`;
         if ($('tfcSub5')) {
           $('tfcSub5').textContent = latestOrd
             ? `${latestOrd.side === 'BUY' ? '買' : '賣'} ${latestOrd.symbol} ${latestOrd.qty}${latestOrd.unit || '張'} @${fmtNum(latestOrd.price, 1)}`
-            : '1R 保本 / Fib 0.382 移動停利';
+            : '三階棘輪 1R保本 / 1.5R鎖利 / 2R移動停利';
         }
         setNodeClass('tfcNode5', latestOrd ? (latestOrd.side === 'BUY' ? 'st-buy' : 'st-sell') : (isAutoOn ? 'st-ok' : ''));
 
-        if ($('tfcClockMeta')) $('tfcClockMeta').textContent = `流程同步 ${nowTwTime()} · 點擊任一步驟直達明細`;
+        if ($('tfcClockMeta')) $('tfcClockMeta').textContent = `流程同步 ${nowTwTime()} · STEP 1~5 單一母體對齊 (${univCnt} 檔)`;
       }
 
       function init() {

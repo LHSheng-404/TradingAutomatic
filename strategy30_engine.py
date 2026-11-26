@@ -730,6 +730,14 @@ def evaluate_symbol_30(
         f"SystemOne={decision['signal_quality']}/{decision['action_tier']}{blk_zh}"
     )
 
+    # Jev System One typed primitives: Choice (BUY/SHORT/HOLD), Score (-1..+1), Noul (actionable prob 0..1)
+    is_actionable_tier = decision["action_tier"] in ("small_candidate", "normal_candidate") and not hard_blocks
+    jev_choice = ("BUY" if overall_dir == "long" else ("SHORT" if overall_dir == "short" else "HOLD")) if is_actionable_tier else "HOLD"
+    jev_noul_prob = round(
+        float(decision["action_probs"].get("normal_candidate", 0.0)) + float(decision["action_probs"].get("small_candidate", 0.0)),
+        4,
+    )
+
     return {
         "symbol": symbol,
         "stock_name": stock_name,
@@ -741,6 +749,12 @@ def evaluate_symbol_30(
         "overall_direction": overall_dir,
         "model_input": model_input,
         "decision": decision,
+        "jev_primitives": {
+            "choice": jev_choice,
+            "score": weighted_score,
+            "noul_prob": jev_noul_prob,
+            "group_agreement": group_agreement,
+        },
         "one_line_summary": one_line_summary,
         "latency_ms": latency_ms,
         "signals_sample": signals[:10],

@@ -2770,7 +2770,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.24.0 · 版本說明
+              v3.25.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3209,21 +3209,75 @@
             </table>
           </div>
 
-          <!-- v3.21.0: 30 組盤中策略確定性統計 + 免費 System One 影子決策排行榜 (Zero-Cost $0 Guarantee) -->
+          <!-- v3.25.0: GrokBot2-Style Dedicated High-Efficiency Bot Matrix × Jev System One Visual Screener Chart -->
           <div id="strat30Box" style="border:1px solid #c7d2fe;border-radius:10px;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#1e1b4b;color:#f8fafc;">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <strong style="font-size:13px;">⚡ 30 組盤中策略統計 × System One 影子決策</strong>
+                <strong style="font-size:13px;">⚡ Jev System One 極速選股圖表 × 專責高效交易矩陣</strong>
                 <span class="badge" style="background:#14532d;color:#86efac;border:1px solid #22c55e;font-size:10.5px;">💰 免費模式 $0（嚴格零收費）</span>
-                <span class="badge" style="background:#312e81;color:#c7d2fe;border:1px solid #6366f1;font-size:10.5px;">👻 影子模式 · 不繞過硬風控</span>
                 <span id="strat30JevQuotaBadge" class="badge" style="background:#0f172a;color:#fde68a;border:1px solid #475569;font-size:10.5px;">🛡️ Jev 額度守衛：超額自動停用待更新</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#fde68a;font-weight:700;cursor:pointer;" title="每 15 秒自動以本機免費 Jev System One 高速重算所選標的並更新圖表（$0）">
+                  <input type="checkbox" id="chkJevFastPoll" />
+                  ⚡ 15 秒極速輪詢
+                </label>
                 <a href="https://github.com/jarrodwatts/jev-trader" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">jev-trader</a>
                 <a href="https://jevai.dev/zh-Hant/playground/" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">jevai.dev</a>
+                <a href="https://www.grokbot2.tech/#platforms" target="_blank" rel="noopener" style="color:#93c5fd;font-size:11px;text-decoration:underline;">grokbot2</a>
                 <button id="btnRunStrat30" type="button" class="btn btn-sm" style="background:#4f46e5;color:#fff;border-color:#6366f1;font-weight:800;padding:4px 10px;">⚡ 執行 30 組策略高速統計</button>
               </div>
             </div>
+
+            <!-- Dedicated Bot Platform Matrix (One Bot Per Role · High-Speed Shioaji Execution) -->
+            <div id="grokBotPlatformMatrix" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;padding:10px 12px;background:#0f172a;border-bottom:1px solid #1e293b;color:#f8fafc;">
+              <div style="background:rgba(30,41,59,0.85);border:1px solid rgba(239,68,68,0.35);border-radius:9px;padding:9px 11px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                  <strong style="font-size:12px;color:#fecaca;">🔴 台股多方順勢 Bot</strong>
+                  <label style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:#94a3b8;cursor:pointer;">
+                    <input type="checkbox" id="chkBotTwLong" checked /> 啟用
+                  </label>
+                </div>
+                <div class="mono" style="font-size:10.5px;color:#94a3b8;margin-top:3px;">平台：永豐 Shioaji API · 最低 1,000 股(1張)</div>
+                <div id="botLongStat" class="mono" style="font-size:11px;color:#f87171;font-weight:800;margin-top:4px;">候選 0 檔 · Jev Choice=BUY</div>
+              </div>
+              <div style="background:rgba(30,41,59,0.85);border:1px solid rgba(16,185,129,0.35);border-radius:9px;padding:9px 11px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                  <strong style="font-size:12px;color:#a7f3d0;">🟢 台股現沖先賣 Bot</strong>
+                  <label style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:#94a3b8;cursor:pointer;">
+                    <input type="checkbox" id="chkBotTwShort" checked /> 啟用
+                  </label>
+                </div>
+                <div class="mono" style="font-size:10.5px;color:#94a3b8;margin-top:3px;">平台：永豐 Shioaji API · 13:25 強制回補</div>
+                <div id="botShortStat" class="mono" style="font-size:11px;color:#34d399;font-weight:800;margin-top:4px;">候選 0 檔 · Jev Choice=SHORT</div>
+              </div>
+              <div style="background:rgba(30,41,59,0.85);border:1px solid rgba(56,189,248,0.35);border-radius:9px;padding:9px 11px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                  <strong style="font-size:12px;color:#bae6fd;">🛡️ 硬風控＆日虧損熔斷 Bot</strong>
+                  <span class="badge mono" style="background:#064e3b;color:#6ee7b7;border:1px solid #10b981;font-size:9.5px;">常駐守護</span>
+                </div>
+                <div class="mono" style="font-size:10.5px;color:#94a3b8;margin-top:3px;">規則：日虧 -2% 停機 · 嚴禁零股 · 費用 $0</div>
+                <div id="botRiskStat" class="mono" style="font-size:11px;color:#38bdf8;font-weight:800;margin-top:4px;">延遲 -- ms · 硬風控 0 檔阻擋</div>
+              </div>
+            </div>
+
+            <!-- Interactive Jev Fast Stock Screener Chart -->
+            <div id="jevScreenerChartBox" style="padding:10px 12px;background:#0b1220;border-bottom:1px solid #1e293b;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <strong style="font-size:12px;color:#e2e8f0;">📈 Jev 快速選股視覺化圖表（點擊標的直切主 K 線）</strong>
+                  <span id="jevChartHint" class="mono" style="font-size:10.5px;color:#94a3b8;">等待 30 組策略掃描...</span>
+                </div>
+                <div style="display:inline-flex;gap:4px;">
+                  <button type="button" id="btnJevChartBar" class="btn btn-sm" style="background:#4f46e5;color:#fff;border-color:#6366f1;font-size:11px;padding:3px 9px;">📊 多空強度排行</button>
+                  <button type="button" id="btnJevChartQuad" class="btn btn-sm" style="background:#1e293b;color:#cbd5e1;border-color:#334155;font-size:11px;padding:3px 9px;">🎯 四象限共識矩陣</button>
+                </div>
+              </div>
+              <div style="position:relative;width:100%;height:240px;border-radius:8px;background:#0f172a;border:1px solid rgba(148,163,184,0.16);overflow:hidden;">
+                <canvas id="jevScreenerCanvas" style="width:100%;height:100%;display:block;cursor:pointer;" aria-label="Jev 快速選股多空強度與四象限視覺化圖表"></canvas>
+              </div>
+            </div>
+
             <div id="strat30MetaBar" class="mono" style="padding:6px 12px;font-size:11px;color:#475569;background:#eef2ff;border-bottom:1px solid #c7d2fe;">
               5 獨立群組（趨勢/突破/均值回歸/量價/事件 × 各6組 = 30組）· 確定性計數與加權分數 · 硬風控優先 · 費用 $0.00
             </div>
@@ -21564,8 +21618,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.24.0';
+      const CURRENT_VERSION = 'v3.25.0';
       const HISTORY = [
+        {
+          ver: 'v3.25.0',
+          items: [
+            '新增「Jev System One 快速選股視覺化圖表」（#jevScreenerCanvas ＋ window.SHL_JEV_CHART）：支援「📊 多空強度排行圖（Divergence Bar）」與「🎯 一致性×強度四象限共識矩陣（Quadrant Scatter）」雙模式切換，點擊圖表任一標的立即跳轉主 K 線圖',
+            '參考 Grok Bot 2.0 專責分市場高效架構，新增「專責高效交易機器人矩陣（#grokBotPlatformMatrix）」：台股多方順勢 Bot、台股現沖先賣 Bot 與硬風控日虧損熔斷守護 Bot 三專責分工，各附即時候選檔數、延遲毫秒與獨立啟停開關',
+            '後端 strategy30_engine.py 補齊 Jev System One 標準型別化原語 jev_primitives（choice: BUY/SHORT/HOLD、score、noul_prob），並於前端新增「⚡ 15 秒極速輪詢」免費高速更新開關（嚴格 $0 零費用）'
+          ]
+        },
         {
           ver: 'v3.24.0',
           items: [
@@ -24192,6 +24254,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             if (typeof selectActiveStock === 'function') selectActiveStock(sym);
           });
         });
+
+        if (window.SHL_JEV_CHART && typeof window.SHL_JEV_CHART.update === 'function') {
+          window.SHL_JEV_CHART.update(data);
+        }
       }
 
       async function runStrategy30(prefetchedBarsMap = null, prefetchedQuotes = null) {
@@ -24468,6 +24534,235 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, updateSentiment, setWaitWatch, flashOrder };
     })();
 
+    // =========================================================================
+    // v3.25.0 Jev System One 快速選股視覺化圖表 × GrokBot2 專責機器人矩陣 (window.SHL_JEV_CHART)
+    // =========================================================================
+    window.SHL_JEV_CHART = (function createJevScreenerChart() {
+      const $ = (id) => document.getElementById(id);
+      let mode = 'bar'; // 'bar' | 'quad'
+      let lastData = null;
+      let hitTargets = []; // { x, y, w, h, sym, r }
+      let fastPollTimer = null;
+
+      function updateBotMatrix(data) {
+        const rows = Array.isArray(data?.results) ? data.results : [];
+        const buyRows = rows.filter(r => (r.jev_primitives?.choice === 'BUY') || (r.overall_direction === 'long' && !(r.model_input?.hard_blocks || []).length && (r.model_input?.weighted_score || 0) >= 0.2));
+        const shortRows = rows.filter(r => (r.jev_primitives?.choice === 'SHORT') || (r.overall_direction === 'short' && !(r.model_input?.hard_blocks || []).length && (r.model_input?.weighted_score || 0) <= -0.2));
+        const blockedCnt = rows.filter(r => (r.model_input?.hard_blocks || []).length > 0).length;
+        const lat = Number(data?.total_latency_ms || 0).toFixed(1);
+
+        const bL = $('botLongStat');
+        const bS = $('botShortStat');
+        const bR = $('botRiskStat');
+        if (bL) {
+          const topL = buyRows.slice(0, 3).map(x => `${x.symbol}${x.stock_name || ''}`).join(' · ');
+          bL.textContent = `候選 ${buyRows.length} 檔${topL ? '（' + topL + '）' : ' · 等待 Jev Choice=BUY'}`;
+        }
+        if (bS) {
+          const topS = shortRows.slice(0, 3).map(x => `${x.symbol}${x.stock_name || ''}`).join(' · ');
+          bS.textContent = `候選 ${shortRows.length} 檔${topS ? '（' + topS + '）' : ' · 等待 Jev Choice=SHORT'}`;
+        }
+        if (bR) {
+          bR.textContent = `延遲 ${lat} ms · 評估 ${rows.length} 檔 · 硬風控阻擋 ${blockedCnt} 檔`;
+        }
+      }
+
+      function draw() {
+        const canvas = $('jevScreenerCanvas');
+        if (!canvas) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = rect.width;
+        const h = rect.height;
+        if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+          canvas.width = Math.round(w * dpr);
+          canvas.height = Math.round(h * dpr);
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+        hitTargets = [];
+
+        const rows = Array.isArray(lastData?.results) ? lastData.results : [];
+        if (!rows.length) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '700 12px "Noto Sans TC", Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('點擊「⚡ 執行 30 組策略高速統計」或開啟「15 秒極速輪詢」，立即繪製 Jev 快速選股圖表（$0）', w / 2, h / 2);
+          ctx.restore();
+          return;
+        }
+
+        if (mode === 'bar') {
+          const top = [...rows]
+            .sort((a, b) => Math.abs(Number(b.model_input?.weighted_score || 0)) - Math.abs(Number(a.model_input?.weighted_score || 0)))
+            .slice(0, 9);
+          const padL = Math.min(138, Math.max(96, w * 0.24));
+          const padR = 54;
+          const padT = 18;
+          const padB = 14;
+          const plotW = Math.max(80, w - padL - padR);
+          const midX = padL + plotW / 2;
+          const rowH = (h - padT - padB) / Math.max(1, top.length);
+
+          // Zero axis
+          ctx.strokeStyle = 'rgba(148,163,184,0.32)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(midX, padT - 4);
+          ctx.lineTo(midX, h - padB);
+          ctx.stroke();
+
+          ctx.fillStyle = '#64748b';
+          ctx.font = '700 9.5px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('空方 (-1.0)', padL + plotW * 0.15, 10);
+          ctx.fillText('0.0 中性', midX, 10);
+          ctx.fillText('多方 (+1.0)', padL + plotW * 0.85, 10);
+
+          top.forEach((r, idx) => {
+            const ws = Math.max(-1, Math.min(1, Number(r.model_input?.weighted_score || 0)));
+            const blocked = (r.model_input?.hard_blocks || []).length > 0;
+            const choice = r.jev_primitives?.choice || (ws > 0.2 ? 'BUY' : (ws < -0.2 ? 'SHORT' : 'HOLD'));
+            const y = padT + idx * rowH;
+            const barH = Math.max(10, rowH * 0.56);
+            const barY = y + (rowH - barH) / 2;
+            const barW = Math.max(3, Math.abs(ws) * (plotW / 2 - 4));
+            const barX = ws >= 0 ? midX : (midX - barW);
+
+            // Stock label (code + zh name)
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '700 11px "Noto Sans TC", monospace';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const lbl = `${r.symbol} ${String(r.stock_name || '').slice(0, 4)}`;
+            ctx.fillText(lbl, padL - 8, barY + barH / 2);
+
+            // Bar fill
+            ctx.fillStyle = blocked ? '#475569' : (ws >= 0 ? '#ef4444' : '#10b981');
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 4);
+            ctx.fill();
+
+            // Score + Jev choice badge
+            ctx.fillStyle = blocked ? '#94a3b8' : (ws >= 0 ? '#fca5a5' : '#6ee7b7');
+            ctx.font = '800 10px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${ws >= 0 ? '+' : ''}${ws.toFixed(2)} ${blocked ? 'BLK' : choice}`, padL + plotW + 6, barY + barH / 2);
+
+            hitTargets.push({ x: 0, y, w, h: rowH, sym: r.symbol, r });
+          });
+        } else {
+          // Quadrant Scatter Matrix: X = weighted_score (-1..+1), Y = group_agreement (0..1)
+          const padL = 36, padR = 16, padT = 20, padB = 22;
+          const pw = Math.max(80, w - padL - padR);
+          const ph = Math.max(80, h - padT - padB);
+          const midX = padL + pw / 2;
+          const midY = padT + ph / 2;
+
+          // Quadrant subtle tints
+          ctx.fillStyle = 'rgba(239,68,68,0.08)';
+          ctx.fillRect(midX, padT, pw / 2, ph / 2);
+          ctx.fillStyle = 'rgba(16,185,129,0.08)';
+          ctx.fillRect(padL, padT, pw / 2, ph / 2);
+
+          // Axes
+          ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(midX, padT); ctx.lineTo(midX, padT + ph);
+          ctx.moveTo(padL, midY); ctx.lineTo(padL + pw, midY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.font = '700 10px "Noto Sans TC", sans-serif';
+          ctx.fillStyle = '#fca5a5'; ctx.textAlign = 'right'; ctx.fillText('🔴 高共識強多區 (BUY)', padL + pw - 6, padT + 12);
+          ctx.fillStyle = '#6ee7b7'; ctx.textAlign = 'left'; ctx.fillText('🟢 高共識現沖空區 (SHORT)', padL + 6, padT + 12);
+          ctx.fillStyle = '#64748b'; ctx.textAlign = 'center'; ctx.fillText('⚪ 分歧觀望區 (HOLD)', midX, padT + ph - 6);
+
+          rows.slice(0, 30).forEach(r => {
+            const ws = Math.max(-1, Math.min(1, Number(r.model_input?.weighted_score || 0)));
+            const ga = Math.max(0, Math.min(1, Number(r.model_input?.group_agreement || 0)));
+            const blocked = (r.model_input?.hard_blocks || []).length > 0;
+            const cx = padL + ((ws + 1) / 2) * pw;
+            const cy = padT + (1 - ga) * ph;
+            const rad = blocked ? 5 : (6 + Math.abs(ws) * 5);
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+            ctx.fillStyle = blocked ? 'rgba(100,116,139,0.8)' : (ws >= 0 ? 'rgba(239,68,68,0.88)' : 'rgba(16,185,129,0.88)');
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '700 9.5px "Noto Sans TC", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(r.symbol, cx, cy - rad - 4);
+            hitTargets.push({ x: cx - rad - 4, y: cy - rad - 4, w: (rad + 4) * 2, h: (rad + 4) * 2, sym: r.symbol, r });
+          });
+        }
+        ctx.restore();
+      }
+
+      function update(data) {
+        lastData = data;
+        updateBotMatrix(data);
+        const hint = $('jevChartHint');
+        const rows = Array.isArray(data?.results) ? data.results : [];
+        if (hint) {
+          hint.textContent = `已即時繪製 ${rows.length} 檔 · ${Number(data?.total_latency_ms || 0).toFixed(1)} ms · $0 免費`;
+        }
+        draw();
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        const bBar = $('btnJevChartBar');
+        const bQuad = $('btnJevChartQuad');
+        if (bBar) { bBar.style.background = mode === 'bar' ? '#4f46e5' : '#1e293b'; bBar.style.color = mode === 'bar' ? '#fff' : '#cbd5e1'; }
+        if (bQuad) { bQuad.style.background = mode === 'quad' ? '#4f46e5' : '#1e293b'; bQuad.style.color = mode === 'quad' ? '#fff' : '#cbd5e1'; }
+        draw();
+      }
+
+      function init() {
+        $('btnJevChartBar')?.addEventListener('click', () => setMode('bar'));
+        $('btnJevChartQuad')?.addEventListener('click', () => setMode('quad'));
+        $('jevScreenerCanvas')?.addEventListener('click', (e) => {
+          const canvas = $('jevScreenerCanvas');
+          if (!canvas || !hitTargets.length) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const hit = hitTargets.find(t => x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h);
+          if (hit && hit.sym) {
+            if (typeof selectActiveStock === 'function') selectActiveStock(hit.sym);
+            document.getElementById('rawPriceChart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+        $('chkJevFastPoll')?.addEventListener('change', (e) => {
+          if (fastPollTimer) { clearInterval(fastPollTimer); fastPollTimer = null; }
+          if (e.target.checked) {
+            if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.runStrategy30 === 'function') {
+              window.SHL_DIAG_NET.runStrategy30();
+              fastPollTimer = setInterval(() => window.SHL_DIAG_NET.runStrategy30(), 15000);
+            }
+            showToast('⚡ Jev 15 秒極速輪詢已啟動', '每 15 秒自動免費重算 30 組策略並更新選股圖表與專責 Bot（$0）。', 'success');
+          } else {
+            showToast('已停止 15 秒極速輪詢', '可隨時手動點擊「⚡ 執行 30 組策略高速統計」。', 'info');
+          }
+        });
+        window.addEventListener('resize', draw);
+        draw();
+      }
+
+      return { init, update, draw, setMode };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -24478,6 +24773,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_SIGNALS) window.SHL_SIGNALS.init();
       if (window.SHL_DIAG_NET) window.SHL_DIAG_NET.init();
       if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.init();
+      if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -24489,6 +24785,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
         if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
         if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.updateSentiment();
+        if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.draw();
         if (typeof updateBackendBadges === 'function') updateBackendBadges();
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {

@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.27.0 · 版本說明
+              v3.28.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -21798,8 +21798,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.27.0';
+      const CURRENT_VERSION = 'v3.28.0';
       const HISTORY = [
+        {
+          ver: 'v3.28.0',
+          items: [
+            '升級「動態 SSE 即時報價推播架構」（GET /api/v1/stream/live-quotes ＋ window.SHL_LIVE_STREAM）：取代傳統慢速輪詢，由後端持久 SSE 每 1.5 秒主動推播永豐／實盤報價，每次收到報價瞬間立即驅動止盈止損檢核、流程圖、情緒 HUD 與戰情室刷新，支援手機前背景自動斷開與重連',
+            '全面強化止盈止損與防洗盤風控（SHL_WAR）：升級三階動態棘輪鎖利（1.0R 含 0.25% 稅費真保本 → 1.5R 鎖利 +0.6R → 2.0R 30% 緊縮移動停利）、25 分鐘橫盤死魚時間停損、單日虧損 -2.0% 硬熔斷、60 秒防洗盤冷卻、單檔連虧 2 次當日黑名單、13:20 尾盤預警與 13:25 無條件強制回補',
+            '自動交易實盤戰情室持倉表格即時顯示每檔鎖利保護階段（初始保護 / 🛡️ 真保本 / 🔒 鎖利+0.6R / 🚀 2R移動停利）'
+          ]
+        },
         {
           ver: 'v3.27.0',
           items: [
@@ -22937,9 +22945,41 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return Math.max(1, Math.min(riskLots, maxAffordableLots));
       }
 
+      // v3.28.0: Hard Entry Risk Gates (-2% daily loss breaker, 60s anti-flicker cooldown, 2-loss daily blacklist)
+      function checkEntryRiskGates(sym, c) {
+        const today = nowTwDateTime().slice(0, 10);
+        c.cooldownMap = c.cooldownMap || {};
+        c.lossStreak = c.lossStreak || {};
+        if (c.lossStreakDate !== today) { c.lossStreak = {}; c.lossStreakDate = today; }
+
+        // 1. Daily -2.0% circuit breaker
+        const baseCap = Math.max(10000, Number(state.initialCapitalTwd || c?.capital || 1000000));
+        const realized = (state.orders || []).reduce((s, o) => s + (typeof o.realized_pnl_twd === 'number' ? o.realized_pnl_twd : 0), 0);
+        const unreal = (state.positions || []).reduce((s, p) => {
+          const curPx = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
+          return s + Math.round((curPx - Number(p.avgPrice || 0)) * p.shares);
+        }, 0);
+        const pnlPct = ((realized + unreal) / baseCap) * 100;
+        if (pnlPct <= -2.0) {
+          showToast('🛑 單日虧損 -2% 硬熔斷啟動', `當日損益 ${pnlPct.toFixed(2)}% 已達 -2.0% 上限，全面禁止開新倉！`, 'error');
+          return false;
+        }
+        // 2. 60-second anti-flicker cooldown per symbol
+        const lastExitTs = Number(c.cooldownMap[sym] || 0);
+        if (lastExitTs && (Date.now() - lastExitTs) < 60000) {
+          return false;
+        }
+        // 3. 2 consecutive stop-losses today -> daily blacklist
+        if (Number(c.lossStreak[sym] || 0) >= 2) {
+          return false;
+        }
+        return true;
+      }
+
       async function placeLong(sym, sig, price, tag) {
         const c = cfg();
         if (posOf(sym) || !price) return false;
+        if (!checkEntryRiskGates(sym, c)) return false;
         const lots = computeAutoLots(price, sig?.sl, c);
         if (!lots || lots < 1) {
           showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，買進 1 張需約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
@@ -22948,7 +22988,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '張', price, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
         if (posOf(sym)) {
           const risk = Math.max(price * 0.005, Math.abs(price - sig.sl));
-          c.stops[sym] = { dir: 1, entry: price, sl: sig.sl, sl0: sig.sl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why, envMode: state.envMode };
+          const initSl = snap(sig.sl < price ? sig.sl : (price - risk));
+          c.stops[sym] = { dir: 1, entry: price, sl: initSl, sl0: initSl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
           save(); return true;
         }
         return false;
@@ -22957,6 +22998,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       async function placeShort(sym, sig, price, tag) {
         const c = cfg();
         if (posOf(sym) || !price) return false;
+        if (!checkEntryRiskGates(sym, c)) return false;
         const lots = computeAutoLots(price, sig?.sl, c);
         if (!lots || lots < 1) {
           showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，現沖先賣 1 張需預留約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
@@ -22966,8 +23008,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         await executeOrder({ symbol: sym, side: 'SELL', qty: lots, unit: '張', price, source: tag || 'MINK_PV_SHORT', dayTrade: true, allowShort: true });
         if (posOf(sym)) {
           const risk = Math.max(price * 0.005, Math.abs(sig.sl - price));
-          const slPx = sig.sl > price ? sig.sl : snap(price + risk);
-          c.stops[sym] = { dir: -1, entry: price, sl: slPx, sl0: slPx, tp: snap(price - risk * c.rrr), risk, ext: price, ts: Date.now(), why: sig.why, envMode: state.envMode };
+          const slPx = snap(sig.sl > price ? sig.sl : (price + risk));
+          c.stops[sym] = { dir: -1, entry: price, sl: slPx, sl0: slPx, tp: snap(price - risk * c.rrr), risk, ext: price, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
           save(); return true;
         }
         return false;
@@ -22985,7 +23027,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           '作戰室',
           ok
             ? `已依訊號${nw.dir < 0 ? '現沖先賣（空單）' : '買進（多單）'} ${oneCtx.sym} @${price}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'} · SL ${nw.sl}）`
-            : '下單未成立（可能資金不足 1 張、已持有、非盤中時段、缺少永豐 Token 或熔斷）',
+            : '下單未成立（可能資金不足 1 張、冷卻中、日虧熔斷、已持有或非盤中時段）',
           ok ? 'info' : 'warn'
         );
       }
@@ -23012,46 +23054,114 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       }
 
-      async function manageStops(quotes) {
-        const c = cfg();
-        const s = isTwSimTradingWindow();
-        const hmNum = Number(String(s.timeStr || '').slice(-8, -3).replace(':', '')) || 0;
-        for (const sym of Object.keys(c.stops)) {
-          const st = c.stops[sym]; const p = posOf(sym);
-          if (!p) { delete c.stops[sym]; continue; }
-          const px = +quotes?.[sym]?.price || 0; if (!px) continue;
-          const isShort = st.dir < 0 || p.shares < 0;
-          const exitLots = Math.max(1, Math.round(Math.abs(p.shares) / 1000));
-          let reason = null;
+      let _managingStops = false;
+      let _warn1320Date = '';
 
-          if (!isShort) {
-            st.ext = Math.max(st.ext, px);
-            const run = st.ext - st.entry;
-            if (c.be && run >= st.risk && st.entry > st.sl) st.sl = st.entry;
-            if (c.fib && run >= st.risk) { const nsl = snap(st.ext - run * 0.382); if (nsl > st.sl) st.sl = nsl; }
-            if (px <= st.sl) reason = px >= st.entry ? '多單移動停利/保本' : '多單止損';
-            else if (!(c.be || c.fib || c.granville) && px >= st.tp) reason = '多單固定停利';
-            else if (c.forceExit && s.open && hmNum >= 1325) reason = '多單尾盤強制平倉';
-            if (reason) {
-              await executeOrder({ symbol: sym, side: 'SELL', qty: exitLots, unit: '張', price: px, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
-              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動平多', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
-            }
-          } else {
-            // SHORT position stop-loss / trailing profit / end-of-day cover (空單回補)
-            st.ext = Math.min(st.ext, px);
-            const run = st.entry - st.ext;
-            if (c.be && run >= st.risk && st.entry < st.sl) st.sl = st.entry;
-            if (c.fib && run >= st.risk) { const nsl = snap(st.ext + run * 0.382); if (nsl < st.sl) st.sl = nsl; }
-            if (px >= st.sl) reason = px <= st.entry ? '空單移動停利/保本' : '空單止損回補';
-            else if (!(c.be || c.fib || c.granville) && px <= st.tp) reason = '空單固定停利回補';
-            else if (c.forceExit && s.open && hmNum >= 1325) reason = '現沖空單尾盤強制回補';
-            if (reason) {
-              await executeOrder({ symbol: sym, side: 'BUY', qty: exitLots, unit: '張', price: px, source: 'QUANT_COVER_SHORT', dayTrade: true });
-              if (!posOf(sym)) { delete c.stops[sym]; showToast('🤖 量化自動回補空單', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info'); }
+      async function manageStops(quotes) {
+        if (_managingStops) return;
+        _managingStops = true;
+        try {
+          const c = cfg();
+          c.cooldownMap = c.cooldownMap || {};
+          c.lossStreak = c.lossStreak || {};
+          const today = nowTwDateTime().slice(0, 10);
+          if (c.lossStreakDate !== today) { c.lossStreak = {}; c.lossStreakDate = today; }
+          const s = isTwSimTradingWindow();
+          const hmNum = Number(String(s.timeStr || '').slice(-8, -3).replace(':', '')) || 0;
+          const openSyms = Object.keys(c.stops || {});
+
+          // 13:20 pre-close warning
+          if (c.forceExit && s.open && hmNum >= 1320 && hmNum < 1325 && openSyms.length > 0 && _warn1320Date !== today) {
+            _warn1320Date = today;
+            showToast('⏰ 13:20 尾盤強平預警', `目前尚有 ${openSyms.length} 檔盤中持倉，將於 13:25 無條件強制平倉／回補。`, 'warn');
+          }
+
+          for (const sym of openSyms) {
+            const st = c.stops[sym]; const p = posOf(sym);
+            if (!p) { delete c.stops[sym]; continue; }
+            const px = +quotes?.[sym]?.price || 0; if (!px) continue;
+            const isShort = st.dir < 0 || p.shares < 0;
+            const exitLots = Math.max(1, Math.round(Math.abs(p.shares) / 1000));
+            const holdMs = Date.now() - Number(st.ts || Date.now());
+            const rUnit = Math.max(st.entry * 0.005, Number(st.risk || st.entry * 0.01));
+            let reason = null;
+
+            if (!isShort) {
+              st.ext = Math.max(st.ext, px);
+              const run = st.ext - st.entry;
+              // 3-Stage Ratchet Trailing Profit (1.0R 真保本含0.25%稅費 -> 1.5R 鎖+0.6R -> 2.0R 30%緊縮移動停利)
+              if (c.be && run >= rUnit) {
+                const trueBe = snap(st.entry * 1.0025);
+                if (trueBe > st.sl) { st.sl = trueBe; st.stage = '🛡️ 真保本'; }
+              }
+              if (run >= rUnit * 1.5) {
+                const lockPx = snap(st.entry + rUnit * 0.6);
+                if (lockPx > st.sl) { st.sl = lockPx; st.stage = '🔒 鎖利+0.6R'; }
+              }
+              if (c.fib && run >= rUnit * 2.0) {
+                const tightTrail = snap(st.ext - run * 0.30);
+                if (tightTrail > st.sl) { st.sl = tightTrail; st.stage = '🚀 2R移動停利'; }
+              } else if (c.fib && run >= rUnit) {
+                const nsl = snap(st.ext - run * 0.382);
+                if (nsl > st.sl) { st.sl = nsl; st.stage = st.stage || '🔒 Fib追蹤'; }
+              }
+
+              const deadMoney = holdMs >= 25 * 60 * 1000 && Math.abs((px - st.entry) / st.entry) < 0.003;
+              if (px <= st.sl) reason = px >= st.entry ? `多單${st.stage || '移動停利'}` : '多單止損保護';
+              else if (!(c.be || c.fib || c.granville) && px >= st.tp) reason = '多單固定停利';
+              else if (deadMoney && s.open) reason = '時間停損（25分無動能釋放資金）';
+              else if (c.forceExit && s.open && hmNum >= 1325) reason = '多單 13:25 尾盤強制平倉';
+
+              if (reason) {
+                await executeOrder({ symbol: sym, side: 'SELL', qty: exitLots, unit: '張', price: px, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
+                if (!posOf(sym)) {
+                  c.cooldownMap[sym] = Date.now();
+                  c.lossStreak[sym] = px < st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
+                  delete c.stops[sym];
+                  showToast('🤖 量化自動平多', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
+                }
+              }
+            } else {
+              // SHORT position 3-stage ratchet + time-stop + 13:25 force cover
+              st.ext = Math.min(st.ext, px);
+              const run = st.entry - st.ext;
+              if (c.be && run >= rUnit) {
+                const trueBe = snap(st.entry * 0.9975);
+                if (trueBe < st.sl) { st.sl = trueBe; st.stage = '🛡️ 真保本'; }
+              }
+              if (run >= rUnit * 1.5) {
+                const lockPx = snap(st.entry - rUnit * 0.6);
+                if (lockPx < st.sl) { st.sl = lockPx; st.stage = '🔒 鎖利+0.6R'; }
+              }
+              if (c.fib && run >= rUnit * 2.0) {
+                const tightTrail = snap(st.ext + run * 0.30);
+                if (tightTrail < st.sl) { st.sl = tightTrail; st.stage = '🚀 2R移動停利'; }
+              } else if (c.fib && run >= rUnit) {
+                const nsl = snap(st.ext + run * 0.382);
+                if (nsl < st.sl) { st.sl = nsl; st.stage = st.stage || '🔒 Fib追蹤'; }
+              }
+
+              const deadMoney = holdMs >= 25 * 60 * 1000 && Math.abs((st.entry - px) / st.entry) < 0.003;
+              if (px >= st.sl) reason = px <= st.entry ? `空單${st.stage || '移動停利'}` : '空單止損回補';
+              else if (!(c.be || c.fib || c.granville) && px <= st.tp) reason = '空單固定停利回補';
+              else if (deadMoney && s.open) reason = '空單時間停損（25分無動能回補）';
+              else if (c.forceExit && s.open && hmNum >= 1325) reason = '現沖空單 13:25 尾盤強制回補';
+
+              if (reason) {
+                await executeOrder({ symbol: sym, side: 'BUY', qty: exitLots, unit: '張', price: px, source: 'QUANT_COVER_SHORT', dayTrade: true });
+                if (!posOf(sym)) {
+                  c.cooldownMap[sym] = Date.now();
+                  c.lossStreak[sym] = px > st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
+                  delete c.stops[sym];
+                  showToast('🤖 量化自動回補空單', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
+                }
+              }
             }
           }
+          save();
+        } finally {
+          _managingStops = false;
         }
-        save();
       }
       function applyAuto() {
         if (timer) { clearInterval(timer); timer = null; }
@@ -23246,12 +23356,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                 const pct = p.avgPrice > 0 ? ((curPx - p.avgPrice) / p.avgPrice * 100) : 0;
                 const st = stops[p.symbol];
                 const slTp = st ? `${Number(st.sl).toFixed(1)} / ${Number(st.tp).toFixed(1)}` : '--';
+                const stageHtml = st?.stage ? `<div style="font-size:10px;color:#0f766e;font-weight:700;">${esc(st.stage)}</div>` : '';
                 return `<tr style="border-bottom:1px solid #f1f5f9;">
                   <td style="padding:4px;font-weight:800;cursor:pointer;" data-at-sel="${esc(p.symbol)}">${esc(p.symbol)} ${esc(p.name || '')}</td>
                   <td class="mono" style="text-align:right;padding:4px;">${fmtInt(p.shares)}</td>
                   <td class="mono" style="text-align:right;padding:4px;">${fmtNum(p.avgPrice, 2)} / <b>${fmtNum(curPx, 2)}</b></td>
                   <td class="mono" style="text-align:right;padding:4px;font-weight:800;color:${pnlColor(pnl)};">${fmtSignedMoney(pnl)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</td>
-                  <td class="mono" style="text-align:right;padding:4px;font-size:11px;color:#475569;">${slTp}</td>
+                  <td class="mono" style="text-align:right;padding:4px;font-size:11px;color:#475569;">${slTp}${stageHtml}</td>
                   <td style="text-align:right;padding:4px;"><button type="button" class="btn btn-sm" data-at-close="${esc(p.symbol)}" style="padding:2px 7px;font-size:10.5px;background:#fee2e2;color:#991b1b;border-color:#fca5a5;">平倉</button></td>
                 </tr>`;
               }).join('')}</tbody></table>`;
@@ -25202,6 +25313,104 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, render };
     })();
 
+    // =========================================================================
+    // v3.28.0 動態 SSE 即時報價推播引擎 (window.SHL_LIVE_STREAM)
+    // - 取代傳統慢速輪詢，透過後端持久 SSE 每 1.5 秒主動推播實盤報價
+    // - 每次收到報價瞬間立即觸發 SHL_WAR.manageStops() 執行秒級止盈止損檢核
+    // =========================================================================
+    window.SHL_LIVE_STREAM = (function createDynamicSseStream() {
+      let es = null;
+      let connected = false;
+      let reconnectTimer = null;
+      let lastSeq = 0;
+
+      function getTargetSymbols() {
+        const set = new Set();
+        (state.positions || []).forEach(p => { if (p?.symbol) set.add(p.symbol); });
+        (state.watchlist || []).forEach(w => { if (w?.symbol) set.add(w.symbol); });
+        if (!set.size) ['2330', '2317', '2454', '0050'].forEach(s => set.add(s));
+        return Array.from(set).slice(0, 40);
+      }
+
+      function stop() {
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        if (es) { try { es.close(); } catch (e) {} es = null; }
+        connected = false;
+      }
+
+      function start() {
+        stop();
+        if (typeof EventSource === 'undefined') return;
+        const apiBase = getApiBase();
+        if (!apiBase) return;
+        const syms = getTargetSymbols();
+        const url = `${apiBase}/api/v1/stream/live-quotes?symbols=${encodeURIComponent(syms.join(','))}&interval_ms=1500`;
+        try {
+          es = new EventSource(url);
+          es.addEventListener('hello', () => {
+            connected = true;
+            const meta = document.getElementById('tfcClockMeta');
+            if (meta) meta.textContent = `⚡ 動態 SSE 即時串流已連線（1.5s 主動推播 · 秒級止盈止損守護）`;
+          });
+          es.addEventListener('tick', (ev) => {
+            connected = true;
+            try {
+              const payload = JSON.parse(ev.data || '{}');
+              lastSeq = payload.seq || (lastSeq + 1);
+              const qMap = payload.quotes || {};
+              let changed = 0;
+              Object.entries(qMap).forEach(([sym, row]) => {
+                if (!row || !Number(row.price)) return;
+                const prev = state.quotes[sym] || {};
+                const px = Number(row.price);
+                const prevClose = Number(row.prev_close || row.prevClose || prev.prevClose || 0);
+                const chgPct = row.change_pct != null ? Number(row.change_pct) : (prevClose > 0 ? Number(((px - prevClose) / prevClose * 100).toFixed(2)) : (prev.changePct || 0));
+                state.quotes[sym] = Object.assign({}, prev, {
+                  symbol: sym,
+                  name: row.name || prev.name || sym,
+                  price: px,
+                  prevClose: prevClose || prev.prevClose,
+                  changePct: chgPct,
+                  change_pct: chgPct,
+                  volume: Number(row.volume_lots != null ? row.volume_lots : (row.volume || prev.volume || 0)),
+                  source: payload.source || prev.source || '動態 SSE 實盤',
+                  lastDate: payload.server_time || nowTwDateTime()
+                });
+                changed++;
+              });
+              if (changed > 0) {
+                // Immediately evaluate tick-level SL/TP for all open positions!
+                if (window.SHL_WAR && typeof window.SHL_WAR.manageStops === 'function' && (state.positions || []).length > 0) {
+                  window.SHL_WAR.manageStops(state.quotes).catch(() => {});
+                }
+                if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+                if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
+                if (window.SHL_TRADE_HUD && typeof window.SHL_TRADE_HUD.updateSentiment === 'function') window.SHL_TRADE_HUD.updateSentiment();
+              }
+              const meta = document.getElementById('tfcClockMeta');
+              if (meta) meta.textContent = `⚡ 動態 SSE 串流 #${lastSeq} · ${changed}檔 (${payload.latency_ms || 0}ms) · ${nowTwTime()}`;
+            } catch (e) {}
+          });
+          es.onerror = () => {
+            connected = false;
+            stop();
+            reconnectTimer = setTimeout(() => {
+              if (!document.hidden && getApiBase()) start();
+            }, 6000);
+          };
+        } catch (e) {}
+      }
+
+      window.addEventListener('beforeunload', stop);
+      window.addEventListener('pagehide', stop);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+        else if (getApiBase()) setTimeout(start, 600);
+      });
+
+      return { start, stop, isConnected: () => connected };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -25229,6 +25438,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.draw();
         if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.updateBadge();
         if (window.SHL_FLOWCHART) window.SHL_FLOWCHART.render();
+        if (window.SHL_LIVE_STREAM) window.SHL_LIVE_STREAM.start();
         if (typeof updateBackendBadges === 'function') updateBackendBadges();
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {

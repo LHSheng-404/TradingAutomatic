@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.27.0",
+    version="3.28.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.27.0",
+        "version": "3.28.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -6512,6 +6512,64 @@ async def get_strategy30_audit(
             },
         },
         headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/v1/stream/live-quotes")
+async def stream_live_quotes(
+    request: Request,
+    symbols: str = "2330,2317,2454",
+    interval_ms: int = 1500,
+    max_events: int = 0,
+):
+    """
+    v3.28.0 Dynamic SSE Real-Time Quote Push Stream (永豐 Shioaji 優先 -> 官方實盤輔助).
+    Replaces slow browser polling with persistent low-latency server push so stop-loss/take-profit
+    and UI HUD react immediately on every tick.
+    """
+    syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:60]
+    if not syms:
+        syms = ["2330"]
+    sym_csv = ",".join(syms)
+    sleep_sec = max(1.0, min(10.0, float(interval_ms) / 1000.0))
+
+    async def event_gen():
+        seq = 0
+        yield f"event: hello\ndata: {json.dumps({'ok': True, 'mode': 'SSE_DYNAMIC', 'symbols': syms, 'interval_ms': int(sleep_sec * 1000)}, ensure_ascii=False)}\n\n"
+        while not _SERVER_SHUTTING_DOWN:
+            if await request.is_disconnected():
+                break
+            seq += 1
+            t0 = time.perf_counter()
+            try:
+                snap = await shioaji_snapshots(symbols=sym_csv)
+                quotes = snap.get("quotes") if isinstance(snap, dict) else {}
+                src = snap.get("source") if isinstance(snap, dict) else "永豐/官方實盤"
+            except Exception as exc:
+                quotes = {}
+                src = f"暫時重連中 ({type(exc).__name__})"
+            lat_ms = round((time.perf_counter() - t0) * 1000.0, 1)
+            payload = {
+                "seq": seq,
+                "server_time": tw_now_str(),
+                "source": src,
+                "latency_ms": lat_ms,
+                "count": len(quotes) if isinstance(quotes, dict) else 0,
+                "quotes": quotes if isinstance(quotes, dict) else {},
+            }
+            yield f"event: tick\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            if max_events > 0 and seq >= max_events:
+                break
+            await asyncio.sleep(sleep_sec)
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-store",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

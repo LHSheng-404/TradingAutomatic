@@ -1480,7 +1480,7 @@
       border-radius: 14px;
       box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.24);
       padding: 6px;
-      z-index: 120;
+      z-index: 1200;
       display: none;
       flex-direction: column;
       gap: 3px;
@@ -1501,7 +1501,7 @@
         max-width: calc(100vw - 20px) !important;
         max-height: calc(100dvh - 136px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
         overflow-y: auto !important;
-        z-index: 130 !important;
+        z-index: 1200 !important;
       }
     }
 
@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.28.0 · 版本說明
+              v3.28.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -13167,7 +13167,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           if (dropdown.classList.contains('open')) positionDropdown();
         });
         document.addEventListener('click', e => {
-          if (!dropdown.contains(e.target) && e.target !== btnMenu) {
+          if (!dropdown.contains(e.target) && !btnMenu.contains(e.target)) {
             dropdown.classList.remove('open');
             btnMenu.setAttribute('aria-expanded', 'false');
           }
@@ -21798,8 +21798,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.28.0';
+      const CURRENT_VERSION = 'v3.28.1';
       const HISTORY = [
+        {
+          ver: 'v3.28.1',
+          items: [
+            '緊急修復「功能選單（#btnFeatureMenu）無法點擊」：補齊全域 window.fmtSignedMoney 定義，排除 SHL_FLOWCHART.init() 與 SHL_TRADE_HUD.flashOrder() 呼叫未定義函式拋出 ReferenceError 中斷 DOMContentLoaded 事件綁定的根因',
+            '全面強化啟動防護：以 safeBoot() try/catch 逐一隔離 DOMContentLoaded 所有子模組初始化，並優先執行 initApp() 確保功能選單與核心互動永遠第一時間完成綁定',
+            '修正功能選單外部點擊判斷（!btnMenu.contains(e.target)）並提高 .menu-dropdown z-index 至 1200，確保桌面與手機版點擊順暢不被遮擋'
+          ]
+        },
         {
           ver: 'v3.28.0',
           items: [
@@ -24675,6 +24683,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults };
     })();
 
+    function fmtSignedMoney(v) {
+      const n = Number(v || 0);
+      return `${n > 0 ? '+' : (n < 0 ? '-' : '')}$${Math.round(Math.abs(n)).toLocaleString()}`;
+    }
+    window.fmtSignedMoney = fmtSignedMoney;
+
     // =========================================================================
     // v3.24.0 交易中樞即時動畫、情緒指標與五階段下單流程控制器 (window.SHL_TRADE_HUD)
     // =========================================================================
@@ -25412,42 +25426,49 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     })();
 
     document.addEventListener('DOMContentLoaded', () => {
+      const safeBoot = (name, fn) => {
+        try { if (typeof fn === 'function') fn(); } catch (err) { console.warn('[SHL boot]', name, err); }
+      };
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
       });
-      if (window.SHL_CHANGELOG) window.SHL_CHANGELOG.init();
-      if (window.SHL_WAR) window.SHL_WAR.init();
-      if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.init();
-      if (window.SHL_SIGNALS) window.SHL_SIGNALS.init();
-      if (window.SHL_DIAG_NET) window.SHL_DIAG_NET.init();
-      if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.init();
-      if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.init();
-      if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.init();
-      if (window.SHL_FLOWCHART) window.SHL_FLOWCHART.init();
-      if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
-      if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
+      safeBoot('CHANGELOG', () => window.SHL_CHANGELOG?.init());
+      safeBoot('WAR', () => window.SHL_WAR?.init());
+      safeBoot('AUTO_DASH', () => window.SHL_AUTO_DASH?.init());
+      safeBoot('SIGNALS', () => window.SHL_SIGNALS?.init());
+      safeBoot('DIAG_NET', () => window.SHL_DIAG_NET?.init());
+      safeBoot('TRADE_HUD', () => window.SHL_TRADE_HUD?.init());
+      safeBoot('JEV_CHART', () => window.SHL_JEV_CHART?.init());
+      safeBoot('WATCHLIST_MEM', () => window.SHL_WATCHLIST_MEM?.init());
+      safeBoot('FLOWCHART', () => window.SHL_FLOWCHART?.init());
+      safeBoot('aiFocusRestore', () => { if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory(); });
+      safeBoot('aiFocusHint', () => { if (typeof updateAiFocusHint === 'function') updateAiFocusHint(); });
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
         if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       });
-      if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.init();
-      initApp().finally(() => {
-        if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
-        if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
-        if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
-        if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.updateSentiment();
-        if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.draw();
-        if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.updateBadge();
-        if (window.SHL_FLOWCHART) window.SHL_FLOWCHART.render();
-        if (window.SHL_LIVE_STREAM) window.SHL_LIVE_STREAM.start();
-        if (typeof updateBackendBadges === 'function') updateBackendBadges();
-        if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
-        if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {
-          const sec = Number(state.ext?.realtimeRefreshSec || 3);
-          if (sec > 0) window.SHL_EXT.setRealtimeRefreshSec(sec, true);
-        }
-        if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
-        if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
-        if (window.SHL_BOOT_LOADER) window.SHL_BOOT_LOADER.finish('即時數據與連線就緒！');
+      safeBoot('TAB_MEMORY', () => window.SHL_TAB_MEMORY?.init());
+      initApp().catch((err) => {
+        console.error('[SHL initApp]', err);
+      }).finally(() => {
+        safeBoot('REMOTE_ACCOUNT', () => window.SHL_REMOTE_ACCOUNT?.init());
+        safeBoot('TAB_MEMORY_RESTORE', () => window.SHL_TAB_MEMORY?.restoreAll());
+        safeBoot('AUTO_DASH_RENDER', () => window.SHL_AUTO_DASH?.render());
+        safeBoot('TRADE_HUD_SENT', () => window.SHL_TRADE_HUD?.updateSentiment());
+        safeBoot('JEV_CHART_DRAW', () => window.SHL_JEV_CHART?.draw());
+        safeBoot('WATCHLIST_BADGE', () => window.SHL_WATCHLIST_MEM?.updateBadge());
+        safeBoot('FLOWCHART_RENDER', () => window.SHL_FLOWCHART?.render());
+        safeBoot('LIVE_STREAM', () => window.SHL_LIVE_STREAM?.start());
+        safeBoot('BACKEND_BADGES', () => { if (typeof updateBackendBadges === 'function') updateBackendBadges(); });
+        safeBoot('SIGNALS_SYNC', () => { if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); } });
+        safeBoot('RT_REFRESH', () => {
+          if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {
+            const sec = Number(state.ext?.realtimeRefreshSec || 3);
+            if (sec > 0) window.SHL_EXT.setRealtimeRefreshSec(sec, true);
+          }
+        });
+        safeBoot('aiFocusRestore2', () => { if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory(); });
+        safeBoot('aiFocusHint2', () => { if (typeof updateAiFocusHint === 'function') updateAiFocusHint(); });
+        safeBoot('BOOT_LOADER_FINISH', () => window.SHL_BOOT_LOADER?.finish('即時數據與連線就緒！'));
       });
     });
   </script>

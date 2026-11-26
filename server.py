@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.23.0",
+    version="3.24.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -672,12 +672,14 @@ async def get_mobile_access_info(request: Request):
 
 @app.get("/api/v1/health")
 async def health_check():
-    shioaji_configured = _shioaji_has_token()
+    sim_token_ok = _shioaji_has_sim_token()
+    live_token_ok = _shioaji_has_token()
+    shioaji_configured = bool(sim_token_ok or live_token_ok)
     ca_path = os.getenv("SHIOAJI_CA_PATH", "")
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.23.0",
+        "version": "3.24.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -691,6 +693,9 @@ async def health_check():
         "kill_switch": KILL_SWITCH_ACTIVE,
         "finmind_tokens": len(FINMIND_TOKENS),
         "shioaji_configured": shioaji_configured,
+        "sim_token_configured": sim_token_ok,
+        "live_token_configured": live_token_ok,
+        "shioaji_active_source": "永豐金 Shioaji API 主連線" if shioaji_configured else "輔助資料源（TWSE/FinMind/Yahoo）",
         "shioaji_ca_ready": ca_ready,
         "ai_env_configured": {
             "groq": bool(os.getenv("GROQ_API_KEY")),
@@ -4579,7 +4584,15 @@ async def shioaji_status():
         "http_server_online": http_ok,
         "sdk_installed": sdk_installed,
         "simulation": bool(_SHIOAJI_CFG.get("simulation", True)),
-        "active_source": "永豐金 Shioaji Pro HTTP" if http_ok else ("永豐金 Shioaji SDK" if (any_token and sdk_installed) else "TWSE/TPEx MIS 官方秒級即時（永豐金待連線）"),
+        "active_source": (
+            "永豐金 Shioaji Pro HTTP 主連線（TWSE/FinMind 輔助）"
+            if http_ok
+            else (
+                "永豐金 Shioaji API 主連線（TWSE/FinMind 輔助）"
+                if any_token
+                else "輔助資料源（TWSE/TPEx/FinMind · 永豐 API 待串接）"
+            )
+        ),
     }
 
 

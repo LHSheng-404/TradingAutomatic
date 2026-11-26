@@ -716,6 +716,136 @@
       font-weight: 500;
     }
 
+    /* v3.24.0: Clean Quant Live Execution & Sentiment HUD (Desktop + iOS/Android Mobile) */
+    .qhud-shell {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.65fr) minmax(190px, 0.9fr);
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0b1220 0%, #0f172a 58%, #111827 100%);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      color: #f8fafc;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+    }
+    .qhud-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 7px;
+      min-width: 0;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+    .qhud-card.is-buy {
+      border-color: rgba(239, 68, 68, 0.85);
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.42), rgba(15, 23, 42, 0.86));
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.32);
+      animation: qhudPulseBuy 1.25s ease-in-out 3;
+    }
+    .qhud-card.is-sell {
+      border-color: rgba(16, 185, 129, 0.85);
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.44), rgba(15, 23, 42, 0.86));
+      box-shadow: 0 0 22px rgba(16, 185, 129, 0.32);
+      animation: qhudPulseSell 1.25s ease-in-out 3;
+    }
+    .qhud-card.is-wait {
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    @keyframes qhudPulseBuy {
+      0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.28); }
+      50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.65); }
+    }
+    @keyframes qhudPulseSell {
+      0%, 100% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.28); }
+      50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.65); }
+    }
+    .qhud-radar-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      background: #38bdf8;
+      box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7);
+      animation: qhudRadar 1.8s infinite;
+    }
+    .qhud-radar-dot.buy { background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75); }
+    .qhud-radar-dot.sell { background: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.75); }
+    @keyframes qhudRadar {
+      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.65); }
+      70% { box-shadow: 0 0 0 9px rgba(56, 189, 248, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+    .qhud-sent-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 28%, #64748b 50%, #f59e0b 72%, #ef4444 100%);
+      position: relative;
+      overflow: visible;
+    }
+    .qhud-sent-needle {
+      position: absolute;
+      top: -3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #0f172a;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
+      transform: translateX(-50%);
+      transition: left 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .qhud-stepper {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .qhud-step {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 3px;
+      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.85);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .qhud-step.is-done {
+      background: rgba(14, 165, 233, 0.18);
+      color: #7dd3fc;
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+    .qhud-step.is-buy-done {
+      background: rgba(239, 68, 68, 0.26);
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.8);
+    }
+    .qhud-step.is-sell-done {
+      background: rgba(16, 185, 129, 0.26);
+      color: #a7f3d0;
+      border-color: rgba(52, 211, 153, 0.8);
+    }
+    @media (max-width: 900px) {
+      .qhud-shell { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .topbar { padding-top: env(safe-area-inset-top, 0px); }
+      .top-controls { gap: 6px; }
+      .top-controls .btn, .menu-wrap .btn { min-height: 38px; touch-action: manipulation; }
+      .qhud-shell { padding: 10px; gap: 8px; }
+      .qhud-step { font-size: 9.5px; padding: 5px 2px; }
+      .ribbon-inner { font-size: 11px; gap: 6px; }
+    }
+
     .inspector-box {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -2640,7 +2770,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.23.0 · 版本說明
+              v3.24.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2992,6 +3122,61 @@
         </div>
 
         <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+          <!-- v3.24.0: Clean Quant Live Execution, Wait/Watch & Sentiment HUD -->
+          <section id="quantLiveHubHud" class="qhud-shell" aria-label="交易中樞即時情緒指標與自動化買賣下單流程">
+            <!-- 1. Market Sentiment Indicator -->
+            <div class="qhud-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="font-size:11px;font-weight:800;color:#94a3b8;letter-spacing:0.4px;">📊 即時市場情緒指標</span>
+                <span id="qhudSentBadge" class="badge mono" style="background:rgba(148,163,184,0.2);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:10.5px;">50 · 中性觀望</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+                <div id="qhudSentScore" class="mono" style="font-size:24px;font-weight:900;color:#f8fafc;">50</div>
+                <div id="qhudSentSub" class="mono" style="font-size:10.5px;color:#94a3b8;text-align:right;">多 0 / 空 0 · 量能中性</div>
+              </div>
+              <div class="qhud-sent-track" aria-hidden="true">
+                <div id="qhudSentNeedle" class="qhud-sent-needle" style="left:50%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;font-weight:700;">
+                <span>恐慌偏空</span>
+                <span>觀望中性</span>
+                <span>貪婪偏多</span>
+              </div>
+            </div>
+
+            <!-- 2. Live Order Execution / Wait-Watch Pulse & 5-Step Flow -->
+            <div id="qhudExecCard" class="qhud-card is-wait" aria-live="polite">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span id="qhudRadarDot" class="qhud-radar-dot"></span>
+                  <strong id="qhudExecTitle" style="font-size:13.5px;color:#f8fafc;">⚪ 觀望監控中 · 等待量價＋情緒共振</strong>
+                </div>
+                <span id="qhudExecTime" class="mono" style="font-size:10.5px;color:#94a3b8;">--:--:--</span>
+              </div>
+              <div id="qhudExecDetail" style="font-size:12px;color:#cbd5e1;line-height:1.45;">
+                系統自動監控永豐 API 真實報價與分K量價；任何買進／現沖賣出觸發時，將即刻顯示整張（1,000股倍數）下單流程動畫。
+              </div>
+              <div id="qhudStepper" class="qhud-stepper" role="list" aria-label="五階段下單交握流程">
+                <div class="qhud-step is-done" data-qstep="1" role="listitem">① 永豐報價</div>
+                <div class="qhud-step is-done" data-qstep="2" role="listitem">② 分K價量</div>
+                <div class="qhud-step is-done" data-qstep="3" role="listitem">③ 情緒判定</div>
+                <div class="qhud-step" data-qstep="4" role="listitem">④ 整張風控</div>
+                <div class="qhud-step" data-qstep="5" role="listitem">⑤ 觀望/成交</div>
+              </div>
+            </div>
+
+            <!-- 3. Primary Shioaji Connection Status & iOS/Android Quick Login -->
+            <div class="qhud-card">
+              <div style="font-size:11px;font-weight:800;color:#94a3b8;">⚡ 連線通道與手機快速登入</div>
+              <div id="qhudConnPrimary" style="font-size:12px;font-weight:800;color:#38bdf8;line-height:1.35;">偵測永豐 API 連線中...</div>
+              <div id="qhudConnAux" style="font-size:10.5px;color:#94a3b8;">輔助資料：TWSE / FinMind / Yahoo</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;">
+                <button type="button" id="btnHudQuickLogin" class="btn btn-sm" style="flex:1;background:#1e293b;color:#fde68a;border-color:#475569;font-size:11px;font-weight:800;padding:5px 8px;">📱 快速解鎖</button>
+                <button type="button" id="btnHudShioajiCfg" class="btn btn-sm" style="flex:1;background:#0f766e;color:#fff;border-color:#14b8a6;font-size:11px;font-weight:800;padding:5px 8px;">永豐 API</button>
+              </div>
+            </div>
+          </section>
+
           <div class="grid-handshake">
             <div class="handshake-stage">
               <canvas id="handshakeCanvas" aria-label="交易判斷邏輯即時交握拓撲圖"></canvas>
@@ -6774,7 +6959,7 @@
         ctx.stroke();
 
         // Subtle animated data flow dash showing continuous keep-alive handshake
-        if (state.animRunning && !state.killSwitch && (typeof isTwSimTradingWindow !== 'function' || isTwSimTradingWindow().open)) {
+        if (state.animRunning && !state.killSwitch) {
           ctx.save();
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
@@ -6972,6 +7157,38 @@
         ctx.fillText(subText, x + 14, y + (compact ? 29 : 39));
         ctx.restore();
       });
+
+      // v3.24.0: Live BUY / SELL floating execution pulse pill directly on Trading Hub canvas
+      const flash = state.handshake.liveOrderFlash;
+      if (flash && Date.now() < flash.expiresAt) {
+        const remain = Math.max(0, (flash.expiresAt - Date.now()) / 12000);
+        const alpha = Math.min(1, remain * 4);
+        const isBuy = flash.side === 'BUY';
+        const pillText = `${isBuy ? '🔴 觸發買進' : '🟢 觸發賣出'} ${flash.symbol} ${flash.name || ''} · ${flash.lots}張(${(flash.lots * 1000).toLocaleString()}股) @${flash.price}`;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `800 ${compact ? 10.5 : 12}px "Noto Sans TC", Inter, sans-serif`;
+        const tw = ctx.measureText(pillText).width;
+        const pw = Math.min(rect.width - 20, tw + 26);
+        const ph = compact ? 24 : 28;
+        const px = (rect.width - pw) / 2;
+        const py = 8;
+        ctx.beginPath();
+        ctx.roundRect(px, py, pw, ph, 999);
+        ctx.fillStyle = isBuy ? 'rgba(185, 28, 28, 0.94)' : 'rgba(5, 150, 105, 0.94)';
+        ctx.shadowColor = isBuy ? 'rgba(239, 68, 68, 0.55)' : 'rgba(16, 185, 129, 0.55)';
+        ctx.shadowBlur = 14;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = isBuy ? '#fca5a5' : '#6ee7b7';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pillText, rect.width / 2, py + ph / 2, pw - 16);
+        ctx.restore();
+      }
 
       ctx.restore();
       requestAnimationFrame(drawHandshakeFrame);
@@ -7201,18 +7418,61 @@
     function updateBackendBadges() {
       const rMode = document.getElementById('ribbonBackendMode');
       const hBadge = document.getElementById('backendHealthBadge');
+      const qPrim = document.getElementById('qhudConnPrimary');
+      const qAux = document.getElementById('qhudConnAux');
+      const sjPill = document.getElementById('shioajiSourcePill');
+      const shioajiReady = Boolean(
+        state.backendHealth?.shioaji_configured
+        || state.backendHealth?.sim_token_configured
+        || state.backendHealth?.live_token_configured
+        || (typeof hasValidShioajiToken === 'function' && hasValidShioajiToken())
+        || (typeof hasValidSimToken === 'function' && hasValidSimToken())
+      );
       if (state.backendDetected) {
-        if (rMode) rMode.textContent = '雲端 FastAPI 代理已連線 (Yahoo+FinMind+AI+LINE)';
-        if (hBadge) {
-          hBadge.className = 'badge badge-teal';
-          hBadge.textContent = `後端已連線 (${state.backendHealth?.trading_mode || 'SIM'})`;
+        if (shioajiReady) {
+          if (rMode) {
+            rMode.textContent = '🟢 永豐金 Shioaji API 主連線（TWSE/FinMind/Yahoo 輔助）';
+            rMode.style.color = '#34d399';
+          }
+          if (hBadge) {
+            hBadge.className = 'badge badge-teal';
+            hBadge.textContent = `永豐金 API 主連線 (${state.envMode || state.backendHealth?.trading_mode || 'SIM'})`;
+          }
+          if (qPrim) { qPrim.textContent = '🟢 永豐金 Shioaji API 主連線（實盤高速決策）'; qPrim.style.color = '#34d399'; }
+          if (qAux) qAux.textContent = '輔助資料源：TWSE MIS / FinMind / Yahoo（自動備援）';
+          if (sjPill) { sjPill.textContent = '主數據源：永豐金 Shioaji API（TWSE/FinMind 輔助）'; sjPill.className = 'badge badge-down mono'; }
+        } else {
+          if (rMode) {
+            rMode.textContent = '🟡 雲端後端已連線 · 輔助資料源（TWSE/FinMind/Yahoo · 永豐 API 待串接）';
+            rMode.style.color = '#fbbf24';
+          }
+          if (hBadge) {
+            hBadge.className = 'badge badge-teal';
+            hBadge.textContent = `後端已連線 · 輔助資料 (${state.envMode || state.backendHealth?.trading_mode || 'SIM'})`;
+          }
+          if (qPrim) { qPrim.textContent = '🟡 輔助資料源連線（永豐 API 待設定 Token）'; qPrim.style.color = '#fbbf24'; }
+          if (qAux) qAux.textContent = '目前由 TWSE MIS / FinMind / Yahoo 輔助提供實盤行情';
+          if (sjPill) { sjPill.textContent = '輔助資料源：TWSE/FinMind（請串接永豐 API）'; sjPill.className = 'badge badge-blue mono'; }
         }
       } else {
-        if (rMode) rMode.textContent = '靜態直連模式 (FinMind 直接抓取)';
+        if (shioajiReady) {
+          if (rMode) {
+            rMode.textContent = '🟡 永豐 Token 已就緒（等待 24H 後端連線 · 輔助資料運行中）';
+            rMode.style.color = '#fbbf24';
+          }
+          if (qPrim) { qPrim.textContent = '🟡 永豐 Token 已就緒（待連 24H 後端）'; qPrim.style.color = '#fbbf24'; }
+        } else {
+          if (rMode) {
+            rMode.textContent = '🔵 瀏覽器獨立模式 · 輔助資料源（TWSE/FinMind · 未連永豐後端）';
+            rMode.style.color = '#38bdf8';
+          }
+          if (qPrim) { qPrim.textContent = '🔵 瀏覽器模式（輔助資料 · 請連 24H 後端）'; qPrim.style.color = '#38bdf8'; }
+        }
         if (hBadge) {
           hBadge.className = 'badge badge-amber';
           hBadge.textContent = '靜態瀏覽器模式（未連後端）';
         }
+        if (qAux) qAux.textContent = '輔助資料源：TWSE / FinMind / Yahoo';
       }
     }
 
@@ -11927,8 +12187,23 @@
           }).catch(() => {});
         }
 
-        triggerHandshake('CORE', 'BROKER', '#d97706', 'ORDER', true, 18, `SIM 成交 ${meta.symbol} ${meta.name} ${side} ${qty}${unit} @${price}`);
+        triggerHandshake('CORE', 'BROKER', side === 'BUY' ? '#dc2626' : '#059669', side === 'BUY' ? 'BUY' : 'SELL', true, 18, `SIM 成交 ${meta.symbol} ${meta.name} ${side} ${qty}${unit} @${price}`);
         showToast('模擬下單成交', `${meta.symbol} ${meta.name} ${side === 'BUY' ? '買進' : '賣出'} ${qty}${unit} @ ${fmtNum(price, 2)}`, 'success');
+      }
+
+      if (window.SHL_TRADE_HUD && typeof window.SHL_TRADE_HUD.flashOrder === 'function') {
+        window.SHL_TRADE_HUD.flashOrder({
+          side,
+          symbol: meta.symbol,
+          name: meta.name,
+          lots: qty,
+          shares,
+          price: state.envMode === 'LIVE' ? price : execPrice,
+          envMode: state.envMode,
+          source,
+          dayTrade: isDayTrade,
+          realizedPnl: realizedPnlTwd
+        });
       }
 
       if (document.getElementById('orderAutoNotify')?.checked && (state.notifier.lineEnabled || state.notifier.tgEnabled)) {
@@ -19297,11 +19572,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const r = await fetch(`${apiBase}/api/v1/shioaji/status`);
           if (!r.ok) return;
           const j = await r.json();
-          if (state.backendHealth) state.backendHealth.shioaji_configured = Boolean(j.token_configured);
-          if (pill) {
-            pill.textContent = `即時數據源：${j.active_source || '永豐金 / TWSE 官方'}`;
-            pill.className = j.http_server_online || j.token_configured ? 'badge badge-down mono' : 'badge badge-blue mono';
+          const sjActive = Boolean(j.http_server_online || j.token_configured || j.sim_token_configured || j.live_token_configured);
+          if (state.backendHealth) {
+            state.backendHealth.shioaji_configured = sjActive;
+            state.backendHealth.sim_token_configured = Boolean(j.sim_token_configured);
+            state.backendHealth.live_token_configured = Boolean(j.live_token_configured || j.token_configured);
           }
+          if (pill) {
+            pill.textContent = `數據源：${j.active_source || (sjActive ? '永豐金 Shioaji API 主連線（TWSE/FinMind 輔助）' : '輔助資料源（TWSE/FinMind）')}`;
+            pill.className = sjActive ? 'badge badge-down mono' : 'badge badge-blue mono';
+          }
+          if (typeof updateBackendBadges === 'function') updateBackendBadges();
         } catch (e) {}
       }
 
@@ -21283,8 +21564,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.23.0';
+      const CURRENT_VERSION = 'v3.24.0';
       const HISTORY = [
+        {
+          ver: 'v3.24.0',
+          items: [
+            '全面升級交易中樞即時動畫與自動化視覺 HUD（#quantLiveHubHud ＋ window.SHL_TRADE_HUD）：整合「即時市場情緒指標儀表（0–100 恐慌／觀望／貪婪）」與「5 階段下單交握流程動畫（永豐報價 → 分K價量 → 情緒判定 → 整張風控 → 買賣／觀望）」',
+            '任何交易觸發買進或賣出（手動、量化作戰室、診斷交握、止盈止損）立即於交易中樞閃動亮紅買進／亮綠賣出脈衝卡片、依序點亮 5 步驟流程燈號，並於交握畫布（#handshakeCanvas）發射買賣光束與浮動成交標籤；未觸發時乾淨呈現觀望雷達監控狀態',
+            '修正連線模式顯示（server.py /api/v1/health ＋ updateBackendBadges）：確認串接永豐金 Shioaji API 時即顯示「🟢 永豐金 Shioaji API 主連線（TWSE/FinMind/Yahoo 輔助）」，其餘明確標示為輔助資料源，並於中樞與手機端提供一鍵「📱 快速解鎖（Face ID / PIN）」與完整 iOS/Android 安全區響應式排版'
+          ]
+        },
         {
           ver: 'v3.23.0',
           items: [
@@ -24013,6 +24302,172 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults };
     })();
 
+    // =========================================================================
+    // v3.24.0 交易中樞即時動畫、情緒指標與五階段下單流程控制器 (window.SHL_TRADE_HUD)
+    // =========================================================================
+    window.SHL_TRADE_HUD = (function createTradeHubHud() {
+      const $ = (id) => document.getElementById(id);
+      let revertTimer = null;
+      let stepTimers = [];
+
+      function clearStepTimers() {
+        stepTimers.forEach(t => clearTimeout(t));
+        stepTimers = [];
+      }
+
+      function setSteps(activeUpTo, tone = 'wait') {
+        const cls = tone === 'buy' ? 'is-buy-done' : (tone === 'sell' ? 'is-sell-done' : 'is-done');
+        document.querySelectorAll('#qhudStepper [data-qstep]').forEach(el => {
+          const idx = Number(el.dataset.qstep || 0);
+          el.classList.remove('is-done', 'is-buy-done', 'is-sell-done');
+          if (idx <= activeUpTo) el.classList.add(cls);
+        });
+      }
+
+      function computeLiveSentiment() {
+        const quotes = Object.values(state.quotes || {}).filter(q => q && Number(q.price) > 0);
+        let up = 0, dn = 0, flat = 0, chgSum = 0;
+        quotes.forEach(q => {
+          const pct = Number(q.change_pct ?? q.changePct ?? (q.prevClose > 0 ? ((q.price - q.prevClose) / q.prevClose * 100) : 0));
+          if (pct > 0.15) up++;
+          else if (pct < -0.15) dn++;
+          else flat++;
+          chgSum += Math.max(-10, Math.min(10, pct));
+        });
+        const total = up + dn + flat;
+        let score = 50;
+        if (total > 0) {
+          const breadth = (up - dn) / total; // -1 .. +1
+          const avgChg = chgSum / total;
+          score = Math.round(50 + breadth * 30 + avgChg * 6);
+        }
+        // Blend in latest diagnostic direction consensus if available
+        const diag = window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getLastResults === 'function' ? window.SHL_DIAG_NET.getLastResults() : [];
+        if (diag.length > 0) {
+          const lCnt = diag.filter(x => x.direction === 'LONG').length;
+          const sCnt = diag.filter(x => x.direction === 'SHORT').length;
+          const dBias = ((lCnt - sCnt) / diag.length) * 18;
+          score = Math.round(score * 0.65 + (50 + dBias) * 0.35);
+        }
+        score = Math.max(5, Math.min(95, score));
+        let label = '中性觀望', bg = 'rgba(148,163,184,0.2)', fg = '#e2e8f0', br = 'rgba(148,163,184,0.35)';
+        if (score >= 72) { label = '極度貪婪·多方強勢'; bg = 'rgba(239,68,68,0.22)'; fg = '#fecaca'; br = 'rgba(248,113,113,0.65)'; }
+        else if (score >= 57) { label = '偏多動能'; bg = 'rgba(249,115,22,0.22)'; fg = '#fed7aa'; br = 'rgba(251,146,60,0.6)'; }
+        else if (score <= 28) { label = '極度恐慌·空方主導'; bg = 'rgba(16,185,129,0.22)'; fg = '#a7f3d0'; br = 'rgba(52,211,153,0.65)'; }
+        else if (score <= 43) { label = '偏空謹慎'; bg = 'rgba(52,211,153,0.18)'; fg = '#a7f3d0'; br = 'rgba(52,211,153,0.45)'; }
+        return { score, label, bg, fg, br, up, dn, flat, total };
+      }
+
+      function updateSentiment() {
+        const s = computeLiveSentiment();
+        const scEl = $('qhudSentScore');
+        const bdEl = $('qhudSentBadge');
+        const subEl = $('qhudSentSub');
+        const ndEl = $('qhudSentNeedle');
+        if (scEl) { scEl.textContent = String(s.score); scEl.style.color = s.fg; }
+        if (bdEl) {
+          bdEl.textContent = `${s.score} · ${s.label}`;
+          bdEl.style.background = s.bg;
+          bdEl.style.color = s.fg;
+          bdEl.style.borderColor = s.br;
+        }
+        if (subEl) subEl.textContent = `漲 ${s.up} / 跌 ${s.dn} / 平 ${s.flat}（共 ${s.total} 檔實盤）`;
+        if (ndEl) ndEl.style.left = `${s.score}%`;
+        return s;
+      }
+
+      function setWaitWatch(detailText = '') {
+        clearStepTimers();
+        const card = $('qhudExecCard');
+        const dot = $('qhudRadarDot');
+        const title = $('qhudExecTitle');
+        const detail = $('qhudExecDetail');
+        const tsEl = $('qhudExecTime');
+        const s = updateSentiment();
+        if (card) { card.classList.remove('is-buy', 'is-sell'); card.classList.add('is-wait'); }
+        if (dot) { dot.classList.remove('buy', 'sell'); }
+        if (title) title.textContent = `⚪ 觀望監控中 · 情緒 ${s.score}（${s.label}）`;
+        if (detail) {
+          detail.textContent = detailText || '系統持續透過永豐 API（及輔助實盤）掃描 5分K／1分K 量價與情緒共振；達標即以 1,000 股（1 張）整數倍自動進場。';
+        }
+        if (tsEl) tsEl.textContent = nowTwTime();
+        setSteps(3, 'wait');
+      }
+
+      function flashOrder({ side = 'BUY', symbol = '', name = '', lots = 1, shares = 1000, price = 0, envMode = 'SIM', source = '', dayTrade = false, realizedPnl = null } = {}) {
+        clearStepTimers();
+        if (revertTimer) { clearTimeout(revertTimer); revertTimer = null; }
+        const isBuy = String(side).toUpperCase() === 'BUY';
+        const tone = isBuy ? 'buy' : 'sell';
+        const card = $('qhudExecCard');
+        const dot = $('qhudRadarDot');
+        const title = $('qhudExecTitle');
+        const detail = $('qhudExecDetail');
+        const tsEl = $('qhudExecTime');
+
+        if (card) {
+          card.classList.remove('is-wait', 'is-buy', 'is-sell');
+          void card.offsetWidth; // restart CSS pulse animation
+          card.classList.add(isBuy ? 'is-buy' : 'is-sell');
+        }
+        if (dot) {
+          dot.classList.remove('buy', 'sell');
+          dot.classList.add(tone);
+        }
+        const actLabel = isBuy ? '🔴 觸發買進（多單成交）' : (dayTrade ? '🟢 觸發現沖賣出（空／平倉）' : '🟢 觸發賣出成交');
+        if (title) title.textContent = `${actLabel} · ${symbol} ${name}`;
+        const pnlStr = typeof realizedPnl === 'number' ? ` ｜ 實現損益 ${fmtSignedMoney(realizedPnl)}` : '';
+        if (detail) {
+          detail.textContent = `[${envMode}] ${lots} 張（${Number(shares || lots * 1000).toLocaleString()} 股）@ ${fmtNum(price, 2)} TWD ｜ 來源：${source || '量化策略'}${pnlStr}`;
+        }
+        if (tsEl) tsEl.textContent = nowTwTime();
+
+        // Sequential 5-step execution pipeline animation (0 -> 560ms)
+        setSteps(1, tone);
+        [2, 3, 4, 5].forEach((stepNum, idx) => {
+          stepTimers.push(setTimeout(() => setSteps(stepNum, tone), (idx + 1) * 140));
+        });
+
+        // Floating pill + glowing laser packets directly on handshakeCanvas
+        state.handshake.liveOrderFlash = {
+          side: isBuy ? 'BUY' : 'SELL',
+          symbol,
+          name,
+          lots,
+          price: fmtNum(price, 2),
+          expiresAt: Date.now() + 12000
+        };
+        const beamColor = isBuy ? '#ef4444' : '#10b981';
+        triggerHandshake('SHIOAJI_PRO', 'CORE', beamColor, 'TICK', true, 16, `永豐報價觸發 ${symbol} @${price}`);
+        setTimeout(() => triggerHandshake('CORE', 'AI_CLUSTER', beamColor, 'SENT', true, 22, `情緒＋策略確認 ${side}`), 160);
+        setTimeout(() => triggerHandshake('CORE', 'BROKER', beamColor, isBuy ? 'BUY' : 'SELL', true, 28, `${envMode} ${side} ${lots}張(${shares}股) @${price}`), 340);
+
+        revertTimer = setTimeout(() => {
+          setWaitWatch(`最近成交：${isBuy ? '買進' : '賣出'} ${symbol} ${name} ${lots}張 @${fmtNum(price, 2)}（目前恢復自動化觀望監控中）`);
+        }, 12500);
+      }
+
+      function init() {
+        updateSentiment();
+        setWaitWatch();
+        if (typeof updateBackendBadges === 'function') updateBackendBadges();
+        $('btnHudQuickLogin')?.addEventListener('click', () => {
+          const vBtn = $('btnHeaderVaultPill');
+          if (vBtn) vBtn.click();
+        });
+        $('btnHudShioajiCfg')?.addEventListener('click', () => {
+          const sBtn = $('btnOpenShioajiCfg');
+          if (sBtn) sBtn.click();
+        });
+        setInterval(() => {
+          updateSentiment();
+          if (typeof updateBackendBadges === 'function') updateBackendBadges();
+        }, 4000);
+      }
+
+      return { init, updateSentiment, setWaitWatch, flashOrder };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -24022,6 +24477,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.init();
       if (window.SHL_SIGNALS) window.SHL_SIGNALS.init();
       if (window.SHL_DIAG_NET) window.SHL_DIAG_NET.init();
+      if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -24032,6 +24488,8 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_REMOTE_ACCOUNT) window.SHL_REMOTE_ACCOUNT.init();
         if (window.SHL_TAB_MEMORY) window.SHL_TAB_MEMORY.restoreAll();
         if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
+        if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.updateSentiment();
+        if (typeof updateBackendBadges === 'function') updateBackendBadges();
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {
           const sec = Number(state.ext?.realtimeRefreshSec || 3);

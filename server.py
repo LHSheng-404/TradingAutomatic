@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.28.1",
+    version="3.29.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.28.1",
+        "version": "3.29.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -6571,6 +6571,44 @@ async def stream_live_quotes(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# =============================================================================
+# v3.29.0 UI Button Action & Error Audit Log Endpoints
+# =============================================================================
+_UI_ACTION_LOGS: List[Dict[str, Any]] = []
+_UI_ACTION_LOGS_MAX = 500
+
+
+@app.post("/api/v1/ui-logs")
+async def post_ui_logs(payload: Dict[str, Any]):
+    """Receive batched UI button action / error logs from frontend (non-blocking audit trail)."""
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        entries = [payload] if isinstance(payload, dict) else []
+    added = 0
+    for item in entries[-100:]:
+        if not isinstance(item, dict):
+            continue
+        _UI_ACTION_LOGS.append({
+            "ts": str(item.get("ts") or tw_now_str())[:32],
+            "level": str(item.get("level") or "OK")[:16],
+            "kind": str(item.get("kind") or "click")[:24],
+            "target": str(item.get("target") or "")[:80],
+            "area": str(item.get("area") or "")[:64],
+            "detail": str(item.get("detail") or "")[:240],
+        })
+        added += 1
+    if len(_UI_ACTION_LOGS) > _UI_ACTION_LOGS_MAX:
+        del _UI_ACTION_LOGS[:-_UI_ACTION_LOGS_MAX]
+    return {"ok": True, "added": added, "total": len(_UI_ACTION_LOGS)}
+
+
+@app.get("/api/v1/ui-logs")
+async def get_ui_logs(limit: int = 120):
+    """Return recent UI button action & error audit logs."""
+    lim = max(1, min(int(limit or 120), _UI_ACTION_LOGS_MAX))
+    return {"ok": True, "total": len(_UI_ACTION_LOGS), "entries": list(reversed(_UI_ACTION_LOGS[-lim:]))}
 
 
 _SERVER_SHUTTING_DOWN = False

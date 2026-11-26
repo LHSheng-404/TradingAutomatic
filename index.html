@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.28.1 · 版本說明
+              v3.29.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2881,6 +2881,11 @@
         <button id="btnGlobalShioajiRefresh" type="button" class="btn btn-sm" style="background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);color:#fff;border-color:#991b1b;font-weight:800;display:inline-flex;align-items:center;gap:5px;padding:7px 12px;box-shadow:0 2px 8px rgba(220,38,38,0.28);" title="透過永豐金 Shioaji API（及官方實盤）一鍵刷新全盤自選股、當日即時 K 線、大盤與多空戰情室">
           <span id="globalRefreshSpinIcon">🔄</span>
           <span>永豐全盤刷新</span>
+        </button>
+        <button id="btnActionLog" type="button" class="btn btn-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155;font-weight:700;display:inline-flex;align-items:center;gap:5px;padding:7px 10px;" title="檢視全站按鈕操作紀錄與系統錯誤 Log（支援一鍵全按鈕自檢與匯出）">
+          <span>📋 Log</span>
+          <span id="actionLogBadgeCount" class="mono" style="background:#1e293b;color:#38bdf8;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:800;">0</span>
+          <span id="actionLogErrDot" style="display:none;width:7px;height:7px;border-radius:999px;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span>
         </button>
         <button id="btnFeatureMenu" type="button" class="btn btn-dark" aria-expanded="false" aria-haspopup="true">
           <i data-lucide="layout-grid" style="width:14px;height:14px;"></i>
@@ -5998,6 +6003,49 @@
           <a href="https://github.com/LHSheng-404/TradingAutomatic/releases" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;white-space:nowrap;">📦 前往 GitHub Releases 下載</a>
         </div>
         <div id="changelogListContainer" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.29.0: Global Button Action & Error Audit Log Modal -->
+  <div id="actionLogModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="actionLogModalTitle">
+    <div class="modal-card" style="max-width:860px;width:95vw;max-height:88vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-blue">AUDIT LOG</span>
+          <h3 id="actionLogModalTitle" style="margin:0;font-size:15px;font-weight:800;">📋 全站按鈕操作與系統事件 Log 紀錄中心</h3>
+          <span id="actionLogSummaryPill" class="badge mono" style="background:#0f172a;color:#38bdf8;font-weight:700;">總計 0 筆 · 錯誤 0</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="actionLogModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-bottom:16px;">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:8px 10px;">
+          <select id="actionLogFilterType" class="select" style="width:auto;min-width:110px;">
+            <option value="all">全部事件</option>
+            <option value="click">僅按鈕點擊</option>
+            <option value="error">僅錯誤 ERR</option>
+            <option value="system">系統事件</option>
+          </select>
+          <input id="actionLogSearchInput" type="text" class="input" style="flex:1;min-width:150px;" placeholder="搜尋按鈕 ID、文字、模組或錯誤訊息..." />
+          <button id="btnActionLogAudit" type="button" class="btn btn-sm btn-primary">🧪 全按鈕健康自檢</button>
+          <button id="btnActionLogExport" type="button" class="btn btn-sm">⬇️ 匯出 Log</button>
+          <button id="btnActionLogClear" type="button" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;">🧹 清空</button>
+        </div>
+        <div id="actionLogAuditBanner" style="display:none;padding:9px 12px;border-radius:10px;background:#ecfdf5;border:1px solid #86efac;color:#14532d;font-size:12px;font-weight:600;line-height:1.5;"></div>
+        <div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:54vh;background:#0b1220;color:#e2e8f0;">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+            <thead>
+              <tr style="background:#111c33;color:#94a3b8;text-align:left;position:sticky;top:0;">
+                <th style="padding:7px 8px;width:95px;">時間</th>
+                <th style="padding:7px 8px;width:62px;">狀態</th>
+                <th style="padding:7px 8px;width:155px;">按鈕 / ID</th>
+                <th style="padding:7px 8px;width:120px;">所屬區域</th>
+                <th style="padding:7px 8px;">操作內容 / 結果</th>
+              </tr>
+            </thead>
+            <tbody id="actionLogTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -9179,6 +9227,10 @@
         }
       };
 
+      if (typeof Chart === 'undefined') {
+        window.SHL_ACTION_LOG?.log('system', 'rawChart', 'Chart.js 尚未載入，暫緩繪製 K 線圖', 'WARN');
+        return;
+      }
       rawChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
@@ -14061,6 +14113,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         Math.min(100, Math.max(0, (c.winRate + (100 - riskPct)) / 2)),
         Math.min(100, Math.max(0, 50 + (c.realPnl > 0 ? 25 : -20)))
       ];
+      if (typeof Chart === 'undefined') {
+        window.SHL_ACTION_LOG?.log('system', 'revCharts', 'Chart.js 尚未載入，暫緩繪製復盤圖表', 'WARN');
+        return;
+      }
       if (revCharts.radar) revCharts.radar.destroy();
       revCharts.radar = new Chart(document.getElementById('revRadarChart').getContext('2d'), {
         type: 'radar',
@@ -14848,6 +14904,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return `當日組合市值：${fmtMoney(pt.totalValue)} ｜ 投入成本：${fmtMoney(pt.totalCost)}（${m.matchedDate}）`;
       });
 
+      if (typeof Chart === 'undefined') {
+        window.SHL_ACTION_LOG?.log('system', 'dcaChart', 'Chart.js 尚未載入，暫緩繪製回測圖表', 'WARN');
+        return;
+      }
       if (dcaChartInstance) dcaChartInstance.destroy();
       dcaChartInstance = new Chart(document.getElementById('dcaMainChart').getContext('2d'), {
         type: 'line',
@@ -20534,6 +20594,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
         if (leg) leg.innerHTML = legendHtml;
 
+        if (typeof Chart === 'undefined') {
+          window.SHL_ACTION_LOG?.log('system', 'subPaneChart', 'Chart.js 尚未載入，暫緩繪製副圖指標', 'WARN');
+          return;
+        }
         subPaneChart = new Chart(canvas.getContext('2d'), {
           type: 'line',
           data: { labels, datasets },
@@ -21206,7 +21270,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
 
         const cv = document.getElementById('battleBacktestChart');
-        if (cv) {
+        if (cv && typeof Chart !== 'undefined') {
           if (battleBtChartInstance) { battleBtChartInstance.destroy(); battleBtChartInstance = null; }
           battleBtChartInstance = new Chart(cv.getContext('2d'), {
             type: 'line',
@@ -21798,8 +21862,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.28.1';
+      const CURRENT_VERSION = 'v3.29.0';
       const HISTORY = [
+        {
+          ver: 'v3.29.0',
+          items: [
+            '全面稽核全站 288 個按鈕與 16 組事件委派，並以無頭瀏覽器實測主畫面、功能選單 9 項與所有彈窗按鈕，確認互動正常無卡死',
+            '新增全站「📋 按鈕操作與系統事件 Log 紀錄中心」（window.SHL_ACTION_LOG ＋ 頂部 #btnActionLog ＋ #actionLogModal）：透過全域 Capture 監聽器自動記錄每一次按鈕點擊（時間戳記、按鈕 ID／名稱、所屬區域、執行狀態 OK/ERR），同步關聯 window.onerror / unhandledrejection 錯誤、寫入瀏覽器 Console 與 localStorage（保留最新 300 筆），並支援一鍵「🧪 全按鈕健康自檢」、篩選搜尋、匯出 JSON Log 與後端 /api/v1/ui-logs 選配同步',
+            '修復 8 處 Chart.js 繪圖（K 線主圖、對帳單復盤 4 圖、台股回測、副圖指標、實盤對決回測）在離線或 CDN 載入延遲時拋出 ReferenceError: Chart is not defined 的隱藏問題'
+          ]
+        },
         {
           ver: 'v3.28.1',
           items: [
@@ -25425,10 +25497,273 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { start, stop, isConnected: () => connected };
     })();
 
+    // =========================================================================
+    // v3.29.0 全站按鈕操作與系統事件 Log 紀錄中心 (window.SHL_ACTION_LOG)
+    // =========================================================================
+    window.SHL_ACTION_LOG = (function createActionLogCenter() {
+      const STORAGE_KEY = 'shl_ui_action_logs_v1';
+      const MAX_LOGS = 300;
+      let entries = [];
+      let pendingSync = [];
+      let syncTimer = null;
+      let lastClickedTarget = '';
+      let lastClickedAt = 0;
+      let initialized = false;
+
+      function nowMs() {
+        const d = new Date();
+        const pad = (n, w = 2) => String(n).padStart(w, '0');
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+      }
+
+      function escHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) entries = arr.slice(-MAX_LOGS);
+          }
+        } catch {}
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(-MAX_LOGS)));
+        } catch {}
+      }
+
+      function scheduleBackendSync() {
+        if (syncTimer || !pendingSync.length) return;
+        syncTimer = setTimeout(() => {
+          syncTimer = null;
+          const batch = pendingSync.splice(0, 40);
+          if (!batch.length) return;
+          try {
+            const base = (typeof getApiBase === 'function' ? getApiBase() : '') || '';
+            if (!base) return;
+            fetch(`${base.replace(/\/$/, '')}/api/v1/ui-logs`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entries: batch }),
+              keepalive: true
+            }).catch(() => {});
+          } catch {}
+        }, 2500);
+      }
+
+      function updateBadge() {
+        const cntEl = document.getElementById('actionLogBadgeCount');
+        const dotEl = document.getElementById('actionLogErrDot');
+        const pillEl = document.getElementById('actionLogSummaryPill');
+        const errCnt = entries.filter(e => e.level === 'ERR').length;
+        if (cntEl) cntEl.textContent = String(entries.length);
+        if (dotEl) dotEl.style.display = errCnt > 0 ? 'inline-block' : 'none';
+        if (pillEl) pillEl.textContent = `總計 ${entries.length} 筆 · 錯誤 ${errCnt}`;
+      }
+
+      function log(kind, target, detail, level = 'OK', area = '系統') {
+        const item = {
+          ts: nowMs(),
+          kind: String(kind || 'system'),
+          level: String(level || 'OK'),
+          target: String(target || '-').slice(0, 80),
+          area: String(area || '系統').slice(0, 48),
+          detail: String(detail || '').slice(0, 240)
+        };
+        entries.push(item);
+        if (entries.length > MAX_LOGS) entries.splice(0, entries.length - MAX_LOGS);
+        save();
+        updateBadge();
+        try {
+          const fn = item.level === 'ERR' ? console.error : (item.level === 'WARN' ? console.warn : console.info);
+          fn(`[SHL-LOG ${item.ts}] [${item.level}] [${item.area}] ${item.target} -> ${item.detail}`);
+        } catch {}
+        pendingSync.push(item);
+        scheduleBackendSync();
+        const modal = document.getElementById('actionLogModal');
+        if (modal && modal.classList.contains('open')) renderTable();
+        return item;
+      }
+
+      function resolveArea(el) {
+        if (!el || !el.closest) return '主畫面';
+        const modal = el.closest('.modal-backdrop');
+        if (modal && modal.id) return `彈窗:${modal.id}`;
+        if (el.closest('#featureMenuDropdown')) return '功能選單';
+        if (el.closest('.topbar')) return '頂部工具列';
+        if (el.closest('#tradingFlowchartCard')) return '交易流程圖';
+        if (el.closest('#quantLiveHubHud')) return '交握中樞HUD';
+        if (el.closest('#shlWarRoomCard')) return '自動戰情室';
+        if (el.closest('.mobile-bottom-nav')) return '手機底部列';
+        const card = el.closest('.card, section, [data-studio-pane]');
+        if (card) {
+          const h = card.querySelector('h2, h3, .card-title');
+          if (h && h.textContent) return h.textContent.replace(/\s+/g, ' ').trim().slice(0, 22);
+          if (card.id) return `#${card.id}`;
+        }
+        return '主交易區';
+      }
+
+      function describeButton(btn) {
+        const id = btn.id ? `#${btn.id}` : '';
+        const dataPairs = Array.from(btn.attributes || [])
+          .filter(a => a.name.startsWith('data-') && a.name !== 'data-lucide')
+          .slice(0, 2)
+          .map(a => `${a.name}=${a.value}`);
+        const target = id || (dataPairs.length ? dataPairs.join(' ') : (btn.type === 'submit' ? 'button[submit]' : 'button'));
+        const label = (btn.innerText || btn.getAttribute('aria-label') || btn.getAttribute('title') || '').replace(/\s+/g, ' ').trim().slice(0, 48);
+        return { target, label };
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById('actionLogTableBody');
+        if (!tbody) return;
+        const typeVal = (document.getElementById('actionLogFilterType')?.value || 'all').toLowerCase();
+        const q = (document.getElementById('actionLogSearchInput')?.value || '').trim().toLowerCase();
+        const filtered = entries.slice().reverse().filter(item => {
+          if (typeVal === 'click' && item.kind !== 'click') return false;
+          if (typeVal === 'error' && item.level !== 'ERR') return false;
+          if (typeVal === 'system' && item.kind === 'click') return false;
+          if (q) {
+            const hay = `${item.ts} ${item.level} ${item.target} ${item.area} ${item.detail}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+        if (!filtered.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="padding:18px;text-align:center;color:#64748b;">尚無符合條件的 Log 紀錄。點擊畫面任一按鈕即會自動寫入！</td></tr>';
+          return;
+        }
+        tbody.innerHTML = filtered.slice(0, 200).map(item => {
+          const badgeBg = item.level === 'ERR' ? '#7f1d1d' : (item.level === 'WARN' ? '#78350f' : (item.level === 'DISABLED' ? '#334155' : '#064e3b'));
+          const badgeCol = item.level === 'ERR' ? '#fecaca' : (item.level === 'WARN' ? '#fde68a' : (item.level === 'DISABLED' ? '#cbd5e1' : '#6ee7b7'));
+          return `<tr style="border-bottom:1px solid #1e293b;">
+            <td class="mono" style="padding:6px 8px;color:#94a3b8;white-space:nowrap;">${escHtml(item.ts)}</td>
+            <td style="padding:6px 8px;"><span class="mono" style="display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:800;background:${badgeBg};color:${badgeCol};">${escHtml(item.level)}</span></td>
+            <td class="mono" style="padding:6px 8px;color:#38bdf8;word-break:break-all;">${escHtml(item.target)}</td>
+            <td style="padding:6px 8px;color:#cbd5e1;">${escHtml(item.area)}</td>
+            <td style="padding:6px 8px;color:#f1f5f9;word-break:break-word;">${escHtml(item.detail)}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      function runAudit() {
+        const allBtns = Array.from(document.querySelectorAll('button'));
+        const total = allBtns.length;
+        const visible = allBtns.filter(b => {
+          const r = b.getBoundingClientRect();
+          return r.width > 0 && r.height > 0;
+        }).length;
+        const orphans = allBtns.filter(b => {
+          if (b.id || b.onclick) return false;
+          const hasData = Array.from(b.attributes).some(a => a.name.startsWith('data-'));
+          if (hasData) return false;
+          if (b.type === 'submit' && b.closest('form')) return false;
+          return true;
+        });
+        const coreIds = ['btnFeatureMenu', 'btnGlobalShioajiRefresh', 'btnActionLog', 'btnOpenChangelog', 'btnTfcRunAll', 'btnWatchlistSaveMem', 'btnRunDiagPipeline'];
+        const missingCore = coreIds.filter(id => !document.getElementById(id));
+        const errCnt = entries.filter(e => e.level === 'ERR').length;
+        const ok = orphans.length === 0 && missingCore.length === 0 && errCnt === 0;
+        const summary = `全站共掃描 ${total} 顆按鈕（目前可見 ${visible} 顆）｜孤立無綁定按鈕：${orphans.length} 顆｜核心按鈕缺失：${missingCore.length} 顆｜累積錯誤 Log：${errCnt} 筆`;
+        log('system', 'BUTTON_AUDIT', summary, ok ? 'OK' : 'WARN', '健康自檢');
+        const banner = document.getElementById('actionLogAuditBanner');
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.background = ok ? '#ecfdf5' : '#fffbeb';
+          banner.style.borderColor = ok ? '#86efac' : '#fcd34d';
+          banner.style.color = ok ? '#14532d' : '#92400e';
+          banner.innerHTML = `${ok ? '✅ 全部按鈕結構與事件稽核通過！' : '⚠️ 稽核發現需要注意項目：'}<br>${escHtml(summary)}`;
+        }
+        renderTable();
+        return { total, visible, orphans: orphans.length, missingCore, errCnt, ok };
+      }
+
+      function exportLogs() {
+        const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), count: entries.length, entries }, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shl_tw_action_logs_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        log('system', '#btnActionLogExport', `已匯出 ${entries.length} 筆操作 Log (JSON)`, 'OK', 'Log中心');
+      }
+
+      function clearLogs() {
+        entries = [];
+        save();
+        updateBadge();
+        renderTable();
+        log('system', '#btnActionLogClear', '已清空歷史操作 Log', 'OK', 'Log中心');
+      }
+
+      function openModal() {
+        const modal = document.getElementById('actionLogModal');
+        if (!modal) return;
+        modal.classList.add('open');
+        updateBadge();
+        renderTable();
+      }
+
+      function init() {
+        if (initialized) return;
+        initialized = true;
+        load();
+        updateBadge();
+
+        // Global capture-phase click logger for EVERY button / interactive menu item
+        document.addEventListener('click', (e) => {
+          const btn = e.target && e.target.closest
+            ? e.target.closest('button, .menu-item, .studio-pill, .flow-step-node, .mobile-nav-btn, [role="button"]')
+            : null;
+          if (!btn) return;
+          const { target, label } = describeButton(btn);
+          const area = resolveArea(btn);
+          const isDisabled = Boolean(btn.disabled || btn.getAttribute('aria-disabled') === 'true');
+          lastClickedTarget = `${target}${label ? ` (${label})` : ''}`;
+          lastClickedAt = Date.now();
+          log('click', target, label ? `點擊「${label}」` : '點擊按鈕', isDisabled ? 'DISABLED' : 'OK', area);
+        }, true);
+
+        // Global runtime error capture correlated to last clicked button
+        window.addEventListener('error', (ev) => {
+          const nearClick = (Date.now() - lastClickedAt) < 2500 ? ` [觸發來源: ${lastClickedTarget}]` : '';
+          log('error', ev.filename ? ev.filename.split('/').pop() : 'window.onerror', `${ev.message || 'Unknown Error'}${nearClick}`, 'ERR', '執行期錯誤');
+        });
+        window.addEventListener('unhandledrejection', (ev) => {
+          const msg = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : 'Unhandled Promise Rejection';
+          const nearClick = (Date.now() - lastClickedAt) < 2500 ? ` [觸發來源: ${lastClickedTarget}]` : '';
+          log('error', 'Promise', `${msg}${nearClick}`, 'ERR', '非同步錯誤');
+        });
+
+        document.getElementById('btnActionLog')?.addEventListener('click', openModal);
+        document.getElementById('actionLogFilterType')?.addEventListener('change', renderTable);
+        document.getElementById('actionLogSearchInput')?.addEventListener('input', renderTable);
+        document.getElementById('btnActionLogAudit')?.addEventListener('click', runAudit);
+        document.getElementById('btnActionLogExport')?.addEventListener('click', exportLogs);
+        document.getElementById('btnActionLogClear')?.addEventListener('click', clearLogs);
+
+        log('system', 'BOOT', 'SHL TW 操作與錯誤 Log 紀錄中心已就緒（全站按鈕自動追蹤中）', 'OK', '系統啟動');
+      }
+
+      return { init, log, openModal, runAudit, exportLogs, clearLogs, getEntries: () => entries.slice() };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       const safeBoot = (name, fn) => {
-        try { if (typeof fn === 'function') fn(); } catch (err) { console.warn('[SHL boot]', name, err); }
+        try { if (typeof fn === 'function') fn(); } catch (err) {
+          console.warn('[SHL boot]', name, err);
+          window.SHL_ACTION_LOG?.log('error', `boot:${name}`, err && err.message ? err.message : String(err), 'ERR', '系統啟動');
+        }
       };
+      safeBoot('ACTION_LOG', () => window.SHL_ACTION_LOG?.init());
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
       });

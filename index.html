@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.30.2 · 版本說明
+              v3.30.3 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -21923,8 +21923,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.30.2';
+      const CURRENT_VERSION = 'v3.30.3';
       const HISTORY = [
+        {
+          ver: 'v3.30.3',
+          items: [
+            '透過實機 uvicorn ＋ Playwright 端到端比對真實 TWSE 端點，徹底修正「TWSE OpenAPI STOCK_DAY_ALL 停在昨日（20261125 大跌日）卻覆蓋掉 TWSE MIS 今日（20261126 上漲日）13:30 真實收盤」的日期回退 Bug',
+            '新增民國／西元日期正規化比對 _norm_tw_date_yyyymmdd()：凡 MIS 已有真實成交價（raw_z > 0）與成交量即直接採用，僅在無成交價或零量時才以官方 EOD 補齊，且嚴禁舊日期覆蓋新日期'
+          ]
+        },
         {
           ver: 'v3.30.2',
           items: [

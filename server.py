@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.30.2",
+    version="3.30.3",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.30.2",
+        "version": "3.30.3",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4417,13 +4417,20 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
             "time": m.get("t", ""),
             "tlong": m.get("tlong", ""),
         }
-        # Whenever off-hours OR MIS has no real trade price (raw_z is None), force official EOD real close/prev_close/change_pct
-        if code not in ("t00", "o00", "t13", "t17") and ((not in_session) or raw_z is None or (vol_lots is None or vol_lots <= 0)):
+        # v3.30.3: ONLY backfill from official EOD when MIS truly has NO real traded price (raw_z is None) or zero volume.
+        # When MIS already carries today's real 13:30 closing price (raw_z > 0 & vol_lots > 0), NEVER overwrite it with stale yesterday EOD!
+        if code not in ("t00", "o00", "t13", "t17") and (raw_z is None or vol_lots is None or vol_lots <= 0):
             need_eod_syms.append(code)
 
     for sy in syms:
         if sy not in out:
             need_eod_syms.append(sy)
+
+    def _norm_tw_date_yyyymmdd(val: Any) -> str:
+        s = re.sub(r"[^0-9]", "", str(val or ""))
+        if len(s) == 7:  # ROC YYYMMDD -> AD YYYYMMDD
+            return f"{int(s[:3]) + 1911:04d}{s[3:]}"
+        return s[:8] if len(s) >= 8 else ""
 
     used_eod = False
     if need_eod_syms:
@@ -4432,8 +4439,13 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
             eod = eod_map.get(code)
             if not eod:
                 continue
-            used_eod = True
             base = out.get(code, {})
+            mis_d = _norm_tw_date_yyyymmdd(base.get("date"))
+            eod_d = _norm_tw_date_yyyymmdd(eod.get("date"))
+            # Guard: if MIS already has a valid price AND a newer date than EOD, do NOT overwrite with older EOD!
+            if base.get("price") and mis_d and eod_d and eod_d < mis_d and (base.get("volume_lots") or 0) > 0:
+                continue
+            used_eod = True
             out[code] = {
                 **base,
                 "symbol": code,
@@ -4447,7 +4459,7 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
                 "high": eod["high"],
                 "low": eod["low"],
                 "volume_lots": eod["volume_lots"],
-                "date": base.get("date") or eod["date"],
+                "date": eod_d or base.get("date") or eod["date"],
                 "time": base.get("time") or "收盤",
                 "is_eod_official": True,
             }

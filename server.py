@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.30.1",
+    version="3.30.2",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.30.1",
+        "version": "3.30.2",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -4087,10 +4087,19 @@ def snap_tw_tick(price: float, symbol: str = "", mode: str = "round") -> float:
     return round(snapped, 2)
 
 
+def _is_tw_intraday_market_hours(now_dt: Optional[datetime] = None) -> bool:
+    """Return True strictly during Taiwan Stock Exchange regular trading hours (Mon-Fri 09:00~13:35 Asia/Taipei)."""
+    dt = now_dt or datetime.now(TW_TZ)
+    if dt.weekday() > 4:
+        return False
+    hm = dt.hour * 100 + dt.minute
+    return 900 <= hm <= 1335
+
+
 def _fetch_shioaji_live_rank_sync(limit: int = 50) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
-    v3.30.0 Priority 1: Dynamic real-time stock screener directly via Shioaji API scanners
-    (ChangePercentRank bull/bear + AmountRank hot leaders) — zero hardcoded stock lists.
+    v3.30.2 Priority 1: Dynamic real-time stock screener directly via Shioaji PRODUCTION API (simulation=False ONLY).
+    NEVER falls back to simulation=True (which returns fake randomized +/-10% sandbox test prices).
     """
     ak, sk = _shioaji_market_creds()
     if not (ak and sk):
@@ -4101,14 +4110,10 @@ def _fetch_shioaji_live_rank_sync(limit: int = 50) -> tuple[list[dict[str, Any]]
         return [], []
 
     api = None
-    for sim_flag in (False, True):
-        try:
-            api = sj.Shioaji(simulation=sim_flag)
-            api.login(api_key=ak, secret_key=sk)
-            break
-        except Exception:
-            api = None
-    if api is None:
+    try:
+        api = sj.Shioaji(simulation=False)
+        api.login(api_key=ak, secret_key=sk)
+    except Exception:
         return [], []
 
     try:
@@ -4378,6 +4383,7 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
 
     out: dict[str, Any] = {}
     need_eod_syms: list[str] = []
+    in_session = _is_tw_intraday_market_hours()
     for m in msg_rows:
         code = str(m.get("c", "")).strip()
         if not code:
@@ -4385,11 +4391,11 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
         raw_z = _parse_mis_float(m.get("z"))
         bids = [_parse_mis_float(x) for x in str(m.get("b", "")).split("_") if x]
         asks = [_parse_mis_float(x) for x in str(m.get("a", "")).split("_") if x]
-        last = raw_z
-        if last is None:
-            last = _parse_mis_float(m.get("pz")) or (bids[0] if bids else None) or _parse_mis_float(m.get("y"))
         prev = _parse_mis_float(m.get("y"))
         vol_lots = _parse_mis_float(m.get("v"))
+        # v3.30.2: Strictly require real traded price raw_z during market hours;
+        # NEVER use pre-market/overnight dummy bids[0] or pz trial bids (which often show +/-10% fake prices!)
+        last = raw_z if raw_z is not None else prev
         out[code] = {
             "symbol": code,
             "name": m.get("n", ""),
@@ -4411,8 +4417,8 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
             "time": m.get("t", ""),
             "tlong": m.get("tlong", ""),
         }
-        # Detect pre-market / MIS-reset empty rows (no intraday trade & zero volume)
-        if code not in ("t00", "o00", "t13", "t17") and raw_z is None and (vol_lots is None or vol_lots <= 0):
+        # Whenever off-hours OR MIS has no real trade price (raw_z is None), force official EOD real close/prev_close/change_pct
+        if code not in ("t00", "o00", "t13", "t17") and ((not in_session) or raw_z is None or (vol_lots is None or vol_lots <= 0)):
             need_eod_syms.append(code)
 
     for sy in syms:
@@ -4991,18 +4997,10 @@ async def _fetch_shioaji_sdk_snapshots(symbols: list[str]) -> Optional[dict[str,
         return None
 
     def _run_sdk():
-        api = None
-        last_err = None
-        for sim_flag in (False, True):
-            try:
-                api = sj.Shioaji(simulation=sim_flag)
-                api.login(api_key=ak, secret_key=sk)
-                break
-            except Exception as e:
-                last_err = e
-                api = None
-        if api is None:
-            raise last_err or RuntimeError("Shioaji SDK login failed")
+        # v3.30.2: STRICTLY use production market data (simulation=False) ONLY.
+        # NEVER fall back to simulation=True, which returns fake randomized +/-10% sandbox quotes!
+        api = sj.Shioaji(simulation=False)
+        api.login(api_key=ak, secret_key=sk)
         try:
             contracts = []
             for s in symbols:
@@ -5064,19 +5062,22 @@ async def _fetch_shioaji_sdk_snapshots(symbols: list[str]) -> Optional[dict[str,
 @app.get("/api/v1/shioaji/snapshots")
 async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
     syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:80]
-    sj_data = await _fetch_shioaji_http_snapshots(syms)
-    if sj_data:
-        return JSONResponse(
-            {"ok": True, "source": "永豐金 Shioaji Pro HTTP", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
-            headers={"Cache-Control": "no-store"},
-        )
-    sdk_data = await _fetch_shioaji_sdk_snapshots(syms)
-    if sdk_data:
-        return JSONResponse(
-            {"ok": True, "source": "永豐金 Shioaji Python SDK 即時", "source_engine": "shioaji_sdk", "server_time": tw_now_str(), "quotes": sdk_data},
-            headers={"Cache-Control": "no-store"},
-        )
-    # Automatic seamless fallback to official TWSE/TPEx MIS real-time quotes
+    in_session = _is_tw_intraday_market_hours()
+    # Intraday (09:00~13:35): strictly prefer Shioaji Production API first for live ticks
+    if in_session:
+        sj_data = await _fetch_shioaji_http_snapshots(syms)
+        if sj_data:
+            return JSONResponse(
+                {"ok": True, "source": "永豐金 Shioaji Pro 正式實盤", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
+                headers={"Cache-Control": "no-store"},
+            )
+        sdk_data = await _fetch_shioaji_sdk_snapshots(syms)
+        if sdk_data:
+            return JSONResponse(
+                {"ok": True, "source": "永豐金 Shioaji SDK 正式實盤", "source_engine": "shioaji_sdk", "server_time": tw_now_str(), "quotes": sdk_data},
+                headers={"Cache-Control": "no-store"},
+            )
+    # Off-hours / overnight / weekend OR Shioaji unavailable: official TWSE/TPEx real closing & MIS verified quotes
     return await twse_realtime_quotes(symbols=",".join(syms), indices="t00,o00")
 
 
@@ -5250,21 +5251,10 @@ async def _fetch_shioaji_sdk_kbars(symbol: str, interval: str) -> Optional[dict[
         return None
 
     def _run_sdk():
-        # v3.11.0: Decouple market-data K-bars from order execution mode —
-        # always prefer real production market data (simulation=False) when API Token is configured,
-        # falling back to simulation=True only if the token is restricted to SIM.
-        api = None
-        last_err = None
-        for sim_flag in (False, True):
-            try:
-                api = sj.Shioaji(simulation=sim_flag)
-                api.login(api_key=ak, secret_key=sk)
-                break
-            except Exception as e:
-                last_err = e
-                api = None
-        if api is None:
-            raise last_err or RuntimeError("Shioaji SDK login failed")
+        # v3.30.2: STRICTLY use production market data (simulation=False) ONLY for K-bars.
+        # NEVER fall back to simulation=True sandbox test data.
+        api = sj.Shioaji(simulation=False)
+        api.login(api_key=ak, secret_key=sk)
         try:
             contract = api.Contracts.Stocks[symbol.upper()]
             kb = api.kbars(contract=contract, start=start_dt.strftime("%Y-%m-%d"), end=end_dt.strftime("%Y-%m-%d"))

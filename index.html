@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.30.1 · 版本說明
+              v3.30.2 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -18071,20 +18071,21 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           : String(m.f || '').split('_').map(parseNum).filter(x => x !== null).slice(0, 5);
         const prevClose = parseNum(m.prev_close ?? m.y);
         let price = parseNum(m.price ?? m.z);
-        if (price === null) price = parseNum(m.pz) ?? (bids[0] ?? null) ?? prevClose;
-        if (price === null) return false;
+        if (price === null) price = prevClose;
+        if (price === null || price <= 0) return false;
         const open = parseNum(m.open ?? m.o) ?? price;
         const high = parseNum(m.high ?? m.h) ?? price;
         const low = parseNum(m.low ?? m.l) ?? price;
         const volumeLots = parseNum(m.volume_lots ?? m.v) ?? 0;
         const tickVol = parseNum(m.tick_volume ?? m.tv) ?? 0;
+        const rawChgPct = parseNum(m.change_pct ?? m.changePct);
         const dateStr = String(m.date || m.d || '').replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3');
         const timeStr = String(m.time || m.t || nowTwTime());
         const stamp = dateStr ? `${dateStr} ${timeStr}` : timeStr;
 
         if (code === 't00' || code === 'o00') {
           const chg = prevClose ? Number((price - prevClose).toFixed(2)) : 0;
-          const chgPct = prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : 0;
+          const chgPct = rawChgPct !== null ? Number(rawChgPct.toFixed(2)) : (prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : 0);
           state.ext.indices[code] = {
             code,
             name: INDEX_META[code]?.name || m.name || m.n || code,
@@ -18102,13 +18103,23 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const existing = state.quotes[code] || {};
         const isPreMarketEmpty = volumeLots === 0 && prevClose && Math.abs(price - prevClose) < 1e-6 && !m.is_eod_official;
         const keepExistingStats = isPreMarketEmpty && (Number(existing.volume || 0) > 0 || (existing.prevClose && existing.price && Math.abs(existing.price - existing.prevClose) > 1e-6));
-        const finalPrevClose = keepExistingStats ? existing.prevClose : (prevClose ?? existing.prevClose ?? open);
+        const finalPrice = keepExistingStats ? existing.price : price;
+        let finalPrevClose = keepExistingStats ? existing.prevClose : (prevClose ?? existing.prevClose ?? null);
+        const finalChgPct = keepExistingStats
+          ? (existing.changePct ?? (finalPrevClose ? Number(((finalPrice - finalPrevClose) / finalPrevClose * 100).toFixed(2)) : 0))
+          : (finalPrevClose ? Number(((finalPrice - finalPrevClose) / finalPrevClose * 100).toFixed(2)) : (rawChgPct !== null ? Number(rawChgPct.toFixed(2)) : (existing.changePct || 0)));
+        if (!finalPrevClose && finalPrice > 0 && (1 + finalChgPct / 100) > 0) {
+          finalPrevClose = Number((finalPrice / (1 + finalChgPct / 100)).toFixed(2));
+        }
         const finalVolLots = keepExistingStats ? (existing.volumeLots || Math.round((existing.volume || 0) / 1000)) : volumeLots;
         const finalVol = keepExistingStats ? (existing.volume || finalVolLots * 1000) : (volumeLots * 1000);
+        const isSjRow = m.source_engine === 'shioaji_sdk' || m.source_engine === 'shioaji_http';
         state.quotes[code] = {
           ...existing,
-          price: keepExistingStats ? existing.price : price,
+          price: finalPrice,
           prevClose: finalPrevClose,
+          changePct: finalChgPct,
+          change_pct: finalChgPct,
           open: keepExistingStats ? (existing.open ?? open) : open,
           high: keepExistingStats ? (existing.high ?? high) : high,
           low: keepExistingStats ? (existing.low ?? low) : low,
@@ -18123,9 +18134,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           realtimeTime: timeStr,
           isRealtime: true,
           realtimeTs: Date.now(),
-          realtimeSource: m.is_eod_official ? 'TWSE/TPEx 官方收盤' : 'TWSE/TPEx MIS 即時',
-          source: existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : (m.is_eod_official ? 'TWSE/TPEx 官方最近交易日' : 'TWSE/TPEx MIS 官方即時'),
-          sourceType: existing.sourceType || 'twse_mis'
+          realtimeSource: isSjRow ? '永豐金 Shioaji 正式實盤' : (m.is_eod_official ? 'TWSE/TPEx 官方收盤' : 'TWSE/TPEx MIS 即時'),
+          source: isSjRow ? '永豐金 Shioaji 正式實盤' : (existing.candles?.length ? `TWSE/TPEx 即時 ＋ K線` : (m.is_eod_official ? 'TWSE/TPEx 官方最近交易日' : 'TWSE/TPEx MIS 官方即時')),
+          sourceType: isSjRow ? 'shioaji' : (existing.sourceType || 'twse_mis')
         };
         if (code === state.activeSymbol && state.chartMode === 'raw' && typeof renderRawPriceChart === 'function') {
           const nowMs = Date.now();
@@ -21912,8 +21923,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.30.1';
+      const CURRENT_VERSION = 'v3.30.2';
       const HISTORY = [
+        {
+          ver: 'v3.30.2',
+          items: [
+            '緊急徹底根除「今日明明上漲卻顯示整片 -8%~-10% 下跌」之假報價污染：全面封殺後端所有行情／快照／掃描／K線函式回退永豐 Shioaji simulation=True（模擬主機僅回傳 ±10% 隨機測試價），行情嚴格僅允許 Shioaji 正式實盤主機（simulation=False）',
+            '明確區分台股盤中（09:00~13:35）與盤外時段：盤中優先抓取永豐 Shioaji 正式實盤 API 即時刷新；盤後／凌晨／週末改由 TWSE/TPEx 官方最近交易日真實收盤補齊，徹底禁止 TWSE MIS 盤前／凌晨試撮假單（bids[0] / pz）充當成交價',
+            '修復前端 applyMisRow 漏存 change_pct、誤以開盤價 open 充當昨收與誤用 bids[0] 的問題，確保真實股價與多空漲跌方向 100% 貼合實際市場'
+          ]
+        },
         {
           ver: 'v3.30.1',
           items: [

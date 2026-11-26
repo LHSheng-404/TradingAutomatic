@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.29.1",
+    version="3.30.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.29.1",
+        "version": "3.30.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3464,6 +3464,7 @@ async def place_order(req: PlaceOrderRequest, request: Request):
         )
     lots = shares // 1000
     norm_unit = "張"
+    req.price = snap_tw_tick(req.price, req.symbol, "round")
     notional = shares * req.price
     is_etf = req.symbol.startswith("00")
     safe_discount = max(0.1, min(6.0, float(req.fee_discount or 2.8)))
@@ -4047,29 +4048,149 @@ def _fetch_yahoo_tw_live_rank_sync(direction: str = "up") -> list[dict[str, Any]
     return out
 
 
+import math
+
+
+def tw_tick_size(price: float, symbol: str = "") -> float:
+    """Official TWSE / TPEx price-tiered tick size (stocks: 6 tiers; ETFs 00xxx: 2 tiers)."""
+    p = float(price or 0.0)
+    sym = str(symbol or "").strip().upper()
+    is_etf = sym.startswith("00")
+    if is_etf:
+        return 0.01 if p < 50.0 else 0.05
+    if p < 10.0:
+        return 0.01
+    if p < 50.0:
+        return 0.05
+    if p < 100.0:
+        return 0.1
+    if p < 500.0:
+        return 0.5
+    if p < 1000.0:
+        return 1.0
+    return 5.0
+
+
+def snap_tw_tick(price: float, symbol: str = "", mode: str = "round") -> float:
+    """Snap a price to the nearest valid TWSE / TPEx tick (mode: round | up | down)."""
+    p = float(price or 0.0)
+    if p <= 0:
+        return 0.0
+    t = tw_tick_size(p, symbol)
+    ratio = p / t
+    if mode == "up":
+        snapped = math.ceil(ratio - 1e-9) * t
+    elif mode == "down":
+        snapped = math.floor(ratio + 1e-9) * t
+    else:
+        snapped = round(ratio) * t
+    return round(snapped, 2)
+
+
+def _fetch_shioaji_live_rank_sync(limit: int = 50) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """
+    v3.30.0 Priority 1: Dynamic real-time stock screener directly via Shioaji API scanners
+    (ChangePercentRank bull/bear + AmountRank hot leaders) — zero hardcoded stock lists.
+    """
+    ak, sk = _shioaji_market_creds()
+    if not (ak and sk):
+        return [], []
+    try:
+        import shioaji as sj  # type: ignore
+    except ImportError:
+        return [], []
+
+    api = None
+    for sim_flag in (False, True):
+        try:
+            api = sj.Shioaji(simulation=sim_flag)
+            api.login(api_key=ak, secret_key=sk)
+            break
+        except Exception:
+            api = None
+    if api is None:
+        return [], []
+
+    try:
+        cnt = max(20, min(int(limit), 80))
+        up_raw = api.scanners(scanner_type=sj.constant.ScannerType.ChangePercentRank, ascending=False, count=cnt) or []
+        dn_raw = api.scanners(scanner_type=sj.constant.ScannerType.ChangePercentRank, ascending=True, count=cnt) or []
+        amt_raw = api.scanners(scanner_type=sj.constant.ScannerType.AmountRank, ascending=False, count=min(cnt, 40)) or []
+
+        def _conv(rows_in: list[Any]) -> list[dict[str, Any]]:
+            out_rows: list[dict[str, Any]] = []
+            seen: set[str] = set()
+            for r in rows_in:
+                code = str(getattr(r, "code", "") or "").strip().upper()
+                if not code or code in seen or not re.fullmatch(r"[0-9A-Z]{4,6}", code):
+                    continue
+                px = float(getattr(r, "close", 0) or 0)
+                if px <= 0:
+                    continue
+                seen.add(code)
+                chg_pct = float(getattr(r, "change_rate", 0) or 0)
+                vol_lots = float(getattr(r, "total_volume", 0) or 0)
+                amt_twd = float(getattr(r, "total_amount", 0) or (px * vol_lots * 1000.0))
+                val_m = round(amt_twd / 1e6, 1)
+                nm = str(getattr(r, "name", "") or code).strip()
+                out_rows.append({
+                    "symbol": code,
+                    "name": nm,
+                    "exchange": "tse",
+                    "price": px,
+                    "change_pct": round(chg_pct, 2),
+                    "volume_lots": vol_lots,
+                    "value_m": val_m,
+                    "is_etf": code.startswith("00"),
+                    "tick_size": tw_tick_size(px, code),
+                    "live_verified": True,
+                })
+            return out_rows
+
+        bulls = _conv(list(up_raw) + [x for x in amt_raw if float(getattr(x, "change_rate", 0) or 0) > 0])
+        bears = _conv(list(dn_raw) + [x for x in amt_raw if float(getattr(x, "change_rate", 0) or 0) < 0])
+        return bulls, bears
+    except Exception:
+        return [], []
+    finally:
+        try:
+            api.logout()
+        except Exception:
+            pass
+
+
 @app.get("/api/v1/market/rank")
 async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
     """
-    v3.14.0: True real-time full-market bull / bear Top-N.
-    Priority 1: Live Yahoo TW full-market (TWSE + TPEx) change-up / change-down rankings (matches real broker/Yahoo screen 100%).
-    Priority 2: Official EOD + Shioaji/MIS live secondary verification fallback (and used for custom/chain universe).
+    v3.30.0: True real-time full-market bull / bear Top-N (Zero Hardcoding).
+    Priority 1: Shioaji API live scanners (ChangePercentRank + AmountRank) when SIM/LIVE credentials are active.
+    Priority 2: Live Yahoo TW full-market (TWSE + TPEx) change-up / change-down rankings.
+    Priority 3: Official EOD + MIS live secondary verification fallback (and used for custom/chain universe).
     universe: all (全市場含ETF) | stocks (僅台股個股·排除ETF) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
     limit = max(5, min(int(limit), 100))
     cache_key = f"{universe}|{limit}|{min_value_m}|{symbols.strip().upper()}"
     now_ts = time.time()
     cached = _RANK_LIVE_CACHE.get(cache_key)
-    if cached and (now_ts - cached[0]) < 35:
+    if cached and (now_ts - cached[0]) < 25:
         return JSONResponse(cached[1], headers={"Cache-Control": "no-store"})
 
     eod_task = asyncio.create_task(_get_official_eod_map())
     live_up: list[dict[str, Any]] = []
     live_dn: list[dict[str, Any]] = []
+    rank_source = "即時全市場實盤漲跌幅排行（上市＋上櫃同步）"
+    shioaji_used = False
     if universe in ("all", "stocks", "liquid"):
-        live_up, live_dn = await asyncio.gather(
-            asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "up"),
-            asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "down"),
-        )
+        sj_up, sj_dn = await asyncio.to_thread(_fetch_shioaji_live_rank_sync, limit)
+        if sj_up or sj_dn:
+            live_up, live_dn = sj_up, sj_dn
+            rank_source = "永豐金 Shioaji API 動態實盤選股（漲跌幅＋成交金額排行）"
+            shioaji_used = True
+        else:
+            live_up, live_dn = await asyncio.gather(
+                asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "up"),
+                asyncio.to_thread(_fetch_yahoo_tw_live_rank_sync, "down"),
+            )
 
     eod = await eod_task
     adv = dec = flat = 0
@@ -4098,7 +4219,9 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
                     continue
                 if universe == "liquid" and x["value_m"] < min_value_m:
                     continue
-                res.append(x)
+                item_copy = dict(x)
+                item_copy["tick_size"] = tw_tick_size(float(item_copy.get("price") or 0), str(item_copy.get("symbol") or ""))
+                res.append(item_copy)
             return res[:limit]
 
         bulls = _flt(live_up, True)
@@ -4106,7 +4229,8 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
         today_str = tw_now_str()[:10].replace("-", "")
         payload = {
             "ok": True,
-            "source": "即時全市場實盤漲跌幅排行（上市＋上櫃同步）",
+            "source": rank_source,
+            "shioaji_dynamic": shioaji_used,
             "data_date": today_str,
             "live_verified": True,
             "verified_count": len(bulls) + len(bears),

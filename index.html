@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.29.1 · 版本說明
+              v3.30.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3240,14 +3240,16 @@
         <div class="diag-toolbar">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <label for="diagScopeSelect" style="font-size:12px;font-weight:800;color:#1e293b;">🎯 掃描股票依據：</label>
-            <select id="diagScopeSelect" class="input" style="width:auto;min-width:190px;padding:5px 10px;font-size:12px;font-weight:700;" aria-label="選擇掃描股票依據">
-              <option value="market_all">全市場（含 ETF 排行）</option>
-              <option value="stocks_only">全個股（不含 ETF）</option>
+            <select id="diagScopeSelect" class="input" style="width:auto;min-width:210px;padding:5px 10px;font-size:12px;font-weight:700;" aria-label="選擇掃描股票依據">
+              <option value="shioaji_dynamic" selected>🚀 永豐 API 動態選股（不硬編碼）</option>
+              <option value="market_all">全市場（含 ETF 動態排行）</option>
+              <option value="stocks_only">全個股（不含 ETF 動態排行）</option>
               <option value="sectors12_watch">12 大產業鏈 ＋ 自選股</option>
-              <option value="watchlist" selected>自選股</option>
+              <option value="watchlist">自選股</option>
               <option value="custom">手動勾選多檔</option>
             </select>
             <span id="diagScopeCountBadge" class="badge badge-blue mono">已選 0 檔</span>
+            <span id="intradayRefreshPill" class="badge mono" style="background:#0f172a;color:#38bdf8;border:1px solid #334155;font-size:11px;" title="台股交易日 09:00~13:20 自動即時刷新動態選股與報價">⏱ 09:00~13:20 盤中排程</span>
             <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#0f172a;cursor:pointer;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:4px 9px;">
               <input id="diagAutoExecChk" type="checkbox" />
               <span>🤖 達標自動順勢下單（含現沖先賣）</span>
@@ -21864,8 +21866,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.29.1';
+      const CURRENT_VERSION = 'v3.30.0';
       const HISTORY = [
+        {
+          ver: 'v3.30.0',
+          items: [
+            '全面去硬編碼選股：後端 GET /api/v1/market/rank 優先透過永豐金 Shioaji API scanners（ChangePercentRank ＋ AmountRank）動態篩選真實台股代號（未連永豐時降級官方全市場動態排行），前端新增並預設「🚀 永豐 API 動態選股（不硬編碼）」',
+            '新增「台股盤中（09:00~13:20）即時自動刷新排程器」（window.SHL_INTRADAY_SCHEDULER）：交易日 09:00~13:20 自動每 30 秒刷新動態選股與診斷（搭配 SSE 1.5 秒報價推播），13:20~13:25 自動轉為尾盤強平監控，盤外自動休眠',
+            '實作台股官方分價級距 Tick Size 引擎（window.SHL_TW_TICK ＋ server.py tw_tick_size/snap_tw_tick）：完整支援一般股票 6 級距（0.01 / 0.05 / 0.1 / 0.5 / 1.0 / 5.0 元）與 ETF 2 級距（0.01 / 0.05 元），直接介接止損防雜訊（≥ max(3 Ticks, 0.5%)）、含稅費方向性對齊真保本（多單無條件進位、空單無條件捨去）、三階移動停利與下單價合法 Tick 對齊，戰情室同步顯示每檔 Tick 級距'
+          ]
+        },
         {
           ver: 'v3.29.1',
           items: [
@@ -22309,6 +22319,106 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     })();
 
     // =========================================================================
+    // v3.30.0 台股官方分價級距 Tick Size 引擎 (window.SHL_TW_TICK)
+    // - 股票 6 級距 (<10: 0.01 / <50: 0.05 / <100: 0.1 / <500: 0.5 / <1000: 1 / >=1000: 5)
+    // - ETF (00xxx) 2 級距 (<50: 0.01 / >=50: 0.05)
+    // - 支援跨價位級距步進 (stepTicks)、方向性對齊 (snapUp/snapDown)、含稅費與 1-Tick 滑價之真保本與最小安全止損
+    // =========================================================================
+    window.SHL_TW_TICK = (function createTwTickEngine() {
+      function isEtf(sym) {
+        return String(sym || '').trim().toUpperCase().startsWith('00');
+      }
+
+      function tickSize(price, sym = '') {
+        const p = Number(price || 0);
+        if (isEtf(sym)) return p < 50 ? 0.01 : 0.05;
+        if (p < 10) return 0.01;
+        if (p < 50) return 0.05;
+        if (p < 100) return 0.1;
+        if (p < 500) return 0.5;
+        if (p < 1000) return 1.0;
+        return 5.0;
+      }
+
+      function snap(price, sym = '', mode = 'round') {
+        const p = Number(price || 0);
+        if (!Number.isFinite(p) || p <= 0) return 0;
+        const t = tickSize(p, sym);
+        const ratio = p / t;
+        let v;
+        if (mode === 'up') v = Math.ceil(ratio - 1e-9) * t;
+        else if (mode === 'down') v = Math.floor(ratio + 1e-9) * t;
+        else v = Math.round(ratio) * t;
+        return Number(v.toFixed(2));
+      }
+
+      function snapUp(price, sym = '') { return snap(price, sym, 'up'); }
+      function snapDown(price, sym = '') { return snap(price, sym, 'down'); }
+
+      function stepTicks(price, deltaTicks, sym = '') {
+        let p = snap(price, sym, 'round');
+        const steps = Math.trunc(Number(deltaTicks || 0));
+        if (!p || !steps) return p;
+        const sign = steps > 0 ? 1 : -1;
+        for (let i = 0; i < Math.abs(steps); i++) {
+          // Stepping down from a tier boundary (e.g. 50.0, 100.0, 500.0, 1000.0) uses the lower tier tick
+          const probe = sign < 0 ? Math.max(0.01, p - 1e-6) : p;
+          const t = tickSize(probe, sym);
+          p = Number(Math.max(0.01, p + sign * t).toFixed(2));
+        }
+        return snap(p, sym, 'round');
+      }
+
+      function ticksBetween(p1, p2, sym = '') {
+        const a = Number(p1 || 0), b = Number(p2 || 0);
+        if (!a || !b) return 0;
+        const mid = (a + b) / 2;
+        const t = tickSize(mid, sym);
+        return Math.round((b - a) / t);
+      }
+
+      // Compute round-trip transaction cost % (brokerage fee x2 x discount + day-trade/ETF tax)
+      function roundTripCostPct(sym = '', dayTrade = true, feeDiscount = null) {
+        const disc = Number(feeDiscount ?? state?.ext?.feeDiscount ?? 2.8);
+        const safeDisc = Math.max(0.1, Math.min(6.0, Number.isFinite(disc) ? disc : 2.8)) / 10;
+        const feeTwoWay = 0.001425 * 2 * safeDisc;
+        const tax = isEtf(sym) ? 0.001 : (dayTrade ? 0.0015 : 0.003);
+        return feeTwoWay + tax;
+      }
+
+      // True breakeven price covering fee + tax + 1 tick slippage protection, snapped in the profit direction
+      function calcNetBreakeven(entry, dir = 1, sym = '', dayTrade = true) {
+        const e = Number(entry || 0);
+        if (!e) return 0;
+        const costPct = roundTripCostPct(sym, dayTrade);
+        if (dir >= 0) {
+          const raw = e * (1 + costPct);
+          const be = snapUp(raw, sym);
+          return be <= e ? stepTicks(e, 1, sym) : be;
+        }
+        const raw = e * (1 - costPct);
+        const be = snapDown(raw, sym);
+        return be >= e ? stepTicks(e, -1, sym) : be;
+      }
+
+      // Tick-aware minimum safe stop distance: max(3 Ticks, 0.5% price) to prevent tick-noise shakeouts
+      function minSafeStop(entry, rawSl, dir = 1, sym = '') {
+        const e = Number(entry || 0);
+        if (!e) return 0;
+        const t = tickSize(e, sym);
+        const minDist = Math.max(t * 3, e * 0.005);
+        if (dir >= 0) {
+          const target = (Number(rawSl) > 0 && Number(rawSl) < e) ? Math.min(Number(rawSl), e - minDist) : (e - minDist);
+          return snapDown(Math.max(0.01, target), sym);
+        }
+        const target = (Number(rawSl) > e) ? Math.max(Number(rawSl), e + minDist) : (e + minDist);
+        return snapUp(target, sym);
+      }
+
+      return { isEtf, tickSize, snap, snapUp, snapDown, stepTicks, ticksBetween, roundTripCostPct, calcNetBreakeven, minSafeStop };
+    })();
+
+    // =========================================================================
     // v3.13.0 盤中作戰室 (window.SHL_WAR)
     // 永豐即時為主 · 大盤趨勢 / 多空前50 / 自選股偵測 / SMC+OF+FVG 量化訊號 / 止損 / 盤中下單 / 圖表進出場
     // 策略移植自 TradingView「SMC+OF VF Alerts｜SMC BOS + 訂單流 + VWAP/FVG [Sheng]」
@@ -22338,9 +22448,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       const fx = (n, d = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(d) : '--');
       const isIntra = iv => ['1', '5', '15', '30', '60'].includes(String(iv));
 
-      // ---------------- Taiwan tick ladder ----------------
-      function tick(p) { return p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5; }
-      function snap(p) { const t = tick(p); return Math.round(p / t) * t; }
+      // ---------------- Taiwan tick ladder (v3.30.0 delegates to SHL_TW_TICK) ----------------
+      function tick(p, sym = '') { return window.SHL_TW_TICK ? window.SHL_TW_TICK.tickSize(p, sym) : (p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5); }
+      function snap(p, sym = '', mode = 'round') { return window.SHL_TW_TICK ? window.SHL_TW_TICK.snap(p, sym, mode) : Number((Math.round(p / tick(p, sym)) * tick(p, sym)).toFixed(2)); }
 
       // ---------------- Engine (Pine port) ----------------
       function analyze(bars, c, iv) {
@@ -23069,16 +23179,21 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const c = cfg();
         if (posOf(sym) || !price) return false;
         if (!checkEntryRiskGates(sym, c)) return false;
-        const lots = computeAutoLots(price, sig?.sl, c);
+        const tk = window.SHL_TW_TICK;
+        const entryPx = tk ? tk.snap(price, sym, 'round') : snap(price, sym);
+        const initSl = tk ? tk.minSafeStop(entryPx, sig?.sl, 1, sym) : snap(sig.sl < entryPx ? sig.sl : (entryPx * 0.99), sym, 'down');
+        const lots = computeAutoLots(entryPx, initSl, c);
         if (!lots || lots < 1) {
-          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，買進 1 張需約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}，買進 1 張需約 ${fmtMoney(Math.ceil(entryPx * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
           return false;
         }
-        await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '張', price, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
+        await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '張', price: entryPx, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
         if (posOf(sym)) {
-          const risk = Math.max(price * 0.005, Math.abs(price - sig.sl));
-          const initSl = snap(sig.sl < price ? sig.sl : (price - risk));
-          c.stops[sym] = { dir: 1, entry: price, sl: initSl, sl0: initSl, tp: snap(price + risk * c.rrr), risk, ext: price, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
+          const tickVal = tk ? tk.tickSize(entryPx, sym) : tick(entryPx, sym);
+          const risk = Math.max(tickVal * 3, entryPx * 0.005, Math.abs(entryPx - initSl));
+          const tpPx = tk ? tk.snapUp(entryPx + risk * c.rrr, sym) : snap(entryPx + risk * c.rrr, sym, 'up');
+          const slTicks = tk ? Math.abs(tk.ticksBetween(entryPx, initSl, sym)) : Math.max(1, Math.round(risk / tickVal));
+          c.stops[sym] = { dir: 1, entry: entryPx, sl: initSl, sl0: initSl, tp: tpPx, risk, tickSize: tickVal, slTicks, ext: entryPx, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
           save(); return true;
         }
         return false;
@@ -23088,17 +23203,22 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const c = cfg();
         if (posOf(sym) || !price) return false;
         if (!checkEntryRiskGates(sym, c)) return false;
-        const lots = computeAutoLots(price, sig?.sl, c);
+        const tk = window.SHL_TW_TICK;
+        const entryPx = tk ? tk.snap(price, sym, 'round') : snap(price, sym);
+        const slPx = tk ? tk.minSafeStop(entryPx, sig?.sl, -1, sym) : snap(sig.sl > entryPx ? sig.sl : (entryPx * 1.01), sym, 'up');
+        const lots = computeAutoLots(entryPx, slPx, c);
         if (!lots || lots < 1) {
-          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(price)}，現沖先賣 1 張需預留約 ${fmtMoney(Math.ceil(price * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}，現沖先賣 1 張需預留約 ${fmtMoney(Math.ceil(entryPx * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
           return false;
         }
         // 現股當沖先賣（空單進場）：嚴格以整張 1,000 股倍數下單，SIM 與 LIVE 共用止損止盈
-        await executeOrder({ symbol: sym, side: 'SELL', qty: lots, unit: '張', price, source: tag || 'MINK_PV_SHORT', dayTrade: true, allowShort: true });
+        await executeOrder({ symbol: sym, side: 'SELL', qty: lots, unit: '張', price: entryPx, source: tag || 'MINK_PV_SHORT', dayTrade: true, allowShort: true });
         if (posOf(sym)) {
-          const risk = Math.max(price * 0.005, Math.abs(sig.sl - price));
-          const slPx = snap(sig.sl > price ? sig.sl : (price + risk));
-          c.stops[sym] = { dir: -1, entry: price, sl: slPx, sl0: slPx, tp: snap(price - risk * c.rrr), risk, ext: price, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
+          const tickVal = tk ? tk.tickSize(entryPx, sym) : tick(entryPx, sym);
+          const risk = Math.max(tickVal * 3, entryPx * 0.005, Math.abs(slPx - entryPx));
+          const tpPx = tk ? tk.snapDown(Math.max(0.01, entryPx - risk * c.rrr), sym) : snap(entryPx - risk * c.rrr, sym, 'down');
+          const slTicks = tk ? Math.abs(tk.ticksBetween(entryPx, slPx, sym)) : Math.max(1, Math.round(risk / tickVal));
+          c.stops[sym] = { dir: -1, entry: entryPx, sl: slPx, sl0: slPx, tp: tpPx, risk, tickSize: tickVal, slTicks, ext: entryPx, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
           save(); return true;
         }
         return false;
@@ -23176,22 +23296,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             let reason = null;
 
             if (!isShort) {
+              const tk = window.SHL_TW_TICK;
+              st.tickSize = tk ? tk.tickSize(px, sym) : tick(px, sym);
               st.ext = Math.max(st.ext, px);
               const run = st.ext - st.entry;
-              // 3-Stage Ratchet Trailing Profit (1.0R 真保本含0.25%稅費 -> 1.5R 鎖+0.6R -> 2.0R 30%緊縮移動停利)
+              // 3-Stage Ratchet Trailing Profit (含稅費+價位級距 Tick 精準對齊：1.0R 真保本 -> 1.5R 鎖+0.6R -> 2.0R 30%緊縮移動停利)
               if (c.be && run >= rUnit) {
-                const trueBe = snap(st.entry * 1.0025);
+                const trueBe = tk ? tk.calcNetBreakeven(st.entry, 1, sym, isIntra(c.iv)) : snap(st.entry * 1.0025, sym, 'up');
                 if (trueBe > st.sl) { st.sl = trueBe; st.stage = '🛡️ 真保本'; }
               }
               if (run >= rUnit * 1.5) {
-                const lockPx = snap(st.entry + rUnit * 0.6);
+                const lockPx = tk ? tk.snapUp(st.entry + rUnit * 0.6, sym) : snap(st.entry + rUnit * 0.6, sym, 'up');
                 if (lockPx > st.sl) { st.sl = lockPx; st.stage = '🔒 鎖利+0.6R'; }
               }
               if (c.fib && run >= rUnit * 2.0) {
-                const tightTrail = snap(st.ext - run * 0.30);
+                const tightTrail = tk ? tk.snapDown(st.ext - run * 0.30, sym) : snap(st.ext - run * 0.30, sym, 'down');
                 if (tightTrail > st.sl) { st.sl = tightTrail; st.stage = '🚀 2R移動停利'; }
               } else if (c.fib && run >= rUnit) {
-                const nsl = snap(st.ext - run * 0.382);
+                const nsl = tk ? tk.snapDown(st.ext - run * 0.382, sym) : snap(st.ext - run * 0.382, sym, 'down');
                 if (nsl > st.sl) { st.sl = nsl; st.stage = st.stage || '🔒 Fib追蹤'; }
               }
 
@@ -23202,31 +23324,34 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               else if (c.forceExit && s.open && hmNum >= 1325) reason = '多單 13:25 尾盤強制平倉';
 
               if (reason) {
-                await executeOrder({ symbol: sym, side: 'SELL', qty: exitLots, unit: '張', price: px, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
+                const exitPx = tk ? tk.snap(px, sym, 'round') : snap(px, sym);
+                await executeOrder({ symbol: sym, side: 'SELL', qty: exitLots, unit: '張', price: exitPx, source: 'QUANT_EXIT_LONG', dayTrade: isIntra(c.iv) });
                 if (!posOf(sym)) {
                   c.cooldownMap[sym] = Date.now();
-                  c.lossStreak[sym] = px < st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
+                  c.lossStreak[sym] = exitPx < st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
                   delete c.stops[sym];
-                  showToast('🤖 量化自動平多', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
+                  showToast('🤖 量化自動平多', `${sym} ${exitLots}張 @${exitPx}（Tick ${st.tickSize}元 · ${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
                 }
               }
             } else {
-              // SHORT position 3-stage ratchet + time-stop + 13:25 force cover
+              // SHORT position 3-stage ratchet + time-stop + 13:25 force cover (Tick-aware)
+              const tk = window.SHL_TW_TICK;
+              st.tickSize = tk ? tk.tickSize(px, sym) : tick(px, sym);
               st.ext = Math.min(st.ext, px);
               const run = st.entry - st.ext;
               if (c.be && run >= rUnit) {
-                const trueBe = snap(st.entry * 0.9975);
+                const trueBe = tk ? tk.calcNetBreakeven(st.entry, -1, sym, true) : snap(st.entry * 0.9975, sym, 'down');
                 if (trueBe < st.sl) { st.sl = trueBe; st.stage = '🛡️ 真保本'; }
               }
               if (run >= rUnit * 1.5) {
-                const lockPx = snap(st.entry - rUnit * 0.6);
+                const lockPx = tk ? tk.snapDown(st.entry - rUnit * 0.6, sym) : snap(st.entry - rUnit * 0.6, sym, 'down');
                 if (lockPx < st.sl) { st.sl = lockPx; st.stage = '🔒 鎖利+0.6R'; }
               }
               if (c.fib && run >= rUnit * 2.0) {
-                const tightTrail = snap(st.ext + run * 0.30);
+                const tightTrail = tk ? tk.snapUp(st.ext + run * 0.30, sym) : snap(st.ext + run * 0.30, sym, 'up');
                 if (tightTrail < st.sl) { st.sl = tightTrail; st.stage = '🚀 2R移動停利'; }
               } else if (c.fib && run >= rUnit) {
-                const nsl = snap(st.ext + run * 0.382);
+                const nsl = tk ? tk.snapUp(st.ext + run * 0.382, sym) : snap(st.ext + run * 0.382, sym, 'up');
                 if (nsl < st.sl) { st.sl = nsl; st.stage = st.stage || '🔒 Fib追蹤'; }
               }
 
@@ -23237,12 +23362,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
               else if (c.forceExit && s.open && hmNum >= 1325) reason = '現沖空單 13:25 尾盤強制回補';
 
               if (reason) {
-                await executeOrder({ symbol: sym, side: 'BUY', qty: exitLots, unit: '張', price: px, source: 'QUANT_COVER_SHORT', dayTrade: true });
+                const coverPx = tk ? tk.snap(px, sym, 'round') : snap(px, sym);
+                await executeOrder({ symbol: sym, side: 'BUY', qty: exitLots, unit: '張', price: coverPx, source: 'QUANT_COVER_SHORT', dayTrade: true });
                 if (!posOf(sym)) {
                   c.cooldownMap[sym] = Date.now();
-                  c.lossStreak[sym] = px > st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
+                  c.lossStreak[sym] = coverPx > st.entry ? (Number(c.lossStreak[sym] || 0) + 1) : 0;
                   delete c.stops[sym];
-                  showToast('🤖 量化自動回補空單', `${sym} ${exitLots}張 @${px}（${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
+                  showToast('🤖 量化自動回補空單', `${sym} ${exitLots}張 @${coverPx}（Tick ${st.tickSize}元 · ${state.envMode === 'LIVE' ? '永豐實盤' : '模擬單'}）· ${reason}`, 'info');
                 }
               }
             }
@@ -23444,8 +23570,9 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                 const pnl = Math.round((curPx - p.avgPrice) * p.shares);
                 const pct = p.avgPrice > 0 ? ((curPx - p.avgPrice) / p.avgPrice * 100) : 0;
                 const st = stops[p.symbol];
-                const slTp = st ? `${Number(st.sl).toFixed(1)} / ${Number(st.tp).toFixed(1)}` : '--';
-                const stageHtml = st?.stage ? `<div style="font-size:10px;color:#0f766e;font-weight:700;">${esc(st.stage)}</div>` : '';
+                const tkSz = window.SHL_TW_TICK ? window.SHL_TW_TICK.tickSize(curPx || p.avgPrice, p.symbol) : (st?.tickSize || 0.5);
+                const slTp = st ? `${Number(st.sl).toFixed(tkSz < 0.1 ? 2 : 1)} / ${Number(st.tp).toFixed(tkSz < 0.1 ? 2 : 1)}` : '--';
+                const stageHtml = `<div style="font-size:10px;color:#0f766e;font-weight:700;">${st?.stage ? esc(st.stage) + ' · ' : ''}Tick ${tkSz}元</div>`;
                 return `<tr style="border-bottom:1px solid #f1f5f9;">
                   <td style="padding:4px;font-weight:800;cursor:pointer;" data-at-sel="${esc(p.symbol)}">${esc(p.symbol)} ${esc(p.name || '')}</td>
                   <td class="mono" style="text-align:right;padding:4px;">${fmtInt(p.shares)}</td>
@@ -23997,10 +24124,12 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return '';
       }
 
+      let lastUniverseSource = '';
+
       async function loadUniverseIfNeeded(mode, force = false) {
-        if (!['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) return resolveSelectedSymbols();
+        if (!['shioaji_dynamic', 'market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) return resolveSelectedSymbols();
         const cached = universeCache[mode];
-        if (!force && cached && (Date.now() - cached.ts) < 60000 && cached.syms.length > 0) {
+        if (!force && cached && (Date.now() - cached.ts) < 25000 && cached.syms.length > 0) {
           return cached.syms;
         }
         const apiBase = getApiBase();
@@ -24012,13 +24141,14 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         let picked = [];
         if (apiBase) {
           try {
-            const limitParam = mode === 'sectors12_watch' ? maxCount : 25;
+            const limitParam = mode === 'sectors12_watch' ? maxCount : 30;
             const minVal = mode === 'sectors12_watch' ? 0 : 50;
             const url = `${apiBase}/api/v1/market/rank?universe=${encodeURIComponent(univParam)}&limit=${limitParam}&min_value_m=${minVal}`
               + (mode === 'sectors12_watch' ? `&symbols=${encodeURIComponent(sectors12All.join(','))}` : '');
             const resp = await fetch(url, { cache: 'no-store' });
             if (resp.ok) {
               const j = await resp.json();
+              lastUniverseSource = j.source || (j.shioaji_dynamic ? '永豐金 Shioaji API 動態實盤選股' : '官方全市場動態排行');
               const bullArr = j.bulls || j.bull || [];
               const bearArr = j.bears || j.bear || [];
               [...bullArr, ...bearArr].forEach(x => {
@@ -24027,19 +24157,26 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
                   if (nm && typeof registerDynamicStockMeta === 'function') {
                     registerDynamicStockMeta(x.symbol, nm, x.market || 'TWSE');
                   }
+                  if (Number(x.price) > 0) {
+                    state.quotes[x.symbol] = Object.assign({}, state.quotes[x.symbol] || {}, {
+                      symbol: x.symbol, name: nm || x.symbol, price: Number(x.price),
+                      changePct: Number(x.change_pct || 0), volume: Number(x.volume_lots || 0),
+                      tickSize: Number(x.tick_size || (window.SHL_TW_TICK ? window.SHL_TW_TICK.tickSize(x.price, x.symbol) : 0.5))
+                    });
+                  }
                 }
               });
               const bulls = bullArr.slice(0, 25).map(x => x.symbol);
               const bears = bearArr.slice(0, 25).map(x => x.symbol);
               if (mode === 'sectors12_watch') {
-                // 完整保留全部 12 大產業鏈 39 檔 + 全部自選股（先排有即時動能者，其餘全數保留絕不截斷）
+                // 完整保留全部 12 大產業鏈 39 檔 + 全部自選股
                 picked = [...bulls, ...bears, ...chains12Syms, ...watchSyms];
-              } else if (mode === 'market_all') {
-                // 全市場：真實排行（含 ETF）+ 補足 12 大產業鏈核心權值，確保遠超 12 筆且具備代號+中文名
-                picked = [...bulls, ...bears, ...chains12Syms];
+              } else if (mode === 'stocks_only') {
+                // 100% 動態 API 個股排行（不硬編碼，濾除 ETF）
+                picked = [...bulls, ...bears].filter(s => !String(s || '').startsWith('00'));
               } else {
-                // 全個股（不含 ETF）：濾除 00 開頭 ETF
-                picked = [...bulls, ...bears, ...chains12Syms].filter(s => !String(s || '').startsWith('00'));
+                // shioaji_dynamic / market_all：100% 採用永豐 API／全市場動態排行回傳之真實股票代號（絕不硬編碼塞入假名單）
+                picked = [...bulls, ...bears];
               }
             }
           } catch (e) {}
@@ -24051,13 +24188,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             const bA = (lr.bulls || lr.bull || []).filter(filterFn);
             const dA = (lr.bears || lr.bear || []).filter(filterFn);
             picked = [...bA.slice(0, 25).map(x => x.symbol), ...dA.slice(0, 25).map(x => x.symbol)];
+            if (picked.length) lastUniverseSource = lr.source || '盤中作戰室動態排行快取';
           }
-          if (mode === 'sectors12_watch') {
-            picked = [...chains12Syms, ...watchSyms, ...picked];
-          } else if (mode === 'stocks_only') {
-            picked = [...picked, ...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00'));
-          } else {
-            picked = [...picked, ...chains12Syms, ...watchSyms];
+          if (!picked.length) {
+            if (mode === 'sectors12_watch') {
+              picked = [...chains12Syms, ...watchSyms];
+              lastUniverseSource = '12 大產業鏈 ＋ 自選股';
+            } else {
+              // 未連線後端時不硬編碼假清單，僅以使用者自選股暫代並標示等待永豐連線
+              picked = mode === 'stocks_only' ? watchSyms.filter(s => !String(s || '').startsWith('00')) : watchSyms;
+              lastUniverseSource = '等待永豐 API 連線（暫以自選股待命）';
+            }
           }
         }
         const unique = Array.from(new Set(picked.filter(Boolean))).slice(0, maxCount);
@@ -24068,19 +24209,19 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       }
 
       function resolveSelectedSymbols() {
-        const mode = $('diagScopeSelect')?.value || 'watchlist';
+        const mode = $('diagScopeSelect')?.value || 'shioaji_dynamic';
         const watchSyms = (state.watchlist || []).map(w => w.symbol).filter(Boolean);
         const chains12Syms = getAllChains12Symbols();
         let list = [];
-        if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
+        if (['shioaji_dynamic', 'market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
           if (universeCache[mode] && universeCache[mode].syms.length) {
             list = universeCache[mode].syms;
           } else if (mode === 'sectors12_watch') {
             list = [...chains12Syms, ...watchSyms];
           } else if (mode === 'stocks_only') {
-            list = [...chains12Syms, ...watchSyms].filter(s => !String(s || '').startsWith('00')).slice(0, 50);
+            list = watchSyms.filter(s => !String(s || '').startsWith('00')).slice(0, 50);
           } else {
-            list = [...chains12Syms, ...watchSyms].slice(0, 50);
+            list = watchSyms.slice(0, 50);
           }
         } else if (mode === 'watchlist') {
           list = watchSyms.slice(0, 80);
@@ -24718,15 +24859,15 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       function init() {
         renderChips();
         syncJevQuota();
-        const initMode = $('diagScopeSelect')?.value || 'watchlist';
-        if (['market_all', 'stocks_only', 'sectors12_watch'].includes(initMode)) {
+        const initMode = $('diagScopeSelect')?.value || 'shioaji_dynamic';
+        if (['shioaji_dynamic', 'market_all', 'stocks_only', 'sectors12_watch'].includes(initMode)) {
           loadUniverseIfNeeded(initMode, false).catch(() => {});
         }
         $('btnRunDiagPipeline')?.addEventListener('click', () => runPipeline(false));
         $('btnRunStrat30')?.addEventListener('click', () => runStrategy30());
         $('diagScopeSelect')?.addEventListener('change', async () => {
-          const mode = $('diagScopeSelect')?.value || 'watchlist';
-          if (['market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
+          const mode = $('diagScopeSelect')?.value || 'shioaji_dynamic';
+          if (['shioaji_dynamic', 'market_all', 'stocks_only', 'sectors12_watch'].includes(mode)) {
             const cntBadge = $('diagScopeCountBadge');
             if (cntBadge) cntBadge.textContent = '載入母體中...';
             await loadUniverseIfNeeded(mode, true);
@@ -24769,7 +24910,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         });
       }
 
-      return { init, runPipeline, runStrategy30, renderChips, loadHistory, getLastResults: () => lastResults, getSelectedSymbols: resolveSelectedSymbols, getChains12Symbols: getAllChains12Symbols };
+      return { init, runPipeline, runStrategy30, renderChips, loadHistory, loadUniverseIfNeeded, getLastResults: () => lastResults, getSelectedSymbols: resolveSelectedSymbols, getChains12Symbols: getAllChains12Symbols, getUniverseSource: () => lastUniverseSource };
     })();
 
     function fmtSignedMoney(v) {
@@ -25787,6 +25928,94 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, log, openModal, runAudit, exportLogs, clearLogs, getEntries: () => entries.slice() };
     })();
 
+    // =========================================================================
+    // v3.30.0 台股盤中 (09:00~13:20) 即時自動刷新排程器 (window.SHL_INTRADAY_SCHEDULER)
+    // - 交易日 09:00~13:20：每 30 秒自動刷新永豐動態選股母體 + 即時報價 + 5m/1m 診斷 + 流程圖
+    // - 交易日 13:20~13:25：自動停止新倉掃描，維持 SSE 尾盤強平監控
+    // - 盤外時段：自動休眠，不浪費 API 額度
+    // =========================================================================
+    window.SHL_INTRADAY_SCHEDULER = (function createIntradayScheduler() {
+      let timer = null;
+      let lastRefreshTs = 0;
+      const REFRESH_MS = 30000;
+
+      function getWindowStatus(nowDate = new Date()) {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Taipei',
+          weekday: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        const parts = {};
+        fmt.formatToParts(nowDate).forEach(p => { parts[p.type] = p.value; });
+        const wd = parts.weekday || '';
+        const isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(wd);
+        const hh = Number(parts.hour || 0);
+        const mm = Number(parts.minute || 0);
+        const ss = Number(parts.second || 0);
+        const hm = hh * 100 + mm;
+        const timeStr = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+        if (isWeekday && hm >= 900 && hm < 1320) {
+          return { phase: 'IN_SESSION', active: true, allowNewEntry: true, timeStr, label: `🟢 盤中即時刷新 09:00~13:20 (${timeStr})` };
+        }
+        if (isWeekday && hm >= 1320 && hm <= 1325) {
+          return { phase: 'PRE_CLOSE_EXIT', active: true, allowNewEntry: false, timeStr, label: `🟠 13:20~13:25 尾盤強平監控 (${timeStr})` };
+        }
+        return { phase: 'AFTER_HOURS', active: false, allowNewEntry: false, timeStr, label: `⏸ 盤外休眠 · 09:00~13:20 自動刷新 (${timeStr})` };
+      }
+
+      function updatePill(st) {
+        const el = document.getElementById('intradayRefreshPill');
+        if (!el) return;
+        el.textContent = st.label;
+        if (st.phase === 'IN_SESSION') {
+          el.style.background = '#052e16';
+          el.style.color = '#86efac';
+          el.style.borderColor = '#166534';
+        } else if (st.phase === 'PRE_CLOSE_EXIT') {
+          el.style.background = '#451a03';
+          el.style.color = '#fde68a';
+          el.style.borderColor = '#b45309';
+        } else {
+          el.style.background = '#0f172a';
+          el.style.color = '#94a3b8';
+          el.style.borderColor = '#334155';
+        }
+      }
+
+      async function tick(force = false) {
+        const st = getWindowStatus();
+        updatePill(st);
+        if (!force && st.phase !== 'IN_SESSION') return;
+        if (document.hidden && !force) return;
+        if (!force && (Date.now() - lastRefreshTs) < REFRESH_MS) return;
+        lastRefreshTs = Date.now();
+        try {
+          const mode = document.getElementById('diagScopeSelect')?.value || 'shioaji_dynamic';
+          if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.loadUniverseIfNeeded === 'function') {
+            await window.SHL_DIAG_NET.loadUniverseIfNeeded(mode, true);
+          }
+          if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.runPipeline === 'function') {
+            await window.SHL_DIAG_NET.runPipeline(true);
+          }
+          window.SHL_FLOWCHART?.render();
+          window.SHL_ACTION_LOG?.log('system', 'INTRADAY_TICK', `盤中即時刷新完成 (${st.timeStr} · 模式 ${mode})`, 'OK', '盤中排程');
+        } catch (err) {
+          window.SHL_ACTION_LOG?.log('error', 'INTRADAY_TICK', err?.message || String(err), 'WARN', '盤中排程');
+        }
+      }
+
+      function init() {
+        updatePill(getWindowStatus());
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => { tick(false); }, 5000);
+      }
+
+      return { init, tick, getWindowStatus };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       const safeBoot = (name, fn) => {
         try { if (typeof fn === 'function') fn(); } catch (err) {
@@ -25795,6 +26024,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
       };
       safeBoot('ACTION_LOG', () => window.SHL_ACTION_LOG?.init());
+      safeBoot('INTRADAY_SCHEDULER', () => window.SHL_INTRADAY_SCHEDULER?.init());
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
       });

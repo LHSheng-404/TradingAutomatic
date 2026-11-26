@@ -846,6 +846,105 @@
       .ribbon-inner { font-size: 11px; gap: 6px; }
     }
 
+    /* v3.27.0: Flow-Ordered Interactive Trading Flowchart (STEP 1 -> 5) */
+    .tfc-card {
+      border-radius: 14px;
+      background: linear-gradient(135deg, #090f1d 0%, #0f172a 55%, #111c33 100%);
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+      padding: 12px 14px;
+      color: #f8fafc;
+      margin-bottom: 12px;
+    }
+    .tfc-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .tfc-track {
+      display: grid;
+      grid-template-columns: 1fr 20px 1fr 20px 1fr 20px 1fr 20px 1fr;
+      align-items: stretch;
+      gap: 4px;
+    }
+    .tfc-node {
+      text-align: left;
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 10px;
+      padding: 9px 10px;
+      color: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
+      transition: transform 0.16s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      min-width: 0;
+    }
+    .tfc-node:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.72);
+      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.18);
+    }
+    .tfc-node.st-ok { border-color: rgba(16, 185, 129, 0.55); }
+    .tfc-node.st-buy {
+      border-color: rgba(239, 68, 68, 0.85);
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.45), rgba(15, 23, 42, 0.88));
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);
+    }
+    .tfc-node.st-sell {
+      border-color: rgba(16, 185, 129, 0.85);
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.45), rgba(15, 23, 42, 0.88));
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);
+    }
+    .tfc-node.st-warn { border-color: rgba(245, 158, 11, 0.75); }
+    .tfc-node.st-block {
+      border-color: rgba(239, 68, 68, 0.9);
+      background: rgba(127, 29, 29, 0.35);
+    }
+    .tfc-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+      font-weight: 900;
+      font-size: 14px;
+      user-select: none;
+      animation: tfcArrowFlow 1.6s ease-in-out infinite;
+    }
+    @keyframes tfcArrowFlow {
+      0%, 100% { opacity: 0.45; transform: translateX(-1px); }
+      50% { opacity: 1; transform: translateX(2px); }
+    }
+    .tfc-step-tag {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .tfc-title { font-size: 12px; font-weight: 900; color: #f8fafc; line-height: 1.25; }
+    .tfc-val { font-size: 11px; font-weight: 800; color: #e2e8f0; line-height: 1.35; }
+    .tfc-sub { font-size: 10px; color: #94a3b8; line-height: 1.3; }
+    @media (max-width: 960px) {
+      .tfc-track {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .tfc-arrow {
+        height: 14px;
+        transform: rotate(90deg);
+        animation: none;
+      }
+    }
+
     .inspector-box {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -2770,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.26.0 · 版本說明
+              v3.27.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2925,11 +3024,67 @@
     <!-- ==================== TAB 1: COMMAND DESK ==================== -->
     <section id="tab-desk" class="tab-section active">
 
-      <!-- 0. Shioaji Pro-Style Capital Flow Intelligence Suite (排行 · 輪動 · 熱力圖 · 產業全景 & 持股族群) -->
+      <!-- v3.27.0: Flow-Ordered Interactive Trading Flowchart (TW-Quant × SHL TW 5-Stage Logic Overview) -->
+      <section id="tradingFlowchartCard" class="tfc-card" aria-label="主交易畫面流程排序交易流程圖">
+        <div class="tfc-head">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:14px;color:#f8fafc;">🧭 流程排序交易流程圖（即看即懂 · 交易與邏輯判斷）</strong>
+            <span class="badge mono" style="background:rgba(56,189,248,0.18);color:#7dd3fc;border:1px solid rgba(56,189,248,0.45);font-size:10px;">UNIVERSE → SHIOAJI/HFT → SCORING → RISK → EXECUTION</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span id="tfcClockMeta" class="mono" style="font-size:10.5px;color:#94a3b8;">即時同步中...</span>
+            <button type="button" id="btnTfcRunAll" class="btn btn-sm" style="background:#2563eb;color:#fff;border-color:#3b82f6;font-size:11px;font-weight:800;padding:4px 10px;">⚡ 一鍵跑完 5 階段流程</button>
+          </div>
+        </div>
+        <div class="tfc-track" role="list" aria-label="五階段量化交易流程">
+          <!-- STEP 1 -->
+          <button type="button" id="tfcNode1" class="tfc-node st-ok" data-tfc-target="shlCapitalFlowSuite" role="listitem">
+            <div class="tfc-step-tag"><span>STEP 1 · UNIVERSE</span><span id="tfcBadge1">✅ 就緒</span></div>
+            <div class="tfc-title">選股狙擊池＆產業鏈</div>
+            <div id="tfcVal1" class="tfc-val mono">12 產業鏈 39 檔 ＋ 自選 0 檔</div>
+            <div id="tfcSub1" class="tfc-sub">PIT 高流動篩選 · 點擊前往</div>
+          </button>
+          <div class="tfc-arrow" aria-hidden="true">➜</div>
+          <!-- STEP 2 -->
+          <button type="button" id="tfcNode2" class="tfc-node st-ok" data-tfc-target="diagHandshakeCard" role="listitem">
+            <div class="tfc-step-tag"><span>STEP 2 · SHIOAJI/HFT</span><span id="tfcBadge2">⚡ 偵測</span></div>
+            <div class="tfc-title">永豐實盤＆盤口微結構</div>
+            <div id="tfcVal2" class="tfc-val mono">永豐 API 主連線 · 5m/1m K</div>
+            <div id="tfcSub2" class="tfc-sub">OBI5 / Micro-Price · 實盤優先</div>
+          </button>
+          <div class="tfc-arrow" aria-hidden="true">➜</div>
+          <!-- STEP 3 -->
+          <button type="button" id="tfcNode3" class="tfc-node" data-tfc-target="strat30Box" role="listitem">
+            <div class="tfc-step-tag"><span>STEP 3 · SCORING</span><span id="tfcBadge3">⚪ 觀望</span></div>
+            <div class="tfc-title">情緒＆30策略邏輯判定</div>
+            <div id="tfcVal3" class="tfc-val mono">情緒 50 · 多 0 / 空 0</div>
+            <div id="tfcSub3" class="tfc-sub">Jev 三原語 ($0) · 共識過濾</div>
+          </button>
+          <div class="tfc-arrow" aria-hidden="true">➜</div>
+          <!-- STEP 4 -->
+          <button type="button" id="tfcNode4" class="tfc-node st-ok" data-tfc-target="autoTradeWarDashboard" role="listitem">
+            <div class="tfc-step-tag"><span>STEP 4 · RISK GATE</span><span id="tfcBadge4">🛡️ 通過</span></div>
+            <div class="tfc-title">硬風控＆整張複利閘門</div>
+            <div id="tfcVal4" class="tfc-val mono">最低 1,000股(1張) · 0.00%</div>
+            <div id="tfcSub4" class="tfc-sub">日虧 -2% 熔斷 · 13:25 強平</div>
+          </button>
+          <div class="tfc-arrow" aria-hidden="true">➜</div>
+          <!-- STEP 5 -->
+          <button type="button" id="tfcNode5" class="tfc-node" data-tfc-target="autoTradeWarDashboard" role="listitem">
+            <div class="tfc-step-tag"><span>STEP 5 · EXECUTION</span><span id="tfcBadge5">⏸ 待命</span></div>
+            <div class="tfc-title">整張下單＆實盤戰情</div>
+            <div id="tfcVal5" class="tfc-val mono">SIM · 持倉 0 檔 · $0</div>
+            <div id="tfcSub5" class="tfc-sub">1R 保本 / Fib 0.382 移動停利</div>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 1: Shioaji Pro-Style Capital Flow Intelligence Suite (排行 · 輪動 · 熱力圖 · 產業全景 & 持股族群) -->
       <section id="shlCapitalFlowSuite" class="shioaji-flow-suite" aria-label="永豐金風格產業鏈資金流向與產業全景">
         <div class="shioaji-flow-head">
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="badge mono" style="background:#0f172a;color:#38bdf8;border:1px solid #334155;font-size:10.5px;">STEP 1 · UNIVERSE</span>
               <span class="badge badge-up" style="font-size:11px;">SHL TW × 永豐金 Shioaji Pro 風格</span>
               <h2 style="margin:0;font-size:17px;font-weight:900;color:#0f172a;">產業鏈資金流向 · 排行 · 輪動 · 熱力圖 · 產業全景</h2>
               <span id="shioajiSourcePill" class="badge badge-blue mono" style="font-size:10.5px;">即時數據源：永豐金 / TWSE 官方</span>
@@ -3055,6 +3210,7 @@
           <div class="card-title-group">
             <h2 class="card-title">
               <i data-lucide="network" style="width:16px;height:16px;color:var(--accent);"></i>
+              <span class="badge mono" style="background:#0f172a;color:#38bdf8;border:1px solid #334155;font-size:10.5px;">STEP 2→3 · SCORING</span>
               SHL TW 交易判斷邏輯診斷交握網路
               <span id="handshakeModeTag" class="badge badge-blue">SIM 模擬模式</span>
               <span id="diagPipelineStateBadge" class="badge badge-gray" aria-live="polite">待命 · 即看即所得</span>
@@ -3338,6 +3494,7 @@
       <article id="autoTradeWarDashboard" class="card" style="border:1.5px solid #cbd5e1;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#0f172a;color:#f8fafc;border-radius:12px 12px 0 0;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="badge mono" style="background:#0284c7;color:#fff;border:1px solid #38bdf8;font-size:10px;">STEP 4→5 · RISK &amp; EXEC</span>
             <span style="font-size:15px;font-weight:900;">🤖 自動交易實盤戰情室</span>
             <span id="atDashEnvBadge" class="badge mono" style="background:#1e3a8a;color:#bfdbfe;border:1px solid #3b82f6;">🟢 SIM 模擬單</span>
             <span id="atDashEngineBadge" class="badge mono" style="background:#334155;color:#cbd5e1;">待命</span>
@@ -21641,8 +21798,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.26.0';
+      const CURRENT_VERSION = 'v3.27.0';
       const HISTORY = [
+        {
+          ver: 'v3.27.0',
+          items: [
+            '依據 TW-Quant × SHL TW 融合規格（docs/tw_quant_system_integration_spec.md），於主交易畫面最頂端新增「🧭 流程排序互動交易流程圖」（#tradingFlowchartCard ＋ window.SHL_FLOWCHART）：由左至右（手機版由上而下）依序串聯 STEP 1 UNIVERSE 選股池 → STEP 2 SHIOAJI/HFT 永豐實盤微結構 → STEP 3 SCORING 情緒與 30 策略判定 → STEP 4 RISK 硬風控閘門（1,000 股整張 / 日虧 -2% 熔斷 / 13:25 強平） → STEP 5 EXECUTION 實盤執行',
+            '每個流程圖節點每 2.5 秒即時呈現邏輯判定燈號與核心指標，點擊任一步驟平滑跳轉對應模組，並提供「⚡ 一鍵跑完 5 階段流程」按鈕快速驅動全鏈路掃描',
+            '主頁四大精簡區塊同步標註 STEP 1 / STEP 2→3 / STEP 4→5 流程編號，讓交易觀察與邏輯判斷一目瞭然'
+          ]
+        },
         {
           ver: 'v3.26.0',
           items: [
@@ -24932,6 +25097,111 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, saveMemory, exportBackupJson, updateBadge, toggleInternalPanels };
     })();
 
+    // =========================================================================
+    // v3.27.0 主交易畫面流程排序交易流程圖控制器 (window.SHL_FLOWCHART)
+    // =========================================================================
+    window.SHL_FLOWCHART = (function createTradingFlowchart() {
+      const $ = (id) => document.getElementById(id);
+
+      function setNodeClass(id, cls) {
+        const el = $(id);
+        if (!el) return;
+        el.classList.remove('st-ok', 'st-buy', 'st-sell', 'st-warn', 'st-block');
+        if (cls) el.classList.add(cls);
+      }
+
+      function render() {
+        const wlCnt = (state.watchlist || []).length;
+        const chainsCnt = Array.isArray(window.SHL_CHAINS_12) ? window.SHL_CHAINS_12.length : 12;
+        const scopeLabel = $('diagScopeSelect')?.selectedOptions?.[0]?.textContent?.slice(0, 14) || '自選股';
+        if ($('tfcVal1')) $('tfcVal1').textContent = `${chainsCnt} 產業鏈 ＋ 自選 ${wlCnt} 檔`;
+        if ($('tfcSub1')) $('tfcSub1').textContent = `掃描依據：${scopeLabel}`;
+        if ($('tfcBadge1')) $('tfcBadge1').textContent = wlCnt > 0 ? '✅ 就緒' : '⚠ 待選';
+        setNodeClass('tfcNode1', wlCnt > 0 ? 'st-ok' : 'st-warn');
+
+        const sjOk = Boolean(
+          state.backendHealth?.shioaji_configured
+          || state.backendHealth?.sim_token_configured
+          || state.backendHealth?.live_token_configured
+          || (typeof hasValidShioajiToken === 'function' && hasValidShioajiToken())
+          || (typeof hasValidSimToken === 'function' && hasValidSimToken())
+        );
+        const syncedQuotes = Object.values(state.quotes || {}).filter(q => q && Number(q.price) > 0).length;
+        const lats = state.handshake?.latencies || [];
+        const avgLat = lats.length ? Math.round(lats.reduce((a, b) => a + b, 0) / lats.length) : 0;
+        if ($('tfcBadge2')) $('tfcBadge2').textContent = sjOk ? '🟢 永豐主連' : '🟡 輔助源';
+        if ($('tfcVal2')) $('tfcVal2').textContent = `${sjOk ? '永豐 API' : 'TWSE/FinMind'} · ${syncedQuotes} 檔實盤`;
+        if ($('tfcSub2')) $('tfcSub2').textContent = `5m/1m K ＋ 微結構${avgLat ? ' · ' + avgLat + 'ms' : ''}`;
+        setNodeClass('tfcNode2', sjOk ? 'st-ok' : 'st-warn');
+
+        const diag = window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.getLastResults === 'function' ? window.SHL_DIAG_NET.getLastResults() : [];
+        const lCnt = diag.filter(x => x.direction === 'LONG').length;
+        const sCnt = diag.filter(x => x.direction === 'SHORT').length;
+        const buySig = diag.filter(x => x.final_action === 'BUY').length;
+        const shortSig = diag.filter(x => x.final_action === 'SHORT_SELL').length;
+        const sentScore = Number($('qhudSentScore')?.textContent || 50);
+        if ($('tfcVal3')) $('tfcVal3').textContent = `情緒 ${sentScore} · 多 ${lCnt} / 空 ${sCnt}`;
+        if ($('tfcSub3')) $('tfcSub3').textContent = (buySig + shortSig) > 0 ? `達標：買 ${buySig} / 現沖賣 ${shortSig} · Jev $0` : '觀望等待共識 · Jev $0';
+        if ($('tfcBadge3')) {
+          $('tfcBadge3').textContent = buySig > shortSig ? '🔴 偏多訊號' : (shortSig > buySig ? '🟢 偏空現沖' : '⚪ 觀望');
+        }
+        setNodeClass('tfcNode3', buySig > shortSig ? 'st-buy' : (shortSig > buySig ? 'st-sell' : ''));
+
+        const positions = state.positions || [];
+        const orders = state.orders || [];
+        const baseCap = Math.max(10000, Number(state.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000));
+        let unreal = 0, realized = 0;
+        positions.forEach(p => {
+          const px = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
+          unreal += Math.round((px - Number(p.avgPrice || 0)) * p.shares);
+        });
+        orders.forEach(o => { if (typeof o.realized_pnl_twd === 'number') realized += o.realized_pnl_twd; });
+        const totalPnl = realized + unreal;
+        const pnlPct = baseCap > 0 ? (totalPnl / baseCap * 100) : 0;
+        const dailyHit = pnlPct <= -2.0;
+        const blocked = Boolean(state.killSwitch || dailyHit);
+        if ($('tfcBadge4')) $('tfcBadge4').textContent = state.killSwitch ? '🛑 已熔斷' : (dailyHit ? '🛑 日虧-2%' : '🛡️ 通過');
+        if ($('tfcVal4')) $('tfcVal4').textContent = `1,000股整張 · ${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`;
+        if ($('tfcSub4')) $('tfcSub4').textContent = blocked ? '硬風控阻擋開新倉！' : `本金 $${Math.round(baseCap).toLocaleString()} · 13:25 強平`;
+        setNodeClass('tfcNode4', blocked ? 'st-block' : 'st-ok');
+
+        const latestOrd = orders[0] || null;
+        const isAutoOn = window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.isAutoRunning === 'function' && window.SHL_AUTO_DASH.isAutoRunning();
+        if ($('tfcBadge5')) {
+          $('tfcBadge5').textContent = latestOrd
+            ? (latestOrd.side === 'BUY' ? '🔴 最新買進' : '🟢 最新賣出')
+            : (isAutoOn ? '⚡ 自動運行' : '⏸ 待命');
+        }
+        if ($('tfcVal5')) $('tfcVal5').textContent = `${state.envMode || 'SIM'} · 持倉 ${positions.length} 檔 · ${fmtSignedMoney(totalPnl)}`;
+        if ($('tfcSub5')) {
+          $('tfcSub5').textContent = latestOrd
+            ? `${latestOrd.side === 'BUY' ? '買' : '賣'} ${latestOrd.symbol} ${latestOrd.qty}${latestOrd.unit || '張'} @${fmtNum(latestOrd.price, 1)}`
+            : '1R 保本 / Fib 0.382 移動停利';
+        }
+        setNodeClass('tfcNode5', latestOrd ? (latestOrd.side === 'BUY' ? 'st-buy' : 'st-sell') : (isAutoOn ? 'st-ok' : ''));
+
+        if ($('tfcClockMeta')) $('tfcClockMeta').textContent = `流程同步 ${nowTwTime()} · 點擊任一步驟直達明細`;
+      }
+
+      function init() {
+        document.querySelectorAll('#tradingFlowchartCard [data-tfc-target]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const target = document.getElementById(btn.dataset.tfcTarget);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        });
+        $('btnTfcRunAll')?.addEventListener('click', () => {
+          if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.runPipeline === 'function') {
+            window.SHL_DIAG_NET.runPipeline(false);
+          }
+        });
+        render();
+        setInterval(render, 2500);
+      }
+
+      return { init, render };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -24944,6 +25214,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.init();
       if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.init();
       if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.init();
+      if (window.SHL_FLOWCHART) window.SHL_FLOWCHART.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -24957,6 +25228,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.updateSentiment();
         if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.draw();
         if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.updateBadge();
+        if (window.SHL_FLOWCHART) window.SHL_FLOWCHART.render();
         if (typeof updateBackendBadges === 'function') updateBackendBadges();
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {

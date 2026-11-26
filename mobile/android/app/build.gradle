@@ -10,8 +10,8 @@ android {
         applicationId "com.synapsetw.app"
         minSdk 24
         targetSdk 34
-        versionCode 3250
-        versionName "3.25.0"
+        versionCode 3260
+        versionName "3.26.0"
     }
 
     buildTypes {

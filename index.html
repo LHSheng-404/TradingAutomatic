@@ -2770,7 +2770,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.25.0 · 版本說明
+              v3.26.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -2952,8 +2952,20 @@
         <div id="shioajiFlowStage" class="shioaji-flow-stage"></div>
       </section>
 
-      <!-- 1. Watchlist & Add Real TW Stock Bar -->
-      <div class="watchlist-bar">
+      <!-- 1. Watchlist & Add Real TW Stock Bar (with Persistent Memory & Backup/Restore) -->
+      <div class="watchlist-bar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <strong style="font-size:13px;color:#0f172a;">⭐ 自選股記憶管理</strong>
+            <span id="watchlistMemBadge" class="badge badge-teal mono" style="font-size:10.5px;">已自動記憶</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btnWatchlistSaveMem" class="btn btn-sm btn-primary" style="padding:4px 9px;font-size:11.5px;font-weight:800;" title="立即將目前自選股與群組寫入本機記憶並同步雲端">💾 儲存記憶</button>
+            <button type="button" id="btnWatchlistExportJson" class="btn btn-sm" style="padding:4px 9px;font-size:11.5px;font-weight:700;" title="匯出自選股與群組 JSON 備份檔">⬇️ 備份匯出</button>
+            <button type="button" id="btnWatchlistImportJson" class="btn btn-sm" style="padding:4px 9px;font-size:11.5px;font-weight:700;" title="從 JSON 備份檔還原自選股與群組記憶">⬆️ 匯入還原</button>
+            <input type="file" id="watchlistImportFile" accept=".json,application/json" style="display:none;" />
+          </div>
+        </div>
         <div id="watchlistPills" class="watchlist-pills"></div>
         <form id="addStockForm" class="add-stock-form">
           <input id="addStockInput" class="input" style="width:205px;" type="text" placeholder="代號或中文如 台積電、台指電子盤" maxlength="24" />
@@ -2980,8 +2992,8 @@
         </form>
       </div>
 
-      <!-- 1.5 Mitake (三竹股市)-Style Real-Time Group Board & 5-Level Orderbook -->
-      <section id="mitakeLiveBoard" class="mitake-board" aria-label="三竹風格即時行情看板">
+      <!-- 1.5 Mitake (三竹股市)-Style Real-Time Group Board (collapsed in v3.26.0 Minimal Quant Desk; toggleable via advanced bar) -->
+      <section id="mitakeLiveBoard" class="mitake-board" data-desk-internal="1" style="display:none;" aria-label="三竹風格即時行情看板">
         <div class="mitake-topbar">
           <div id="mitakeGroupTabs" class="mitake-group-bar"></div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -3399,6 +3411,16 @@
         </div>
       </article>
 
+      <!-- v3.26.0: Minimal Quant Desk Internal-Engine Notice & Collapsible Advanced Panels -->
+      <div id="deskInternalQuantBar" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:10px;background:#f8fafc;border:1px dashed #cbd5e1;font-size:12px;color:#475569;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-teal">⚙️ 內部量化引擎運作中</span>
+          <span>技術線圖（5分K / 1分K / EMA / VWAP / SMC / 30 策略）已於內部量化自動計算，主畫面精簡保留「<strong>產業鏈流向 · 自選股記憶 · 量化自動交易</strong>」。</span>
+        </div>
+        <button type="button" id="btnToggleInternalDeskModules" class="btn btn-sm" style="font-size:11.5px;font-weight:700;" aria-expanded="false">🔧 展開進階（手動線圖／看板／AI）</button>
+      </div>
+
+      <div id="deskInternalModulesWrap" style="display:none;flex-direction:column;gap:14px;">
       <!-- 2.6 v3.14.0 Shioaji Pro Full-Market Streaming Signals & Index Contribution Deck -->
       <article id="shioajiSignalsDeck" class="card" style="border:1.5px solid #1e293b;background:#0f172a;color:#e2e8f0;">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#020617;border-bottom:1px solid #1e293b;border-radius:12px 12px 0 0;">
@@ -3778,6 +3800,7 @@
           <div id="aiQuickGrid" class="grid-ai-3"></div>
         </div>
       </article>
+      </div><!-- /#deskInternalModulesWrap -->
 
       <!-- v3.20.0: Duplicate scanner & positions/orders cards consolidated into #diagHandshakeCard & #autoTradeWarDashboard (DOM IDs retained hidden for zero-error compatibility) -->
       <div id="legacyConsolidatedTables" style="display:none;" aria-hidden="true">
@@ -21618,8 +21641,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.25.0';
+      const CURRENT_VERSION = 'v3.26.0';
       const HISTORY = [
+        {
+          ver: 'v3.26.0',
+          items: [
+            '主畫面精簡重構（Minimal Quant Desk）：聚焦保留四大核心區塊——① 產業鏈流向、② 自選股記憶管理、③ 量化自動交易交握中樞（即時動畫 HUD ＋ Jev 選股圖表 ＋ GrokBot2 專責矩陣）、④ 自動交易實盤戰情室',
+            '技術線圖轉為內部量化引擎自動計算（5分K／1分K／EMA／VWAP／SMC／30 策略），預設收折手動技術線圖、三竹看板、訊號串流與 AI 六模型卡片，底部保留一鍵「🔧 展開進階」切換，畫面極致乾淨不雜亂',
+            '自選股區塊新增「💾 儲存記憶／⬇️ 備份匯出 (JSON)／⬆️ 匯入還原」工具列（window.SHL_WATCHLIST_MEM），同備份功能自動記憶本機並同步雲端，隨時一鍵還原自選股與群組設定'
+          ]
+        },
         {
           ver: 'v3.25.0',
           items: [
@@ -24763,6 +24794,144 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, update, draw, setMode };
     })();
 
+    // =========================================================================
+    // v3.26.0 自選股儲存記憶、JSON 備份還原與主頁精簡進階切換 (window.SHL_WATCHLIST_MEM)
+    // =========================================================================
+    window.SHL_WATCHLIST_MEM = (function createWatchlistMemoryBackup() {
+      const $ = (id) => document.getElementById(id);
+      const MEM_KEY = 'shl_watchlist_memory_v1';
+
+      function updateBadge(tsText = '') {
+        const b = $('watchlistMemBadge');
+        if (!b) return;
+        const cnt = (state.watchlist || []).length;
+        const grpCnt = (state.ext?.groups || []).length;
+        b.textContent = `已記憶 ${cnt} 檔${grpCnt ? ' · ' + grpCnt + '群組' : ''}${tsText ? ' (' + tsText + ')' : ''}`;
+      }
+
+      function buildPayload() {
+        return {
+          app: 'SHL_TW',
+          type: 'WATCHLIST_BACKUP',
+          version: 'v3.26.0',
+          saved_at: nowTwDateTime(),
+          watchlist: Array.isArray(state.watchlist) ? state.watchlist : [],
+          groups: Array.isArray(state.ext?.groups) ? state.ext.groups : [],
+          activeGroupId: state.ext?.activeGroupId || 'all',
+          initialCapitalTwd: Number(state.initialCapitalTwd || 1000000)
+        };
+      }
+
+      function saveMemory(silent = false) {
+        const payload = buildPayload();
+        try { localStorage.setItem(MEM_KEY, JSON.stringify(payload)); } catch (e) {}
+        if (typeof persistState === 'function') persistState();
+        if (window.SHL_REMOTE_ACCOUNT && typeof window.SHL_REMOTE_ACCOUNT.pushToBackendSilent === 'function') {
+          try { window.SHL_REMOTE_ACCOUNT.pushToBackendSilent(); } catch (e) {}
+        }
+        updateBadge(nowTwTime());
+        if (!silent) {
+          showToast('💾 自選股記憶已儲存', `已永久記憶 ${payload.watchlist.length} 檔自選股與 ${payload.groups.length} 個群組（含本機＋雲端備份同步）。`, 'success');
+        }
+      }
+
+      function exportBackupJson() {
+        const payload = buildPayload();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateTag = nowTwDateTime().slice(0, 10).replace(/-/g, '');
+        a.href = url;
+        a.download = `shl-watchlist-backup-${dateTag}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('⬇️ 自選股備份已匯出', `已下載 ${payload.watchlist.length} 檔自選股與群組備份檔 (${a.download})。`, 'success');
+      }
+
+      function importBackupFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result || '{}'));
+            const wl = Array.isArray(parsed.watchlist) ? parsed.watchlist : (Array.isArray(parsed) ? parsed : null);
+            if (!wl || !wl.length) {
+              showToast('還原失敗', '檔案格式不含有效自選股資料（需為 SHL TW 備份 JSON）。', 'warn');
+              return;
+            }
+            state.watchlist = wl.filter(x => x && x.symbol).map(x => ({
+              symbol: String(x.symbol).trim().toUpperCase(),
+              name: String(x.name || x.symbol).trim(),
+              market: x.market || 'TWSE'
+            }));
+            if (Array.isArray(parsed.groups) && parsed.groups.length) {
+              state.ext = state.ext || {};
+              state.ext.groups = parsed.groups;
+              if (parsed.activeGroupId) state.ext.activeGroupId = parsed.activeGroupId;
+            }
+            if (typeof parsed.initialCapitalTwd === 'number' && parsed.initialCapitalTwd >= 10000) {
+              state.initialCapitalTwd = parsed.initialCapitalTwd;
+            }
+            saveMemory(true);
+            if (typeof renderAllViews === 'function') renderAllViews();
+            if (window.SHL_DIAG_NET && typeof window.SHL_DIAG_NET.renderChips === 'function') window.SHL_DIAG_NET.renderChips();
+            if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+            showToast('⬆️ 自選股記憶已還原', `已成功還原 ${state.watchlist.length} 檔自選股並寫入記憶！`, 'success');
+          } catch (err) {
+            showToast('匯入還原失敗', err?.message || 'JSON 解析錯誤', 'error');
+          }
+        };
+        reader.readAsText(file, 'utf-8');
+      }
+
+      function toggleInternalPanels() {
+        const wrap = $('deskInternalModulesWrap');
+        const mitake = $('mitakeLiveBoard');
+        const btn = $('btnToggleInternalDeskModules');
+        if (!wrap) return;
+        const nextOpen = wrap.style.display === 'none';
+        wrap.style.display = nextOpen ? 'flex' : 'none';
+        if (mitake) mitake.style.display = nextOpen ? 'block' : 'none';
+        if (btn) {
+          btn.setAttribute('aria-expanded', String(nextOpen));
+          btn.textContent = nextOpen ? '🔽 收合進階（恢復精簡量化主畫面）' : '🔧 展開進階（手動線圖／看板／AI）';
+        }
+        if (nextOpen && typeof renderRawPriceChart === 'function') {
+          setTimeout(() => { try { renderRawPriceChart(); } catch (e) {} }, 60);
+        }
+      }
+
+      function init() {
+        // Auto-restore from dedicated memory backup if watchlist is unexpectedly empty
+        if (!Array.isArray(state.watchlist) || !state.watchlist.length) {
+          try {
+            const raw = localStorage.getItem(MEM_KEY);
+            if (raw) {
+              const mem = JSON.parse(raw);
+              if (Array.isArray(mem?.watchlist) && mem.watchlist.length) {
+                state.watchlist = mem.watchlist;
+                if (Array.isArray(mem.groups) && mem.groups.length && state.ext) state.ext.groups = mem.groups;
+              }
+            }
+          } catch (e) {}
+        }
+        updateBadge();
+        $('btnWatchlistSaveMem')?.addEventListener('click', () => saveMemory(false));
+        $('btnWatchlistExportJson')?.addEventListener('click', exportBackupJson);
+        $('btnWatchlistImportJson')?.addEventListener('click', () => $('watchlistImportFile')?.click());
+        $('watchlistImportFile')?.addEventListener('change', (e) => {
+          const f = e.target.files?.[0];
+          if (f) importBackupFile(f);
+          e.target.value = '';
+        });
+        $('btnToggleInternalDeskModules')?.addEventListener('click', toggleInternalPanels);
+      }
+
+      return { init, saveMemory, exportBackupJson, updateBadge, toggleInternalPanels };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
@@ -24774,6 +24943,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       if (window.SHL_DIAG_NET) window.SHL_DIAG_NET.init();
       if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.init();
       if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.init();
+      if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.init();
       if (typeof restoreAiFocusMemory === 'function') restoreAiFocusMemory();
       if (typeof updateAiFocusHint === 'function') updateAiFocusHint();
       document.getElementById('aiFocusModeSelect')?.addEventListener('change', () => {
@@ -24786,6 +24956,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         if (window.SHL_AUTO_DASH) window.SHL_AUTO_DASH.render();
         if (window.SHL_TRADE_HUD) window.SHL_TRADE_HUD.updateSentiment();
         if (window.SHL_JEV_CHART) window.SHL_JEV_CHART.draw();
+        if (window.SHL_WATCHLIST_MEM) window.SHL_WATCHLIST_MEM.updateBadge();
         if (typeof updateBackendBadges === 'function') updateBackendBadges();
         if (window.SHL_SIGNALS) { window.SHL_SIGNALS.applySubscription(true); window.SHL_SIGNALS.refreshContrib(); }
         if (window.SHL_EXT && typeof window.SHL_EXT.setRealtimeRefreshSec === 'function') {

@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.32.0 · 版本說明
+              v3.32.1 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3093,6 +3093,7 @@
               <span class="badge badge-up" style="font-size:11px;">SHL TW × 永豐金 Shioaji Pro 風格</span>
               <h2 style="margin:0;font-size:17px;font-weight:900;color:#0f172a;">產業鏈資金流向 · 排行 · 輪動 · 熱力圖 · 產業全景</h2>
               <span id="shioajiSourcePill" class="badge badge-blue mono" style="font-size:10.5px;">即時數據源：永豐金 / TWSE 官方</span>
+              <span id="step1DataDateBadge" class="badge mono" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:10.5px;">📅 資料日期：同步中…</span>
             </div>
             <p style="margin:4px 0 0;font-size:12px;color:#475569;">
               依即時成交價量與漲跌幅即時計算產業資金流入／流出，點選族群可下鑽成分股，點選個股立即切換技術線圖與量化指標
@@ -3105,6 +3106,7 @@
               <button type="button" class="shioaji-flow-tab active" data-flow-tab="heatmap">熱力</button>
               <button type="button" class="shioaji-flow-tab" data-flow-tab="panorama">產業全景 / 持股族群</button>
             </div>
+            <button type="button" id="btnStep1RefreshNow" class="btn btn-sm btn-primary" title="立即強制重抓 12 大產業鏈 39 檔最新即時報價與當日收盤">↻ 刷新 Step 1</button>
             <button type="button" id="btnFlowPrivacyToggle" class="btn btn-sm" title="開啟金額遮蔽，截圖更放心">🙈 金額遮蔽</button>
             <button type="button" id="btnOpenShioajiCfg" class="btn btn-sm btn-dark">⚡ 永豐金 API 設定</button>
           </div>
@@ -18241,7 +18243,13 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const volumeLots = parseNum(m.volume_lots ?? m.v) ?? 0;
         const tickVol = parseNum(m.tick_volume ?? m.tv) ?? 0;
         const rawChgPct = parseNum(m.change_pct ?? m.changePct);
-        const dateStr = String(m.date || m.d || '').replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3');
+        const normTwDate = (v) => {
+          const digits = String(v || '').replace(/[^0-9]/g, '');
+          if (digits.length === 7) return `${Number(digits.slice(0, 3)) + 1911}-${digits.slice(3, 5)}-${digits.slice(5, 7)}`;
+          if (digits.length >= 8) return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+          return '';
+        };
+        const dateStr = normTwDate(m.date || m.d || '');
         const timeStr = String(m.time || m.t || nowTwTime());
         const stamp = dateStr ? `${dateStr} ${timeStr}` : timeStr;
 
@@ -18263,6 +18271,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         }
 
         const existing = state.quotes[code] || {};
+        // v3.32.1 Guard: never let an older official EOD row overwrite a newer live tradeDate quote already in memory
+        if (m.is_eod_official && existing.tradeDate && dateStr && dateStr < existing.tradeDate && Number(existing.price || 0) > 0) {
+          return false;
+        }
         const isPreMarketEmpty = volumeLots === 0 && prevClose && Math.abs(price - prevClose) < 1e-6 && !m.is_eod_official;
         const keepExistingStats = isPreMarketEmpty && (Number(existing.volume || 0) > 0 || (existing.prevClose && existing.price && Math.abs(existing.price - existing.prevClose) > 1e-6));
         const finalPrice = keepExistingStats ? existing.price : price;
@@ -18292,6 +18304,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           bidSizes,
           asks,
           askSizes,
+          tradeDate: dateStr || existing.tradeDate || '',
           lastDate: stamp,
           realtimeTime: timeStr,
           isRealtime: true,
@@ -18482,7 +18495,11 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           ...(Array.isArray(extraSymbols) ? extraSymbols : [])
         ])).filter(s => /^[0-9A-Z]{4,6}$/.test(s));
 
-        const apiBase = getApiBase();
+        let apiBase = getApiBase();
+        if (!apiBase && typeof detectBackend === 'function' && window.location.protocol.startsWith('http') && !/github\.io$/i.test(window.location.hostname || '')) {
+          try { await detectBackend(); } catch (_) {}
+          apiBase = getApiBase();
+        }
         const badge = document.getElementById('mitakeFeedBadge');
         let updated = 0;
 
@@ -20268,6 +20285,31 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const hideAmt = Boolean(state.ext.flowPrivacy);
         const chains = computeChainMetrics();
 
+        // v3.32.1: Update Step 1 live data date badge so user always sees the exact trade date & synced count
+        const dateBadge = document.getElementById('step1DataDateBadge');
+        if (dateBadge) {
+          const allSyms = new Set();
+          const syncedSyms = new Set();
+          let maxDate = '';
+          chains.forEach(c => (c.members || []).forEach(m => {
+            allSyms.add(m.symbol);
+            if (m.hasQuote) {
+              syncedSyms.add(m.symbol);
+              const q = getQuote(m.symbol);
+              const d = String(q?.tradeDate || q?.lastDate || '').slice(0, 10);
+              if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d > maxDate) maxDate = d;
+            }
+          }));
+          const todayTw = (typeof nowTwDateTime === 'function' ? nowTwDateTime().slice(0, 10) : '');
+          const isStaleStatic = Boolean(maxDate && todayTw && maxDate < todayTw && !getApiBase());
+          dateBadge.textContent = maxDate
+            ? `📅 資料日期：${maxDate} · ${syncedSyms.size}/${allSyms.size} 檔${isStaleStatic ? '（靜態延遲·建議連後端）' : '即時'}`
+            : `📅 資料日期：同步中 (${syncedSyms.size}/${allSyms.size} 檔)`;
+          dateBadge.style.background = isStaleStatic ? '#fef3c7' : '#ecfdf5';
+          dateBadge.style.color = isStaleStatic ? '#92400e' : '#065f46';
+          dateBadge.style.borderColor = isStaleStatic ? '#f59e0b' : '#34d399';
+        }
+
         document.querySelectorAll('[data-flow-tab]').forEach(b => b.classList.toggle('active', b.dataset.flowTab === tab));
 
         if (tab === 'rank') {
@@ -21013,6 +21055,31 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const netFlow = Number(members.reduce((s, m) => s + m.netFlowYi, 0).toFixed(2));
           return { name: ch.name, avgPct, totalTurnover, netFlow, members };
         }).sort((a, b) => (b.totalTurnover || 1) - (a.totalTurnover || 1));
+
+        // v3.32.1: Update Step 1 live data date badge for heatmap & panorama tabs too
+        const dateBadge = document.getElementById('step1DataDateBadge');
+        if (dateBadge) {
+          const allSyms = new Set();
+          const syncedSyms = new Set();
+          let maxDate = '';
+          chains.forEach(c => (c.members || []).forEach(m => {
+            allSyms.add(m.symbol);
+            if (m.hasQuote) {
+              syncedSyms.add(m.symbol);
+              const q = getQuote(m.symbol);
+              const d = String(q?.tradeDate || q?.lastDate || '').slice(0, 10);
+              if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d > maxDate) maxDate = d;
+            }
+          }));
+          const todayTw = (typeof nowTwDateTime === 'function' ? nowTwDateTime().slice(0, 10) : '');
+          const isStaleStatic = Boolean(maxDate && todayTw && maxDate < todayTw && !getApiBase());
+          dateBadge.textContent = maxDate
+            ? `📅 資料日期：${maxDate} · ${syncedSyms.size}/${allSyms.size} 檔${isStaleStatic ? '（靜態延遲·建議連後端）' : '即時'}`
+            : `📅 資料日期：同步中 (${syncedSyms.size}/${allSyms.size} 檔)`;
+          dateBadge.style.background = isStaleStatic ? '#fef3c7' : '#ecfdf5';
+          dateBadge.style.color = isStaleStatic ? '#92400e' : '#065f46';
+          dateBadge.style.borderColor = isStaleStatic ? '#f59e0b' : '#34d399';
+        }
 
         if (tab === 'panorama') {
           const view = state.ext.flowHoldingView || 'channel';
@@ -22085,8 +22152,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.32.0';
+      const CURRENT_VERSION = 'v3.32.1';
       const HISTORY = [
+        {
+          ver: 'v3.32.1',
+          items: [
+            '徹底根除 Step 1 產業鏈資金流向抓到昨日過期資料（如 TWSE OpenAPI STOCK_DAY_ALL 停在昨日 1151126 導致 PCB / 載板誤顯示 +9.37% 而非今日真實 -2.41%）之問題：後端 _fetch_twse_eod_sync() 全面升級改優先抓取當日收盤即更新之官方 TWSE MI_INDEX（ALLBUT0999），並與 TPEx 當日收盤及 MIS 即時報價精準對齊',
+            '升級後端 GET /api/v1/shioaji/snapshots 全時段（含盤中與盤後）優先讀取永豐 Shioaji 正式實盤（simulation=False）最新快照，並於 TWSE MIS 併發查詢加入限流重試保護，避免雲端主機 IP 遭限流掉包',
+            '前端 Step 1 標頭新增「📅 資料日期即時狀態膠囊（#step1DataDateBadge）」與專屬「↻ 刷新 Step 1（#btnStep1RefreshNow）」按鈕，並於 applyMisRow() 加上日期新舊防護（嚴禁舊日 EOD 覆蓋新日實盤報價）'
+          ]
+        },
         {
           ver: 'v3.32.0',
           items: [
@@ -26776,6 +26851,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       safeBoot('TRADE_BACKUP', () => window.SHL_TRADE_BACKUP?.init());
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
+      });
+      document.getElementById('btnStep1RefreshNow')?.addEventListener('click', async () => {
+        const b = document.getElementById('btnStep1RefreshNow');
+        if (b) { b.disabled = true; b.textContent = '↻ 刷新中…'; }
+        try {
+          if (window.SHL_EXT && typeof window.SHL_EXT.refreshRealtimeQuotes === 'function') {
+            await window.SHL_EXT.refreshRealtimeQuotes(false);
+          }
+          if (window.SHL_EXT && typeof window.SHL_EXT.renderCapitalFlow === 'function') {
+            window.SHL_EXT.renderCapitalFlow();
+          }
+          if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') {
+            window.SHL_FLOWCHART.render();
+          }
+          window.SHL_ACTION_LOG?.log('system', '#btnStep1RefreshNow', '已強制重抓 Step 1 產業鏈 39 檔最新行情', 'OK', 'Step 1 刷新');
+        } finally {
+          if (b) { b.disabled = false; b.textContent = '↻ 刷新 Step 1'; }
+        }
       });
       safeBoot('CHANGELOG', () => window.SHL_CHANGELOG?.init());
       safeBoot('WAR', () => window.SHL_WAR?.init());

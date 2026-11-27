@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.32.0",
+    version="3.32.1",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.32.0",
+        "version": "3.32.1",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3882,7 +3882,62 @@ def _parse_eod_num(v: Any) -> Optional[float]:
 
 def _fetch_twse_eod_sync() -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
-    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Accept": "application/json"}
+    # v3.32.1 Primary: TWSE official MI_INDEX (updates on the SAME trading day right after close, unlike STOCK_DAY_ALL which lags 1 day!)
+    try:
+        req = urllib.request.Request(
+            "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?type=ALLBUT0999&response=json",
+            headers=headers,
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            j = json.loads(r.read().decode("utf-8", errors="replace"))
+        if isinstance(j, dict) and str(j.get("stat", "")).upper() == "OK":
+            mi_date = str(j.get("date", "")).strip()  # YYYYMMDD
+            for tbl in (j.get("tables") or []):
+                title = str(tbl.get("title") or "")
+                rows = tbl.get("data") or []
+                if not rows or "收盤行情" not in title:
+                    continue
+                for row in rows:
+                    if not isinstance(row, list) or len(row) < 11:
+                        continue
+                    code = str(row[0] or "").strip().upper()
+                    close = _parse_eod_num(row[8])
+                    if not code or close is None or close <= 0:
+                        continue
+                    sign_raw = str(row[9] or "")
+                    diff_mag = _parse_eod_num(row[10]) or 0.0
+                    if "-" in sign_raw and "green" in sign_raw.lower():
+                        chg = -abs(diff_mag)
+                    elif "-" in sign_raw and "+" not in sign_raw:
+                        chg = -abs(diff_mag)
+                    elif "+" in sign_raw:
+                        chg = abs(diff_mag)
+                    else:
+                        chg = 0.0
+                    prev = round(close - chg, 4)
+                    shares = _parse_eod_num(row[2]) or 0.0
+                    out[code] = {
+                        "symbol": code,
+                        "name": str(row[1] or "").strip(),
+                        "exchange": "tse",
+                        "price": close,
+                        "prev_close": prev if prev > 0 else close,
+                        "change": round(chg, 4),
+                        "change_pct": round((chg / prev) * 100.0, 2) if prev > 0 else 0.0,
+                        "open": _parse_eod_num(row[5]) or close,
+                        "high": _parse_eod_num(row[6]) or close,
+                        "low": _parse_eod_num(row[7]) or close,
+                        "volume_lots": round(shares / 1000.0, 2),
+                        "date": mi_date,
+                        "is_eod_official": True,
+                    }
+    except Exception:
+        pass
+    if out:
+        return out
+
+    # Secondary fallback: TWSE OpenAPI STOCK_DAY_ALL (only if MI_INDEX failed)
     try:
         req = urllib.request.Request("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL", headers=headers)
         with urllib.request.urlopen(req, timeout=8) as r:
@@ -4385,18 +4440,23 @@ async def twse_realtime_quotes(symbols: str = "", indices: str = "t00,o00"):
     chunks = [all_channels[s:s + chunk_size] for s in range(0, len(all_channels), chunk_size)]
 
     async def _fetch_chunk(ch_list: list[str]) -> list[dict[str, Any]]:
-        url = (
-            "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch="
-            + urllib.parse.quote("|".join(ch_list), safe="|_.")
-            + f"&_={int(time.time() * 1000)}"
-        )
-        try:
-            status, data, _ = await asyncio.to_thread(_sync_relay_request, url, "GET", None, "")
-            if status == 200:
-                payload = json.loads(data.decode("utf-8", errors="replace").strip())
-                return payload.get("msgArray", []) or []
-        except Exception:
-            pass
+        for attempt in range(2):
+            url = (
+                "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch="
+                + urllib.parse.quote("|".join(ch_list), safe="|_.")
+                + f"&_={int(time.time() * 1000)}"
+            )
+            try:
+                status, data, _ = await asyncio.to_thread(_sync_relay_request, url, "GET", None, "")
+                if status == 200:
+                    payload = json.loads(data.decode("utf-8", errors="replace").strip())
+                    arr = payload.get("msgArray", []) or []
+                    if arr:
+                        return arr
+            except Exception:
+                pass
+            if attempt == 0:
+                await asyncio.sleep(0.3)
         return []
 
     chunk_results = await asyncio.gather(*[_fetch_chunk(c) for c in chunks])
@@ -5095,22 +5155,21 @@ async def _fetch_shioaji_sdk_snapshots(symbols: list[str]) -> Optional[dict[str,
 @app.get("/api/v1/shioaji/snapshots")
 async def shioaji_snapshots(symbols: str = "2330,2317,2454,0050"):
     syms = [x.strip().upper() for x in symbols.split(",") if re.fullmatch(r"[0-9A-Z]{4,6}", x.strip().upper())][:80]
-    in_session = _is_tw_intraday_market_hours()
-    # Intraday (09:00~13:35): strictly prefer Shioaji Production API first for live ticks
-    if in_session:
-        sj_data = await _fetch_shioaji_http_snapshots(syms)
-        if sj_data:
-            return JSONResponse(
-                {"ok": True, "source": "永豐金 Shioaji Pro 正式實盤", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
-                headers={"Cache-Control": "no-store"},
-            )
-        sdk_data = await _fetch_shioaji_sdk_snapshots(syms)
-        if sdk_data:
-            return JSONResponse(
-                {"ok": True, "source": "永豐金 Shioaji SDK 正式實盤", "source_engine": "shioaji_sdk", "server_time": tw_now_str(), "quotes": sdk_data},
-                headers={"Cache-Control": "no-store"},
-            )
-    # Off-hours / overnight / weekend OR Shioaji unavailable: official TWSE/TPEx real closing & MIS verified quotes
+    # v3.32.1: Always prefer Shioaji Production API (simulation=False) snapshots across all hours
+    # (holds live intraday ticks 09:00~13:30 AND today's exact official close after hours; never simulation=True!)
+    sj_data = await _fetch_shioaji_http_snapshots(syms)
+    if sj_data:
+        return JSONResponse(
+            {"ok": True, "source": "永豐金 Shioaji Pro 正式實盤", "source_engine": "shioaji_http", "server_time": tw_now_str(), "quotes": sj_data},
+            headers={"Cache-Control": "no-store"},
+        )
+    sdk_data = await _fetch_shioaji_sdk_snapshots(syms)
+    if sdk_data:
+        return JSONResponse(
+            {"ok": True, "source": "永豐金 Shioaji SDK 正式實盤", "source_engine": "shioaji_sdk", "server_time": tw_now_str(), "quotes": sdk_data},
+            headers={"Cache-Control": "no-store"},
+        )
+    # Fallback when Shioaji Production is not connected: official TWSE/TPEx MIS + same-day MI_INDEX / TPEx EOD
     return await twse_realtime_quotes(symbols=",".join(syms), indices="t00,o00")
 
 

@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.30.3",
+    version="3.31.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.30.3",
+        "version": "3.31.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -3422,6 +3422,9 @@ class PlaceOrderRequest(BaseModel):
     fee_discount: float = 2.8  # 預設 2.8 折，可修改，最低 6 折（上限 6.0）
     source: str = "WEB_UI"
     allow_after_hours: bool = False
+    day_trade: bool = False
+    max_principal_twd: Optional[float] = None
+    current_exposure_twd: Optional[float] = 0.0
 
 
 def _owner_from_request(request: Optional[Request]) -> str:
@@ -3469,7 +3472,19 @@ async def place_order(req: PlaceOrderRequest, request: Request):
     is_etf = req.symbol.startswith("00")
     safe_discount = max(0.1, min(6.0, float(req.fee_discount or 2.8)))
     fee = max(20.0, round(notional * 0.001425 * (safe_discount / 10.0), 2))
-    tax = round(notional * (0.001 if is_etf else 0.003), 2) if req.side.upper() == "SELL" else 0.0
+    tax_rate = 0.001 if is_etf else (0.0015 if req.day_trade else 0.003)
+    tax = round(notional * tax_rate, 2) if req.side.upper() == "SELL" else 0.0
+
+    # v3.31.0: Hard principal cap — order amount + existing exposure must NEVER exceed principal
+    if req.max_principal_twd is not None and float(req.max_principal_twd) > 0:
+        cap = float(req.max_principal_twd)
+        cur_exp = max(0.0, float(req.current_exposure_twd or 0.0))
+        req_total = notional + fee + tax
+        if (cur_exp + req_total) > cap:
+            raise HTTPException(
+                status_code=400,
+                detail=f"下單金額超出本金上限：本筆約 {int(round(req_total)):,} 元（{round(notional/1000,1)}K）＋ 目前持倉曝險 {int(round(cur_exp)):,} 元 > 本金 {int(round(cap)):,} 元，已硬攔截。",
+            )
 
     ts_ms = int(time.time() * 1000)
     iso = tw_now_str()
@@ -4165,16 +4180,17 @@ def _fetch_shioaji_live_rank_sync(limit: int = 50) -> tuple[list[dict[str, Any]]
 
 
 @app.get("/api/v1/market/rank")
-async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, symbols: str = ""):
+async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float = 100.0, min_volume_lots: float = 1000.0, symbols: str = ""):
     """
-    v3.30.0: True real-time full-market bull / bear Top-N (Zero Hardcoding).
+    v3.31.0: True real-time full-market bull / bear Top-N (Zero Hardcoding + High Liquidity >= 1,000 張).
     Priority 1: Shioaji API live scanners (ChangePercentRank + AmountRank) when SIM/LIVE credentials are active.
     Priority 2: Live Yahoo TW full-market (TWSE + TPEx) change-up / change-down rankings.
     Priority 3: Official EOD + MIS live secondary verification fallback (and used for custom/chain universe).
     universe: all (全市場含ETF) | stocks (僅台股個股·排除ETF) | liquid (成交值 >= min_value_m 百萬) | custom (symbols=...)
     """
     limit = max(5, min(int(limit), 100))
-    cache_key = f"{universe}|{limit}|{min_value_m}|{symbols.strip().upper()}"
+    min_lots = max(0.0, float(min_volume_lots if min_volume_lots is not None else 1000.0))
+    cache_key = f"{universe}|{limit}|{min_value_m}|{min_lots}|{symbols.strip().upper()}"
     now_ts = time.time()
     cached = _RANK_LIVE_CACHE.get(cache_key)
     if cached and (now_ts - cached[0]) < 25:
@@ -4183,13 +4199,13 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
     eod_task = asyncio.create_task(_get_official_eod_map())
     live_up: list[dict[str, Any]] = []
     live_dn: list[dict[str, Any]] = []
-    rank_source = "即時全市場實盤漲跌幅排行（上市＋上櫃同步）"
+    rank_source = "即時全市場實盤漲跌幅排行（上市＋上櫃同步 · 流動性 ≥ 1,000張）"
     shioaji_used = False
     if universe in ("all", "stocks", "liquid"):
         sj_up, sj_dn = await asyncio.to_thread(_fetch_shioaji_live_rank_sync, limit)
         if sj_up or sj_dn:
             live_up, live_dn = sj_up, sj_dn
-            rank_source = "永豐金 Shioaji API 動態實盤選股（漲跌幅＋成交金額排行）"
+            rank_source = "永豐金 Shioaji API 動態實盤選股（漲跌幅＋成交金額 · 流動性 ≥ 1,000張）"
             shioaji_used = True
         else:
             live_up, live_dn = await asyncio.gather(
@@ -4222,6 +4238,8 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
                     continue
                 if universe == "stocks" and x.get("is_etf"):
                     continue
+                if float(x.get("volume_lots") or 0) < min_lots:
+                    continue
                 if universe == "liquid" and x["value_m"] < min_value_m:
                     continue
                 item_copy = dict(x)
@@ -4236,6 +4254,7 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
             "ok": True,
             "source": rank_source,
             "shioaji_dynamic": shioaji_used,
+            "min_volume_lots": min_lots,
             "data_date": today_str,
             "live_verified": True,
             "verified_count": len(bulls) + len(bears),
@@ -4263,9 +4282,11 @@ async def market_rank(universe: str = "all", limit: int = 50, min_value_m: float
             continue
         if universe == "stocks" and (code.startswith("00") or code.startswith("02")):
             continue
+        if universe != "custom" and lots < min_lots:
+            continue
         if universe == "liquid" and value_m < min_value_m:
             continue
-        if universe == "all" and (lots < 5 or value_m < 1.0):
+        if universe == "all" and value_m < 1.0:
             continue
         if lots <= 0:
             continue

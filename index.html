@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.30.3 · 版本說明
+              v3.31.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3513,6 +3513,7 @@
             <button type="button" id="btnAtSwitchEnv" class="btn btn-sm" style="background:#1e293b;color:#fde68a;border-color:#334155;">切換 SIM / LIVE</button>
             <button type="button" id="btnAtOpenWarModal" class="btn btn-sm" style="background:#7f1d1d;color:#fecaca;border-color:#b91c1c;">⚔️ 策略與止損參數</button>
             <button type="button" id="btnAtResetSim" class="btn btn-sm" style="background:#1e293b;color:#cbd5e1;border-color:#334155;">重設模擬盤</button>
+            <button type="button" id="btnAtDailyPnl" class="btn btn-sm" style="background:#065f46;color:#a7f3d0;border-color:#059669;font-weight:800;">📅 每日損益記憶</button>
             <button type="button" id="btnAtExportCsv" class="btn btn-sm" style="background:#1e293b;color:#93c5fd;border-color:#334155;">匯出 CSV</button>
             <button type="button" id="btnAtSendReview" class="btn btn-sm" style="background:#1d4ed8;color:#fff;border-color:#2563eb;">送往對帳復盤</button>
           </div>
@@ -4323,7 +4324,8 @@
                   <span style="font-weight:700;color:#92400e;">折（最低6折）</span>
                 </div>
                 <button id="btnReviewLoadSample" type="button" class="btn btn-sm">載入範例對帳單</button>
-                <button id="btnReviewImportSysOrders" type="button" class="btn btn-sm btn-teal">導入本系統成交</button>
+                <button id="btnReviewImportSysOrders" type="button" class="btn btn-sm btn-teal">從系統載入成交</button>
+                <button id="btnReviewApplyToSystem" type="button" class="btn btn-sm btn-primary" style="font-weight:800;" title="將目前匯入的對帳單資料套用至本系統所有交易紀錄、戰情室與每日損益記憶">📥 導入（套用至全系統交易紀錄）</button>
                 <button id="btnReviewExportCsv" type="button" class="btn btn-sm">匯出復盤 CSV</button>
                 <button id="btnReviewClear" type="button" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;">清空資料</button>
               </div>
@@ -6046,6 +6048,45 @@
               </tr>
             </thead>
             <tbody id="actionLogTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.31.0: Daily Trading PnL Memory & Export Modal -->
+  <div id="dailyPnlModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="dailyPnlModalTitle">
+    <div class="modal-card" style="max-width:820px;width:95vw;max-height:86vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-blue">DAILY PNL</span>
+          <h3 id="dailyPnlModalTitle" style="margin:0;font-size:15px;font-weight:800;">📅 每日交易損益記憶與對帳匯出</h3>
+          <span id="dailyPnlSummaryPill" class="badge mono" style="background:#0f172a;color:#34d399;font-weight:800;">0 個交易日 · 累計 $0</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="dailyPnlModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:8px 10px;">
+          <div style="font-size:11.5px;color:#475569;font-weight:700;">自動記憶每日已實現／未實現損益、真實手續費與證交稅（1張=1,000股=K）</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button id="btnDailyPnlSnapNow" type="button" class="btn btn-sm btn-primary">💾 立即寫入今日記憶</button>
+            <button id="btnDailyPnlExportCsv" type="button" class="btn btn-sm">⬇️ 匯出 CSV</button>
+            <button id="btnDailyPnlExportJson" type="button" class="btn btn-sm">⬇️ 匯出 JSON</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:52vh;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#f1f5f9;color:#475569;text-align:right;">
+                <th style="text-align:left;padding:7px 8px;">日期</th>
+                <th style="padding:7px 8px;">成交筆數</th>
+                <th style="padding:7px 8px;">已實現損益</th>
+                <th style="padding:7px 8px;">未實現浮動</th>
+                <th style="padding:7px 8px;">手續費 / 證交稅</th>
+                <th style="padding:7px 8px;">當日總淨損益</th>
+              </tr>
+            </thead>
+            <tbody id="dailyPnlTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -12231,6 +12272,77 @@
       };
     }
 
+    // =========================================================================
+    // v3.31.0 台股規格標準引擎 (window.SHL_TW_SPEC)
+    // - 股價 K 單位：1 張 (1,000 股) = 股價 × K（例：4 = 4K = 4,000 元）
+    // - 真實台股稅費：手續費 0.1425% × 折數 (最低 20 元)；證交稅 波段賣出 0.3% / 當沖賣出 0.15% / ETF 賣出 0.1%
+    // - 選股高流動性門檻：交易張數 >= 1,000 張
+    // - 硬性本金上限：任何開倉（多／空）總曝險不得超出本金
+    // =========================================================================
+    window.SHL_TW_SPEC = (function createTwSpecEngine() {
+      const MIN_LIQUIDITY_LOTS = 1000;
+
+      function fmtK(price, lots = 1) {
+        const px = Number(price || 0);
+        const l = Math.max(1, Math.abs(Number(lots || 1)));
+        const kVal = px * l;
+        const twd = Math.round(kVal * 1000);
+        const kStr = Number.isInteger(kVal) ? String(kVal) : kVal.toFixed(1).replace(/\.0$/, '');
+        return `${kStr}K ($${twd.toLocaleString()})`;
+      }
+
+      function calcTwCosts(price, shares, side = 'BUY', symbol = '', dayTrade = false, feeDiscount = null) {
+        const px = Number(price || 0);
+        const sh = Math.abs(Math.round(Number(shares || 0)));
+        const notional = Math.round(px * sh);
+        const disc = Number(feeDiscount ?? state?.feeDiscount ?? state?.ext?.feeDiscount ?? 2.8);
+        const safeDisc = Math.max(0.1, Math.min(6.0, Number.isFinite(disc) ? disc : 2.8));
+        const stdFee = Math.max(20, Math.round(notional * 0.001425));
+        const discountedFee = Math.max(20, Math.round(notional * 0.001425 * (safeDisc / 10)));
+        const isEtf = String(symbol || '').trim().toUpperCase().startsWith('00');
+        const taxRate = isEtf ? 0.001 : (dayTrade ? 0.0015 : 0.003);
+        const tax = String(side || '').toUpperCase() === 'SELL' ? Math.round(notional * taxRate) : 0;
+        return { notional, stdFee, discountedFee, taxRate, tax, isEtf, totalCost: notional + stdFee + tax };
+      }
+
+      function getPrincipalCap() {
+        return Math.max(10000, Math.round(Number(state?.initialCapitalTwd || window.SHL_WAR?.cfg()?.capital || 1000000)));
+      }
+
+      function getGrossExposure() {
+        return Math.round((state?.positions || []).reduce((sum, p) => {
+          return sum + Math.abs(Number(p.shares || 0)) * Number(p.avgPrice || 0);
+        }, 0));
+      }
+
+      function getRemainingPrincipal() {
+        const cap = getPrincipalCap();
+        const gross = getGrossExposure();
+        const remByCap = Math.max(0, cap - gross);
+        if (state?.envMode === 'SIM') {
+          return Math.max(0, Math.min(remByCap, Math.round(Number(state.simCashTwd || 0))));
+        }
+        return remByCap;
+      }
+
+      function getQuoteLots(sym, qObj = null) {
+        const q = qObj || (typeof getQuote === 'function' ? getQuote(sym) : state?.quotes?.[sym]);
+        if (!q) return null;
+        if (q.volumeLots != null && Number(q.volumeLots) > 0) return Number(q.volumeLots);
+        if (q.volume_lots != null && Number(q.volume_lots) > 0) return Number(q.volume_lots);
+        if (q.volume != null && Number(q.volume) > 0) return Number(q.volume) / 1000;
+        return 0;
+      }
+
+      function hasHighLiquidity(sym, qObj = null, minLots = MIN_LIQUIDITY_LOTS) {
+        const lots = getQuoteLots(sym, qObj);
+        if (lots === null) return true; // 若無成交量欄位（例如手動測試）不誤殺，但有量必嚴格檢核 >= 1,000 張
+        return lots >= Number(minLots || MIN_LIQUIDITY_LOTS);
+      }
+
+      return { MIN_LIQUIDITY_LOTS, fmtK, calcTwCosts, getPrincipalCap, getGrossExposure, getRemainingPrincipal, getQuoteLots, hasHighLiquidity };
+    })();
+
     async function executeOrder({ symbol, side, qty, unit, price, orderType = 'LMT', tif = 'ROD', source = 'WEB_UI', dayTrade = null, allowShort = false }) {
       if (state.killSwitch) {
         showToast('下單已攔截', '目前處於緊急熔斷狀態，請先解除熔斷。', 'error');
@@ -12294,6 +12406,22 @@
       const taxRate = isEtf ? 0.001 : (isDayTrade ? 0.0015 : 0.003);
       const tax = side === 'SELL' ? Math.round(notional * taxRate) : 0;
       const netAmount = side === 'BUY' ? (notional + fee) : (notional - fee - tax);
+
+      // v3.31.0: Hard Principal Cap — opening order notional + existing gross exposure MUST NOT exceed principal!
+      const existingPosForCap = (state.positions || []).find(p => p.symbol === symbol);
+      const isClosingExisting = (side === 'SELL' && existingPosForCap && existingPosForCap.shares > 0 && shares <= existingPosForCap.shares)
+        || (side === 'BUY' && existingPosForCap && existingPosForCap.shares < 0 && shares <= Math.abs(existingPosForCap.shares));
+      if (!isClosingExisting && window.SHL_TW_SPEC) {
+        const principalCap = window.SHL_TW_SPEC.getPrincipalCap();
+        const grossExp = window.SHL_TW_SPEC.getGrossExposure();
+        const orderNeed = notional + fee + tax;
+        if ((grossExp + orderNeed) > principalCap) {
+          const msg = `本筆 ${window.SHL_TW_SPEC.fmtK(execPrice, qty)}（含稅費 ${fmtMoney(orderNeed)}）＋ 現有曝險 ${fmtMoney(grossExp)} 超出本金上限 ${fmtMoney(principalCap)}，已硬攔截！`;
+          showToast('🛑 下單金額超出本金上限', msg, 'error');
+          window.SHL_ACTION_LOG?.log('system', 'PRINCIPAL_CAP', `${symbol} ${side} ${qty}張被攔截：${msg}`, 'WARN', '資金控管');
+          return;
+        }
+      }
       const monthKey = todayStr.slice(0, 7);
       if (!state.ext.monthlyRebateLedger || typeof state.ext.monthlyRebateLedger !== 'object') {
         state.ext.monthlyRebateLedger = {};
@@ -21923,8 +22051,17 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.30.3';
+      const CURRENT_VERSION = 'v3.31.0';
       const HISTORY = [
+        {
+          ver: 'v3.31.0',
+          items: [
+            '落實台股 K 單位標準與真實稅費引擎（window.SHL_TW_SPEC）：1 張 (1,000 股) = K（例：4 = 4K = $4,000），戰情室同步標示 K 額與剩餘可用本金；嚴格依真實台股規定計算手續費（0.1425% × 折數，最低 20 元）與證交稅（波段賣出 0.3% / 當沖賣出 0.15% / ETF 賣出 0.1%）',
+            '選股高流動性門檻（成交張數 ≥ 1,000 張）：後端 GET /api/v1/market/rank 與前端自動交易風控閘門全面過濾低於 1,000 張之冷門股（杜絕低流動性標的誤觸發下單）',
+            '硬性資金控管「下單金額不得超出本金」：前後端（executeOrder ＋ SHL_WAR.computeAutoLots ＋ POST /api/v1/orders/place）同步鎖定開倉金額＋現有持倉總曝險絕不得超出設定本金，徹底修正空單超額問題',
+            '新增「📅 每日交易損益記憶與匯出」（window.SHL_DAILY_PNL ＋ #dailyPnlModal，支援 CSV / JSON 匯出）與對帳單一鍵「📥 導入（套用至全系統交易紀錄）」（#btnReviewApplyToSystem）'
+          ]
+        },
         {
           ver: 'v3.30.3',
           items: [
@@ -23199,24 +23336,24 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return null;
       }
 
-      // v3.23.0: Autonomous principal-compounding 1,000-share (1 張) lot calculator
+      // v3.31.0: Hard principal cap (下單金額與累計曝險嚴禁超出本金)
       function getAvailableCapital(c) {
-        if (state.envMode === 'SIM') {
-          return Math.max(0, Number(state.simCashTwd || 0));
+        if (window.SHL_TW_SPEC && typeof window.SHL_TW_SPEC.getRemainingPrincipal === 'function') {
+          return window.SHL_TW_SPEC.getRemainingPrincipal();
         }
         const baseCap = Math.max(10000, Number(state.initialCapitalTwd || c?.capital || 1000000));
-        const realized = (state.orders || []).reduce((s, o) => s + (typeof o.realized_pnl_twd === 'number' ? o.realized_pnl_twd : 0), 0);
-        return Math.max(0, baseCap + realized);
+        const gross = (state.positions || []).reduce((s, p) => s + Math.abs(Number(p.shares || 0)) * Number(p.avgPrice || 0), 0);
+        const rem = Math.max(0, baseCap - gross);
+        return state.envMode === 'SIM' ? Math.max(0, Math.min(rem, Number(state.simCashTwd || 0))) : rem;
       }
 
       function computeAutoLots(price, sl, c) {
         const px = Number(price || 0);
         if (!px || px <= 0) return 0;
         const availCash = getAvailableCapital(c);
-        const maxLev = Math.max(1, Number(c?.maxLev || 1));
-        const oneLotCost = px * 1000 * 1.003; // 1 張 (1,000 股) + 手續費/滑點預留
-        const maxAffordableLots = Math.floor((availCash * maxLev) / oneLotCost);
-        if (maxAffordableLots < 1) return 0; // 資金不足 1 張（1,000 股）→ 嚴禁零股，直接略過
+        const oneLotCost = px * 1000 * 1.005; // 1 張 (1,000 股) + 真實手續費/證交稅/滑點預留
+        const maxAffordableLots = Math.floor(availCash / oneLotCost);
+        if (maxAffordableLots < 1) return 0; // 剩餘本金不足 1 張（1,000 股）→ 嚴禁超額與零股，直接略過
         const riskPerShare = Math.max(px * 0.005, Math.abs(px - Number(sl || px * 0.99)));
         const riskPct = Math.max(0.5, Number(c?.riskPct || 4));
         const riskBudget = Math.max(3000, availCash * (riskPct / 100));
@@ -23224,8 +23361,14 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         return Math.max(1, Math.min(riskLots, maxAffordableLots));
       }
 
-      // v3.28.0: Hard Entry Risk Gates (-2% daily loss breaker, 60s anti-flicker cooldown, 2-loss daily blacklist)
+      // v3.28.0 / v3.31.0: Hard Entry Risk Gates (Liquidity >= 1,000 張, -2% daily loss breaker, 60s cooldown, 2-loss blacklist)
       function checkEntryRiskGates(sym, c) {
+        // 0. High-Liquidity Gate: volume_lots >= 1,000 張
+        if (window.SHL_TW_SPEC && !window.SHL_TW_SPEC.hasHighLiquidity(sym)) {
+          const lots = window.SHL_TW_SPEC.getQuoteLots(sym);
+          window.SHL_ACTION_LOG?.log('system', 'LIQUIDITY_GATE', `${sym} 成交量 ${Math.round(lots || 0)} 張 < 1,000 張流動性門檻，已略過下單`, 'WARN', '選股流動性');
+          return false;
+        }
         const today = nowTwDateTime().slice(0, 10);
         c.cooldownMap = c.cooldownMap || {};
         c.lossStreak = c.lossStreak || {};
@@ -23264,7 +23407,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const initSl = tk ? tk.minSafeStop(entryPx, sig?.sl, 1, sym) : snap(sig.sl < entryPx ? sig.sl : (entryPx * 0.99), sym, 'down');
         const lots = computeAutoLots(entryPx, initSl, c);
         if (!lots || lots < 1) {
-          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}，買進 1 張需約 ${fmtMoney(Math.ceil(entryPx * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}（${window.SHL_TW_SPEC ? window.SHL_TW_SPEC.fmtK(entryPx, 1) : ''}），剩餘可用本金 ${fmtMoney(getAvailableCapital(c))}（嚴禁超額與零股，已略過）。`, 'warn');
           return false;
         }
         await executeOrder({ symbol: sym, side: 'BUY', qty: lots, unit: '張', price: entryPx, source: tag || 'MINK_PV_LONG', dayTrade: isIntra(c.iv) });
@@ -23274,7 +23417,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const tpPx = tk ? tk.snapUp(entryPx + risk * c.rrr, sym) : snap(entryPx + risk * c.rrr, sym, 'up');
           const slTicks = tk ? Math.abs(tk.ticksBetween(entryPx, initSl, sym)) : Math.max(1, Math.round(risk / tickVal));
           c.stops[sym] = { dir: 1, entry: entryPx, sl: initSl, sl0: initSl, tp: tpPx, risk, tickSize: tickVal, slTicks, ext: entryPx, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
-          save(); return true;
+          save(); window.SHL_DAILY_PNL?.recordToday?.(); return true;
         }
         return false;
       }
@@ -23288,7 +23431,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         const slPx = tk ? tk.minSafeStop(entryPx, sig?.sl, -1, sym) : snap(sig.sl > entryPx ? sig.sl : (entryPx * 1.01), sym, 'up');
         const lots = computeAutoLots(entryPx, slPx, c);
         if (!lots || lots < 1) {
-          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}，現沖先賣 1 張需預留約 ${fmtMoney(Math.ceil(entryPx * 1000 * 1.003))}，目前可用 ${fmtMoney(getAvailableCapital(c))}（嚴禁零股，已略過）。`, 'warn');
+          showToast('資金不足 1 張（1,000 股）', `${sym} 現價 ${fx(entryPx)}（${window.SHL_TW_SPEC ? window.SHL_TW_SPEC.fmtK(entryPx, 1) : ''}），剩餘可用本金 ${fmtMoney(getAvailableCapital(c))}（嚴禁超額與零股，已略過）。`, 'warn');
           return false;
         }
         // 現股當沖先賣（空單進場）：嚴格以整張 1,000 股倍數下單，SIM 與 LIVE 共用止損止盈
@@ -23299,7 +23442,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
           const tpPx = tk ? tk.snapDown(Math.max(0.01, entryPx - risk * c.rrr), sym) : snap(entryPx - risk * c.rrr, sym, 'down');
           const slTicks = tk ? Math.abs(tk.ticksBetween(entryPx, slPx, sym)) : Math.max(1, Math.round(risk / tickVal));
           c.stops[sym] = { dir: -1, entry: entryPx, sl: slPx, sl0: slPx, tp: tpPx, risk, tickSize: tickVal, slTicks, ext: entryPx, ts: Date.now(), stage: '初始保護', why: sig.why, envMode: state.envMode };
-          save(); return true;
+          save(); window.SHL_DAILY_PNL?.recordToday?.(); return true;
         }
         return false;
       }
@@ -23619,9 +23762,10 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
 
         const pInp = $('atPrincipalInput');
         if (pInp && document.activeElement !== pInp) pInp.value = String(Math.round(baseCap));
-        const availCash = state.envMode === 'SIM' ? Math.max(0, Number(state.simCashTwd || 0)) : Math.max(0, baseCap + realizedPnl);
+        const availCash = window.SHL_TW_SPEC ? window.SHL_TW_SPEC.getRemainingPrincipal() : (state.envMode === 'SIM' ? Math.max(0, Number(state.simCashTwd || 0)) : Math.max(0, baseCap + realizedPnl));
+        const grossExp = window.SHL_TW_SPEC ? window.SHL_TW_SPEC.getGrossExposure() : 0;
         const cashBadge = $('atAvailCashBadge');
-        if (cashBadge) cashBadge.textContent = `可用現金：${fmtMoney(availCash)} ｜ 總權益：${fmtMoney(baseCap + totalPnl)}`;
+        if (cashBadge) cashBadge.textContent = `剩餘可用本金：${fmtMoney(availCash)} ｜ 持倉曝險：${fmtMoney(grossExp)} ｜ 總權益：${fmtMoney(baseCap + totalPnl)}`;
 
         const kTot = $('atKpiTotalPnl');
         if (kTot) { kTot.textContent = fmtSignedMoney(totalPnl); kTot.style.color = pnlColor(totalPnl); }
@@ -23644,18 +23788,20 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
             posBox.innerHTML = '<div style="padding:10px;text-align:center;color:#94a3b8;">尚無持倉部位（點上方「▶ 一鍵啟動全自動量化交易」或手動下單）</div>';
           } else {
             posBox.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11.5px;">
-              <thead><tr style="border-bottom:1px solid #e2e8f0;color:#64748b;"><th style="text-align:left;padding:4px;">標的</th><th style="text-align:right;padding:4px;">股數</th><th style="text-align:right;padding:4px;">均價/現價</th><th style="text-align:right;padding:4px;">未實現損益</th><th style="text-align:right;padding:4px;">SL / TP</th><th style="text-align:right;padding:4px;">操作</th></tr></thead>
+              <thead><tr style="border-bottom:1px solid #e2e8f0;color:#64748b;"><th style="text-align:left;padding:4px;">標的</th><th style="text-align:right;padding:4px;">股數 / K額</th><th style="text-align:right;padding:4px;">均價/現價</th><th style="text-align:right;padding:4px;">未實現損益</th><th style="text-align:right;padding:4px;">SL / TP</th><th style="text-align:right;padding:4px;">操作</th></tr></thead>
               <tbody>${positions.map(p => {
                 const curPx = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
                 const pnl = Math.round((curPx - p.avgPrice) * p.shares);
                 const pct = p.avgPrice > 0 ? ((curPx - p.avgPrice) / p.avgPrice * 100) : 0;
+                const lotsAbs = Math.max(1, Math.round(Math.abs(p.shares) / 1000));
+                const kDisp = window.SHL_TW_SPEC ? window.SHL_TW_SPEC.fmtK(curPx, lotsAbs).split(' ')[0] : `${(curPx * lotsAbs).toFixed(1)}K`;
                 const st = stops[p.symbol];
                 const tkSz = window.SHL_TW_TICK ? window.SHL_TW_TICK.tickSize(curPx || p.avgPrice, p.symbol) : (st?.tickSize || 0.5);
                 const slTp = st ? `${Number(st.sl).toFixed(tkSz < 0.1 ? 2 : 1)} / ${Number(st.tp).toFixed(tkSz < 0.1 ? 2 : 1)}` : '--';
                 const stageHtml = `<div style="font-size:10px;color:#0f766e;font-weight:700;">${st?.stage ? esc(st.stage) + ' · ' : ''}Tick ${tkSz}元</div>`;
                 return `<tr style="border-bottom:1px solid #f1f5f9;">
                   <td style="padding:4px;font-weight:800;cursor:pointer;" data-at-sel="${esc(p.symbol)}">${esc(p.symbol)} ${esc(p.name || '')}</td>
-                  <td class="mono" style="text-align:right;padding:4px;">${fmtInt(p.shares)}</td>
+                  <td class="mono" style="text-align:right;padding:4px;">${fmtInt(p.shares)}<div style="font-size:10px;color:#64748b;">${esc(kDisp)}</div></td>
                   <td class="mono" style="text-align:right;padding:4px;">${fmtNum(p.avgPrice, 2)} / <b>${fmtNum(curPx, 2)}</b></td>
                   <td class="mono" style="text-align:right;padding:4px;font-weight:800;color:${pnlColor(pnl)};">${fmtSignedMoney(pnl)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</td>
                   <td class="mono" style="text-align:right;padding:4px;font-size:11px;color:#475569;">${slTp}${stageHtml}</td>
@@ -26118,6 +26264,217 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       return { init, tick, getWindowStatus };
     })();
 
+    // =========================================================================
+    // v3.31.0 每日交易損益記憶 ＋ 匯出 ＋ 對帳單一鍵導入全系統 (window.SHL_DAILY_PNL)
+    // =========================================================================
+    window.SHL_DAILY_PNL = (function createDailyPnlLedger() {
+      const STORAGE_KEY = 'shl_daily_pnl_ledger_v1';
+      let ledger = {}; // 'YYYY-MM-DD' -> { date, tradeCount, realizedPnl, unrealizedPnl, totalPnl, totalFee, totalTax, updatedAt }
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') ledger = parsed;
+          }
+        } catch {}
+      }
+
+      function save() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ledger)); } catch {}
+      }
+
+      function rebuildFromOrders() {
+        const byDate = {};
+        (state.orders || []).forEach(o => {
+          const d = String(o.iso_time || o.time || nowTwDateTime()).slice(0, 10).replace(/\//g, '-');
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+          if (!byDate[d]) byDate[d] = { date: d, tradeCount: 0, realizedPnl: 0, unrealizedPnl: 0, totalPnl: 0, totalFee: 0, totalTax: 0, updatedAt: nowTwDateTime() };
+          byDate[d].tradeCount += 1;
+          byDate[d].totalFee += Math.round(Number(o.fee || 0));
+          byDate[d].totalTax += Math.round(Number(o.tax || 0));
+          if (typeof o.realized_pnl_twd === 'number') byDate[d].realizedPnl += Math.round(o.realized_pnl_twd);
+        });
+        Object.keys(byDate).forEach(d => {
+          const prev = ledger[d] || {};
+          byDate[d].unrealizedPnl = d === nowTwDateTime().slice(0, 10) ? calcUnrealizedNow() : (prev.unrealizedPnl || 0);
+          byDate[d].totalPnl = byDate[d].realizedPnl + byDate[d].unrealizedPnl;
+          ledger[d] = byDate[d];
+        });
+        save();
+      }
+
+      function calcUnrealizedNow() {
+        return (state.positions || []).reduce((sum, p) => {
+          const px = Number(getQuote(p.symbol)?.price || p.avgPrice || 0);
+          return sum + Math.round((px - Number(p.avgPrice || 0)) * Number(p.shares || 0));
+        }, 0);
+      }
+
+      function recordToday(silent = true) {
+        const today = nowTwDateTime().slice(0, 10);
+        rebuildFromOrders();
+        const todayOrders = (state.orders || []).filter(o => String(o.iso_time || '').startsWith(today));
+        const realized = todayOrders.reduce((s, o) => s + (typeof o.realized_pnl_twd === 'number' ? Math.round(o.realized_pnl_twd) : 0), 0);
+        const fee = todayOrders.reduce((s, o) => s + Math.round(Number(o.fee || 0)), 0);
+        const tax = todayOrders.reduce((s, o) => s + Math.round(Number(o.tax || 0)), 0);
+        const unreal = calcUnrealizedNow();
+        ledger[today] = {
+          date: today,
+          tradeCount: todayOrders.length,
+          realizedPnl: realized,
+          unrealizedPnl: unreal,
+          totalPnl: realized + unreal,
+          totalFee: fee,
+          totalTax: tax,
+          updatedAt: nowTwDateTime()
+        };
+        save();
+        renderModal();
+        if (!silent) {
+          showToast('📅 今日損益已寫入記憶', `${today}：成交 ${todayOrders.length} 筆 · 總淨損益 ${fmtSignedMoney(realized + unreal)}（手續費 $${fee} / 證交稅 $${tax}）`, 'success');
+        }
+        return ledger[today];
+      }
+
+      function getRows() {
+        return Object.values(ledger).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      }
+
+      function renderModal() {
+        const tb = document.getElementById('dailyPnlTableBody');
+        const pill = document.getElementById('dailyPnlSummaryPill');
+        const rows = getRows();
+        const cumTotal = rows.reduce((s, r) => s + Number(r.totalPnl || 0), 0);
+        if (pill) pill.textContent = `${rows.length} 個交易日 · 累計 ${fmtSignedMoney(cumTotal)}`;
+        if (!tb) return;
+        if (!rows.length) {
+          tb.innerHTML = '<tr><td colspan="6" style="padding:18px;text-align:center;color:#94a3b8;">尚無每日損益記憶，交易成交或點「💾 立即寫入今日記憶」即可自動累積。</td></tr>';
+          return;
+        }
+        tb.innerHTML = rows.map(r => {
+          const col = r.totalPnl >= 0 ? '#dc2626' : '#059669';
+          return `<tr style="border-bottom:1px solid #e2e8f0;text-align:right;">
+            <td class="mono" style="text-align:left;padding:7px 8px;font-weight:800;">${r.date}</td>
+            <td class="mono" style="padding:7px 8px;">${r.tradeCount} 筆</td>
+            <td class="mono" style="padding:7px 8px;color:${r.realizedPnl >= 0 ? '#dc2626' : '#059669'};">${fmtSignedMoney(r.realizedPnl)}</td>
+            <td class="mono" style="padding:7px 8px;color:${r.unrealizedPnl >= 0 ? '#dc2626' : '#059669'};">${fmtSignedMoney(r.unrealizedPnl)}</td>
+            <td class="mono" style="padding:7px 8px;color:#64748b;">$${Math.round(r.totalFee).toLocaleString()} / $${Math.round(r.totalTax).toLocaleString()}</td>
+            <td class="mono" style="padding:7px 8px;font-weight:900;color:${col};">${fmtSignedMoney(r.totalPnl)}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      function exportCsv() {
+        const rows = getRows();
+        const header = '日期,成交筆數,已實現損益(TWD),未實現浮動(TWD),手續費(TWD),證交稅(TWD),當日總淨損益(TWD),更新時間';
+        const lines = rows.map(r => [r.date, r.tradeCount, r.realizedPnl, r.unrealizedPnl, r.totalFee, r.totalTax, r.totalPnl, r.updatedAt].join(','));
+        const csv = '\uFEFF' + [header, ...lines].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shl_daily_pnl_${nowTwDateTime().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('⬇️ 已匯出每日損益 CSV', `共 ${rows.length} 個交易日紀錄`, 'success');
+      }
+
+      function exportJson() {
+        const rows = getRows();
+        const blob = new Blob([JSON.stringify({ exported_at: nowTwDateTime(), count: rows.length, rows }, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shl_daily_pnl_${nowTwDateTime().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('⬇️ 已匯出每日損益 JSON', `共 ${rows.length} 個交易日紀錄`, 'success');
+      }
+
+      // v3.31.0: 對帳單「導入」— 將對帳單資料套用至本系統所有交易紀錄（state.orders + 每日損益記憶 + 戰情室）
+      function applyReviewToSystem() {
+        const rows = (Array.isArray(state.reviewData) && state.reviewData.length)
+          ? state.reviewData
+          : (Array.isArray(state.reviewRows) ? state.reviewRows : []);
+        if (!rows.length) {
+          showToast('尚未匯入對帳單', '請先上傳券商對帳單（PDF / XLSX / CSV / JSON）或點「載入範例對帳單」後再按「導入」。', 'warn');
+          return { ok: false, imported: 0 };
+        }
+        const importedOrders = rows.map((r, idx) => {
+          const rawSym = String(r.symbol || r.code || '2330').trim();
+          const parts = rawSym.split(/\s+/);
+          const sym = (parts[0] || '2330').toUpperCase();
+          const parsedName = parts.slice(1).join(' ');
+          const name = String(r.name || r.stock_name || parsedName || (typeof getStockMeta === 'function' ? getStockMeta(sym)?.name : sym) || sym).trim();
+          const notionalVal = Math.max(0, Number(r.sell || r.buy || 0));
+          const rawShares = Number(r.shares || r.qty || 1000);
+          const shares = rawShares >= 1000 ? Math.round(rawShares / 1000) * 1000 : Math.max(1000, Math.round(rawShares) * 1000);
+          const lots = Math.max(1, Math.round(shares / 1000));
+          const px = Number(r.sellPrice || r.price || r.buyPrice || (notionalVal > 0 ? Number((notionalVal / shares).toFixed(2)) : 100));
+          const isDay = String(r.type || '').toLowerCase() === 'day' || String(r.type || '').includes('當沖');
+          const costs = window.SHL_TW_SPEC ? window.SHL_TW_SPEC.calcTwCosts(px, shares, 'SELL', sym, isDay) : { notional: Math.round(px * shares), stdFee: 20, tax: 0 };
+          const fee = Number(r.fees != null ? r.fees : (r.fee != null ? r.fee : costs.stdFee));
+          const tax = Number(r.tax != null ? r.tax : costs.tax);
+          const netPnl = Number(r.netPnl != null ? r.netPnl : (r.pnl != null ? r.pnl : 0));
+          const dt = String(r.date || nowTwDateTime().slice(0, 10)).replace(/\//g, '-').slice(0, 10);
+          const iso = `${dt} ${String(r.time || '13:30:00')}`;
+          return {
+            order_id: `STMT-${sym}-${idx + 1}-${Date.now().toString().slice(-4)}`,
+            symbol: sym,
+            stock_name: name,
+            side: String(r.side || 'SELL').toUpperCase() === 'BUY' ? 'BUY' : 'SELL',
+            qty: lots,
+            unit: '張',
+            shares,
+            price: px,
+            notional: notionalVal > 0 ? Math.round(notionalVal) : Math.round(px * shares),
+            fee: Math.round(fee),
+            tax: Math.round(tax),
+            realized_pnl_twd: Math.round(netPnl),
+            env_mode: state.envMode || 'SIM',
+            source: 'STATEMENT_IMPORT',
+            status: 'FILLED',
+            time: iso.slice(5, 16),
+            iso_time: iso,
+            day_trade: isDay
+          };
+        });
+        state.orders = importedOrders;
+        rebuildFromOrders();
+        recordToday(true);
+        if (typeof persistState === 'function') persistState();
+        if (typeof renderAllViews === 'function') renderAllViews();
+        if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+        if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
+        window.SHL_ACTION_LOG?.log('system', '#btnReviewApplyToSystem', `已將對帳單 ${importedOrders.length} 筆交易完整導入套用至全系統紀錄`, 'OK', '對帳單導入');
+        showToast('📥 對帳單已導入套用至全系統', `已將 ${importedOrders.length} 筆對帳單紀錄套用至系統所有交易紀錄、戰情室與每日損益記憶！`, 'success');
+        return { ok: true, imported: importedOrders.length };
+      }
+
+      function openModal() {
+        recordToday(true);
+        document.getElementById('dailyPnlModal')?.classList.add('open');
+      }
+
+      function init() {
+        load();
+        rebuildFromOrders();
+        document.getElementById('btnAtDailyPnl')?.addEventListener('click', openModal);
+        document.getElementById('btnDailyPnlSnapNow')?.addEventListener('click', () => recordToday(false));
+        document.getElementById('btnDailyPnlExportCsv')?.addEventListener('click', exportCsv);
+        document.getElementById('btnDailyPnlExportJson')?.addEventListener('click', exportJson);
+        document.getElementById('btnReviewApplyToSystem')?.addEventListener('click', applyReviewToSystem);
+      }
+
+      return { init, recordToday, rebuildFromOrders, getRows, openModal, exportCsv, exportJson, applyReviewToSystem };
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       const safeBoot = (name, fn) => {
         try { if (typeof fn === 'function') fn(); } catch (err) {
@@ -26127,6 +26484,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       };
       safeBoot('ACTION_LOG', () => window.SHL_ACTION_LOG?.init());
       safeBoot('INTRADAY_SCHEDULER', () => window.SHL_INTRADAY_SCHEDULER?.init());
+      safeBoot('DAILY_PNL', () => window.SHL_DAILY_PNL?.init());
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
       });

@@ -73,7 +73,7 @@ def main() -> None:
     lan_ip = detect_lan_ip() if bind_host == "0.0.0.0" else ""
 
     print("=" * 64)
-    print("  SHL TW · 全自動台股交易系統 v3.31.0")
+    print("  SHL TW · 全自動台股交易系統 v3.32.0")
     print(f"  本機介面：{url}")
     if lan_ip:
         print(f"  手機區網：http://{lan_ip}:{port}  （同 Wi-Fi iPhone / Android 開啟或加入主畫面）")

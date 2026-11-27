@@ -545,7 +545,7 @@ def tw_now_str() -> str:
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="SHL TW — 全自動台股交易系統 API",
-    version="3.31.0",
+    version="3.32.0",
 )
 
 _ALLOWED_ORIGINS_RAW = os.getenv("SHL_ALLOWED_ORIGINS", "").strip()
@@ -679,7 +679,7 @@ async def health_check():
     ca_ready = bool(ca_path and Path(ca_path).exists())
     return {
         "status": "ok",
-        "version": "3.31.0",
+        "version": "3.32.0",
         "e2ee_sync_supported": True,
         "realtime_relay_supported": True,
         "device_pairing_supported": True,
@@ -6756,6 +6756,243 @@ async def get_ui_logs(limit: int = 120):
     """Return recent UI button action & error audit logs."""
     lim = max(1, min(int(limit or 120), _UI_ACTION_LOGS_MAX))
     return {"ok": True, "total": len(_UI_ACTION_LOGS), "entries": list(reversed(_UI_ACTION_LOGS[-lim:]))}
+
+
+# =============================================================================
+# v3.32.0 Dual Cloud DB + Local Computer Backup (Default: D:\SideProject\TradeDB)
+# + Mobile Cloud Restore Sync Endpoints
+# =============================================================================
+DEFAULT_PC_BACKUP_DIR = os.getenv("SHL_LOCAL_BACKUP_DIR", r"D:\SideProject\TradeDB")
+
+
+def _ensure_trade_backup_table() -> None:
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS trade_cloud_backups (
+                account_key TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                orders_count INTEGER DEFAULT 0,
+                positions_count INTEGER DEFAULT 0,
+                daily_pnl_days INTEGER DEFAULT 0,
+                local_path TEXT DEFAULT '',
+                device TEXT DEFAULT '',
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _resolve_local_backup_dir(requested_dir: str = "") -> tuple[Path, str]:
+    """
+    Resolve writable local backup directory.
+    On Windows desktop, defaults to D:\\SideProject\\TradeDB (or requested_dir).
+    On Linux/cloud containers where a Windows drive letter (e.g. D:\\) is not mounted,
+    gracefully falls back to <DATA_DIR>/TradeDB while reporting the configured PC path.
+    """
+    raw = str(requested_dir or DEFAULT_PC_BACKUP_DIR).strip()
+    is_win_drive = bool(re.match(r"^[A-Za-z]:[\\/]", raw))
+    if os.name != "nt" and is_win_drive:
+        fallback = DATA_DIR / "TradeDB"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback, raw
+    try:
+        target = Path(raw)
+        target.mkdir(parents=True, exist_ok=True)
+        return target, raw
+    except Exception:
+        fallback = DATA_DIR / "TradeDB"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback, raw
+
+
+@app.post("/api/v1/backup/trade-data")
+async def backup_trade_data(request: Request):
+    """Dual backup: upload full trading snapshot to Cloud SQLite AND write JSON files to Local TradeDB."""
+    try:
+        payload = await request.json()
+        if not isinstance(payload, dict):
+            payload = {}
+    except Exception:
+        payload = {}
+    _ensure_trade_backup_table()
+    owner_id = _owner_from_request(request)
+    account_key = str(payload.get("account_key") or owner_id or "default").strip()[:80] or "default"
+    req_local_dir = str(payload.get("local_dir") or DEFAULT_PC_BACKUP_DIR).strip()
+    device = str(payload.get("device") or "desktop").strip()[:40]
+    snapshot = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+
+    now_s = tw_now_str()
+    orders_cnt = len(snapshot.get("orders") or []) if isinstance(snapshot.get("orders"), list) else 0
+    pos_cnt = len(snapshot.get("positions") or []) if isinstance(snapshot.get("positions"), list) else 0
+    dp_raw = snapshot.get("daily_pnl")
+    dp_cnt = len(dp_raw) if isinstance(dp_raw, (list, dict)) else 0
+
+    envelope = {
+        "schema": "shl_trade_backup_v1",
+        "account_key": account_key,
+        "saved_at": now_s,
+        "device": device,
+        "configured_pc_dir": req_local_dir,
+        "counts": {"orders": orders_cnt, "positions": pos_cnt, "daily_pnl_days": dp_cnt},
+        "data": snapshot,
+    }
+    blob_str = json.dumps(envelope, ensure_ascii=False, indent=2)
+
+    # 1. Local disk backup (default D:\SideProject\TradeDB on Windows PC, or DATA_DIR/TradeDB on cloud Linux)
+    local_written = False
+    local_latest_path = ""
+    local_snap_path = ""
+    local_err = ""
+    try:
+        target_dir, configured_str = _resolve_local_backup_dir(req_local_dir)
+        latest_file = target_dir / "trade_backup_latest.json"
+        ts_tag = now_s.replace("-", "").replace(":", "").replace(" ", "_")
+        snap_file = target_dir / f"trade_backup_{ts_tag}.json"
+        latest_file.write_text(blob_str, encoding="utf-8")
+        snap_file.write_text(blob_str, encoding="utf-8")
+        local_written = True
+        local_latest_path = str(latest_file)
+        local_snap_path = str(snap_file)
+    except Exception as ex:
+        local_err = str(ex)
+
+    # 2. Cloud SQLite backup (for cross-device & mobile sync restore)
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute(
+            """
+            INSERT INTO trade_cloud_backups (account_key, payload_json, orders_count, positions_count, daily_pnl_days, local_path, device, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(account_key) DO UPDATE SET
+                payload_json = excluded.payload_json,
+                orders_count = excluded.orders_count,
+                positions_count = excluded.positions_count,
+                daily_pnl_days = excluded.daily_pnl_days,
+                local_path = excluded.local_path,
+                device = excluded.device,
+                updated_at = excluded.updated_at
+            """,
+            (account_key, blob_str, orders_cnt, pos_cnt, dp_cnt, local_latest_path, device, now_s),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "account_key": account_key,
+        "saved_at": now_s,
+        "cloud_saved": True,
+        "local_saved": local_written,
+        "configured_pc_dir": req_local_dir,
+        "local_latest_path": local_latest_path,
+        "local_snapshot_path": local_snap_path,
+        "local_error": local_err,
+        "counts": {"orders": orders_cnt, "positions": pos_cnt, "daily_pnl_days": dp_cnt},
+    }
+
+
+@app.get("/api/v1/backup/trade-data/latest")
+async def get_latest_trade_backup(request: Request, account_key: str = ""):
+    """Fetch latest cloud trading backup for mobile (iOS/Android) or desktop sync restore."""
+    _ensure_trade_backup_table()
+    owner_id = _owner_from_request(request)
+    keys_to_try = [k for k in (account_key.strip(), owner_id, "default") if k]
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        row = None
+        for k in keys_to_try:
+            cur = conn.execute(
+                "SELECT account_key, payload_json, orders_count, positions_count, daily_pnl_days, local_path, device, updated_at FROM trade_cloud_backups WHERE account_key = ?",
+                (k,),
+            )
+            row = cur.fetchone()
+            if row:
+                break
+        if not row:
+            cur = conn.execute(
+                "SELECT account_key, payload_json, orders_count, positions_count, daily_pnl_days, local_path, device, updated_at FROM trade_cloud_backups ORDER BY updated_at DESC LIMIT 1"
+            )
+            row = cur.fetchone()
+        if row:
+            parsed = json.loads(row[1])
+            return {
+                "ok": True,
+                "source": "cloud_db",
+                "account_key": row[0],
+                "updated_at": row[7],
+                "device": row[6],
+                "local_path": row[5],
+                "counts": {"orders": row[2], "positions": row[3], "daily_pnl_days": row[4]},
+                "backup": parsed,
+            }
+    finally:
+        conn.close()
+
+    # Fallback: read from local TradeDB latest file if exists
+    target_dir, _ = _resolve_local_backup_dir(DEFAULT_PC_BACKUP_DIR)
+    latest_file = target_dir / "trade_backup_latest.json"
+    if latest_file.exists():
+        parsed = json.loads(latest_file.read_text(encoding="utf-8"))
+        return {
+            "ok": True,
+            "source": "local_disk",
+            "account_key": parsed.get("account_key", "default"),
+            "updated_at": parsed.get("saved_at", ""),
+            "device": parsed.get("device", "desktop"),
+            "local_path": str(latest_file),
+            "counts": parsed.get("counts", {}),
+            "backup": parsed,
+        }
+    return {"ok": False, "detail": "雲端與本機尚無交易備份資料，請先於電腦端點擊「立即雙重備份」。"}
+
+
+@app.get("/api/v1/backup/trade-data/status")
+async def get_trade_backup_status(request: Request, account_key: str = ""):
+    """Return cloud backup status & local TradeDB file summary."""
+    _ensure_trade_backup_table()
+    owner_id = _owner_from_request(request)
+    key = account_key.strip() or owner_id or "default"
+    cloud_info = None
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cur = conn.execute(
+            "SELECT account_key, orders_count, positions_count, daily_pnl_days, local_path, device, updated_at FROM trade_cloud_backups WHERE account_key = ? OR account_key = 'default' ORDER BY updated_at DESC LIMIT 1",
+            (key,),
+        )
+        row = cur.fetchone()
+        if not row:
+            cur = conn.execute(
+                "SELECT account_key, orders_count, positions_count, daily_pnl_days, local_path, device, updated_at FROM trade_cloud_backups ORDER BY updated_at DESC LIMIT 1"
+            )
+            row = cur.fetchone()
+        if row:
+            cloud_info = {
+                "account_key": row[0],
+                "orders_count": row[1],
+                "positions_count": row[2],
+                "daily_pnl_days": row[3],
+                "local_path": row[4],
+                "device": row[5],
+                "updated_at": row[6],
+            }
+    finally:
+        conn.close()
+    target_dir, configured_str = _resolve_local_backup_dir(DEFAULT_PC_BACKUP_DIR)
+    files = sorted([p.name for p in target_dir.glob("trade_backup_*.json")], reverse=True)
+    return {
+        "ok": True,
+        "default_pc_dir": DEFAULT_PC_BACKUP_DIR,
+        "active_local_dir": str(target_dir),
+        "local_file_count": len(files),
+        "local_latest_files": files[:5],
+        "cloud": cloud_info,
+    }
 
 
 _SERVER_SHUTTING_DOWN = False

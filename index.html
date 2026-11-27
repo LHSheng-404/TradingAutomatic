@@ -2869,7 +2869,7 @@
             SHL TW
             <span class="badge badge-blue">全自動台股中控台</span>
             <button type="button" id="btnOpenChangelog" class="badge mono" style="cursor:pointer;background:#0f172a;color:#fde68a;border:1px solid #334155;font-weight:800;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;" title="點此查看當前版本號與完整歷史修改／新增紀錄清單">
-              v3.31.0 · 版本說明
+              v3.32.0 · 版本說明
             </button>
           </h1>
           <p class="brand-sub">永豐金 Shioaji Pro 即時行情 × FinMind 盤後輔助 × 六模型 AI × 多 Agent 自動買賣</p>
@@ -3514,6 +3514,7 @@
             <button type="button" id="btnAtOpenWarModal" class="btn btn-sm" style="background:#7f1d1d;color:#fecaca;border-color:#b91c1c;">⚔️ 策略與止損參數</button>
             <button type="button" id="btnAtResetSim" class="btn btn-sm" style="background:#1e293b;color:#cbd5e1;border-color:#334155;">重設模擬盤</button>
             <button type="button" id="btnAtDailyPnl" class="btn btn-sm" style="background:#065f46;color:#a7f3d0;border-color:#059669;font-weight:800;">📅 每日損益記憶</button>
+            <button type="button" id="btnAtTradeBackup" class="btn btn-sm" style="background:#312e81;color:#c7d2fe;border-color:#4f46e5;font-weight:800;">☁️ 雲端/本機備份</button>
             <button type="button" id="btnAtExportCsv" class="btn btn-sm" style="background:#1e293b;color:#93c5fd;border-color:#334155;">匯出 CSV</button>
             <button type="button" id="btnAtSendReview" class="btn btn-sm" style="background:#1d4ed8;color:#fff;border-color:#2563eb;">送往對帳復盤</button>
           </div>
@@ -6088,6 +6089,39 @@
             </thead>
             <tbody id="dailyPnlTableBody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v3.32.0: Cloud + Local PC (D:\SideProject\TradeDB) Dual Backup & Mobile Sync Restore Modal -->
+  <div id="tradeBackupModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tradeBackupModalTitle">
+    <div class="modal-dialog" style="max-width:680px;max-height:88vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge" style="background:#312e81;color:#e0e7ff;border:1px solid #6366f1;">CLOUD &amp; LOCAL DB</span>
+          <h3 id="tradeBackupModalTitle" style="margin:0;font-size:15px;font-weight:800;">☁️ 交易數據雲端 ＋ 本機雙重備份（手機同步還原）</h3>
+        </div>
+        <button type="button" class="btn btn-sm btn-dark" data-close-modal="tradeBackupModal">✕ 關閉</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-bottom:16px;">
+        <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+          <label for="tradeBackupLocalDirInput" style="font-size:12px;font-weight:800;color:#312e81;">💻 電腦端本機備份路徑（預設 D:\SideProject\TradeDB）</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input id="tradeBackupLocalDirInput" type="text" class="input mono" value="D:\SideProject\TradeDB" style="flex:1;min-width:240px;background:#fff;font-weight:700;" />
+            <button id="btnTradeBackupSaveDir" type="button" class="btn btn-sm">套用路徑</button>
+          </div>
+          <div style="font-size:11px;color:#4338ca;line-height:1.5;">
+            電腦端按下「立即雙重備份」時，系統會同時將所有交易紀錄、持倉、本金、每日損益記憶與自選股寫入 <b>雲端 SQLite 資料庫</b> 與 <b>本機 TradeDB 目錄</b>（<code>trade_backup_latest.json</code> ＋ 時間戳記歷史快照）；手機端（iOS / Android）只需按「同步載入雲端備份」即可一鍵還原最新完整交易數據。
+          </div>
+        </div>
+
+        <div id="tradeBackupStatusBox" class="mono" style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.65;white-space:pre-wrap;">尚未查詢備份狀態，請點擊下方按鈕執行備份或同步載入。</div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <button id="btnTradeBackupDownload" type="button" class="btn btn-sm">⬇️ 下載本機 JSON 備份檔</button>
+          <button id="btnTradeBackupPull" type="button" class="btn btn-sm" style="background:#0f766e;color:#fff;border-color:#14b8a6;font-weight:800;">📱 同步載入雲端備份（手機／跨裝置還原）</button>
+          <button id="btnTradeBackupPush" type="button" class="btn btn-sm btn-primary" style="font-weight:800;">☁️ 立即雙重備份（雲端 ＋ 本機 TradeDB）</button>
         </div>
       </div>
     </div>
@@ -22051,8 +22085,16 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
     // v3.11.2 CURRENT VERSION & CHANGELOG HISTORY VIEWER (window.SHL_CHANGELOG)
     // =========================================================================
     window.SHL_CHANGELOG = (function createChangelogViewer() {
-      const CURRENT_VERSION = 'v3.31.0';
+      const CURRENT_VERSION = 'v3.32.0';
       const HISTORY = [
+        {
+          ver: 'v3.32.0',
+          items: [
+            '新增「☁️ 雲端 ＋ 本機雙重備份系統」（POST /api/v1/backup/trade-data、GET /api/v1/backup/trade-data/latest、GET /api/v1/backup/trade-data/status 與前端 window.SHL_TRADE_BACKUP）：一鍵將完整交易紀錄、持倉、投入本金、可用現金、每日損益記憶、自選股與對帳單資料同步寫入雲端 SQLite 資料庫與電腦本機備份路徑',
+            '電腦端本機備份路徑預設為 D:\\SideProject\\TradeDB（可於介面自訂並永久記憶；同時輸出 trade_backup_latest.json 與帶時間戳記之歷史快照，並支援離線下載本機 JSON 備份檔）',
+            '手機端（iOS / Android）支援「📱 同步載入雲端備份」一鍵從雲端拉取最新交易數據，完整還原交易紀錄、持倉、本金與每日損益記憶並即時刷新全畫面'
+          ]
+        },
         {
           ver: 'v3.31.0',
           items: [
@@ -26462,6 +26504,14 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.getElementById('dailyPnlModal')?.classList.add('open');
       }
 
+      function restoreLedger(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        Object.keys(ledger).forEach((k) => delete ledger[k]);
+        Object.keys(obj).forEach((k) => { ledger[k] = obj[k]; });
+        save();
+        renderModal();
+      }
+
       function init() {
         load();
         rebuildFromOrders();
@@ -26472,7 +26522,245 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
         document.getElementById('btnReviewApplyToSystem')?.addEventListener('click', applyReviewToSystem);
       }
 
-      return { init, recordToday, rebuildFromOrders, getRows, openModal, exportCsv, exportJson, applyReviewToSystem };
+      return { init, recordToday, rebuildFromOrders, restoreLedger, getRows, openModal, exportCsv, exportJson, applyReviewToSystem };
+    })();
+
+    // =========================================================================
+    // v3.32.0: CLOUD + LOCAL PC (D:\SideProject\TradeDB) DUAL BACKUP & MOBILE SYNC
+    // =========================================================================
+    window.SHL_TRADE_BACKUP = (function createTradeBackupEngine() {
+      const DEFAULT_LOCAL_DIR = 'D:\\SideProject\\TradeDB';
+      const DIR_STORAGE_KEY = 'shl_trade_backup_local_dir_v1';
+
+      function getLocalDir() {
+        try {
+          const v = localStorage.getItem(DIR_STORAGE_KEY);
+          return (v && v.trim()) ? v.trim() : DEFAULT_LOCAL_DIR;
+        } catch (_) {
+          return DEFAULT_LOCAL_DIR;
+        }
+      }
+
+      function setLocalDir(dir) {
+        const clean = String(dir || '').trim() || DEFAULT_LOCAL_DIR;
+        try { localStorage.setItem(DIR_STORAGE_KEY, clean); } catch (_) {}
+        const inp = document.getElementById('tradeBackupLocalDirInput');
+        if (inp) inp.value = clean;
+        return clean;
+      }
+
+      function detectDevice() {
+        const ua = (navigator.userAgent || '').toLowerCase();
+        if (/iphone|ipad|ipod/.test(ua)) return 'ios-mobile';
+        if (/android/.test(ua)) return 'android-mobile';
+        if (/windows/.test(ua)) return 'windows-pc';
+        if (/macintosh|mac os/.test(ua)) return 'macos-pc';
+        return 'desktop';
+      }
+
+      function apiHeaders() {
+        const h = { 'Content-Type': 'application/json' };
+        try {
+          const pw = (state && state.accessPassword) || localStorage.getItem('shl_access_password') || '';
+          if (pw) h['X-SHL-Access-Token'] = pw;
+          const uid = (state && state.remoteOwnerId) || localStorage.getItem('shl_remote_owner_id') || '';
+          if (uid) h['X-SHL-Owner-Id'] = uid;
+        } catch (_) {}
+        return h;
+      }
+
+      function apiBase() {
+        try {
+          if (typeof getApiBase === 'function') return String(getApiBase() || '').replace(/\/+$/, '');
+        } catch (_) {}
+        return String((state && state.apiBase) || '').replace(/\/+$/, '');
+      }
+
+      function buildSnapshot() {
+        let dailyPnlObj = {};
+        try {
+          const raw = localStorage.getItem('shl_daily_pnl_ledger_v1');
+          if (raw) dailyPnlObj = JSON.parse(raw) || {};
+        } catch (_) {}
+        let warStops = {};
+        try {
+          if (window.SHL_WAR && typeof window.SHL_WAR.cfg === 'function') {
+            warStops = (window.SHL_WAR.cfg() && window.SHL_WAR.cfg().stops) || {};
+          }
+        } catch (_) {}
+        return {
+          schema: 'shl_trade_backup_v1',
+          version: 'v3.32.0',
+          exported_at: new Date().toISOString(),
+          orders: Array.isArray(state.orders) ? state.orders : [],
+          positions: Array.isArray(state.positions) ? state.positions : [],
+          daily_pnl: dailyPnlObj,
+          watchlist: Array.isArray(state.watchlist) ? state.watchlist : [],
+          groups: (state.ext && state.ext.groups) ? state.ext.groups : {},
+          initialCapitalTwd: Number(state.initialCapitalTwd) || 1000000,
+          simCashTwd: Number(state.simCashTwd ?? state.initialCapitalTwd) || 1000000,
+          feeDiscount: Number(state.feeDiscount) || 0.28,
+          war_stops: warStops,
+          reviewData: Array.isArray(state.reviewData) ? state.reviewData : []
+        };
+      }
+
+      function setStatusText(text) {
+        const box = document.getElementById('tradeBackupStatusBox');
+        if (box) box.textContent = text;
+      }
+
+      async function refreshStatus() {
+        const dir = getLocalDir();
+        const inp = document.getElementById('tradeBackupLocalDirInput');
+        if (inp) inp.value = dir;
+        try {
+          const res = await fetch(`${apiBase()}/api/v1/backup/trade-data/status`, { headers: apiHeaders() });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const lines = [
+            `💻 預設電腦本機備份路徑：${data.default_pc_dir || DEFAULT_LOCAL_DIR}`,
+            `📂 後端實際寫入目錄：${data.active_local_dir || dir}（共 ${data.local_file_count || 0} 份快照檔）`,
+          ];
+          if (data.cloud) {
+            lines.push(`☁️ 雲端最新備份：${data.cloud.updated_at}（來源裝置：${data.cloud.device || 'desktop'}）`);
+            lines.push(`📊 雲端內容：${data.cloud.orders_count} 筆成交紀錄 ｜ ${data.cloud.positions_count} 檔持倉 ｜ ${data.cloud.daily_pnl_days} 個每日損益交易日`);
+          } else {
+            lines.push('☁️ 雲端最新備份：尚無紀錄（請先按「立即雙重備份」）');
+          }
+          setStatusText(lines.join('\n'));
+          return data;
+        } catch (err) {
+          setStatusText(`⚠️ 無法連線至後端雲端 API（${err && err.message ? err.message : err}）\n仍可使用「下載本機 JSON 備份檔」手動存至 ${dir}`);
+          return null;
+        }
+      }
+
+      function downloadLocalJson(snapshotOverride) {
+        const snap = snapshotOverride || buildSnapshot();
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SHL_TradeDB_backup_${ts}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        window.SHL_ACTION_LOG?.log('system', '#btnTradeBackupDownload', `已下載本機 JSON 備份檔（${snap.orders.length} 筆交易）`, 'OK', '交易備份');
+      }
+
+      async function pushBackup(silent = false) {
+        const inp = document.getElementById('tradeBackupLocalDirInput');
+        const localDir = setLocalDir(inp ? inp.value : getLocalDir());
+        if (window.SHL_DAILY_PNL && typeof window.SHL_DAILY_PNL.recordToday === 'function') {
+          window.SHL_DAILY_PNL.recordToday(true);
+        }
+        const snap = buildSnapshot();
+        try {
+          const res = await fetch(`${apiBase()}/api/v1/backup/trade-data`, {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify({
+              local_dir: localDir,
+              device: detectDevice(),
+              data: snap
+            })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const out = await res.json();
+          const msg = `☁️ 雲端已儲存：${out.cloud_saved ? '✅ 成功' : '❌ 失敗'}\n💾 本機已儲存：${out.local_saved ? '✅ 成功' : '⚠️ 未寫入'}（${out.local_latest_path || localDir}）\n🕒 時間：${out.saved_at}\n📊 筆數：${out.counts?.orders || 0} 筆成交 / ${out.counts?.positions || 0} 檔持倉 / ${out.counts?.daily_pnl_days || 0} 日損益`;
+          setStatusText(msg);
+          window.SHL_ACTION_LOG?.log('system', '#btnTradeBackupPush', `雲端+本機雙重備份成功 (${out.counts?.orders || 0}筆交易, 路徑:${out.local_latest_path || localDir})`, 'OK', '交易備份');
+          if (!silent && typeof showToast === 'function') {
+            showToast('☁️ 雲端 ＋ 本機雙重備份完成', `已備份 ${out.counts?.orders || 0} 筆交易至雲端資料庫與 ${out.local_latest_path || localDir}`, 'success');
+          }
+          return out;
+        } catch (err) {
+          window.SHL_ACTION_LOG?.log('error', '#btnTradeBackupPush', `雙重備份失敗: ${err && err.message ? err.message : err}`, 'ERR', '交易備份');
+          if (!silent) {
+            downloadLocalJson(snap);
+            if (typeof showToast === 'function') {
+              showToast('⚠️ 雲端暫離線，已改為下載本機 JSON 備份', `請將檔案存至 ${localDir}`, 'warning');
+            }
+          }
+          return { ok: false, error: String(err) };
+        }
+      }
+
+      async function pullCloudBackup(silent = false) {
+        try {
+          const res = await fetch(`${apiBase()}/api/v1/backup/trade-data/latest`, { headers: apiHeaders() });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const out = await res.json();
+          if (!out.ok || !out.backup || !out.backup.data) {
+            const detail = out.detail || '雲端尚無交易備份資料';
+            setStatusText(`⚠️ ${detail}`);
+            if (!silent && typeof showToast === 'function') showToast('尚無雲端備份', detail, 'warning');
+            return { ok: false, detail };
+          }
+          const d = out.backup.data;
+          if (Array.isArray(d.orders)) state.orders = d.orders;
+          if (Array.isArray(d.positions)) state.positions = d.positions;
+          if (Array.isArray(d.watchlist) && d.watchlist.length) state.watchlist = d.watchlist;
+          if (d.groups && typeof d.groups === 'object') {
+            state.ext = state.ext || {};
+            state.ext.groups = d.groups;
+          }
+          if (Number(d.initialCapitalTwd) > 0) state.initialCapitalTwd = Number(d.initialCapitalTwd);
+          if (Number.isFinite(Number(d.simCashTwd))) state.simCashTwd = Number(d.simCashTwd);
+          if (Number(d.feeDiscount) > 0) state.feeDiscount = Number(d.feeDiscount);
+          if (Array.isArray(d.reviewData)) state.reviewData = d.reviewData;
+          if (d.war_stops && typeof d.war_stops === 'object' && window.SHL_WAR && typeof window.SHL_WAR.cfg === 'function') {
+            const c = window.SHL_WAR.cfg();
+            if (c) c.stops = Object.assign({}, c.stops || {}, d.war_stops);
+          }
+          if (d.daily_pnl && typeof d.daily_pnl === 'object' && window.SHL_DAILY_PNL && typeof window.SHL_DAILY_PNL.restoreLedger === 'function') {
+            window.SHL_DAILY_PNL.restoreLedger(d.daily_pnl);
+          }
+          const pInp = document.getElementById('atPrincipalInput');
+          if (pInp && state.initialCapitalTwd) pInp.value = String(state.initialCapitalTwd);
+          if (typeof persistState === 'function') persistState();
+          if (typeof renderAllViews === 'function') renderAllViews();
+          if (window.SHL_AUTO_DASH && typeof window.SHL_AUTO_DASH.render === 'function') window.SHL_AUTO_DASH.render();
+          if (window.SHL_FLOWCHART && typeof window.SHL_FLOWCHART.render === 'function') window.SHL_FLOWCHART.render();
+          if (window.SHL_DAILY_PNL && typeof window.SHL_DAILY_PNL.rebuildFromOrders === 'function') window.SHL_DAILY_PNL.rebuildFromOrders();
+
+          const msg = `✅ 已從雲端同步還原最新交易數據！\n🕒 備份時間：${out.updated_at || '--'}（來源：${out.device || out.source}）\n📊 已還原：${state.orders.length} 筆成交紀錄 ｜ ${state.positions.length} 檔持倉 ｜ 本金 $${Number(state.initialCapitalTwd || 0).toLocaleString()}`;
+          setStatusText(msg);
+          window.SHL_ACTION_LOG?.log('system', '#btnTradeBackupPull', `手機/跨裝置雲端還原成功 (${state.orders.length}筆交易, ${state.positions.length}檔持倉)`, 'OK', '交易備份');
+          if (!silent && typeof showToast === 'function') {
+            showToast('📱 雲端備份同步還原完成', `已還原 ${state.orders.length} 筆交易紀錄與 ${state.positions.length} 檔持倉`, 'success');
+          }
+          return { ok: true, restored_orders: state.orders.length, restored_positions: state.positions.length, initialCapitalTwd: state.initialCapitalTwd };
+        } catch (err) {
+          window.SHL_ACTION_LOG?.log('error', '#btnTradeBackupPull', `雲端還原失敗: ${err && err.message ? err.message : err}`, 'ERR', '交易備份');
+          if (!silent && typeof showToast === 'function') showToast('雲端還原失敗', String(err && err.message ? err.message : err), 'error');
+          return { ok: false, error: String(err) };
+        }
+      }
+
+      function openModal() {
+        const modal = document.getElementById('tradeBackupModal');
+        if (modal) modal.classList.add('open');
+        refreshStatus();
+      }
+
+      function init() {
+        const inp = document.getElementById('tradeBackupLocalDirInput');
+        if (inp) inp.value = getLocalDir();
+        document.getElementById('btnAtTradeBackup')?.addEventListener('click', openModal);
+        document.getElementById('btnTradeBackupSaveDir')?.addEventListener('click', () => {
+          const saved = setLocalDir(document.getElementById('tradeBackupLocalDirInput')?.value);
+          if (typeof showToast === 'function') showToast('已儲存本機備份路徑', saved, 'success');
+        });
+        document.getElementById('btnTradeBackupPush')?.addEventListener('click', () => pushBackup(false));
+        document.getElementById('btnTradeBackupPull')?.addEventListener('click', () => pullCloudBackup(false));
+        document.getElementById('btnTradeBackupDownload')?.addEventListener('click', () => downloadLocalJson());
+      }
+
+      return { init, openModal, pushBackup, pullCloudBackup, refreshStatus, downloadLocalJson, buildSnapshot, getLocalDir, setLocalDir };
     })();
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -26485,6 +26773,7 @@ plot(ema_slow, color=color.orange, title="EMA 12")`;
       safeBoot('ACTION_LOG', () => window.SHL_ACTION_LOG?.init());
       safeBoot('INTRADAY_SCHEDULER', () => window.SHL_INTRADAY_SCHEDULER?.init());
       safeBoot('DAILY_PNL', () => window.SHL_DAILY_PNL?.init());
+      safeBoot('TRADE_BACKUP', () => window.SHL_TRADE_BACKUP?.init());
       document.getElementById('btnGlobalShioajiRefresh')?.addEventListener('click', () => {
         window.SHL_GLOBAL_REFRESH_ALL(false);
       });
